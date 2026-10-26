@@ -164,6 +164,11 @@ lighthouse-ci: (lighthouse "--base" ".lighthouse/base/apps/site")
 lighthouse-embed:
     node scripts/lighthouse-embed.ts
 
+# Skills: rewrite content/skills.json from the public skills repo's main branch; pass
+# `--evals ~/projects/agents-skills/eval-results` (the repo does not track them) or `--from <checkout>`
+skills-sync *args:
+    node scripts/skills-sync.ts {{ args }}
+
 # Site: dev server (no search index; run site-build for that)
 site-dev:
     {{ site }} astro dev

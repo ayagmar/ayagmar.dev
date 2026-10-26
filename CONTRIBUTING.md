@@ -61,6 +61,10 @@ The build fails, naming the file and line, when a diagram has no name, has a Mer
 
 A note is a short "today I learned" in `content/til/<slug>.md`; the slug is the URL, `/til/<slug>`. Frontmatter is `title` and `date` (`YYYY-MM-DD`), plus optional `tags` (the posts' rules) and `draft: true`. Any other field, `summary` included, fails the build. The body is a few lines to a few paragraphs of Markdown, with the same code blocks and diagrams as posts. `/til` shows every published note in full, newest first; `/til/feed.xml` and `/til/atom.xml` carry them, and the writing feeds do not. Feeds use the note's first paragraph as its summary. Read drafts with `PUBLIC_SHOW_DRAFTS=1 just dev`. Details: [ADR 0028](docs/adr/0028-til-notes.md).
 
+## Skills
+
+`/skills` shows the public skills in [ayagmar/agents-skills](https://github.com/ayagmar/agents-skills). The page reads `content/skills.json`, never the network or a checkout. After a skill changes there, `just skills-sync --evals ~/projects/agents-skills/eval-results` rewrites the file from the repo's `main` (add `--from <checkout>` to read a local copy instead) and prints a warning for each skill it had to fill in from a fallback. The eval results are not tracked in that repo, so pass them from the local checkout or the shelf loses its eval lines. Commit the file as `chore(content): sync skills`. Details: [ADR 0031](docs/adr/0031-skills-shelf.md).
+
 ## Projects
 
 The featured projects are listed in `packages/contracts/src/projects.ts`. Each gets a page at `/projects/<slug>` and feeds at `/projects/<slug>/feed.xml` and `atom.xml`. A post with `projects: [<slug>]` shows that project's card and appears on its page.

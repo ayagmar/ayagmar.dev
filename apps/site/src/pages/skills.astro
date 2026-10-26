@@ -1,0 +1,316 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { getPosts } from '../lib/posts.ts';
+import {
+  commitUrl,
+  creditParts,
+  evalLine,
+  installPattern,
+  needsNode,
+  postsMentioning,
+  shelvesOf,
+  skillsTagPath,
+} from '../lib/skills.ts';
+import { isoDay, postPath } from '../lib/writing.ts';
+
+// content/skills.json, validated by the collection schema in content.config.ts (ADR 0031).
+const entry = await getEntry('skills', 'skills');
+if (entry === undefined) throw new Error('content/skills.json is missing');
+const { source, skills } = entry.data;
+const posts = await getPosts();
+const tagPath = skillsTagPath(posts);
+const shelves = shelvesOf(skills);
+const pattern = installPattern(skills);
+const repoUrl = `https://github.com/${source.repo}`;
+---
+
+<Base
+  title="Skills"
+  description={`${skills.length} Agent Skills by Abdeslam Yassine Agmar: what each does, how to install it, and how it did on its evals.`}
+>
+  <div data-pagefind-body>
+    <span hidden data-pagefind-meta="title">Skills</span>
+    <header class="intro">
+      <h1>Skills</h1>
+      <p>
+        An Agent Skill is a folder with a <code>SKILL.md</code> that tells a coding agent when to
+        use it and how to do one kind of job; the agent reads it only when the task matches.
+        {` These ${skills.length} are mine: `}each is its own npm package, kept in{' '}
+        <a href={repoUrl}>{source.repo}</a>.
+      </p>
+      {pattern !== null && (
+        <>
+          <code class="install">{pattern}</code>
+          <p class="note">
+            Agents: <code>pi</code>, <code>claude-code</code>, <code>codex</code>,{' '}
+            <code>cursor</code>. Add <code>-g</code> to install for your user instead of the
+            project. A mark like 3/3 is how many eval cases passed.
+          </p>
+        </>
+      )}
+      {tagPath !== null && (
+        <p class="note" data-pagefind-ignore>
+          Writing about them: <a href={tagPath}>posts tagged {tagPath.split('/').at(-1)}</a>.
+        </p>
+      )}
+    </header>
+
+    {shelves.map((shelf, index) => (
+      <section class="shelf" aria-labelledby={`shelf-${index}`}>
+        <h2 id={`shelf-${index}`}>{shelf.title}</h2>
+        <p class="blurb">{shelf.blurb}</p>
+        <ul class="jars">
+          {shelf.skills.map((skill) => {
+            const result = evalLine(skill);
+            const mentions = postsMentioning(posts, skill);
+            return (
+              <li id={skill.name} class="jar">
+                <div class="label">
+                  <h3>{skill.name}</h3>
+                  <span class="version">v{skill.version}</span>
+                </div>
+                <div class="contents">
+                  <p class="summary">{skill.summary}</p>
+                  <p class="badges">
+                    <span>{skill.license}</span>
+                    {needsNode(skill) && <span>needs Node</span>}
+                    {result !== null && (
+                      <span class={result.clean ? 'mark' : 'mark short'}>
+                        {result.ratio}
+                        <span class="sr-only"> eval cases passed</span>
+                      </span>
+                    )}
+                  </p>
+                  {skill.credit !== null && (
+                    <p class="credit">
+                      {creditParts(skill.credit).map((part) =>
+                        part.href === undefined ? part.text : <a href={part.href}>{part.text}</a>
+                      )}
+                    </p>
+                  )}
+                  <p class="links">
+                    <a href={skill.readme}>
+                      README<span class="sr-only"> for {skill.name}</span>
+                    </a>
+                    <a href={skill.npm}>
+                      npm<span class="sr-only"> page for {skill.name}</span>
+                    </a>
+                    {mentions.map((post) => (
+                      <a href={postPath(post.id)}>
+                        <span class="sr-only">Post: </span>
+                        {post.data.title}
+                        <span class="sr-only"> ({isoDay(post.data.date)})</span>
+                      </a>
+                    ))}
+                  </p>
+                  <details>
+                    <summary>
+                      Install{result !== null && ' and eval run'}
+                      <span class="sr-only"> for {skill.name}</span>
+                    </summary>
+                    {skill.install !== null && <code class="install">{skill.install}</code>}
+                    {result !== null && (
+                      <p class="detail">
+                        {result.cases}, {result.passMark}. Run {result.ran}.
+                      </p>
+                    )}
+                    {skill.runtime !== null && <p class="detail">Runtime: {skill.runtime}.</p>}
+                  </details>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ))}
+
+    <p class="note" data-pagefind-ignore>
+      Copied from <a href={repoUrl}>{source.repo}</a> at{' '}
+      <a href={commitUrl(source)}><code>{source.commit.slice(0, 7)}</code></a>,{' '}
+      {isoDay(new Date(source.committedAt))}, by <code>just skills-sync</code>. Each skill keeps its
+      own licence and credits. Eval runs are Claude Code's plugin eval with Claude as the judge, run
+      by me; the repo does not publish them.
+    </p>
+  </div>
+</Base>
+
+<style>
+.intro > p {
+  max-width: var(--measure);
+}
+
+.intro h1 {
+  margin-bottom: 0.25em;
+}
+
+.note,
+.blurb,
+.credit,
+.detail,
+.version,
+.badges,
+.links,
+summary {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.note {
+  color: var(--fg-2);
+}
+
+.shelf + .note {
+  margin-block-start: 2.5rem;
+}
+
+/* The install pattern and each skill's own line: the code face on the room's dark screen. */
+.install {
+  display: block;
+  margin: 0.5rem 0;
+  padding: 0.55rem 0.75rem;
+  width: fit-content;
+  max-width: 100%;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.shelf {
+  margin-block: 2.5rem 0;
+}
+
+.shelf h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.blurb {
+  margin: 0.15rem 0 1rem;
+  color: var(--fg-2);
+}
+
+/* Each skill is a jar standing on its own wooden base, labelled with a strip of the notebook's
+   paper, so the shelf holds what the writing desk holds. */
+.jars {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.jar {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background: var(--surface);
+  border-block-end: 6px solid var(--wood);
+  clip-path: var(--step);
+  scroll-margin-top: 1rem;
+}
+
+.label {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.label h3 {
+  margin: 0;
+  font: 650 0.9375rem / 1.3 var(--mono);
+  letter-spacing: -0.02em;
+  text-wrap: auto;
+}
+
+.version {
+  flex: none;
+  color: var(--ink-2);
+  font-family: var(--mono);
+}
+
+.contents {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+  padding: 0.8rem 0.8rem 0.9rem;
+}
+
+.contents p {
+  margin: 0;
+}
+
+.summary {
+  font-size: 0.975rem;
+  line-height: 1.5;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: var(--fg-2);
+  font-family: var(--mono);
+}
+
+.badges span {
+  padding: 0 0.4rem;
+  border: 1px solid var(--line);
+}
+
+.badges .mark {
+  border-color: var(--glow);
+  color: var(--glow);
+}
+
+.badges .mark.short {
+  border-color: var(--rose);
+  color: var(--rose);
+}
+
+.credit {
+  color: var(--fg-2);
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
+.links a,
+summary {
+  display: inline-block;
+  min-height: 24px;
+  padding-block: 0.25rem;
+}
+
+details {
+  margin-block-start: 0.1rem;
+}
+
+summary {
+  color: var(--fg-2);
+  cursor: pointer;
+}
+
+summary:hover {
+  color: var(--fg);
+}
+
+details[open] summary {
+  color: var(--fg);
+}
+
+.detail {
+  margin-block-start: 0.4rem;
+  color: var(--fg-2);
+}
+</style>

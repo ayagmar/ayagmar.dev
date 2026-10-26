@@ -1,0 +1,269 @@
+{
+  "source": {
+    "repo": "ayagmar/agents-skills",
+    "commit": "d4f9837e04c09dcd7c2857421b62caf7c968dca2",
+    "committedAt": "2026-10-24T18:31:24.000Z"
+  },
+  "skills": [
+    {
+      "name": "adversarial-plan-approval",
+      "summary": "Independently falsify or approve implementation plans before execution with ACCEPT, MODIFY, or REJECT verdicts per task or decision gate.",
+      "version": "0.1.2",
+      "package": "@ayagmar/adversarial-plan-approval",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill adversarial-plan-approval --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/adversarial-plan-approval/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/adversarial-plan-approval",
+      "eval": {
+        "passed": 3,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "advisor-executor-quality-loop",
+      "summary": "Orchestrate complex multi-task work by separating advisor reasoning, delegated execution, and independent verification until tasks converge.",
+      "version": "0.1.2",
+      "package": "@ayagmar/advisor-executor-quality-loop",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill advisor-executor-quality-loop --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/advisor-executor-quality-loop/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/advisor-executor-quality-loop",
+      "eval": {
+        "passed": 3,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "commit",
+      "summary": "Create Conventional Commits safely, including logical commit stacks over mixed working trees and plan-traceable commit sequences.",
+      "version": "0.1.2",
+      "package": "@ayagmar/commit",
+      "license": "Apache-2.0",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill commit --agent pi",
+      "credit": "Based on commit from https://github.com/mitsuhiko/agent-stuff (Apache-2.0), modified by Abdeslam Yassine Agmar.",
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/commit/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/commit",
+      "eval": {
+        "passed": 3,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "engineering-optimization",
+      "summary": "Improve performance, resource use, determinism, or simplicity through measurement, profiling, benchmarks, and proven equivalence.",
+      "version": "0.1.2",
+      "package": "@ayagmar/engineering-optimization",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill engineering-optimization --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/engineering-optimization/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/engineering-optimization",
+      "eval": {
+        "passed": 2,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "implementation-plan-author",
+      "summary": "Author self-contained implementation plans, multi-plan programs, or compact handoffs that a fresh agent can execute without conversational memory.",
+      "version": "0.1.2",
+      "package": "@ayagmar/implementation-plan-author",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill implementation-plan-author --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/implementation-plan-author/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/implementation-plan-author",
+      "eval": {
+        "passed": 3,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "improve",
+      "summary": "Survey a codebase as a senior advisor, report prioritized improvements, and implement selected fixes or produce handoff plans.",
+      "version": "0.1.3",
+      "package": "@ayagmar/improve",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill improve --agent pi",
+      "credit": "Based on improve from https://github.com/shadcn/improve (MIT), modified by Abdeslam Yassine Agmar. Upstream version 1.2.0.",
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/improve/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/improve",
+      "eval": {
+        "passed": 2,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.2"
+      }
+    },
+    {
+      "name": "no-slop",
+      "summary": "Write, edit, or audit READMEs, docs, landing pages, and other prose so it reads like a person wrote it, without AI-writing patterns.",
+      "version": "0.1.1",
+      "package": "@ayagmar/no-slop",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill no-slop --agent pi",
+      "credit": "razakiau/no-slop (MIT), merged from blader/humanizer 3.1.0 (MIT) and petergyang/no-ai-slop (MIT)",
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/no-slop/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/no-slop",
+      "eval": {
+        "passed": 4,
+        "total": 4,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.0"
+      }
+    },
+    {
+      "name": "product-spec-foundry",
+      "summary": "Turn a product idea, loose PRD, or inconsistent pre-implementation repository into an implementation-ready specification package.",
+      "version": "0.1.2",
+      "package": "@ayagmar/product-spec-foundry",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill product-spec-foundry --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/product-spec-foundry/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/product-spec-foundry",
+      "eval": {
+        "passed": 4,
+        "total": 4,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "release-readiness-certification",
+      "summary": "Produce a strict evidence-based release verdict with severity-ranked findings, blockers, a pre-release work batch, and a deferred backlog.",
+      "version": "0.1.2",
+      "package": "@ayagmar/release-readiness-certification",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill release-readiness-certification --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/release-readiness-certification/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/release-readiness-certification",
+      "eval": {
+        "passed": 3,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "session-cost-forensics",
+      "summary": "Analyze local Codex, Pi, and Claude Code session logs for cost, token waste, cache misses, retries, duplicate sessions, and orchestration inefficiency.",
+      "version": "0.1.2",
+      "package": "@ayagmar/session-cost-forensics",
+      "license": "MIT",
+      "runtime": "Node.js >= 22.19, npx",
+      "install": "npx skills add ayagmar/agents-skills --skill session-cost-forensics --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/session-cost-forensics/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/session-cost-forensics",
+      "eval": {
+        "passed": 2,
+        "total": 3,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.1"
+      }
+    },
+    {
+      "name": "session-memory-search",
+      "summary": "Search local Codex, Pi, and Claude Code session history to recover prior decisions, feedback, prompts, TODOs, and conversation snippets.",
+      "version": "0.1.3",
+      "package": "@ayagmar/session-memory-search",
+      "license": "MIT",
+      "runtime": "Node.js >= 22.19, rg optional",
+      "install": "npx skills add ayagmar/agents-skills --skill session-memory-search --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/session-memory-search/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/session-memory-search",
+      "eval": {
+        "passed": 3,
+        "total": 4,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.2"
+      }
+    },
+    {
+      "name": "summarize",
+      "summary": "Fetch a URL or convert a local file (PDF, DOCX, HTML, and more) into Markdown with markitdown, optionally summarizing it.",
+      "version": "0.1.3",
+      "package": "@ayagmar/summarize",
+      "license": "Apache-2.0",
+      "runtime": "Node.js >= 22.19, uvx; pi optional",
+      "install": "npx skills add ayagmar/agents-skills --skill summarize --agent pi",
+      "credit": "Based on summarize from https://github.com/mitsuhiko/agent-stuff (Apache-2.0), modified by Abdeslam Yassine Agmar.",
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/summarize/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/summarize",
+      "eval": {
+        "passed": 4,
+        "total": 4,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.2"
+      }
+    },
+    {
+      "name": "x-post-craft",
+      "summary": "Write and review X/Twitter posts and threads using the reach mechanics of X's open-source recommendation stack.",
+      "version": "0.1.1",
+      "package": "@ayagmar/x-post-craft",
+      "license": "MIT",
+      "runtime": "Instruction-only",
+      "install": "npx skills add ayagmar/agents-skills --skill x-post-craft --agent pi",
+      "credit": null,
+      "readme": "https://github.com/ayagmar/agents-skills/blob/main/plugins/x-post-craft/README.md",
+      "npm": "https://www.npmjs.com/package/@ayagmar/x-post-craft",
+      "eval": {
+        "passed": 3,
+        "total": 4,
+        "threshold": 0.8,
+        "date": "2026-10-11",
+        "model": "claude-sonnet-5-5",
+        "version": "0.1.0"
+      }
+    }
+  ]
+}
