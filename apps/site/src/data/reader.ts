@@ -31,7 +31,7 @@ export type PulledSource = keyof Snapshots;
 
 export type SnapshotOf<Source extends PulledSource> = Snapshots[Source];
 
-type SignalsMode = 'fixtures' | 'api';
+export type SignalsMode = 'fixtures' | 'api';
 
 export interface ReaderOptions {
   mode: SignalsMode;
@@ -60,11 +60,11 @@ export function createReader(options: ReaderOptions) {
   const reads = new Map<PulledSource, Promise<Envelope<unknown>>>();
 
   async function fromFixtures<Source extends PulledSource>(source: Source) {
-    const { snapshotFixtures } = await import('@min7/contracts/fixtures');
+    const { fixturesCapturedAt, snapshotFixtures } = await import('@min7/contracts/fixtures');
     return envelopeSchemas[source].parse({
       source,
       version: 1,
-      fetchedAt: now().toISOString(),
+      fetchedAt: fixturesCapturedAt,
       stale: false,
       data: snapshotFixtures[source].ok,
     });

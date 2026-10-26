@@ -43,6 +43,9 @@ import shippingSnapshotPartial from '../fixtures/shipping/snapshot/partial.json'
   type: 'json',
 };
 
+/** When the real fixture data was captured; the time the site's fixtures mode shows. */
+export const fixturesCapturedAt = '2026-10-26T09:00:00Z';
+
 /** Upstream responses as each adapter's `fetch` returns them. */
 export const rawFixtures = {
   github: {

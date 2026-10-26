@@ -1,4 +1,5 @@
 import type { Envelope } from '@min7/contracts';
+import type { SignalsMode } from './reader.ts';
 
 const units = [
   ['day', 24 * 60 * 60],
@@ -19,10 +20,17 @@ function timeAgo(iso: string, now: Date): string {
 
 /**
  * The line a page shows under a source's numbers, computed at build time: when the data was
- * last refreshed, and whether it is out of date. Null when there is no data to qualify.
+ * last refreshed, and whether it is out of date. Null when there is no data to qualify. In
+ * fixtures mode (local builds and public Previews) the data is the shared fixtures, some of
+ * it invented, and is labelled as such.
  */
-export function freshness(envelope: Envelope<unknown>, now: Date): string | null {
+export function freshness(
+  envelope: Envelope<unknown>,
+  now: Date,
+  mode: SignalsMode
+): string | null {
   if (envelope.fetchedAt === null || envelope.data === null) return null;
+  if (mode === 'fixtures') return 'Sample data (fixtures mode).';
   const updated = `Updated ${timeAgo(envelope.fetchedAt, now)}`;
   return envelope.stale ? `${updated}; this may be out of date.` : `${updated}.`;
 }
