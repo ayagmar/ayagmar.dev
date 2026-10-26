@@ -119,3 +119,5 @@ for name in "$@"; do
 done
 
 echo "bootstrap: $("${bin}/just" --version) in .tools/bin"
+
+# probe
