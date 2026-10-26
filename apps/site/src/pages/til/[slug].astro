@@ -24,7 +24,7 @@ const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length >
   <article class="reader" data-pagefind-body>
     <!-- Search shows this as the result's title, so a note reads "TIL: ..." (ADR 0028). -->
     <span hidden data-pagefind-meta="title">TIL: {note.data.title}</span>
-    <PostHeader post={note} linkTags={false} />
+    <PostHeader post={note} linkTags={false} folder="til" />
     <Toc headings={headings} idPrefix={`${note.id}-`} />
     <div class="prose">
       <Content />

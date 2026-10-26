@@ -1,6 +1,7 @@
 ---
 import Search from '../components/Search.svelte';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
+import pixel from '../fonts/pixel.woff2?url';
 import serifRoman from '../fonts/serif-roman.woff2?url';
 import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
 import { roomObjects } from '../lib/room.ts';
@@ -37,6 +38,7 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <link rel="preload" href={serifRoman} as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href={pixel} as="font" type="font/woff2" crossorigin>
     <title>{pageTitle}</title>
     <meta name="description" content={description}>
     <link rel="canonical" href={canonical}>

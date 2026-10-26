@@ -1,6 +1,6 @@
 # 0026. Visual design: the late-night room
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. Amended 2026-10-26: ADR 0034 changes the panels, the palette and the headings' typeface.
 
 ## Context
 

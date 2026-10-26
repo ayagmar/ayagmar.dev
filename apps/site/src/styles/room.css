@@ -23,7 +23,7 @@
 .room-art.night {
   background-image: url("../assets/room-night.png");
   /* The lamp coming on: the only motion besides the record. */
-  animation: lamp-on 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+  animation: lamp-on 1.8s steps(9) 0.1s backwards;
 }
 
 .room-art.day {
@@ -110,6 +110,14 @@
 
 .scene[data-sky="day"][data-weather="cloudy"] .room-weather {
   background-image: url("../assets/weather-cloudy-day.png");
+}
+
+.scene[data-weather="overcast"] .room-weather {
+  background-image: url("../assets/weather-overcast-night.png");
+}
+
+.scene[data-sky="day"][data-weather="overcast"] .room-weather {
+  background-image: url("../assets/weather-overcast-day.png");
 }
 
 .scene[data-weather="fog"] .room-weather {
@@ -350,14 +358,27 @@
 }
 
 .intro {
-  margin: 1.25rem 0 0.25rem;
-  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.9rem);
-  font-weight: 500;
-  line-height: 1.25;
+  margin: 1.5rem 0 0.5rem;
+  font-size: clamp(2rem, 1.2rem + 3.6vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.05;
+  text-shadow: 3px 3px 0 var(--shade);
+  text-transform: none;
 }
 
+/* The role, as a line typed at a prompt. */
 .intro span {
-  color: var(--muted);
+  display: block;
+  margin-top: 0.3rem;
+  color: var(--glow);
+  font-size: 0.5em;
+  font-weight: 500;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--glow) 45%, transparent);
+}
+
+.intro span::before {
+  content: "> ";
+  color: var(--lamp);
 }
 
 .room-list {
@@ -370,24 +391,31 @@
 }
 
 .room-list a {
-  display: flex;
-  flex-direction: column;
-  padding-block: 0.4rem;
+  display: block;
+  padding: 0.35rem 0.5rem;
+  border: 2px solid transparent;
   color: var(--text);
+  font-family: var(--display);
   font-weight: 600;
   line-height: 1.25;
   text-decoration: none;
 }
 
-/* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
-.room-list a span {
-  color: var(--muted);
-  font-weight: 400;
+.room-list a::before {
+  content: "> ";
+  color: var(--lamp);
 }
 
-.room-list a:hover,
-.room-list a:hover span {
-  color: var(--lamp);
+/* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
+.room-list a span {
+  display: block;
+  color: var(--muted);
+  font: 500 0.75rem var(--mono);
+}
+
+.room-list a:hover {
+  border-color: var(--lamp);
+  background: color-mix(in srgb, var(--lamp) 14%, transparent);
 }
 
 /* ---------- panels ---------- */
@@ -404,9 +432,19 @@
   margin: 0;
 }
 
+/* The link to the whole section: a small pixel button. */
 .panel-head a {
   margin-inline-start: auto;
-  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border: 2px solid currentcolor;
+  font-family: var(--display);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.panel-head a:hover {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 .home-panels {
@@ -416,14 +454,13 @@
   overflow-wrap: anywhere;
 }
 
-.home-panels .paper h2 {
-  font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+.home-panels h2 {
+  font-size: clamp(1.5rem, 1.3rem + 1vw, 1.9rem);
 }
 
 .home-panels .posts li:first-child a {
-  font-size: clamp(1.6rem, 1.2rem + 2vw, 2.4rem);
+  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.6rem);
   line-height: 1.1;
-  letter-spacing: -0.02em;
 }
 
 @media (min-width: 60rem) {
@@ -496,7 +533,7 @@
 /* The record turns only while Last.fm says something is playing now (ADR 0027): the island
    marks a live, fresh answer with a track. The build-time value never turns it. */
 .record:has([data-playing]) .disc {
-  animation: spin 9s linear infinite;
+  animation: spin 9s steps(36) infinite;
 }
 
 .disc::after {
@@ -514,43 +551,5 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-/* The corkboard: shipping events pinned as paper slips. */
-.m-cork .shipping {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.m-cork .shipping li {
-  position: relative;
-  padding: 0.7rem 0.9rem 0.8rem;
-  background: var(--paper);
-  color: var(--ink);
-  line-height: 1.35;
-
-  --accent: var(--ink-link);
-}
-
-.m-cork .shipping li::before {
-  content: "";
-  position: absolute;
-  top: 5px;
-  right: 8px;
-  width: 6px;
-  height: 6px;
-  background: #bf433b;
-}
-
-.m-cork .shipping time {
-  display: block;
-  margin-bottom: 0.2rem;
-  color: var(--ink-2);
-}
-
-@media (min-width: 30rem) {
-  .m-cork .shipping {
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
   }
 }

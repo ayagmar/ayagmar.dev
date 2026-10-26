@@ -1,0 +1,28 @@
+---
+import type { ShippingEvent } from '@min7/contracts';
+import { heatLevels } from '../data/format.ts';
+import { builtAt } from '../data/signals.ts';
+
+interface Props {
+  /** Every event in the snapshot, not only the ones listed next to it. */
+  events: readonly Pick<ShippingEvent, 'at'>[];
+}
+
+const { events } = Astro.props;
+const levels = heatLevels(events, builtAt);
+const busy = levels.filter((level) => level > 0).length;
+---
+
+<figure class="heat">
+  <div
+    class="heat-cells"
+    role="img"
+    aria-label={`Shipping activity over the last ${levels.length} days: ${busy} days with something shipped.`}
+  >
+    {levels.map((level) => <i data-l={level}></i>)}
+  </div>
+  <figcaption class="heat-cap">
+    <span>{levels.length} days ago</span>
+    <span>today</span>
+  </figcaption>
+</figure>

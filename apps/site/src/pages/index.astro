@@ -1,6 +1,7 @@
 ---
 import NowPlayingPanel from '../components/NowPlayingPanel.astro';
 import PostList from '../components/PostList.astro';
+import ShippingHeat from '../components/ShippingHeat.astro';
 import ShippingList from '../components/ShippingList.astro';
 import { signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
@@ -114,7 +115,10 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
         {recentlyShipped.length === 0 ? (
           <p>Nothing to show yet.</p>
         ) : (
-          <ShippingList events={recentlyShipped} />
+          <>
+            <ShippingHeat events={shipping.data?.events ?? []} />
+            <ShippingList events={recentlyShipped} />
+          </>
         )}
       </section>
     </div>
