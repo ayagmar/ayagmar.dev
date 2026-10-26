@@ -103,7 +103,6 @@ const pendingFile = (dir: string) => join(dir, 'pending.json');
 /** When signals' last Retry-After ends, as an ISO instant; absent when there is none. */
 const deadlineFile = (dir: string) => join(dir, 'retry-after');
 const tempMarker = '.tmp-';
-const isoInstant = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 /** Creates the directory if needed and makes it private, even if it already existed. */
 export function privateDir(dir: string): void {
@@ -182,8 +181,9 @@ function readDeadline(dir: string): number | undefined {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
     throw new ProducerError('retry_after_unreadable', exitCodes.operator);
   }
+  // Exactly what saveDeadline writes: Date.parse alone reads 30 February as 2 March.
   const at = Date.parse(text);
-  if (!isoInstant.test(text) || Number.isNaN(at)) {
+  if (Number.isNaN(at) || new Date(at).toISOString() !== text) {
     throw new ProducerError('retry_after_unreadable', exitCodes.operator);
   }
   return at;

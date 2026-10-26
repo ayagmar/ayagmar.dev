@@ -359,10 +359,14 @@ describe('Retry-After across runs', () => {
       at(0, signals({ status: 429, headers: { 'retry-after': '3600' } }).fetch).rt,
       producer
     );
-    writeFileSync(join(stateDir, 'retry-after'), 'soon');
-    const { fetch, requests } = signals(accepted());
-    assert.equal(await deliver(at(2 * 60 * minute, fetch).rt, producer), exitCodes.operator);
-    assert.equal(requests.length, 0);
+    // 30 February would read as 2 March, long past.
+    for (const corrupt of ['soon', '2026-02-30T12:00:00.000Z', '2026-10-26T13:00:00Z']) {
+      writeFileSync(join(stateDir, 'retry-after'), corrupt);
+      const { fetch, requests } = signals(accepted());
+      assert.equal(await deliver(at(2 * 60 * minute, fetch).rt, producer), exitCodes.operator);
+      assert.equal(requests.length, 0, corrupt);
+      assert.equal(readFileSync(join(stateDir, 'retry-after'), 'utf8'), corrupt);
+    }
   });
 });
 
