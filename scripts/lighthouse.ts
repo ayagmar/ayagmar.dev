@@ -84,7 +84,7 @@ export function regressions(head: Values, base: Values | null): Metric[] {
   });
 }
 
-/** The URL path of each page; `/writing/*` is the largest page directly under /writing. */
+/** The URL path of each page; a path ending in `/*` is the largest page directly under it. */
 export function pagePaths(dist: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [name, path] of Object.entries(budgets.lighthouse.pages)) {

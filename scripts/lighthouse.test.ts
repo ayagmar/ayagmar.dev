@@ -61,14 +61,19 @@ describe('runs and pages', () => {
     assert.throws(() => readLhr(loaded), /no performance in the result/);
   });
 
-  it('measures the largest post, so a heavy post cannot hide behind a light one', () => {
+  it('measures the largest post and project page, so a heavy one cannot hide behind a light one', () => {
     const dist = mkdtempSync(join(tmpdir(), 'min7-lighthouse-'));
     try {
       mkdirSync(join(dist, 'writing/tags'), { recursive: true });
       writeFileSync(join(dist, 'writing/short.html'), 'x');
       writeFileSync(join(dist, 'writing/long.html'), 'x'.repeat(100));
       writeFileSync(join(dist, 'writing/tags/ci.html'), 'x'.repeat(1000));
+      mkdirSync(join(dist, 'projects'));
+      writeFileSync(join(dist, 'projects/a.html'), 'x'.repeat(10));
+      writeFileSync(join(dist, 'projects/b.html'), 'x'.repeat(10));
       assert.equal(pagePaths(dist).post, '/writing/long');
+      // Equal sizes: the first by name, so base and head pick the same page.
+      assert.equal(pagePaths(dist).project, '/projects/a');
     } finally {
       rmSync(dist, { recursive: true, force: true });
     }

@@ -3,13 +3,15 @@ import { isoDay, type Post, postPath } from '../lib/writing.ts';
 
 interface Props {
   posts: readonly Post[];
+  /** What to say when there are no posts. */
+  empty?: string;
 }
 
-const { posts } = Astro.props;
+const { posts, empty = 'Nothing published yet.' } = Astro.props;
 ---
 
 {posts.length === 0 ? (
-  <p>Nothing published yet.</p>
+  <p>{empty}</p>
 ) : (
   <ul class="posts">
     {posts.map((post) => (

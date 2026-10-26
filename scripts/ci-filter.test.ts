@@ -77,6 +77,20 @@ describe('plan', () => {
     assert.ok(!jobs.includes('lighthouse') && !jobs.includes('budgets'));
   });
 
+  it('builds the site and checks the resume for a resume-only change', () => {
+    for (const file of ['resume/resume.typ', 'content/about.json']) {
+      assert.deepEqual(runs([file]), [
+        'budgets',
+        'e2e',
+        'format',
+        'lighthouse',
+        'links',
+        'secrets-source',
+        'site-build',
+      ]);
+    }
+  });
+
   it('gives a signals-only change the full static checks but no site build', () => {
     const jobs = runs(['apps/signals/src/routes/v1/health.ts']);
     assert.deepEqual(jobs, ['checks', 'codeql', 'format', 'secrets-source', 'signals-test']);

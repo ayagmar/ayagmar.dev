@@ -21,6 +21,7 @@ export const pages = {
   post: 'A post',
   writing: 'Writing',
   projects: 'Projects',
+  project: 'A project',
   about: 'About',
   stats: 'Stats',
 };

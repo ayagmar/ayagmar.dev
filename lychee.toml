@@ -27,6 +27,11 @@ exclude = [
   '^https://github\.com/ayagmar/ayagmar\.dev/commit/',
   # X answers 403 to requests from CI runners whether or not the profile exists.
   '^https://(x|twitter)\.com/',
+  # npmjs.com answers 403 to any non-browser client. Package pages are built from the npm
+  # names in packages/contracts/src/projects.ts, which signals reads from the npm API.
+  '^https://www\.npmjs\.com/package/',
+  # LinkedIn answers 999 to automated requests whether or not the profile exists.
+  '^https://([a-z]+\.)?linkedin\.com/',
   # The signals API is a separate Worker, checked by its own tests; it may not be deployed yet.
   '^https://api\.ayagmar\.dev/',
 ]

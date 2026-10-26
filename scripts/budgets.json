@@ -12,6 +12,7 @@
       "post": "/writing/*",
       "writing": "/writing",
       "projects": "/projects",
+      "project": "/projects/*",
       "about": "/about",
       "stats": "/stats"
     },

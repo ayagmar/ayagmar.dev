@@ -44,9 +44,27 @@ if [[ "$("${bin}/just" --version 2>/dev/null || true)" != "just ${just_version}"
     "${just_sha256[${target}]}" "${archive}"
   tar --extract --gzip --file "${archive}" --directory "${tmp}" just
   install -m 0755 "${tmp}/just" "${bin}/just"
+  rm -rf "${tmp}"
 fi
 
-# typst: added with the resume build.
+# typst: https://github.com/typst/typst/releases (sha256 digests of the release assets)
+# renovate: datasource=github-releases depName=typst/typst
+typst_version="0.15.1"
+declare -A typst_sha256=(
+  ["x86_64-unknown-linux-musl"]="a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c"
+  ["aarch64-unknown-linux-musl"]="5aa8d74a3d906e60ea12a66ac2f37f8eef1b14cbad7182a745e393a10c23dcee"
+)
+if [[ "$("${bin}/typst" --version 2>/dev/null || true)" != "typst ${typst_version} "* ]]; then
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "${tmp}"' EXIT
+  archive="${tmp}/typst.tar.xz"
+  download \
+    "https://github.com/typst/typst/releases/download/v${typst_version}/typst-${target}.tar.xz" \
+    "${typst_sha256[${target}]}" "${archive}"
+  tar --extract --xz --file "${archive}" --directory "${tmp}" --strip-components 1 "typst-${target}/typst"
+  install -m 0755 "${tmp}/typst" "${bin}/typst"
+  rm -rf "${tmp}"
+fi
 
 # CI tools. Each entry: version, release asset URL, sha256 of the asset, path of the binary
 # inside the archive ("-" when the asset is the binary itself). The sha256 is the one GitHub
@@ -119,4 +137,4 @@ for name in "$@"; do
   echo "bootstrap: ${name} ${version} in .tools/bin"
 done
 
-echo "bootstrap: $("${bin}/just" --version) in .tools/bin"
+echo "bootstrap: $("${bin}/just" --version), $("${bin}/typst" --version) in .tools/bin"

@@ -11,6 +11,7 @@ const post = (id: string, data: Partial<Post['data']> = {}): Post => ({
     summary: `Summary ${id}`,
     tags: [],
     draft: false,
+    projects: [],
     ...data,
   },
 });
@@ -22,9 +23,15 @@ const corpus = [
     date: new Date('2026-10-20T00:00:00Z'),
     updated: new Date('2026-10-22T00:00:00Z'),
     tags: ['rust', 'ci'],
+    projects: ['runnerd'],
   }),
-  post('older', { tags: ['rust'] }),
-  post('secret-draft', { draft: true, tags: ['rust'], date: new Date('2026-10-25T00:00:00Z') }),
+  post('older', { tags: ['rust'], projects: ['ccdesk'] }),
+  post('secret-draft', {
+    draft: true,
+    tags: ['rust'],
+    projects: ['runnerd'],
+    date: new Date('2026-10-25T00:00:00Z'),
+  }),
 ];
 const published = publishedPosts(corpus, false);
 
@@ -90,7 +97,7 @@ describe('feeds', () => {
   });
 
   it('narrow a tag feed to that tag and point it at itself', () => {
-    const tagged = buildFeed(published, 'ci');
+    const tagged = buildFeed(published, { tag: 'ci' });
     expect(tagged.entries.map((entry) => entry.url)).toEqual([
       'https://ayagmar.dev/writing/escaping',
     ]);
@@ -100,10 +107,26 @@ describe('feeds', () => {
     expect(renderAtom(tagged)).toContain(
       '<link rel="self" type="application/atom+xml" href="https://ayagmar.dev/writing/tags/ci/atom.xml"/>'
     );
-    expect(feedPaths('ci')).toEqual({
+    expect(feedPaths({ tag: 'ci' })).toEqual({
       rss: '/writing/tags/ci/feed.xml',
       atom: '/writing/tags/ci/atom.xml',
     });
+  });
+
+  // A project feed that filtered on tags, or on the unpublished set, would leak other posts.
+  it('narrow a project feed to that project, without drafts, and point it at itself', () => {
+    const project = buildFeed(published, { project: 'runnerd' });
+    expect(project.entries.map((entry) => entry.url)).toEqual([
+      'https://ayagmar.dev/writing/escaping',
+    ]);
+    expect(project.id).toBe('tag:ayagmar.dev,2026:/projects/runnerd');
+    expect(renderAtom(project)).toContain(
+      '<link rel="self" type="application/atom+xml" href="https://ayagmar.dev/projects/runnerd/atom.xml"/>'
+    );
+    expect(renderRss(project)).toContain(
+      '<atom:link href="https://ayagmar.dev/projects/runnerd/feed.xml" rel="self"'
+    );
+    expect(buildFeed(published, { project: 'headroom' }).entries).toEqual([]);
   });
 
   it('render the same bytes for an empty feed on every build', () => {

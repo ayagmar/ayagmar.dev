@@ -21,6 +21,7 @@ describe('writing frontmatter', () => {
     const post = writingSchema.parse({ ...valid, tags: undefined });
     expect(post.draft).toBe(false);
     expect(post.tags).toEqual([]);
+    expect(post.projects).toEqual([]);
   });
 
   it.each([
@@ -39,6 +40,18 @@ describe('writing frontmatter', () => {
     ],
     ['repeated tag', { tags: ['rust', 'rust'] }, 'tags: must not repeat a tag'],
     ['non-boolean draft', { draft: 'yes' }, 'draft: must be true or false'],
+    [
+      'unknown project',
+      { projects: ['runnerd', 'no-such-project'] },
+      expect.stringMatching(
+        /^projects\.1: "no-such-project" is not a featured project in packages\/contracts\/src\/projects\.ts/
+      ),
+    ],
+    [
+      'repeated project',
+      { projects: ['runnerd', 'runnerd'] },
+      'projects: must not repeat a project',
+    ],
     [
       'updated before date',
       { updated: new Date('2026-10-01') },

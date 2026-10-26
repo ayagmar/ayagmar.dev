@@ -30,8 +30,17 @@ export const groups = {
   code: ['apps/site/**', 'packages/contracts/**', 'scripts/**', ...toolchain, ...checkConfig],
   signals: ['apps/signals/**', 'packages/contracts/**', ...toolchain, ...checkConfig],
   contracts: ['packages/contracts/**', ...toolchain],
-  // Everything that changes the built site. PR 6 adds the resume inputs here.
-  output: ['apps/site/**', 'content/**', 'packages/contracts/**', 'lychee.toml', ...toolchain],
+  // Everything that changes the built site, the resume PDF included (site-build compiles it,
+  // e2e checks its text).
+  output: [
+    'apps/site/**',
+    'content/**',
+    'content/about.*',
+    'resume/**',
+    'packages/contracts/**',
+    'lychee.toml',
+    ...toolchain,
+  ],
   workflows: ['.github/**', 'scripts/ci.ts', 'scripts/ci-*.ts'],
   // Configs and pins of the CI tools themselves.
   tooling: [
@@ -78,7 +87,6 @@ export const jobs = {
   renovate: (g) => g.tooling,
   shell: (g) => g.shell,
   lighthouse,
-  // PR 6: `resume: (g) => g.output,` once `resume/**` and `content/about.*` are in `output`.
 } satisfies Record<string, (g: Groups, labels: readonly string[]) => boolean>;
 
 export type Job = keyof typeof jobs;

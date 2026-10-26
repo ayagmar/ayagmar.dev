@@ -13,10 +13,10 @@ export const getStaticPaths = (async () => {
 
 const { tag } = Astro.params;
 const { posts } = Astro.props;
-const feeds = feedPaths(tag);
+const feeds = feedPaths({ tag });
 ---
 
-<Base title={`Tagged ${tag}`} tag={tag}>
+<Base title={`Tagged ${tag}`} feed={{ tag }}>
   <h1>Tagged {tag}</h1>
   <PostList posts={posts} />
   <p>Follow this tag: <a href={feeds.rss}>RSS</a>, <a href={feeds.atom}>Atom</a>.</p>

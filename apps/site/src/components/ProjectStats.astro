@@ -1,0 +1,50 @@
+---
+import { count, utcDay } from '../data/format.ts';
+import type { SiteProject } from '../lib/projects.ts';
+
+interface Props {
+  project: SiteProject;
+}
+
+const { project } = Astro.props;
+const { live } = project;
+const release = live?.latestRelease ?? null;
+const downloads = live?.npm?.monthlyDownloads ?? null;
+const known =
+  live !== null &&
+  (live.language !== null || live.stars !== null || release !== null || downloads !== null);
+---
+
+{known ? (
+  <dl class="project-stats">
+    {live?.language != null && (
+      <>
+        <dt>Language</dt>
+        <dd>{live.language}</dd>
+      </>
+    )}
+    {live?.stars != null && (
+      <>
+        <dt>Stars</dt>
+        <dd>{count(live.stars)}</dd>
+      </>
+    )}
+    {release !== null && (
+      <>
+        <dt>Latest release</dt>
+        <dd>
+          <a href={release.url}>{release.tag}</a>,{' '}
+          <time datetime={release.publishedAt}>{utcDay(release.publishedAt)}</time>
+        </dd>
+      </>
+    )}
+    {downloads !== null && (
+      <>
+        <dt>npm downloads, last 30 days</dt>
+        <dd>{count(downloads)}</dd>
+      </>
+    )}
+  </dl>
+) : (
+  <p class="project-stats-empty">No live numbers for {project.slug} right now.</p>
+)}

@@ -1,0 +1,26 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getPosts, getProjects } from '../../lib/posts.ts';
+import { postCount, postsAbout, projectPath } from '../../lib/projects.ts';
+
+const posts = await getPosts();
+const { projects } = await getProjects();
+---
+
+<Base title="Projects">
+  <h1>Projects</h1>
+  <ul class="projects">
+    {projects.map((project) => (
+      <li id={project.slug}>
+        <h2>
+          <a href={projectPath(project.slug)}>{project.slug}</a>
+        </h2>
+        {project.summary !== null && <p>{project.summary}</p>}
+        <p class="project-post-count">
+          {postCount(postsAbout(posts, project.slug).length)}
+          {project.status !== null && <>, {project.status}</>}
+        </p>
+      </li>
+    ))}
+  </ul>
+</Base>

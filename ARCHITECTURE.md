@@ -9,7 +9,7 @@ apps/signals         Hono Worker on api.ayagmar.dev. Pulls sources on a cron, ac
                      serves the latest snapshot per source. Knows no pages.
 packages/contracts   zod schemas for every snapshot, push payload and the response envelope,
                      their JSON Schema export, and the shared test fixtures.
-content/             Posts in Markdown. Data for the site, not code.
+content/             Posts and optional project descriptions in Markdown. Data for the site, not code.
 ```
 
 Dependencies point one way:
@@ -79,6 +79,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                                  |
 | Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                                         |
 | Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                                            |
+| Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025)                                       |
 | RSS and Atom (one model, two renderers)                                   | `apps/site/src/lib/feed.ts`                                                                                   |
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                         |
 | Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                              |
@@ -88,6 +89,8 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                           |
 | Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                   |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                   |
+| About page and resume data, its schema                                    | `content/about.json`, `apps/site/src/data/about.ts`                                                           |
+| Resume PDF (Typst template, build and ship scripts)                       | `resume/resume.typ`, `apps/site/scripts/{resume,ship-resume}.ts`                                              |
 | Base stylesheet                                                           | `apps/site/src/styles/base.css`                                                                               |
 | Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`         |
 | Commands                                                                  | `justfile`                                                                                                    |
@@ -95,9 +98,11 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 
 ## Site build
 
-`just site-build` runs three steps:
-1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
-2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post bodies) into `dist/pagefind/`.
-3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
+`just site-build` runs these steps:
+1. `just resume` validates `content/about.json` and compiles `resume/resume.typ` into `resume/build/resume.pdf` with Typst.
+2. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
+3. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post bodies) into `dist/pagefind/`.
+4. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
+5. `scripts/ship-resume.ts` copies the PDF (or `resume/override.pdf`) to `dist/resume.pdf` only when `resume.published` is `true`.
 
 In production, Workers static assets serve `dist/`. The site Worker runs only for `/`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt`, anything else gets `index.html`. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.

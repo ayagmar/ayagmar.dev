@@ -1,20 +1,36 @@
 ---
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
+import ProjectCard from '../../components/ProjectCard.astro';
 import Base from '../../layouts/Base.astro';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
-import { getPosts } from '../../lib/posts.ts';
+import { getPosts, getProjects } from '../../lib/posts.ts';
+import { morePostsAbout, projectPath } from '../../lib/projects.ts';
 import { isoDay, tagPath } from '../../lib/writing.ts';
 
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
-  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+  const { projects, envelope } = await getProjects();
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      envelope,
+      // In the post's own order, which is the order the author listed them.
+      cards: post.data.projects.flatMap((slug) => {
+        const project = projects.find((candidate) => candidate.slug === slug);
+        return project === undefined
+          ? []
+          : [{ project, more: morePostsAbout(posts, slug, post.id) }];
+      }),
+    },
+  }));
 }) satisfies GetStaticPaths;
 
-const { post } = Astro.props;
+const { post, envelope, cards } = Astro.props;
 const { Content, remarkPluginFrontmatter } = await render(post);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
-const { title, summary, date, updated, tags, draft } = post.data;
+const { title, summary, date, updated, tags, draft, projects } = post.data;
 ---
 
 <Base title={title} description={summary}>
@@ -44,7 +60,21 @@ const { title, summary, date, updated, tags, draft } = post.data;
           ))}
         </ul>
       )}
+      {projects.length > 0 && (
+        <ul class="post-projects" aria-label="Projects">
+          {projects.map((slug) => (
+            <li>
+              <a href={projectPath(slug)} data-pagefind-filter="project">
+                {slug}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
     </header>
     <Content />
   </article>
+  {cards.map(({ project, more }) => (
+    <ProjectCard project={project} envelope={envelope} more={more} />
+  ))}
 </Base>
