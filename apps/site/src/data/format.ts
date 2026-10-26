@@ -1,4 +1,5 @@
 import type { Project, ShippingEvent } from '@min7/contracts';
+import { rabatTimeZone } from '@min7/contracts/rabat';
 
 const plural = (count: number, one: string, many: string) =>
   `${count.toLocaleString('en')} ${count === 1 ? one : many}`;
@@ -22,6 +23,21 @@ export function describeEvent(event: ShippingEvent): string {
 
 /** `2026-10-24` from an RFC 3339 timestamp, in UTC. */
 export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
+
+/**
+ * `26 Oct, 09:00`, in Rabat: a time as pages show it without JavaScript, the same in every
+ * browser and no longer than the relative times the page's script puts in its place
+ * (src/lib/live.ts), so the swap moves nothing.
+ */
+export const rabatTime = (iso: string) =>
+  new Intl.DateTimeFormat('en-GB', {
+    timeZone: rabatTimeZone,
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(Date.parse(iso));
 
 export const count = (value: number) => value.toLocaleString('en');
 

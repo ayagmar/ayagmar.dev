@@ -8,7 +8,6 @@ import { fixtureEnvelope } from '@min7/contracts/testing';
 import { delay, HttpResponse, http, passthrough } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { freshness } from '../src/data/freshness.ts';
 import { createReader } from '../src/data/reader.ts';
 
 const apiBase = 'https://api.test.invalid';
@@ -50,7 +49,6 @@ describe('api mode', () => {
 
     const read = await reader().read('listening');
     expect(read.stale).toBe(true);
-    expect(freshness(read, now, 'api')).toBe('Updated 3 hours ago; this may be out of date.');
   });
 
   it('passes a source that never succeeded through as empty', async () => {
@@ -146,13 +144,12 @@ describe('api mode', () => {
 });
 
 describe('fixtures mode', () => {
-  // Fixtures mode builds the public Previews: sample data must not pass for current data.
-  it('serves the ok fixtures, dated when they were captured and labelled as samples', async () => {
+  // Fixtures mode builds the public Previews; e2e checks the pages label it as sample data.
+  it('serves the ok fixtures, dated when they were captured', async () => {
     const read = createReader({ mode: 'fixtures', apiBase, now: () => now }).read;
 
     const listening = await read('listening');
     expect(listening.data).toEqual(snapshotFixtures.listening.ok);
     expect(listening.fetchedAt).toBe(fixturesCapturedAt);
-    expect(freshness(listening, now, 'fixtures')).toBe('Sample data (fixtures mode).');
   });
 });

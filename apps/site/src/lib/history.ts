@@ -22,7 +22,7 @@ export interface History {
   years: HistoryYear[];
 }
 
-export { knowsRabatDate } from './live.ts';
+export { knowsRabatDate } from './rabat-date.ts';
 
 const int = (value: unknown, min: number, max: number) =>
   Number.isInteger(value) && (value as number) >= min && (value as number) <= max;

@@ -8,7 +8,7 @@ test('a post about a project shows its card and the other posts on it', async ({
     '/projects/llm-usage-metrics'
   );
   await expect(card.locator('.project-stats')).toContainText('Stars35');
-  await expect(card.getByText('Sample data (fixtures mode).')).toBeVisible();
+  await expect(card.getByText('Sample data, not live')).toBeVisible();
   const more = card.getByRole('region', { name: 'More on llm-usage-metrics' });
   await expect(more.getByRole('link')).toHaveText([
     'Placeholder: counting cache reads that agents never log',

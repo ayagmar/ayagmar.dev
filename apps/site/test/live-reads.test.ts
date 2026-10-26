@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { desktopEnvelopeSchema, llmUsageEnvelopeSchema, staleAfterSeconds } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
-import { desktopStaleAfterMs, readDesktop, reportedAgo, uptime } from '../src/lib/desktop.ts';
+import { desktopStaleAfterMs, readDesktop, uptime } from '../src/lib/desktop.ts';
 import { hours, readLlmUsage } from '../src/lib/llm-usage.ts';
 
 const corpus = (source: string) =>
@@ -183,8 +183,5 @@ describe('desktop facts', () => {
     expect(since(day - 1)).toBe('23 hours');
     expect(since(day)).toBe('1 day');
     expect(since(3 * day + 23 * hour)).toBe('3 days');
-    expect(reportedAgo('2026-10-26T08:00:00.000Z', taken + 2 * hour + 59 * minute)).toBe(
-      '2 hours ago'
-    );
   });
 });

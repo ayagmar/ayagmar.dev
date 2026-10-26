@@ -3,7 +3,7 @@
 // is hidden in the page's HTML and stays hidden without this script, in fixtures mode (no
 // endpoint), and whenever the last answer has no hours or no longer holds.
 
-import { poll, timeElement, utcTime } from '../lib/live.ts';
+import { poll, stamp, tick } from '../lib/live.ts';
 import { hours, readLlmUsage } from '../lib/llm-usage.ts';
 
 const block = document.querySelector<HTMLElement>('.agent-hours');
@@ -35,11 +35,9 @@ if (block && endpoint) {
       dd.textContent = value === undefined ? '' : hours(value);
     }
     if (usage && asOf) {
-      asOf.replaceChildren(
-        'As of ',
-        timeElement(usage.fetchedAt, utcTime(Date.parse(usage.fetchedAt))),
-        '.'
-      );
+      // The /stats live panels (src/scripts/stats-live.ts) keep it reading relative to now.
+      asOf.replaceChildren('Updated ', stamp(usage.fetchedAt));
+      tick(now);
     }
     block.hidden = !visible;
     if (empty) empty.hidden = visible;

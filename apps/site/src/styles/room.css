@@ -493,8 +493,9 @@
     repeating-radial-gradient(circle, #15131d 0 2px, #2a2638 2px 3px);
 }
 
-/* The record turns only while Last.fm says something is playing now (ADR 0027): the island
-   marks a live, fresh answer with a track. The build-time value never turns it. */
+/* The record turns only while Last.fm says something is playing now (ADR 0027): the page's
+   script marks a live, fresh answer with a track (src/lib/listening.ts). The build-time value
+   never turns it. */
 .record:has([data-playing]) .disc {
   animation: spin 9s linear infinite;
 }

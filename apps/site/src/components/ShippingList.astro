@@ -1,6 +1,7 @@
 ---
 import type { ShippingEvent } from '@min7/contracts';
-import { describeEvent, repoName, utcDay } from '../data/format.ts';
+import { describeEvent, repoName } from '../data/format.ts';
+import Stamp from './Stamp.astro';
 
 interface Props {
   events: readonly ShippingEvent[];
@@ -9,11 +10,11 @@ interface Props {
 const { events } = Astro.props;
 ---
 
+<!-- /stats renders the same list from a live answer (src/scripts/stats-live.ts). -->
 <ul class="shipping">
   {events.map((event) => (
     <li>
-      <time datetime={event.at}>{utcDay(event.at)}</time>
-      {repoName(event.repo)}{' '}
+      <Stamp iso={event.at} /> {repoName(event.repo)}{' '}
       {'url' in event ? <a href={event.url}>{describeEvent(event)}</a> : describeEvent(event)}
     </li>
   ))}

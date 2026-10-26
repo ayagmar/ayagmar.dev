@@ -19,7 +19,7 @@
       {
         "name": "stats script",
         "file": "/_astro/stats.astro_astro_type_script_index_0_lang.*.js",
-        "bytes": 1500
+        "bytes": 2800
       },
       {
         "name": "uses script",
@@ -28,8 +28,8 @@
       },
       {
         "name": "live reads",
-        "file": "/_astro/llm-usage.*.js",
-        "bytes": 1470
+        "file": "/_astro/listening.*.js",
+        "bytes": 1950
       }
     ]
   },
