@@ -1,0 +1,18 @@
+{
+  "llm-usage-metrics": {
+    "status": 200,
+    "body": {
+      "downloads": 0,
+      "start": "2026-09-23",
+      "end": "2026-10-22",
+      "package": "llm-usage-metrics"
+    }
+  },
+  "ccdesk": {
+    "status": 404,
+    "body": {
+      "error": "package ccdesk not found"
+    }
+  },
+  "pi-extmgr": null
+}

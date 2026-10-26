@@ -1,0 +1,317 @@
+{
+  "ayagmar/llm-usage-metrics": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1017,
+        "node_id": "R_kgDOfixture",
+        "name": "llm-usage-metrics",
+        "full_name": "ayagmar/llm-usage-metrics",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/llm-usage-metrics",
+        "description": "Token and cost reports for 17 AI coding agents (Claude Code, Codex, Gemini CLI, OpenCode, Copilot, pi and more), read from local session logs across all your machines",
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 35,
+        "watchers_count": 35,
+        "language": "TypeScript",
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "id": 1,
+        "tag_name": "v0.14.1",
+        "name": "v0.14.1",
+        "draft": false,
+        "prerelease": false,
+        "html_url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.1",
+        "published_at": "2026-10-23T13:51:53Z",
+        "created_at": "2026-10-23T13:51:53Z",
+        "author": {
+          "login": "ayagmar",
+          "id": 1
+        },
+        "body": "Release notes are not read.",
+        "assets": []
+      }
+    }
+  },
+  "ayagmar/ccdesk": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1011,
+        "node_id": "R_kgDOfixture",
+        "name": "claude-desk",
+        "full_name": "ayagmar/claude-desk",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/claude-desk",
+        "description": "See and manage everything that shapes Claude Code on your machine: instructions, settings, permissions, hooks, MCP servers, agents, skills and memory. npx ccdesk",
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 4,
+        "watchers_count": 4,
+        "language": "TypeScript",
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "id": 1,
+        "tag_name": "v0.5.13",
+        "name": "v0.5.13",
+        "draft": false,
+        "prerelease": false,
+        "html_url": "https://github.com/ayagmar/claude-desk/releases/tag/v0.5.13",
+        "published_at": "2026-10-25T11:48:51Z",
+        "created_at": "2026-10-25T11:48:51Z",
+        "author": {
+          "login": "ayagmar",
+          "id": 1
+        },
+        "body": "Release notes are not read.",
+        "assets": []
+      }
+    }
+  },
+  "ayagmar/pi-mobile": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1009,
+        "node_id": "R_kgDOfixture",
+        "name": "pi-mobile",
+        "full_name": "ayagmar/pi-mobile",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/pi-mobile",
+        "description": "Android client for pi-rpc",
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 115,
+        "watchers_count": 115,
+        "language": "Kotlin",
+        "forks_count": 0,
+        "archived": true,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
+        "status": "404"
+      }
+    }
+  },
+  "ayagmar/pi-extmgr": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1009,
+        "node_id": "R_kgDOfixture",
+        "name": "pi-extmgr",
+        "full_name": "ayagmar/pi-extmgr",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/pi-extmgr",
+        "description": "A better way to manage Pi extensions. Browse, install, enable/disable, and remove extensions from one place.",
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 72,
+        "watchers_count": 72,
+        "language": "TypeScript",
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "id": 1,
+        "tag_name": "v0.4.2",
+        "name": "v0.4.2",
+        "draft": false,
+        "prerelease": false,
+        "html_url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.4.2",
+        "published_at": "2026-10-21T19:38:01Z",
+        "created_at": "2026-10-21T19:38:01Z",
+        "author": {
+          "login": "ayagmar",
+          "id": 1
+        },
+        "body": "Release notes are not read.",
+        "assets": []
+      }
+    }
+  },
+  "ayagmar/runnerd": {
+    "repo": null,
+    "release": null
+  },
+  "ayagmar/kipple": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1006,
+        "node_id": "R_kgDOfixture",
+        "name": "kipple",
+        "full_name": "ayagmar/kipple",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/kipple",
+        "description": null,
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 1,
+        "watchers_count": 1,
+        "language": null,
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
+        "status": "404"
+      }
+    }
+  },
+  "ayagmar/niri-computer-use": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1017,
+        "node_id": "R_kgDOfixture",
+        "name": "niri-computer-use",
+        "full_name": "ayagmar/niri-computer-use",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/niri-computer-use",
+        "description": "MCP server for AI agents to observe and drive a niri Wayland desktop. Early development.",
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 6,
+        "watchers_count": 6,
+        "language": "Rust",
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 500,
+      "body": null
+    }
+  },
+  "ayagmar/headroom": {
+    "repo": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository",
+        "status": "404"
+      }
+    },
+    "release": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
+        "status": "404"
+      }
+    }
+  }
+}

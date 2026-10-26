@@ -6,6 +6,10 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # renovate: datasource=npm depName=renovate
 renovate_version := "44.178.3"
 commit_sha := env("WORKERS_CI_COMMIT_SHA", `git rev-parse HEAD 2>/dev/null || echo dev`)
+
+# Where the site build reads source data (ADR 0015): the read API when Workers Builds builds
+# main, the shared fixtures everywhere else (local, CI, Previews). SIGNALS_MODE overrides it.
+signals_mode := env("SIGNALS_MODE", if env("WORKERS_CI_BRANCH", "") == "main" { "api" } else { "fixtures" })
 site := "pnpm --filter @min7/site exec"
 signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
@@ -146,7 +150,7 @@ site-dev:
 
 # Site: static build, search index, headers
 site-build:
-    COMMIT_SHA={{ commit_sha }} {{ site }} astro build
+    COMMIT_SHA={{ commit_sha }} SIGNALS_MODE={{ signals_mode }} {{ site }} astro build
     {{ site }} pagefind --site dist --quiet
     {{ site }} node scripts/postbuild.ts
 
@@ -177,6 +181,10 @@ signals-deploy:
 # Signals: upload a Preview (pull requests)
 signals-preview:
     {{ signals }} wrangler preview --var COMMIT_SHA:{{ commit_sha }} --message "{{ commit_sha }}"
+
+# Signals: set a Worker secret, prompting for its value (deploys a new version)
+signals-secret name:
+    {{ signals }} wrangler secret put {{ quote(name) }}
 
 # List the 10 most recent deployments of a Worker (site or signals)
 deployments worker:
