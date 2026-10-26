@@ -75,10 +75,13 @@ describe('mermaid diagrams', () => {
     expect(defined).toEqual(used);
   });
 
-  // Catches a diagram that ships with no accessible name.
-  it('fails with the file and line when a diagram has no accessible name', async () => {
-    const body = 'Intro.\n\n```mermaid\nflowchart LR\n  a --> b\n```\n';
-    await expect(renderPost(body)).rejects.toThrow(
+  // Catches a diagram that ships with no accessible name, or one that is only whitespace.
+  it.each([
+    ['no name', '```mermaid\nflowchart LR\n  a --> b\n```'],
+    ['a blank caption', '```mermaid title=" "\nflowchart LR\n  a --> b\n```'],
+    ['a blank accTitle', '```mermaid\nflowchart LR\n  accTitle: #32;\n  a --> b\n```'],
+  ])('fails with the file and line when a diagram has %s', async (_, fence) => {
+    await expect(renderPost(`Intro.\n\n${fence}\n`)).rejects.toThrow(
       /post\.md:7: a diagram needs an accessible name: add `accTitle: \.\.\.`/
     );
   });

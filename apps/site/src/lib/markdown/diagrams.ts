@@ -40,6 +40,22 @@ function* elements(node: HastNode): Generator<Element> {
   if ('children' in node) for (const child of node.children) yield* elements(child as HastNode);
 }
 
+const textOf = (node: HastNode): string =>
+  node.type === 'text'
+    ? node.value
+    : 'children' in node
+      ? node.children.map((child) => textOf(child as HastNode)).join('')
+      : '';
+
+/** The text of the elements the SVG's aria-labelledby points at, as Pele wrote them. */
+function labelText(svg: Element): string {
+  const ids = new Set([svg.properties.ariaLabelledBy ?? []].flat().map(String));
+  return [...elements(svg)]
+    .filter((element) => ids.has(String(element.properties.id)))
+    .map(textOf)
+    .join(' ');
+}
+
 /** Moves every style="" into a class named by the declaration's hash. */
 function classesForStyles(svg: Element, styles: Record<string, string>) {
   for (const element of elements(svg)) {
@@ -110,8 +126,9 @@ export const diagrams: HastPluginEntry = (factory) => {
         delete svg.properties[':xmlns'];
         svg.properties.role = 'img';
         const title = caption?.title;
-        if (title !== undefined) svg.properties.ariaLabelledBy = [`${id}-caption`];
-        else if (svg.properties.ariaLabelledBy === undefined) {
+        if (title !== undefined && title.trim() !== '') {
+          svg.properties.ariaLabelledBy = [`${id}-caption`];
+        } else if (title !== undefined || labelText(svg).trim() === '') {
           fail(
             line,
             'a diagram needs an accessible name: add `accTitle: ...` to the diagram or title="..." after ```mermaid'
