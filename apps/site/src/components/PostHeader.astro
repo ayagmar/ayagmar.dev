@@ -1,13 +1,20 @@
 ---
 import { projectPath } from '../lib/projects.ts';
-import { isoDay, type Post, tagPath } from '../lib/writing.ts';
+import { isoDay, tagPath } from '../lib/writing.ts';
+import type { WritingFrontmatter } from '../lib/writing-schema.ts';
 
 interface Props {
-  post: Post;
+  /** A post, or a TIL note, which has neither `updated` nor `projects`. */
+  post: {
+    data: Pick<WritingFrontmatter, 'title' | 'date' | 'tags' | 'draft'> &
+      Partial<Pick<WritingFrontmatter, 'updated' | 'projects'>>;
+  };
+  /** Tags link to their writing page; a note's tags have none, so they are plain text. */
+  linkTags?: boolean;
 }
 
-const { post } = Astro.props;
-const { title, date, updated, tags, draft, projects } = post.data;
+const { post, linkTags = true } = Astro.props;
+const { title, date, updated, tags, draft, projects = [] } = post.data;
 // The `art` slot holds per-post art (ADR 0027); without it the header has no figure. Search
 // skips it: the ascii kind is text.
 const hasArt = Astro.slots.has('art');
@@ -37,9 +44,7 @@ const hasArt = Astro.slots.has('art');
     {tags.length > 0 && (
       <ul class="tags" aria-label="Tags">
         {tags.map((tag) => (
-          <li>
-            <a href={tagPath(tag)}>{tag}</a>
-          </li>
+          <li>{linkTags ? <a href={tagPath(tag)}>{tag}</a> : <span>{tag}</span>}</li>
         ))}
       </ul>
     )}

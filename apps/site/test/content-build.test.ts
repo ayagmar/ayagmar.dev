@@ -43,6 +43,12 @@ it.each([
     'nope',
   ],
   [
+    'a TIL note has a field only posts have',
+    'content/til/bad.md',
+    '---\ntitle: A note\ndate: 2026-10-01\nsummary: Posts have one.\n---\n\nHello.\n',
+    'summary',
+  ],
+  [
     "a project file's slug differs from its name",
     'content/projects/ccdesk.md',
     '---\nslug: runnerd\nstatus: active\n---\n',

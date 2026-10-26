@@ -79,8 +79,9 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                                  |
 | Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                                         |
 | Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                                            |
+| TIL notes: schema, model, summary, page and feeds (ADR 0028)              | `apps/site/src/lib/{til-schema,til}.ts`, `src/pages/til/`, `src/components/TilNote.astro`                     |
 | Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025)                                       |
-| RSS and Atom (one model, two renderers)                                   | `apps/site/src/lib/feed.ts`                                                                                   |
+| RSS and Atom (one model, two renderers; writing and TIL)                  | `apps/site/src/lib/feed.ts`                                                                                   |
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                         |
 | Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                              |
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                 |
@@ -103,7 +104,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 
 `just site-build` runs these steps:
 1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
-2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post bodies) into `dist/pagefind/`.
+2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post and note bodies) into `dist/pagefind/`.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
 In production, Workers static assets serve `dist/`. The site Worker runs only for `/`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt`, anything else gets `index.html`. `index.txt` starts with the room in ASCII. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.

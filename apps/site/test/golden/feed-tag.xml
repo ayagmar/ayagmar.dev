@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>min7 writing tagged rust</title>
+    <link>https://ayagmar.dev/writing/tags/rust</link>
+    <description>Posts tagged rust on min7.</description>
+    <language>en</language>
+    <lastBuildDate>Thu, 22 Oct 2026 00:00:00 GMT</lastBuildDate>
+    <atom:link href="https://ayagmar.dev/writing/tags/rust/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Tom &amp; Jerry &lt;script&gt;alert(1)&lt;/script&gt;</title>
+      <link>https://ayagmar.dev/writing/escaping</link>
+      <guid isPermaLink="true">https://ayagmar.dev/writing/escaping</guid>
+      <pubDate>Tue, 20 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Uses &lt;b&gt;HTML&lt;/b&gt; &amp; &quot;quotes&quot; in the summary.</description>
+      <category>rust</category>
+      <category>ci</category>
+    </item>
+    <item>
+      <title>Title older</title>
+      <link>https://ayagmar.dev/writing/older</link>
+      <guid isPermaLink="true">https://ayagmar.dev/writing/older</guid>
+      <pubDate>Thu, 01 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Summary older</description>
+      <category>rust</category>
+    </item>
+  </channel>
+</rss>

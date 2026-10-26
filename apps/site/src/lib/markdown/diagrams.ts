@@ -9,6 +9,7 @@ import { relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PeleError, render } from 'pele';
 import { type HastNode, type HastPluginEntry, htmlToHast } from 'satteri';
+import { idScope } from './scope-ids.ts';
 
 type Element = Extract<HastNode, { type: 'element' }>;
 
@@ -72,6 +73,8 @@ function classesForStyles(svg: Element, styles: Record<string, string>) {
 /** The hast plugin for `satteri({ hastPlugins })`. */
 export const diagrams: HastPluginEntry = (factory) => {
   let file = '<markdown>';
+  // A note's ids carry its name, a post's are left as they were (scope-ids.ts).
+  const scope = idScope(factory.fileURL);
   // Astro passes the body without its frontmatter; positions count from the body's start.
   let bodyStart = 0;
   if (factory.fileURL) {
@@ -103,7 +106,7 @@ export const diagrams: HastPluginEntry = (factory) => {
         }
 
         count += 1;
-        const id = `diagram-${count}`;
+        const id = `${scope}diagram-${count}`;
         const source = ctx.textContent(code).replace(/\n$/, '');
         let svgMarkup = '';
         try {

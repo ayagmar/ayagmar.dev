@@ -1,6 +1,6 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { markdownToHtml } from 'satteri';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -17,8 +17,9 @@ afterEach(() => {
 const frontmatter = '---\ntitle: A post\n---\n\n';
 
 /** Renders a post the way Astro does: the body alone, with the file it came from. */
-async function renderPost(body: string) {
-  const path = join(dir, 'post.md');
+async function renderPost(body: string, file = 'post.md') {
+  const path = join(dir, file);
+  mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, frontmatter + body);
   const { html, data } = await markdownToHtml(body, {
     hastPlugins: [diagrams],
@@ -73,6 +74,16 @@ describe('mermaid diagrams', () => {
     const defined = new Set([...css.matchAll(/^\.(pele-s-[0-9a-f]+)\{/gm)].map(([, name]) => name));
     expect(used.size).toBeGreaterThan(0);
     expect(defined).toEqual(used);
+  });
+
+  // Catches two notes on the /til page both drawing `diagram-1`, which is a duplicate id on that
+  // page. A post keeps its ids.
+  it('gives a TIL note ids of its own, and leaves a post its own', async () => {
+    const note = await renderPost(flowchart, 'til/first-note.md');
+    expect(note.html).toContain('id="first-note-diagram-1-title"');
+    expect(note.html).not.toContain('id="diagram-1');
+    const post = await renderPost(flowchart, 'writing/a-post.md');
+    expect(post.html).toContain('id="diagram-1-title"');
   });
 
   // Catches a diagram that ships with no accessible name, or one that is only whitespace.

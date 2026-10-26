@@ -9,10 +9,16 @@ export interface Post {
 export const postPath = (id: string) => `/writing/${id}`;
 export const tagPath = (tag: string) => `/writing/tags/${tag}`;
 
-/** Posts to publish, newest first. Drafts only when `showDrafts` is set (PR previews). */
-export function publishedPosts<P extends Post>(posts: readonly P[], showDrafts: boolean): P[] {
-  return posts
-    .filter((post) => showDrafts || !post.data.draft)
+/** What publishing needs of a post or a TIL note. */
+interface Dated {
+  id: string;
+  data: { date: Date; draft: boolean };
+}
+
+/** Posts or notes to publish, newest first. Drafts only when `showDrafts` is set (PR previews). */
+export function publishedEntries<E extends Dated>(entries: readonly E[], showDrafts: boolean): E[] {
+  return entries
+    .filter((entry) => showDrafts || !entry.data.draft)
     .toSorted((a, b) => b.data.date.getTime() - a.data.date.getTime() || a.id.localeCompare(b.id));
 }
 
