@@ -79,18 +79,27 @@ export function scan(dirs: readonly string[]): Finding[] {
     }
     for (const file of files(dir)) {
       // Every file, binary ones too: a WebAssembly data section, image metadata or a PDF can
-      // carry a token. latin1 maps each byte to one character, so the ASCII patterns match
-      // the same bytes in text and binary files.
-      const lines = readFileSync(file, 'latin1').split('\n');
-      lines.forEach((text, index) => {
-        for (const rule of rules) {
-          // Every pattern has the g flag; matchAll copies it, so no state carries over.
-          const hit = [...text.matchAll(rule.pattern)].some(
-            (match) => !rule.accept || rule.accept(match[1] ?? match[0])
-          );
-          if (hit) findings.push({ file: relative('.', file), line: index + 1, rule: rule.id });
-        }
-      });
+      // carry a token. Each file is read twice: as UTF-8, so Unicode whitespace such as U+00A0
+      // counts as whitespace in text, and as latin1, one character per byte, so the ASCII
+      // patterns also match in bytes that are not valid UTF-8. '\n' is the same byte in both,
+      // so line numbers agree; a hit in both is reported once.
+      const bytes = readFileSync(file);
+      const hits = new Set<string>();
+      for (const text of [bytes.toString('utf8'), bytes.toString('latin1')]) {
+        text.split('\n').forEach((line, index) => {
+          for (const rule of rules) {
+            // Every pattern has the g flag; matchAll copies it, so no state carries over.
+            const hit = [...line.matchAll(rule.pattern)].some(
+              (match) => !rule.accept || rule.accept(match[1] ?? match[0])
+            );
+            const key = `${index + 1}\0${rule.id}`;
+            if (hit && !hits.has(key)) {
+              hits.add(key);
+              findings.push({ file: relative('.', file), line: index + 1, rule: rule.id });
+            }
+          }
+        });
+      }
     }
   }
   return findings;

@@ -32,6 +32,19 @@ describe('just scan-artifact', () => {
     assert.match(result.stderr, /search\.wasm:\d+: github-token/);
   });
 
+  it('still fails on a UTF-8 text assignment spaced with non-breaking spaces', () => {
+    // Read as UTF-8, U+00A0 is whitespace to the assignment pattern; read byte by byte it is
+    // two characters, one of them not whitespace.
+    writeFileSync(
+      join(dist, 'config.txt'),
+      `token\u00a0=\u00a0"Hx7Qm2Vz9Kp4Wr8Tn3By6Cf1Dj5Ls0Ae"\n`,
+      'utf8'
+    );
+    const result = scan();
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /config\.txt:1: high-entropy-assignment/);
+  });
+
   it('names file, line and rule but prints neither the token nor what sits next to it', () => {
     // A credential no rule knows, beside one gitleaks recognises: gitleaks' verbose output
     // redacts the token and prints the rest of the matched line.
