@@ -7,7 +7,8 @@
 # owner cannot approve their own PRs), the `gate` check reported by the GitHub Actions app must
 # pass (branches need not be up to date first), no force pushes, no deletion, merge commits
 # only. Nobody bypasses it. The repo allows auto-merge, so Renovate can queue patch and minor
-# updates that merge once `gate` is green.
+# updates that merge once `gate` is green. Workflows on a pull request from any outside
+# contributor wait for the owner's approval before they run.
 set -euo pipefail
 
 repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
@@ -26,6 +27,16 @@ fi
 
 gh api --method PATCH "repos/${repo}" \
   -F allow_merge_commit=true -F allow_auto_merge=true >/dev/null
+
+# Fork pull requests run no workflow until the owner approves the run, first-time or not. The
+# body goes as JSON: `-f approval_policy=...` is accepted and changes nothing.
+approval="repos/${repo}/actions/permissions/fork-pr-contributor-approval"
+gh api --method PUT "${approval}" --input - <<<'{"approval_policy":"all_external_contributors"}'
+policy="$(gh api "${approval}" --jq .approval_policy)"
+if [[ "${policy}" != "all_external_contributors" ]]; then
+  echo "repo-ruleset: fork pull request approval is ${policy}, not all_external_contributors" >&2
+  exit 1
+fi
 
 ruleset="$(
   cat <<EOF

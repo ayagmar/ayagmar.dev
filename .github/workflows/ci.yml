@@ -397,7 +397,10 @@ jobs:
   # token, and only `pull-requests: write`: it checks out no code, runs no action but the
   # artifact download, and reads nothing but the metrics artifact, which the copy of
   # scripts/lighthouse-report.js below validates before rendering. Same-repository pull
-  # requests only; on a fork it is skipped and the budgets still apply. Outside the gate
+  # requests only; on a fork it is skipped and the budgets still apply. This guards against
+  # hostile artifact data (a compromised dependency or build step in the read-only jobs) and
+  # fork pull requests. It is not a boundary against a same-repository branch: this job's
+  # definition comes from the branch, whose authors are trusted (ADR 0017). Outside the gate
   # (scripts/ci.ts `ungated`): the lighthouse job enforces the budgets, and a failure to post
   # must not block a merge.
   lighthouse-comment:
