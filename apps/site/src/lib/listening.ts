@@ -42,8 +42,13 @@ export interface NowPlayingLine {
   /** Last.fm says it is playing, in an answer that still describes now. */
   playing: boolean;
   track: { track: string; artist: string; url: string | null } | null;
-  /** When the track was last seen playing; null while it plays. */
+  /**
+   * When the track was last seen playing or, with no track, when Last.fm was last asked; null
+   * while the line describes now.
+   */
   at: string | null;
+  /** The words between the sentence and `at`. */
+  when: string;
 }
 
 /**
@@ -58,7 +63,7 @@ export function nowPlaying(
   now: boolean
 ): NowPlayingLine {
   if (current !== null && now) {
-    return { lead: 'Now playing', playing: true, track: current, at: null };
+    return { lead: 'Now playing', playing: true, track: current, at: null, when: '' };
   }
   const last = current === null ? recent[0] : { ...current, playedAt: fetchedAt };
   return last === undefined
@@ -66,9 +71,11 @@ export function nowPlaying(
         lead: now ? 'Nothing playing right now' : 'Nothing played lately',
         playing: false,
         track: null,
-        at: null,
+        // An empty answer that no longer describes now is dated like any other.
+        at: now ? null : fetchedAt,
+        when: ', checked ',
       }
-    : { lead: 'Last played', playing: false, track: last, at: last.playedAt };
+    : { lead: 'Last played', playing: false, track: last, at: last.playedAt, when: ', ' };
 }
 
 // What the line's live region says now, so it is announced only when that changes.
@@ -83,7 +90,7 @@ export function renderNowPlaying(
   { data, fetchedAt }: Answer<ListeningSnapshot>,
   now: boolean
 ): void {
-  const { lead, playing, track, at } = nowPlaying(data, fetchedAt, now);
+  const { lead, playing, track, at, when } = nowPlaying(data, fetchedAt, now);
   const words = line.firstElementChild as HTMLElement;
   const key = JSON.stringify([lead, track]);
   if (key !== said) {
@@ -104,5 +111,5 @@ export function renderNowPlaying(
     }
   }
   line.toggleAttribute('data-playing', playing);
-  line.replaceChildren(words, ...(at === null ? [] : [', ', stamp(at)]));
+  line.replaceChildren(words, ...(at === null ? [] : [when, stamp(at)]));
 }

@@ -255,6 +255,27 @@ test('the record stays stopped on an older answer after a failure', async ({ pag
   await expectRested(page, '3 minutes ago');
 });
 
+// Catches an empty answer that stays an undated claim: after a week of failures, the line
+// says when Last.fm was last checked.
+test('nothing played says when it was checked once it no longer describes now', async ({
+  page,
+}) => {
+  let requests = 0;
+  await goLive(page, (route) =>
+    ++requests === 1
+      ? route.fulfill(envelope(false, snapshot('empty')))
+      : route.fulfill({ status: 503, body: '' })
+  );
+  await expect(page.locator('.now-playing')).toHaveText('Nothing playing right now');
+  await page.clock.fastForward(7 * 24 * 60 * 60_000);
+  await page.clock.runFor(60_000);
+  await expect(page.locator('.now-playing')).toHaveText('Nothing played lately, checked 26 Oct');
+  await expect(page.locator('.now-playing time')).toHaveAttribute(
+    'datetime',
+    '2026-10-26T10:30:00Z'
+  );
+});
+
 // One request at a time, given up after 5 s: a refresh that hangs counts as a failure, and the
 // next minute asks again.
 test('the record stops when a refresh hangs past its deadline', async ({ page }) => {

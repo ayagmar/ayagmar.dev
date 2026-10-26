@@ -39,7 +39,8 @@ const track = line?.track ?? null;
     )}</span
   >{line?.at && (
     <>
-      , <Stamp iso={line.at} />
+      {line.when}
+      <Stamp iso={line.at} />
     </>
   )}
 </p>

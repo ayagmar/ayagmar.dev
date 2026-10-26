@@ -220,7 +220,7 @@ describe('nowPlaying', () => {
   // Catches "Now playing" from a stale answer or from the build, which cannot know.
   it('says now playing only for an answer that describes now, with a track', () => {
     const data = { ...ok, nowPlaying: track };
-    expect(nowPlaying(data, fetchedAt, true)).toEqual({
+    expect(nowPlaying(data, fetchedAt, true)).toMatchObject({
       lead: 'Now playing',
       playing: true,
       track,
@@ -245,9 +245,17 @@ describe('nowPlaying', () => {
     });
   });
 
-  it('says nothing is playing when there is no track at all', () => {
+  // Catches an old empty answer passed off as current: without a track, the line still says
+  // when it was checked, unless the answer describes now.
+  it('says nothing is playing when there is no track at all, dated unless now', () => {
     const data = { ...ok, nowPlaying: null, recent: [] };
-    expect(nowPlaying(data, fetchedAt, true).lead).toBe('Nothing playing right now');
-    expect(nowPlaying(data, fetchedAt, false).lead).toBe('Nothing played lately');
+    expect(nowPlaying(data, fetchedAt, true)).toMatchObject({
+      lead: 'Nothing playing right now',
+      at: null,
+    });
+    expect(nowPlaying(data, fetchedAt, false)).toMatchObject({
+      lead: 'Nothing played lately',
+      at: fetchedAt,
+    });
   });
 });
