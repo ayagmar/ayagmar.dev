@@ -12,7 +12,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: preview-links-${{ github.event.check_run.check_suite.head_branch }}
+  group: preview-links-${{ github.event.check_run.head_sha }}
   cancel-in-progress: false
 
 defaults:
@@ -33,8 +33,11 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
-      BRANCH: ${{ github.event.check_run.check_suite.head_branch }}
       SHA: ${{ github.event.check_run.head_sha }}
+      # The pull requests GitHub matched to the check, and the branch for the log only: the
+      # comment goes to the pull request whose head is this commit, never to one found by name.
+      EVENT_PRS: ${{ toJSON(github.event.check_run.pull_requests) }}
+      BRANCH: ${{ github.event.check_run.check_suite.head_branch }}
       # The account's workers.dev subdomain: Preview URLs are <slug>-<worker>.<subdomain>.workers.dev.
       SUBDOMAIN: ayagmar
     steps:
@@ -43,11 +46,27 @@ jobs:
           set -euo pipefail
           marker='<!-- min7-preview-links -->'
 
-          pr=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
-          if [[ -z $pr ]]; then
-            echo "No open pull request for $BRANCH"
+          # The one open pull request from this repository whose head is still this commit. The
+          # event's list can be empty (or name pull requests that moved on); the commit's own
+          # pull requests are the fallback. A fork's pull request, or an older commit's check
+          # arriving after a push, matches nothing and changes nothing.
+          numbers=$(jq -r '.[].number' <<<"$EVENT_PRS")
+          if [[ -z $numbers ]]; then
+            numbers=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '.[].number')
+          fi
+          prs=()
+          for number in $numbers; do
+            if gh api "repos/$REPO/pulls/$number" |
+              jq -e --arg repo "$REPO" --arg sha "$SHA" \
+                '.state == "open" and .head.repo.full_name == $repo and .head.sha == $sha' > /dev/null; then
+              prs+=("$number")
+            fi
+          done
+          if [[ ${#prs[@]} -ne 1 ]]; then
+            echo "Commit $SHA (branch '$BRANCH') is the head of ${#prs[@]} open pull requests here; nothing to update"
             exit 0
           fi
+          pr=${prs[0]}
 
           # Latest Workers Builds run per Worker on this commit, so a re-run replaces a failure.
           runs=$(gh api --paginate "repos/$REPO/commits/$SHA/check-runs?per_page=100" \
