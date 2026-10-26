@@ -10,7 +10,13 @@ export type PullErrorCode =
   | 'upstream_rate_limited'
   | 'upstream_http_error'
   | 'upstream_error'
-  | 'upstream_malformed';
+  | 'upstream_malformed'
+  /** More past years than one history snapshot holds (ADR 0030). */
+  | 'over_budget'
+  /** The date in Rabat changed while the pull ran, so its answers would mix two dates. */
+  | 'date_changed'
+  /** A pull spread over several invocations read its part; it is not finished (ADR 0030). */
+  | 'in_progress';
 
 /**
  * A failed pull. The message is the code and nothing else, and no cause is attached: an
@@ -18,7 +24,11 @@ export type PullErrorCode =
  */
 export class PullError extends Error {
   override readonly name = 'PullError';
-  constructor(readonly code: PullErrorCode) {
+  constructor(
+    readonly code: PullErrorCode,
+    /** Unix ms before which the upstream asked not to be called again (`Retry-After`). */
+    readonly retryAt?: number
+  ) {
     super(code);
   }
 }
@@ -27,6 +37,26 @@ export class PullError extends Error {
 export interface UpstreamResponse {
   status: number;
   body: unknown;
+  /** From a usable `Retry-After` header (`retryAfter`), whatever the status. */
+  retryAt?: number;
+}
+
+/** The longest wait a `Retry-After` header is taken at. */
+const maxRetryAfterMs = 24 * 60 * 60_000;
+
+/**
+ * Unix ms from a `Retry-After` header read at `now`: delay-seconds, or an HTTP date in the
+ * IMF-fixdate form (RFC 9110, 10.2.3), at most a day ahead. Undefined for no header, any
+ * other text, or a time not in the future, so the caller falls back to its own backoff.
+ */
+function retryAfter(value: string | null, now: number): number | undefined {
+  const text = value?.trim() ?? '';
+  const at = /^\d{1,10}$/.test(text)
+    ? now + Number(text) * 1000
+    : /^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(text)
+      ? Date.parse(text)
+      : Number.NaN;
+  return at > now ? Math.min(at, now + maxRetryAfterMs) : undefined;
 }
 
 /** What the adapters need of a contracts schema, so signals does not import zod itself. */
@@ -64,8 +94,13 @@ export async function getJson(
       signal,
       ...(options.form === undefined ? {} : { method: 'POST', body: options.form }),
     });
+    const retryAt = retryAfter(response.headers.get('retry-after'), Date.now());
     const text = await readText(response, options.maxBytes);
-    return { status: response.status, body: parseJson(text) };
+    return {
+      status: response.status,
+      body: parseJson(text),
+      ...(retryAt === undefined ? {} : { retryAt }),
+    };
   } catch (error) {
     if (error instanceof PullError) throw error;
     throw new PullError(signal.aborted ? 'upstream_timeout' : 'upstream_unreachable');
@@ -122,16 +157,16 @@ function parseJson(text: string): unknown {
   }
 }
 
-/** The error a non-2xx status stands for. */
-function statusError(status: number): PullError {
+/** The error a non-2xx status stands for; a refusal keeps the upstream's `Retry-After`. */
+function statusError({ status, retryAt }: UpstreamResponse): PullError {
   if (status === 404 || status === 410) return new PullError('upstream_not_found');
-  if (status === 403 || status === 429) return new PullError('upstream_rate_limited');
+  if (status === 403 || status === 429) return new PullError('upstream_rate_limited', retryAt);
   return new PullError('upstream_http_error');
 }
 
 /** The body of a 200 response, checked against the wire schema. */
 export function parseBody<T>(response: UpstreamResponse, schema: Schema<T>): T {
-  if (response.status !== 200) throw statusError(response.status);
+  if (response.status !== 200) throw statusError(response);
   const parsed = schema.safeParse(response.body);
   if (!parsed.success) throw new PullError('upstream_malformed');
   return parsed.data;

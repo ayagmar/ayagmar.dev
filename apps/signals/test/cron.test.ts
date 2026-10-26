@@ -1,11 +1,13 @@
 import { createScheduledController } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import type { SourceId } from '@min7/contracts';
+import { rabatDate } from '@min7/contracts/rabat';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { pullAdapters } from '../src/adapters/pull/index.ts';
 import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import worker from '../src/index.ts';
+import { D1SnapshotStore } from '../src/storage/d1.ts';
 import { clearState, deliveryRows, fetchApi } from './helpers.ts';
 
 beforeEach(clearState);
@@ -30,6 +32,53 @@ const adapter = (
   };
   return fake;
 };
+
+/** How long each stand-in's fetch takes, close to production's. */
+const durationMs: Partial<Record<SourceId, number>> = {
+  listening: 1500,
+  shipping: 900,
+  projects: 8000,
+  weather: 700,
+  'listening-history': 800,
+};
+
+/**
+ * The real registry's sources, intervals and due rules, each fetch replaced by `fetch` after
+ * the source's usual duration.
+ */
+const standIns = (fetch: (id: SourceId) => Promise<unknown>) =>
+  pullAdapters.map(({ id, intervalSeconds, dueAt }) =>
+    Object.assign(
+      adapter(id, intervalSeconds, async () => {
+        vi.setSystemTime(Date.now() + (durationMs[id] ?? 1000));
+        return fetch(id);
+      }),
+      // The history's snapshot is stored as it comes, so its `describedDate` is seen.
+      id === 'listening-history' ? { dueAt, normalize: (raw: unknown) => raw } : { dueAt }
+    )
+  );
+
+/**
+ * A stand-in for the history's upstream (ADR 0030): a pull of three years takes three
+ * invocations, its progress kept for the Rabat date the pull began on, as the real one keeps
+ * it in D1, and publishes that date. `published` holds the time of each finished pull.
+ */
+function historyStandIn() {
+  const progress = { date: '', read: 0 };
+  const published: number[] = [];
+  return {
+    published,
+    async part(fails = false) {
+      const date = rabatDate(Date.now());
+      if (progress.date !== date) Object.assign(progress, { date, read: 0 });
+      if (fails) throw Object.assign(new Error('429'), { code: 'upstream_rate_limited' });
+      if (++progress.read < 3) throw Object.assign(new Error('part'), { code: 'in_progress' });
+      progress.date = '';
+      published.push(Date.now());
+      return { describedDate: date };
+    },
+  };
+}
 
 describe('scheduled', () => {
   it('runs with the empty adapter registry and still cleans up', async () => {
@@ -66,42 +115,42 @@ describe('scheduled', () => {
     expect(pulled).toEqual(['listening', 'projects', 'shipping', 'listening', 'listening']);
   });
 
-  // Two days of minute triggers with the real registry's sources and intervals (ADR 0029).
-  // Both clocks move: the trigger's scheduledTime, and Date, which stamps each stored attempt.
-  // Fetches take time, and weather fails for six hours, every third failure hanging until the
-  // runner's 20 s timeout. Catches a source starved by the others, a failing one hogging the
-  // slot, or two adapters sharing an invocation. 2,880 runs against D1 take about 4 s here and
-  // 12 s on a CI runner, so the default 5 s timeout is too short.
+  // Two days of minute triggers with the real registry's sources, intervals and due rules
+  // (ADR 0029, ADR 0030), across Rabat's midnight at +01 and at +00 and the change between
+  // them on 20 September 2026. Both clocks move: the trigger's scheduledTime, and Date, which
+  // stamps each stored attempt. Fetches take time; weather fails for six hours, every third
+  // failure hanging until the runner's 20 s timeout; the history fails from 23:50 to 00:01
+  // around the second midnight. Catches a source starved by the others, a failing one hogging
+  // the slot, two adapters sharing an invocation, and a history that waits for its interval
+  // after midnight or refreshes too often. 2,880 runs against D1 take about 4 s here and 12 s
+  // on a CI runner, so the default 5 s timeout is too short.
   it('serves every source near its interval for two days, with one adapter per run', {
     timeout: 60_000,
   }, async () => {
     const hour = 60 * minute;
-    const start = Date.UTC(2026, 9, 26);
+    const start = Date.UTC(2026, 8, 19, 12);
     const failing = { from: start + 6 * hour, to: start + 12 * hour };
-    const durationMs: Partial<Record<SourceId, number>> = {
-      listening: 1500,
-      shipping: 900,
-      projects: 8000,
-      weather: 700,
-    };
+    const midnights = [Date.UTC(2026, 8, 19, 23), Date.UTC(2026, 8, 21)] as const;
+    const historyFailing = { from: midnights[1] - 10 * minute, to: midnights[1] + minute };
     const attempts = new Map<SourceId, number[]>();
     let run = 0;
     let weatherFailures = 0;
-    const adapters = pullAdapters.map(({ id, intervalSeconds }) =>
-      adapter(id, intervalSeconds, async () => {
-        attempts.set(id, [...(attempts.get(id) ?? []), run]);
-        vi.setSystemTime(Date.now() + (durationMs[id] ?? 1000));
-        const now = Date.now();
-        if (id === 'weather' && now >= failing.from && now < failing.to) {
-          if (++weatherFailures % 3 === 0) {
-            vi.setSystemTime(now + 20_000);
-            throw new DOMException('timed out', 'TimeoutError');
-          }
-          throw Object.assign(new Error('429'), { code: 'upstream_rate_limited' });
+    const history = historyStandIn();
+    const adapters = standIns(async (id) => {
+      attempts.set(id, [...(attempts.get(id) ?? []), run]);
+      const now = Date.now();
+      if (id === 'weather' && now >= failing.from && now < failing.to) {
+        if (++weatherFailures % 3 === 0) {
+          vi.setSystemTime(now + 20_000);
+          throw new DOMException('timed out', 'TimeoutError');
         }
-        return {};
-      })
-    );
+        throw Object.assign(new Error('429'), { code: 'upstream_rate_limited' });
+      }
+      if (id === 'listening-history') {
+        return history.part(now >= historyFailing.from && now < historyFailing.to);
+      }
+      return {};
+    });
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       for (run = 0; run < 2 * 24 * 60; run++) {
@@ -132,7 +181,56 @@ describe('scheduled', () => {
     expect(weatherFailures).toBeGreaterThan(0);
     const weather = await fetchApi('/v1/weather').then((r) => r.json());
     expect(weather).toMatchObject({ data: { normalized: {} } });
+    // Each new Rabat date has its history within 10 minutes with Last.fm answering, and 5
+    // minutes later when its first attempt of the date fails. No date has more than four.
+    for (const [midnight, bound] of [
+      [midnights[0], 10 * minute],
+      [midnights[1], 15 * minute],
+    ] as const) {
+      const first = history.published.find((at) => at >= midnight) ?? Number.POSITIVE_INFINITY;
+      expect(first - midnight, new Date(midnight).toISOString()).toBeLessThanOrEqual(bound);
+    }
+    const perDate = Map.groupBy(history.published, (at) => rabatDate(at));
+    expect(Math.max(...[...perDate.values()].map((d) => d.length))).toBeLessThanOrEqual(4);
   });
+
+  // Every source due at Rabat's midnight, the history's last attempt at 23:58 (a success or a
+  // failure), and the triggers at 00:02 and 00:03 lost to a deploy, at +01 and at +00.
+  // Catches a history that waits for its 7 hours, or behind the other sources, on a new date.
+  it.each([
+    ['+01', 'a success', Date.UTC(2026, 8, 19, 23)],
+    ['+01', 'a failure', Date.UTC(2026, 8, 19, 23)],
+    ['+00', 'a success', Date.UTC(2026, 9, 27)],
+    ['+00', 'a failure', Date.UTC(2026, 9, 27)],
+  ])(
+    'publishes the history within 10 minutes of midnight at %s, after %s at 23:58',
+    async (_, last, midnight) => {
+      const store = new D1SnapshotStore(env.DB);
+      for (const { id, intervalSeconds } of pullAdapters) {
+        const at = new Date(
+          midnight - (id === 'listening-history' ? 2 * minute : intervalSeconds * 1000)
+        );
+        if (id === 'listening-history' && last === 'a failure') {
+          await store.recordFailure(id, 'upstream_error', at.toISOString());
+        } else await store.put(id, {}, at.toISOString());
+      }
+      const history = historyStandIn();
+      const adapters = standIns(async (id) => (id === 'listening-history' ? history.part() : {}));
+      vi.useFakeTimers({ toFake: ['Date'] });
+      try {
+        for (let run = 0; run < 15; run++) {
+          if (run === 2 || run === 3) continue;
+          vi.setSystemTime(midnight + run * minute + 1500);
+          await runScheduled(env, adapters, midnight + run * minute);
+        }
+      } finally {
+        vi.useRealTimers();
+      }
+      expect((history.published[0] ?? Number.POSITIVE_INFINITY) - midnight).toBeLessThanOrEqual(
+        10 * minute
+      );
+    }
+  );
 
   it('records a failure as a code, keeps the last good snapshot and never logs the message', async () => {
     const start = Date.now();

@@ -1,0 +1,63 @@
+{
+  "describedDate": "2028-02-29",
+  "registration": {
+    "status": 200,
+    "body": {
+      "user": {
+        "registered": {
+          "unixtime": "1674677885"
+        }
+      }
+    }
+  },
+  "days": [
+    {
+      "year": 2024,
+      "from": 1709161200,
+      "to": 1709247600,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [
+              {
+                "artist": {
+                  "#text": "Moderat"
+                },
+                "name": "A New Error",
+                "date": {
+                  "uts": "1709247599"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Moderat"
+                },
+                "name": "Bad Kingdom",
+                "date": {
+                  "uts": "1709164800"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Moderat"
+                },
+                "name": "A New Error",
+                "date": {
+                  "uts": "1709161200"
+                }
+              }
+            ],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "1",
+              "page": "1",
+              "perPage": "200",
+              "total": "3"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

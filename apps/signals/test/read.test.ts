@@ -169,6 +169,7 @@ describe('health', () => {
       { source: 'llm-usage', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'shelf', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'weather', lastSuccessAt: null, stale: true, lastErrorCode: null },
+      { source: 'listening-history', lastSuccessAt: null, stale: true, lastErrorCode: null },
     ]);
   });
 });

@@ -1,0 +1,36 @@
+{
+  "describedDate": "2026-10-26",
+  "firstYear": 2023,
+  "years": [
+    {
+      "year": 2025,
+      "scrobbles": 29,
+      "read": 29,
+      "top": {
+        "track": "Nowhere to Run",
+        "artist": "LTN",
+        "plays": 2
+      }
+    },
+    {
+      "year": 2024,
+      "scrobbles": 47,
+      "read": 47,
+      "top": {
+        "track": "The Less I Know the Better",
+        "artist": "Tame Impala",
+        "plays": 2
+      }
+    },
+    {
+      "year": 2023,
+      "scrobbles": 99,
+      "read": 99,
+      "top": {
+        "track": "Better Off Alone",
+        "artist": "Always Mirin",
+        "plays": 3
+      }
+    }
+  ]
+}

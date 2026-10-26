@@ -21,8 +21,8 @@ import {
 } from './http.ts';
 import { readSecret } from './secrets.ts';
 
-const endpoint = 'https://ws.audioscrobbler.com/2.0/';
-const user = 'min7_';
+export const lastfmEndpoint = 'https://ws.audioscrobbler.com/2.0/';
+export const lastfmUser = 'min7_';
 const listLimit = 10;
 // Ten tracks with their image lists are about 10 KiB.
 const maxBytes = 128 * 1024;
@@ -56,23 +56,29 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
     const call = (method: string, params: Record<string, string>) => ({
       signal,
       maxBytes,
-      form: new URLSearchParams({ method, user, api_key: apiKey, format: 'json', ...params }),
+      form: new URLSearchParams({
+        method,
+        user: lastfmUser,
+        api_key: apiKey,
+        format: 'json',
+        ...params,
+      }),
     });
     const thisMonday = weekStart(new Date());
     const lastMonday = thisMonday - 7 * day;
     // Only `@attr.total` of the weekly calls is read, so one item per page is enough.
     const [recentTracks, topArtists, thisWeek, lastWeek] = await Promise.all([
-      getJson(endpoint, call('user.getrecenttracks', { limit: String(listLimit) })),
+      getJson(lastfmEndpoint, call('user.getrecenttracks', { limit: String(listLimit) })),
       getOptionalJson(
-        endpoint,
+        lastfmEndpoint,
         call('user.gettopartists', { period: 'overall', limit: String(listLimit) })
       ),
       getOptionalJson(
-        endpoint,
+        lastfmEndpoint,
         call('user.getrecenttracks', { limit: '1', from: String(thisMonday) })
       ),
       getOptionalJson(
-        endpoint,
+        lastfmEndpoint,
         call('user.getrecenttracks', {
           limit: '1',
           from: String(lastMonday),
@@ -84,7 +90,7 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
   },
 
   normalize(raw) {
-    const recent = read(raw.recentTracks, lastfmRecentTracksSchema).recenttracks;
+    const recent = readLastfm(raw.recentTracks, lastfmRecentTracksSchema).recenttracks;
     const tracks = items(recent.track, lastfmTrackSchema);
 
     let nowPlaying: ListeningSnapshot['nowPlaying'] = null;
@@ -119,19 +125,19 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
   },
 };
 
-function read<T>(response: UpstreamResponse, schema: Schema<T>): T {
-  // Last.fm reports errors in the body, sometimes with HTTP 200.
+/** A Last.fm answer checked against `schema`. Last.fm reports errors in the body, sometimes with HTTP 200. */
+export function readLastfm<T>(response: UpstreamResponse, schema: Schema<T>): T {
   const failure = lastfmErrorSchema.safeParse(response.body);
   if (failure.success) {
     if (failure.data.error === 6) throw new PullError('upstream_not_found'); // no such user
-    if (failure.data.error === 29) throw new PullError('upstream_rate_limited');
+    if (failure.data.error === 29) throw new PullError('upstream_rate_limited', response.retryAt);
     throw new PullError('upstream_error');
   }
   return parseBody(response, schema);
 }
 
 const readOptional = <T>(response: UpstreamResponse | null, schema: Schema<T>) =>
-  response === null ? null : orNull(() => read(response, schema));
+  response === null ? null : orNull(() => readLastfm(response, schema));
 
 /** The items of a Last.fm list that match `schema`; one it cannot read is skipped. */
 function items<T>(list: unknown[] | Record<string, unknown>, schema: Schema<T>): T[] {

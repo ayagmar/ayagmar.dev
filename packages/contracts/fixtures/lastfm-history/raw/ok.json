@@ -1,0 +1,1653 @@
+{
+  "describedDate": "2026-10-26",
+  "registration": {
+    "status": 200,
+    "body": {
+      "user": {
+        "registered": {
+          "unixtime": "1674677885"
+        }
+      }
+    }
+  },
+  "days": [
+    {
+      "year": 2025,
+      "from": 1761433200,
+      "to": 1761519600,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [
+              {
+                "artist": {
+                  "#text": "Jan Blomqvist"
+                },
+                "name": "The Space in Between - Ben Böhmer Remix",
+                "date": {
+                  "uts": "1761518714"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Ben Böhmer"
+                },
+                "name": "Autumn",
+                "date": {
+                  "uts": "1761518255"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Sound Quelle"
+                },
+                "name": "Fofan",
+                "date": {
+                  "uts": "1761518044"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Cubicolor"
+                },
+                "name": "Down The Wall - Original Mix",
+                "date": {
+                  "uts": "1761517486"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tom Demac"
+                },
+                "name": "Serenade",
+                "date": {
+                  "uts": "1761517039"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Cubicolor"
+                },
+                "name": "Got This Feeling - Original Mix",
+                "date": {
+                  "uts": "1761517038"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tom Demac"
+                },
+                "name": "Serenade",
+                "date": {
+                  "uts": "1761516474"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tinlicker"
+                },
+                "name": "Fractal",
+                "date": {
+                  "uts": "1761516156"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Gone"
+                },
+                "name": "SAVED",
+                "date": {
+                  "uts": "1761515940"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Stereoclip"
+                },
+                "name": "Day One",
+                "date": {
+                  "uts": "1761515675"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "François Ier"
+                },
+                "name": "Neptune",
+                "date": {
+                  "uts": "1761515282"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Oporia"
+                },
+                "name": "Irusu",
+                "date": {
+                  "uts": "1761515067"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Helsloot"
+                },
+                "name": "Killing Time",
+                "date": {
+                  "uts": "1761514735"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Durante"
+                },
+                "name": "Maia",
+                "date": {
+                  "uts": "1761514422"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Lane 8"
+                },
+                "name": "Sunlight",
+                "date": {
+                  "uts": "1761514127"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Trashlagoon"
+                },
+                "name": "Metaphobia",
+                "date": {
+                  "uts": "1761513824"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Ben Böhmer"
+                },
+                "name": "Beyond Beliefs",
+                "date": {
+                  "uts": "1761513510"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Ben Böhmer"
+                },
+                "name": "Fade to Blue",
+                "date": {
+                  "uts": "1761513221"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Ben Böhmer"
+                },
+                "name": "After Earth",
+                "date": {
+                  "uts": "1761512763"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Rylan Taggart"
+                },
+                "name": "Sail",
+                "date": {
+                  "uts": "1761512525"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Joachim Pastor"
+                },
+                "name": "Millenium",
+                "date": {
+                  "uts": "1761512102"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Trilucid"
+                },
+                "name": "Cheyenne",
+                "date": {
+                  "uts": "1761511857"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jerro"
+                },
+                "name": "Go Back Now (feat. Beacon)",
+                "date": {
+                  "uts": "1761511642"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jan Blomqvist"
+                },
+                "name": "Same Mistake - But Different Remix",
+                "date": {
+                  "uts": "1761511640"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jerro"
+                },
+                "name": "Go Back Now (feat. Beacon)",
+                "date": {
+                  "uts": "1761511344"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tinlicker"
+                },
+                "name": "Voodoo",
+                "date": {
+                  "uts": "1761511110"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "LTN"
+                },
+                "name": "The Wanderer",
+                "date": {
+                  "uts": "1761510954"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "LTN"
+                },
+                "name": "Nowhere to Run",
+                "date": {
+                  "uts": "1761510687"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "LTN"
+                },
+                "name": "Nowhere to Run",
+                "date": {
+                  "uts": "1761479961"
+                }
+              }
+            ],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "1",
+              "page": "1",
+              "total": "29",
+              "perPage": "200"
+            }
+          }
+        }
+      }
+    },
+    {
+      "year": 2024,
+      "from": 1729897200,
+      "to": 1729983600,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [
+              {
+                "artist": {
+                  "#text": "Stereoclip"
+                },
+                "name": "Airplane Lesson",
+                "date": {
+                  "uts": "1729970737"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Fritz Kalkbrenner"
+                },
+                "name": "King Curtis - Edit",
+                "date": {
+                  "uts": "1729970511"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Mezerg"
+                },
+                "name": "Blu-Tack",
+                "date": {
+                  "uts": "1729970347"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Joachim Pastor"
+                },
+                "name": "Joda - Worakls Remix",
+                "date": {
+                  "uts": "1729970009"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Solomun"
+                },
+                "name": "Home",
+                "date": {
+                  "uts": "1729969787"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jumo"
+                },
+                "name": "Les autres",
+                "date": {
+                  "uts": "1729969553"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Stereoclip"
+                },
+                "name": "Sunset Drive",
+                "date": {
+                  "uts": "1729969318"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Plein Ciel",
+                "date": {
+                  "uts": "1729969010"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Oliver Koletzki"
+                },
+                "name": "Spiritual but Not Religious",
+                "date": {
+                  "uts": "1729968763"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Giolì & Assia"
+                },
+                "name": "Blame on Me - Club Edit",
+                "date": {
+                  "uts": "1729968484"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Romain Garcia"
+                },
+                "name": "Mysterious Bird",
+                "date": {
+                  "uts": "1729951918"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Harold van Lennep"
+                },
+                "name": "Liberation",
+                "date": {
+                  "uts": "1729951017"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Angara"
+                },
+                "name": "Prove",
+                "date": {
+                  "uts": "1729950818"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Philipp Wolf"
+                },
+                "name": "Spiral - Edit",
+                "date": {
+                  "uts": "1729950473"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Giolì & Assia"
+                },
+                "name": "Blame on Me - Club Edit",
+                "date": {
+                  "uts": "1729950194"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Invisible",
+                "date": {
+                  "uts": "1729949851"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Playboi Carti"
+                },
+                "name": "ILoveUIHateU",
+                "date": {
+                  "uts": "1729949659"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "surrenderdorothy"
+                },
+                "name": "lighthouses",
+                "date": {
+                  "uts": "1729949514"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Lil Baby"
+                },
+                "name": "Drip Too Hard (Lil Baby & Gunna)",
+                "date": {
+                  "uts": "1729949514"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Nujabes"
+                },
+                "name": "Luv(sic.) Pt3 (feat. Shing02)",
+                "date": {
+                  "uts": "1729949029"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "A$AP Rocky"
+                },
+                "name": "Fashion Killa",
+                "date": {
+                  "uts": "1729948794"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Helsloot"
+                },
+                "name": "When We Meet Again - Edit",
+                "date": {
+                  "uts": "1729948521"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Helsloot"
+                },
+                "name": "When We Meet Again - Edit",
+                "date": {
+                  "uts": "1729948015"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Mezerg"
+                },
+                "name": "Blu-Tack",
+                "date": {
+                  "uts": "1729908255"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Loving You Like Always - Rodriguez Jr. Remix",
+                "date": {
+                  "uts": "1729908053"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Solomun"
+                },
+                "name": "Home",
+                "date": {
+                  "uts": "1729901260"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "M83"
+                },
+                "name": "Midnight City",
+                "date": {
+                  "uts": "1729901158"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "M83"
+                },
+                "name": "Midnight City",
+                "date": {
+                  "uts": "1729900913"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Nujabes"
+                },
+                "name": "Luv(sic.) Pt3 (feat. Shing02)",
+                "date": {
+                  "uts": "1729900577"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Wisp"
+                },
+                "name": "Your face",
+                "date": {
+                  "uts": "1729900470"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "my head is empty"
+                },
+                "name": "i was only temporary 2 u",
+                "date": {
+                  "uts": "1729900470"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Wisp"
+                },
+                "name": "Your face",
+                "date": {
+                  "uts": "1729900244"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "PASTEL GHOST"
+                },
+                "name": "Amethyst",
+                "date": {
+                  "uts": "1729900024"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "akiaura"
+                },
+                "name": "Ars Goetia",
+                "date": {
+                  "uts": "1729900024"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "akiaura"
+                },
+                "name": "Ars Goetia",
+                "date": {
+                  "uts": "1729899833"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "LucidBeatz"
+                },
+                "name": "transcendent",
+                "date": {
+                  "uts": "1729899635"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "LucidBeatz"
+                },
+                "name": "transcendent",
+                "date": {
+                  "uts": "1729899491"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "PERPETUALLL"
+                },
+                "name": "ECCHYMOSES - Slowed + Reverb",
+                "date": {
+                  "uts": "1729899277"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "PASTEL GHOST"
+                },
+                "name": "Shadows",
+                "date": {
+                  "uts": "1729899068"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Alvedon"
+                },
+                "name": "retire (final)",
+                "date": {
+                  "uts": "1729898923"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "akiaura"
+                },
+                "name": "deep black sea",
+                "date": {
+                  "uts": "1729898923"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Alvedon"
+                },
+                "name": "retire (final)",
+                "date": {
+                  "uts": "1729898709"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tame Impala"
+                },
+                "name": "The Less I Know the Better",
+                "date": {
+                  "uts": "1729898466"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jan Blomqvist"
+                },
+                "name": "More",
+                "date": {
+                  "uts": "1729898466"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tame Impala"
+                },
+                "name": "The Less I Know the Better",
+                "date": {
+                  "uts": "1729898251"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Calvin Harris"
+                },
+                "name": "I Need Your Love (feat. Ellie Goulding)",
+                "date": {
+                  "uts": "1729898013"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Xxtarlit⚸"
+                },
+                "name": "Fleeting Frozen Heart",
+                "date": {
+                  "uts": "1729897826"
+                }
+              }
+            ],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "1",
+              "page": "1",
+              "perPage": "200",
+              "total": "47"
+            }
+          }
+        }
+      }
+    },
+    {
+      "year": 2023,
+      "from": 1698274800,
+      "to": 1698361200,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [
+              {
+                "artist": {
+                  "#text": "WAVY JONE$"
+                },
+                "name": "Earth Blues",
+                "date": {
+                  "uts": "1698357734"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "HAARPER"
+                },
+                "name": "DEAD TO ME",
+                "date": {
+                  "uts": "1698357599"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Bones"
+                },
+                "name": "Rocks",
+                "date": {
+                  "uts": "1698357462"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "La clé des champs",
+                "date": {
+                  "uts": "1698357045"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Travis Scott"
+                },
+                "name": "sdp interlude",
+                "date": {
+                  "uts": "1698356853"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "surrenderdorothy"
+                },
+                "name": "sittinginthecar",
+                "date": {
+                  "uts": "1698356766"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "WAVY JONE$"
+                },
+                "name": "Holographic Memory",
+                "date": {
+                  "uts": "1698356663"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Pouya"
+                },
+                "name": "umm",
+                "date": {
+                  "uts": "1698356567"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "$uicideboy$"
+                },
+                "name": "Runnin' Thru the 7th with My Woadies",
+                "date": {
+                  "uts": "1698356360"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Mac Miller"
+                },
+                "name": "Nikes on My Feet",
+                "date": {
+                  "uts": "1698356196"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Angara"
+                },
+                "name": "Kyoto",
+                "date": {
+                  "uts": "1698355663"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "WhoMadeWho"
+                },
+                "name": "Nefertari",
+                "date": {
+                  "uts": "1698355421"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Helsloot"
+                },
+                "name": "Let's Pretend",
+                "date": {
+                  "uts": "1698355200"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Eelke Kleijn"
+                },
+                "name": "De Orde Van De Nacht",
+                "date": {
+                  "uts": "1698354995"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "The Blaze"
+                },
+                "name": "Breath",
+                "date": {
+                  "uts": "1698354764"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "In the Mood for Noune",
+                "date": {
+                  "uts": "1698354511"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Sainte Vie"
+                },
+                "name": "Cenote",
+                "date": {
+                  "uts": "1698354211"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Nox Vahn"
+                },
+                "name": "Come Together",
+                "date": {
+                  "uts": "1698353988"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Paul Sabin"
+                },
+                "name": "Prototype",
+                "date": {
+                  "uts": "1698353886"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Meanwhile in Rio",
+                "date": {
+                  "uts": "1698353601"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Helsloot"
+                },
+                "name": "When We Meet Again - Edit",
+                "date": {
+                  "uts": "1698353362"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "R Plus"
+                },
+                "name": "Love Will Tear Us Apart - Tensnake Remix",
+                "date": {
+                  "uts": "1698353142"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Down There - Radio Edit",
+                "date": {
+                  "uts": "1698352968"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Eelke Kleijn"
+                },
+                "name": "Woodstock",
+                "date": {
+                  "uts": "1698352680"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "TWO LANES"
+                },
+                "name": "Closer",
+                "date": {
+                  "uts": "1698352472"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Eelke Kleijn"
+                },
+                "name": "The Magician",
+                "date": {
+                  "uts": "1698352214"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Giolì & Assia"
+                },
+                "name": "Emptiness",
+                "date": {
+                  "uts": "1698352006"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Agoria"
+                },
+                "name": "Up All Night - Radio Edit",
+                "date": {
+                  "uts": "1698351822"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "KOSCO"
+                },
+                "name": "Supermoon",
+                "date": {
+                  "uts": "1698351510"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Joachim Pastor"
+                },
+                "name": "Eiffel Powder - Short Version",
+                "date": {
+                  "uts": "1698351246"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Mezerg"
+                },
+                "name": "Blu-Tack",
+                "date": {
+                  "uts": "1698351129"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Boris Brejcha"
+                },
+                "name": "Spicy (feat. Ginger) - Edit",
+                "date": {
+                  "uts": "1698350918"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Carrousel - Short Version",
+                "date": {
+                  "uts": "1698350659"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Cristoph"
+                },
+                "name": "Alone (feat. FEMME)",
+                "date": {
+                  "uts": "1698350434"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Diskay"
+                },
+                "name": "Reach the Moon",
+                "date": {
+                  "uts": "1698350197"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Joachim Pastor"
+                },
+                "name": "Wardenclyffe - Mees Salomé Remix",
+                "date": {
+                  "uts": "1698349950"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "The Hound - Short Version",
+                "date": {
+                  "uts": "1698349672"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jumo"
+                },
+                "name": "Ville",
+                "date": {
+                  "uts": "1698349541"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Agoria"
+                },
+                "name": "You’re Not Alone",
+                "date": {
+                  "uts": "1698349378"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Anderholm"
+                },
+                "name": "Fractures",
+                "date": {
+                  "uts": "1698349115"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "vimala"
+                },
+                "name": "Ages",
+                "date": {
+                  "uts": "1698348906"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Emrod"
+                },
+                "name": "Jennesys",
+                "date": {
+                  "uts": "1698348665"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Catching Flies"
+                },
+                "name": "Satisfied - Edit",
+                "date": {
+                  "uts": "1698348441"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "You Man"
+                },
+                "name": "Who We Are",
+                "date": {
+                  "uts": "1698348266"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Loving You Like Always - Rodriguez Jr. Remix",
+                "date": {
+                  "uts": "1698348061"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "The Morning After",
+                "date": {
+                  "uts": "1698347652"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Kollektiv Turmstrasse"
+                },
+                "name": "Jupiter Sunrise",
+                "date": {
+                  "uts": "1698347402"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Monkey Safari"
+                },
+                "name": "Sturm",
+                "date": {
+                  "uts": "1698347169"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Rodriguez Jr."
+                },
+                "name": "What Is Real",
+                "date": {
+                  "uts": "1698346945"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jumo"
+                },
+                "name": "Minuit",
+                "date": {
+                  "uts": "1698346741"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "The Blaze"
+                },
+                "name": "Breath",
+                "date": {
+                  "uts": "1698346511"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Joris Delacroix"
+                },
+                "name": "Aiguilhe",
+                "date": {
+                  "uts": "1698346222"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tonic Walter"
+                },
+                "name": "Stay There",
+                "date": {
+                  "uts": "1698345988"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tube & Berger"
+                },
+                "name": "Reliquia - German Brigante Remix",
+                "date": {
+                  "uts": "1698345778"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Philipp Wolf"
+                },
+                "name": "Spiral - Edit",
+                "date": {
+                  "uts": "1698345557"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "The Blaze"
+                },
+                "name": "Queens",
+                "date": {
+                  "uts": "1698345348"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Emrod"
+                },
+                "name": "Tango",
+                "date": {
+                  "uts": "1698345107"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Les Orangers",
+                "date": {
+                  "uts": "1698344705"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Angara"
+                },
+                "name": "Kyoto",
+                "date": {
+                  "uts": "1698344411"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Angara"
+                },
+                "name": "Drive",
+                "date": {
+                  "uts": "1698344025"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Fritz Kalkbrenner"
+                },
+                "name": "King Curtis - Edit",
+                "date": {
+                  "uts": "1698343799"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Dom Livez"
+                },
+                "name": "Middle Of The Night",
+                "date": {
+                  "uts": "1698343580"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Always Mirin"
+                },
+                "name": "Can You Feel My Heart",
+                "date": {
+                  "uts": "1698343458"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Always Mirin"
+                },
+                "name": "Outside",
+                "date": {
+                  "uts": "1698343374"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Breslin"
+                },
+                "name": "Dream of Me",
+                "date": {
+                  "uts": "1698343271"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Annaland"
+                },
+                "name": "Tokyo (Popeska Remix)",
+                "date": {
+                  "uts": "1698343093"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Taska Black"
+                },
+                "name": "No Paradise",
+                "date": {
+                  "uts": "1698342999"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "hxly xo"
+                },
+                "name": "haunted.",
+                "date": {
+                  "uts": "1698342879"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Octatonez"
+                },
+                "name": "The Revolution",
+                "date": {
+                  "uts": "1698342694"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Baki"
+                },
+                "name": "Vamos A La Playa - Hardstyle",
+                "date": {
+                  "uts": "1698342584"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Baki"
+                },
+                "name": "Malo Tebya (Hardstyle)",
+                "date": {
+                  "uts": "1698324675"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Always Mirin"
+                },
+                "name": "Outside",
+                "date": {
+                  "uts": "1698324528"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Always Mirin"
+                },
+                "name": "Better Off Alone",
+                "date": {
+                  "uts": "1698324392"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Maul"
+                },
+                "name": "We will make it",
+                "date": {
+                  "uts": "1698324287"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Breslin"
+                },
+                "name": "Dream of Me",
+                "date": {
+                  "uts": "1698324183"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Andonis"
+                },
+                "name": "Adagio For Strings - Hardstyle",
+                "date": {
+                  "uts": "1698324015"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Odium"
+                },
+                "name": "In Control",
+                "date": {
+                  "uts": "1698323870"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "yosuf"
+                },
+                "name": "Anadrol",
+                "date": {
+                  "uts": "1698323516"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "TOOZ"
+                },
+                "name": "PLAY",
+                "date": {
+                  "uts": "1698323386"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Always Mirin"
+                },
+                "name": "Can You Feel My Heart",
+                "date": {
+                  "uts": "1698323263"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Meteor"
+                },
+                "name": "I wanna go",
+                "date": {
+                  "uts": "1698323157"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Ty 2048"
+                },
+                "name": "Rip Zyzz II",
+                "date": {
+                  "uts": "1698323008"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "yosuf"
+                },
+                "name": "Love",
+                "date": {
+                  "uts": "1698322843"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Baki"
+                },
+                "name": "Dark Horse - Hardstyle",
+                "date": {
+                  "uts": "1698322767"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Baki"
+                },
+                "name": "SAY IT RIGHT - Hardstyle",
+                "date": {
+                  "uts": "1698322686"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Breslin"
+                },
+                "name": "Dream of Me",
+                "date": {
+                  "uts": "1698322575"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tekkno"
+                },
+                "name": "Summertime Sadness - Techno",
+                "date": {
+                  "uts": "1698322398"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "SICK LEGEND"
+                },
+                "name": "CHASING THE SUN HARDSTYLE",
+                "date": {
+                  "uts": "1698322209"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "PXSEIDON"
+                },
+                "name": "Slow Down (Hardstyle)",
+                "date": {
+                  "uts": "1698322105"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "crypvolk"
+                },
+                "name": "ON THE FLOOR HARDSTYLE",
+                "date": {
+                  "uts": "1698321926"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Always Mirin"
+                },
+                "name": "Better Off Alone",
+                "date": {
+                  "uts": "1698321815"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "SICK LEGEND"
+                },
+                "name": "SAFE AND SOUND HARDSTYLE",
+                "date": {
+                  "uts": "1698321578"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Mysk"
+                },
+                "name": "My rival Hardstyle",
+                "date": {
+                  "uts": "1698321477"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Fuarkistan National Team"
+                },
+                "name": "FAMY AVA - HARDSTYLE",
+                "date": {
+                  "uts": "1698321349"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Always Mirin"
+                },
+                "name": "Better Off Alone",
+                "date": {
+                  "uts": "1698321218"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Octatonez"
+                },
+                "name": "Paranoia",
+                "date": {
+                  "uts": "1698321065"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Tekkno"
+                },
+                "name": "apologize tekkno",
+                "date": {
+                  "uts": "1698320754"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "SICK LEGEND"
+                },
+                "name": "SUMMER TIME SADNESS HARDSTYLE",
+                "date": {
+                  "uts": "1698320609"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "NTO"
+                },
+                "name": "Meanwhile in Rio",
+                "date": {
+                  "uts": "1698320117"
+                }
+              }
+            ],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "1",
+              "page": "1",
+              "total": "99",
+              "perPage": "200"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

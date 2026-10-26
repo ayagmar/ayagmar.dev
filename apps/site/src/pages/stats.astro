@@ -4,7 +4,7 @@ import NowPlayingPanel from '../components/NowPlayingPanel.astro';
 import ShippingList from '../components/ShippingList.astro';
 import { count, projectsSummary, repoName } from '../data/format.ts';
 import { emptyEnvelope } from '../data/reader.ts';
-import { signals } from '../data/signals.ts';
+import { signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { site } from '../lib/site.ts';
 
@@ -26,7 +26,10 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
 
 <Base title="Stats">
   <h1>Stats</h1>
-  <p class="caption">Numbers from my own tools, refreshed when the site is built.</p>
+  <p class="caption">
+    Numbers from my own tools, refreshed when the site is built. On this day is fetched by your
+    browser, and shown only on that date in Rabat.
+  </p>
 
   <div class="stats-grid">
     <section class="panel m-vinyl" aria-labelledby="listening">
@@ -76,6 +79,19 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
         </>
       )}
       <Freshness envelope={listening} />
+      {/* Filled in, and shown, by src/scripts/history.ts (ADR 0030); hidden without it. */}
+      <div
+        class="history"
+        data-history-src={signalsMode === 'api'
+          ? `${signalsApiBase}/v1/listening-history`
+          : undefined}
+        hidden
+      >
+        <h3>On this day</h3>
+        <p>On <span class="history-date"></span> in past years:</p>
+        <ol></ol>
+        <p class="history-empty" hidden>Nothing played on this date in any past year.</p>
+      </div>
     </section>
 
     <section class="panel m-cork" aria-labelledby="shipping">
@@ -122,3 +138,7 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
     ))}
   </div>
 </Base>
+
+<script>
+import '../scripts/history.ts';
+</script>

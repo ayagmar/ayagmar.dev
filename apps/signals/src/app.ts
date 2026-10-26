@@ -3,6 +3,7 @@ import type { AppEnv } from './env.ts';
 import { notFound, onError } from './errors.ts';
 import { health } from './routes/v1/health.ts';
 import { listening } from './routes/v1/listening.ts';
+import { listeningHistory } from './routes/v1/listening-history.ts';
 import { llmUsage } from './routes/v1/llm-usage.ts';
 import { projects } from './routes/v1/projects.ts';
 import { push } from './routes/v1/push.ts';
@@ -18,6 +19,7 @@ export const app = new Hono<AppEnv>()
   .route('/v1/llm-usage', llmUsage)
   .route('/v1/shelf', shelf)
   .route('/v1/weather', weather)
+  .route('/v1/listening-history', listeningHistory)
   .route('/v1/push', push)
   .notFound(notFound)
   .onError(onError);

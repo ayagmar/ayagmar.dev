@@ -11,6 +11,13 @@ export interface SourceStatus {
   lastErrorCode: string | null;
   /** Unix milliseconds of the cron's last attempt (pull sources only). */
   lastAttemptAt: number | null;
+  /**
+   * The date the stored snapshot says it describes (`describedDate`, ADR 0030), or null for a
+   * snapshot that names none.
+   */
+  describedDate: string | null;
+  /** Unix ms before which the upstream asked not to be called again, from the last failure. */
+  retryAfterAt: number | null;
 }
 
 export interface StoredSnapshot extends SourceStatus {
@@ -23,5 +30,5 @@ export interface SnapshotStore {
   get(source: SourceId): Promise<StoredSnapshot | null>;
   list(): Promise<SourceStatus[]>;
   put(source: SourceId, snapshot: unknown, fetchedAt: string): Promise<void>;
-  recordFailure(source: SourceId, code: string, at: string): Promise<void>;
+  recordFailure(source: SourceId, code: string, at: string, retryAfterAt?: number): Promise<void>;
 }

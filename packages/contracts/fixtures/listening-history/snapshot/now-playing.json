@@ -1,0 +1,16 @@
+{
+  "describedDate": "2026-10-26",
+  "firstYear": 2025,
+  "years": [
+    {
+      "year": 2025,
+      "scrobbles": 2,
+      "read": 2,
+      "top": {
+        "track": "Cirrus",
+        "artist": "Bonobo",
+        "plays": 2
+      }
+    }
+  ]
+}

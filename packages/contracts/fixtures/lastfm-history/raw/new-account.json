@@ -1,0 +1,14 @@
+{
+  "describedDate": "2026-10-26",
+  "registration": {
+    "status": 200,
+    "body": {
+      "user": {
+        "registered": {
+          "unixtime": "1767227400"
+        }
+      }
+    }
+  },
+  "days": []
+}

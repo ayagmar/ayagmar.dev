@@ -1,0 +1,16 @@
+{
+  "describedDate": "2026-10-26",
+  "firstYear": 2025,
+  "years": [
+    {
+      "year": 2025,
+      "scrobbles": 450,
+      "read": 200,
+      "top": {
+        "track": "Late One",
+        "artist": "Late Artist",
+        "plays": 16
+      }
+    }
+  ]
+}

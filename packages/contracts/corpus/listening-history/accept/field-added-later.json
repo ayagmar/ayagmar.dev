@@ -1,0 +1,26 @@
+{
+  "source": "listening-history",
+  "version": 1,
+  "fetchedAt": "2026-10-26T16:40:00Z",
+  "stale": false,
+  "data": {
+    "describedDate": "2026-10-26",
+    "firstYear": 2023,
+    "years": [
+      {
+        "year": 2025,
+        "scrobbles": 29,
+        "read": 29,
+        "top": {
+          "track": "Nowhere to Run",
+          "artist": "LTN",
+          "plays": 2,
+          "url": "https://www.last.fm/music/LTN"
+        },
+        "minutes": 95
+      }
+    ],
+    "timeZone": "Africa/Casablanca"
+  },
+  "servedBy": "edge"
+}

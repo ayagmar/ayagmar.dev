@@ -82,6 +82,7 @@ export async function clearState() {
   await env.DB.batch([
     env.DB.prepare('DELETE FROM snapshots'),
     env.DB.prepare('DELETE FROM push_deliveries'),
+    env.DB.prepare('DELETE FROM pull_progress'),
   ]);
   await Promise.all(sourceIds.map((source) => caches.default.delete(`${origin}/v1/${source}`)));
 }

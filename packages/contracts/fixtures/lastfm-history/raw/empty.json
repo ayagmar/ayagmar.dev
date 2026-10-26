@@ -1,0 +1,75 @@
+{
+  "describedDate": "2026-10-26",
+  "registration": {
+    "status": 200,
+    "body": {
+      "user": {
+        "registered": {
+          "unixtime": "1674677885"
+        }
+      }
+    }
+  },
+  "days": [
+    {
+      "year": 2025,
+      "from": 1761433200,
+      "to": 1761519600,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "0",
+              "page": "1",
+              "perPage": "200",
+              "total": "0"
+            }
+          }
+        }
+      }
+    },
+    {
+      "year": 2024,
+      "from": 1729897200,
+      "to": 1729983600,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "0",
+              "page": "1",
+              "perPage": "200",
+              "total": "0"
+            }
+          }
+        }
+      }
+    },
+    {
+      "year": 2023,
+      "from": 1698274800,
+      "to": 1698361200,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "0",
+              "page": "1",
+              "perPage": "200",
+              "total": "0"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
