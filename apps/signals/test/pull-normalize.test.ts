@@ -5,6 +5,7 @@ import { rawFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { PullError, type PullErrorCode } from '../src/adapters/pull/index.ts';
 import { listening, weekStart } from '../src/adapters/pull/listening.ts';
+import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
 import { type ProjectsRaw, projects } from '../src/adapters/pull/projects.ts';
 import { shipping } from '../src/adapters/pull/shipping.ts';
 import { weather } from '../src/adapters/pull/weather.ts';
@@ -141,5 +142,132 @@ describe('weather (Open-Meteo)', () => {
     expect(weather.normalize(raw)).toMatchObject({ weatherCode: 100 });
     raw.body.current.weather_code = 3.5;
     check(() => weather.normalize(raw), { error: 'upstream_malformed' });
+  });
+});
+
+describe('monkeytype (personal bests)', () => {
+  const expected: Record<keyof typeof rawFixtures.monkeytype, Expected> = {
+    // Real, minimized: time bests at 15, 30 and 60 seconds, no word-count bests (`data: null`).
+    ok: { snapshot: snapshotFixtures.monkeytype.ok },
+    // A new account: `data: null` and an empty map are both no bests, every slot null.
+    empty: { snapshot: snapshotFixtures.monkeytype.empty },
+    // Other wordlists, difficulties and flags, empty and absent lengths, a custom length, ties.
+    partial: { snapshot: snapshotFixtures.monkeytype.partial },
+    // Ids, a name, an email and new fields beside the data and in a best: none comes through.
+    'sensitive-fields': { snapshot: snapshotFixtures.monkeytype['sensitive-fields'] },
+    // WPM as a string.
+    malformed: { error: 'upstream_malformed' },
+    // 470: the ApeKey is not valid. Words was never asked.
+    missing: { error: 'upstream_unauthorized' },
+  };
+
+  it.each(Object.entries(rawFixtures.monkeytype))('normalizes the %s case', (name, raw) => {
+    check(() => monkeytype.normalize(raw), expected[name as keyof typeof expected]);
+  });
+
+  type Best = { [key: string]: unknown };
+  const sixty = { wpm: 100, acc: 95, raw: 102, consistency: 80, timestamp: 1_700_000_000_000 };
+  const english = { ...sixty, language: 'english', difficulty: 'normal' };
+  const answer = (sixtySeconds: unknown, status = 200) => ({
+    time: { status, body: { message: 'ok', data: { '60': sixtySeconds } } },
+    words: { status: 200, body: { message: 'ok', data: null } },
+  });
+  const sixtyOf = (records: Best[]) => monkeytype.normalize(answer(records)).time[60];
+
+  // Catches a strict `=== false` that drops bests saved before Monkeytype stored these flags,
+  // and a truthy check that lets punctuation, numbers or lazy mode in.
+  it('reads an absent flag as off, and leaves out any best with a flag on', () => {
+    expect(sixtyOf([english])).toMatchObject({ wpm: 100, date: '2023-11-14' });
+    for (const flag of ['punctuation', 'numbers', 'lazyMode']) {
+      expect(sixtyOf([{ ...english, [flag]: true }]), flag).toBeNull();
+      expect(sixtyOf([{ ...english, [flag]: false }]), flag).toMatchObject({ wpm: 100 });
+    }
+    // Only the English wordlist at normal difficulty; a missing language is not English.
+    expect(sixtyOf([{ ...english, language: 'english_1k' }])).toBeNull();
+    expect(sixtyOf([{ ...english, difficulty: 'master' }])).toBeNull();
+  });
+
+  // Catches numbers taken from different records, or a tie broken by array order.
+  it('takes every number from the one best record, ties broken the same way in any order', () => {
+    const a = { ...english, wpm: 110, acc: 90, raw: 120, consistency: 60 };
+    const b = { ...english, wpm: 105, acc: 99, raw: 130, consistency: 90 };
+    expect(sixtyOf([a, b])).toEqual({
+      wpm: 110,
+      acc: 90,
+      raw: 120,
+      consistency: 60,
+      date: '2023-11-14',
+    });
+    const older = { ...english, timestamp: 1_600_000_000_000 };
+    for (const records of [
+      [english, older],
+      [older, english],
+    ]) {
+      expect(sixtyOf(records)).toMatchObject({ date: '2023-11-14' });
+    }
+  });
+
+  // Catches a value read as no best, or a timestamp read as seconds.
+  it.each([
+    ['WPM below 0', { ...english, wpm: -1 }],
+    ['accuracy over 100', { ...english, acc: 100.01 }],
+    ['consistency as a string', { ...english, consistency: '80' }],
+    ['a fractional timestamp', { ...english, timestamp: 1.5 }],
+    ['a timestamp past year 9999', { ...english, timestamp: 253_402_300_800_000 }],
+    ['no language', { ...sixty, difficulty: 'normal' }],
+    ['a null flag', { ...english, punctuation: null }],
+    ['a flag as a string', { ...english, lazyMode: 'false' }],
+  ])('fails on %s', (_case, record) => {
+    check(() => sixtyOf([record as Best]), { error: 'upstream_malformed' });
+  });
+
+  // Catches the docs' example shape, a single best in `data`, read as an account with none.
+  it('fails on an answer that is not a map of test lengths', () => {
+    check(
+      () =>
+        monkeytype.normalize({ ...answer(null), time: { status: 200, body: { data: english } } }),
+      {
+        error: 'upstream_malformed',
+      }
+    );
+    check(() => monkeytype.normalize(answer({ wpm: 100 })), { error: 'upstream_malformed' });
+  });
+
+  it('does not read a test length it does not show', () => {
+    const raw = answer([english]);
+    Object.assign(raw.time.body.data, { '45': [{ wpm: 'not read' }] });
+    expect(monkeytype.normalize(raw).time[60]).toMatchObject({ wpm: 100 });
+  });
+
+  // Catches a refused key read as rate limiting (or the reverse), and 479's Retry-After lost.
+  it.each([
+    [401, 'upstream_unauthorized'],
+    [403, 'upstream_unauthorized'],
+    [470, 'upstream_unauthorized'],
+    [471, 'upstream_unauthorized'],
+    [472, 'upstream_unauthorized'],
+    [429, 'upstream_rate_limited'],
+    [479, 'upstream_rate_limited'],
+    [301, 'upstream_http_error'],
+    [500, 'upstream_http_error'],
+    [503, 'upstream_http_error'],
+  ] as const)('reads HTTP %i as %s', (status, code) => {
+    const retryAt = Date.now() + 60_000;
+    const refused = { status, body: { message: 'no' }, retryAt };
+    for (const raw of [
+      { time: refused, words: null },
+      { time: answer([english]).time, words: refused },
+    ]) {
+      let thrown: unknown;
+      try {
+        monkeytype.normalize(raw);
+      } catch (error) {
+        thrown = error;
+      }
+      expect(thrown).toMatchObject({
+        code,
+        retryAt: code === 'upstream_rate_limited' ? retryAt : undefined,
+      });
+    }
   });
 });

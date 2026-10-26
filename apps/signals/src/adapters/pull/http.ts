@@ -8,6 +8,8 @@ export type PullErrorCode =
   | 'upstream_too_large'
   | 'upstream_not_found'
   | 'upstream_rate_limited'
+  /** The upstream refused the credential: revoked, inactive or malformed (ADR 0033). */
+  | 'upstream_unauthorized'
   | 'upstream_http_error'
   | 'upstream_error'
   | 'upstream_malformed'
@@ -84,6 +86,11 @@ export async function getJson(
     form?: URLSearchParams;
     /** This request's own deadline, whatever `signal` does. */
     timeoutMs?: number;
+    /**
+     * `manual` returns a 3xx as it is, without following it. Workers forwards headers, the
+     * `Authorization` header included, to wherever a followed redirect points (ADR 0033).
+     */
+    redirect?: 'manual';
   }
 ): Promise<UpstreamResponse> {
   const timeout = AbortSignal.timeout(options.timeoutMs ?? requestTimeoutMs);
@@ -92,10 +99,11 @@ export async function getJson(
     const response = await fetch(url, {
       headers: { accept: 'application/json', 'user-agent': userAgent, ...options.headers },
       signal,
+      ...(options.redirect === undefined ? {} : { redirect: options.redirect }),
       ...(options.form === undefined ? {} : { method: 'POST', body: options.form }),
     });
     const retryAt = retryAfter(response.headers.get('retry-after'), Date.now());
-    const text = await readText(response, options.maxBytes);
+    const text = await readText(response, options.maxBytes, signal);
     return {
       status: response.status,
       body: parseJson(text),
@@ -119,7 +127,12 @@ export async function getOptionalJson(
   }
 }
 
-async function readText(response: Response, maxBytes: number): Promise<string> {
+/** Reads the body, at most `maxBytes`, until `signal` aborts, even when the body stalls. */
+async function readText(
+  response: Response,
+  maxBytes: number,
+  signal: AbortSignal
+): Promise<string> {
   const declared = Number(response.headers.get('content-length'));
   if (declared > maxBytes) {
     await response.body?.cancel();
@@ -127,17 +140,27 @@ async function readText(response: Response, maxBytes: number): Promise<string> {
   }
   if (response.body === null) return '';
   const reader = response.body.getReader();
+  // A body that stalls after its headers is not tied to the request's signal everywhere (a
+  // mocked one is not), so the reads end when the signal aborts.
+  const stop = () => void reader.cancel().catch(() => {});
+  signal.addEventListener('abort', stop, { once: true });
   const chunks: Uint8Array[] = [];
   let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > maxBytes) {
-      await reader.cancel();
-      throw new PullError('upstream_too_large');
+  try {
+    signal.throwIfAborted();
+    for (;;) {
+      const { done, value } = await reader.read();
+      signal.throwIfAborted();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maxBytes) {
+        await reader.cancel();
+        throw new PullError('upstream_too_large');
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } finally {
+    signal.removeEventListener('abort', stop);
   }
   const bytes = new Uint8Array(size);
   let offset = 0;

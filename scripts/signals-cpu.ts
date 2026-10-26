@@ -22,7 +22,14 @@ const persist = join(app, '.wrangler/bench');
 const port = 8797;
 const warmRuns = 10;
 
-const allScenarios = ['listening', 'history-first', 'history-full-page', 'history-last-of-24'];
+const allScenarios = [
+  'listening',
+  'history-first',
+  'history-full-page',
+  'history-last-of-24',
+  'monkeytype',
+  'monkeytype-max',
+];
 const scenarios = process.argv.length > 2 ? process.argv.slice(2) : allScenarios;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

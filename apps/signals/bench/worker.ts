@@ -1,9 +1,10 @@
 // The CPU bench Worker (`just signals-cpu`, ADR 0030): runs one real cron invocation of a
-// pull adapter, D1 included, with Last.fm answered from memory, so the CPU it takes is
+// pull adapter, D1 included, with Last.fm and Monkeytype answered from memory, so the CPU it takes is
 // signals' own work. Never deployed; scripts/signals-cpu.ts drives it.
 import { rawFixtures } from '@min7/contracts/fixtures';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { listeningHistory } from '../src/adapters/pull/listening-history.ts';
+import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
 import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 
@@ -111,6 +112,38 @@ function listeningAnswers(): Answers {
   ]);
 }
 
+/**
+ * Monkeytype's answers near the adapter's 128 KiB cap (ADR 0033): in each mode, the four
+ * standard lengths and six custom ones, each with 40 bests across wordlists, difficulties and
+ * flags, about 200 B each, 2 standard ones among them.
+ */
+function monkeytypeAnswers(): Answers {
+  const languages = ['english', 'english_1k', 'english_10k', 'spanish', 'french'];
+  const bests = (length: number) =>
+    Array.from({ length: 40 }, (_, i) => ({
+      acc: 90 + (i % 10),
+      consistency: 70 + (i % 20),
+      difficulty: ['normal', 'expert'][i % 2],
+      lazyMode: i % 3 === 0,
+      language: languages[i % languages.length],
+      punctuation: i % 4 === 1,
+      numbers: i % 8 === 2,
+      raw: 100 + length / 10 + i,
+      wpm: 95 + length / 10 + i,
+      timestamp: Date.UTC(2025, 0, 1) + i * 86_400_000,
+    }));
+  const mode = (lengths: number[]) =>
+    JSON.stringify({
+      message: 'Personal bests retrieved',
+      data: Object.fromEntries(lengths.map((length) => [String(length), bests(length)])),
+    });
+  const custom = [5, 7, 45, 90, 180, 300];
+  return new Map([
+    ['monkeytype time', mode([15, 30, 60, 120, ...custom])],
+    ['monkeytype words', mode([10, 25, 50, 100, ...custom])],
+  ]);
+}
+
 /** What earlier invocations of a pull saved: `read` of the date's years, each summarized. */
 const progress = (years: number, read: number, name = 'Track') => {
   const today = dateAt(Date.now() / 1000);
@@ -137,6 +170,16 @@ const scenarios: Record<
   // A cron invocation with no adapter due: what every scenario's number is measured against.
   baseline: { answers: () => new Map() },
   listening: { adapter: listening, answers: listeningAnswers },
+  // The real answers (0.7 KiB), and answers near the adapter's body cap.
+  monkeytype: {
+    adapter: monkeytype,
+    answers: () =>
+      new Map([
+        ['monkeytype time', JSON.stringify(rawFixtures.monkeytype.ok.time.body)],
+        ['monkeytype words', JSON.stringify(rawFixtures.monkeytype.ok.words.body)],
+      ]),
+  },
+  'monkeytype-max': { adapter: monkeytype, answers: monkeytypeAnswers },
   // A pull's first invocation for the account today (three years): registration, then the
   // newest year's page, at 100 scrobbles (the real days had 29 to 99), and progress saved.
   'history-first': { adapter: listeningHistory, answers: () => historyAnswers(3, 100) },
@@ -158,6 +201,11 @@ const scenarios: Record<
 let prepared: Answers | undefined;
 
 async function answer(request: Request): Promise<Response> {
+  const url = new URL(request.url);
+  if (url.host === 'api.monkeytype.com') {
+    const body = prepared?.get(`monkeytype ${url.searchParams.get('mode')}`);
+    return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
+  }
   const form = new URLSearchParams(await request.text());
   const method = form.get('method') ?? '';
   const key = form.has('page')
