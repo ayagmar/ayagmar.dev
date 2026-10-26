@@ -37,6 +37,17 @@ Both projects:
 
 Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` route, which `wrangler deploy` creates. The `ayagmar.dev` zone must be on the same Cloudflare account. If the deploy cannot create it, add it under the Worker's **Settings → Domains & Routes** instead.
 
+## Secrets (signals)
+
+Set once, from a checkout with Wrangler logged in; each command prompts for the value and deploys a new version:
+
+```sh
+just signals-secret LASTFM_API_KEY   # from https://www.last.fm/api/account/create
+just signals-secret GITHUB_TOKEN     # optional: a fine-grained token with no permissions (public data)
+```
+
+Without `LASTFM_API_KEY` the listening pull fails with `not_configured`. Without `GITHUB_TOKEN` GitHub allows 60 requests an hour per IP, shared with other Workers, so the daily projects pull may be refused.
+
 ## D1 (signals)
 
 `apps/signals/wrangler.jsonc` declares the `DB` binding with placeholder ids. Before the first signals deploy:

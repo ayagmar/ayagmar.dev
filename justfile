@@ -135,6 +135,10 @@ signals-deploy:
 signals-preview:
     {{ signals }} wrangler preview --var COMMIT_SHA:{{ commit_sha }} --message "{{ commit_sha }}"
 
+# Signals: set a Worker secret, prompting for its value (deploys a new version)
+signals-secret name:
+    {{ signals }} wrangler secret put {{ quote(name) }}
+
 # List the 10 most recent deployments of a Worker (site or signals)
 deployments worker:
     pnpm --filter @min7/{{ worker }} exec wrangler deployments list
