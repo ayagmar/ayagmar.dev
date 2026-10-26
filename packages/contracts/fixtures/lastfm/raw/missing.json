@@ -1,0 +1,30 @@
+{
+  "recentTracks": {
+    "status": 404,
+    "body": {
+      "message": "User not found",
+      "error": 6
+    }
+  },
+  "topArtists": {
+    "status": 404,
+    "body": {
+      "message": "User not found",
+      "error": 6
+    }
+  },
+  "thisWeek": {
+    "status": 404,
+    "body": {
+      "message": "User not found",
+      "error": 6
+    }
+  },
+  "lastWeek": {
+    "status": 404,
+    "body": {
+      "message": "User not found",
+      "error": 6
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "ayagmar/llm-usage-metrics": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/ccdesk": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/pi-mobile": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/pi-extmgr": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/runnerd": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/kipple": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/niri-computer-use": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/headroom": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  }
+}

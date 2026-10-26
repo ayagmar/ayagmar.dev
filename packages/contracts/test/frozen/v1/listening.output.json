@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "nowPlaying": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "track": {
+              "type": "string",
+              "minLength": 1
+            },
+            "artist": {
+              "type": "string",
+              "minLength": 1
+            },
+            "album": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "url": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2048,
+                  "pattern": "^https:\\/\\/www\\.last\\.fm\\/[^\\s]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "track",
+            "artist",
+            "album",
+            "url"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recent": {
+      "maxItems": 10,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "track": {
+            "type": "string",
+            "minLength": 1
+          },
+          "artist": {
+            "type": "string",
+            "minLength": 1
+          },
+          "album": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2048,
+                "pattern": "^https:\\/\\/www\\.last\\.fm\\/[^\\s]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "playedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "track",
+          "artist",
+          "album",
+          "url",
+          "playedAt"
+        ]
+      }
+    },
+    "topArtists": {
+      "anyOf": [
+        {
+          "maxItems": 10,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "artist": {
+                "type": "string",
+                "minLength": 1
+              },
+              "plays": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "pattern": "^https:\\/\\/www\\.last\\.fm\\/[^\\s]*$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "artist",
+              "plays",
+              "url"
+            ]
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "scrobbles": {
+      "type": "object",
+      "properties": {
+        "thisWeek": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastWeek": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "thisWeek",
+        "lastWeek"
+      ]
+    }
+  },
+  "required": [
+    "nowPlaying",
+    "recent",
+    "topArtists",
+    "scrobbles"
+  ]
+}

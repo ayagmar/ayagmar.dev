@@ -1,0 +1,129 @@
+{
+  "projects": [
+    {
+      "slug": "llm-usage-metrics",
+      "repo": "ayagmar/llm-usage-metrics",
+      "name": "llm-usage-metrics",
+      "url": "https://github.com/ayagmar/llm-usage-metrics",
+      "description": "Token and cost reports for 17 AI coding agents (Claude Code, Codex, Gemini CLI, OpenCode, Copilot, pi and more), read from local session logs across all your machines",
+      "language": "TypeScript",
+      "stars": 35,
+      "archived": false,
+      "latestRelease": {
+        "tag": "v0.14.1",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.1",
+        "publishedAt": "2026-10-23T13:51:53Z"
+      },
+      "npm": {
+        "package": "llm-usage-metrics",
+        "monthlyDownloads": 1652
+      }
+    },
+    {
+      "slug": "ccdesk",
+      "repo": "ayagmar/ccdesk",
+      "name": "ccdesk",
+      "url": "https://github.com/ayagmar/ccdesk",
+      "description": "See and manage everything that shapes Claude Code on your machine: instructions, settings, permissions, hooks, MCP servers, agents, skills and memory. npx ccdesk",
+      "language": "TypeScript",
+      "stars": 4,
+      "archived": false,
+      "latestRelease": {
+        "tag": "v0.5.13",
+        "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.13",
+        "publishedAt": "2026-10-25T11:48:51Z"
+      },
+      "npm": {
+        "package": "ccdesk",
+        "monthlyDownloads": 1590
+      }
+    },
+    {
+      "slug": "pi-mobile",
+      "repo": "ayagmar/pi-mobile",
+      "name": "pi-mobile",
+      "url": "https://github.com/ayagmar/pi-mobile",
+      "description": "Android client for pi-rpc",
+      "language": "Kotlin",
+      "stars": 115,
+      "archived": false,
+      "latestRelease": null,
+      "npm": null
+    },
+    {
+      "slug": "pi-extmgr",
+      "repo": "ayagmar/pi-extmgr",
+      "name": "pi-extmgr",
+      "url": "https://github.com/ayagmar/pi-extmgr",
+      "description": "A better way to manage Pi extensions. Browse, install, enable/disable, and remove extensions from one place.",
+      "language": "TypeScript",
+      "stars": 72,
+      "archived": false,
+      "latestRelease": {
+        "tag": "v0.4.2",
+        "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.4.2",
+        "publishedAt": "2026-10-21T19:38:01Z"
+      },
+      "npm": {
+        "package": "pi-extmgr",
+        "monthlyDownloads": 2054
+      }
+    },
+    {
+      "slug": "runnerd",
+      "repo": "ayagmar/runnerd",
+      "name": "runnerd",
+      "url": "https://github.com/ayagmar/runnerd",
+      "description": "Local self-hosted GitHub Actions runner manager: ephemeral runners in fresh containers",
+      "language": "Rust",
+      "stars": 1,
+      "archived": false,
+      "latestRelease": {
+        "tag": "v0.0.17",
+        "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.17",
+        "publishedAt": "2026-10-26T01:43:13Z"
+      },
+      "npm": null
+    },
+    {
+      "slug": "kipple",
+      "repo": "ayagmar/kipple",
+      "name": "kipple",
+      "url": "https://github.com/ayagmar/kipple",
+      "description": "Finds what your dev tools and AI agents leave behind, explains it, and safely reclaims the space. Linux, macOS, Windows. (spec stage)",
+      "language": "Rust",
+      "stars": 1,
+      "archived": false,
+      "latestRelease": null,
+      "npm": null
+    },
+    {
+      "slug": "niri-computer-use",
+      "repo": "ayagmar/niri-computer-use",
+      "name": "niri-computer-use",
+      "url": "https://github.com/ayagmar/niri-computer-use",
+      "description": "MCP server for AI agents to observe and drive a niri Wayland desktop. Early development.",
+      "language": "Rust",
+      "stars": 6,
+      "archived": false,
+      "latestRelease": {
+        "tag": "v0.1.5",
+        "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.5",
+        "publishedAt": "2026-10-18T04:43:27Z"
+      },
+      "npm": null
+    },
+    {
+      "slug": "headroom",
+      "repo": "ayagmar/headroom",
+      "name": "headroom",
+      "url": "https://github.com/ayagmar/headroom",
+      "description": "How much of your Claude, Codex and Antigravity plan limits is left, in your Noctalia bar, with reset times and forecasts.",
+      "language": "Luau",
+      "stars": 1,
+      "archived": false,
+      "latestRelease": null,
+      "npm": null
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "projects": [
+    {
+      "slug": "pi-mobile",
+      "repo": "ayagmar/pi-mobile",
+      "name": "pi-mobile",
+      "url": "https://github.com/ayagmar/pi-mobile",
+      "description": null,
+      "language": "Kotlin",
+      "stars": null,
+      "archived": false,
+      "latestRelease": null,
+      "npm": {
+        "package": "pi-mobile",
+        "monthlyDownloads": "lots"
+      }
+    }
+  ]
+}

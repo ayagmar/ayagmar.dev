@@ -1,0 +1,69 @@
+{
+  "nowPlaying": {
+    "track": "Friendships and Love",
+    "artist": "Rocketship",
+    "album": "A Certain Sensation",
+    "url": "https://www.last.fm/music/Rocketship/_/Friendships+and+Love"
+  },
+  "recent": [
+    {
+      "track": "Half Right",
+      "artist": "Heatmiser",
+      "album": "Mic City Sons",
+      "url": "https://www.last.fm/music/Heatmiser/_/Half+Right",
+      "playedAt": "2026-10-26T08:53:00Z"
+    },
+    {
+      "track": "We're The Ordinary",
+      "artist": "Starflyer 59",
+      "album": "Old",
+      "url": "https://www.last.fm/music/Starflyer+59/_/We're+The+Ordinary",
+      "playedAt": "2026-10-26T08:48:00Z"
+    },
+    {
+      "track": "Which Will",
+      "artist": "Nick Drake",
+      "album": "Pink Moon",
+      "url": "https://www.last.fm/music/Nick+Drake/_/Which+Will",
+      "playedAt": "2026-10-26T08:45:00Z"
+    },
+    {
+      "track": "St. Ides Heaven - 25th Anniversary Mix",
+      "artist": "Elliott Smith",
+      "album": "Elliott Smith (Expanded 25th Anniversary Edition)",
+      "url": "https://www.last.fm/music/Elliott+Smith/_/St.+Ides+Heaven+-+25th+Anniversary+Mix",
+      "playedAt": "2026-10-26T08:42:00Z"
+    }
+  ],
+  "topArtists": [
+    {
+      "artist": "Elliott Smith",
+      "plays": 2423,
+      "url": "https://www.last.fm/music/Elliott+Smith"
+    },
+    {
+      "artist": "NTO",
+      "plays": 1559,
+      "url": "https://www.last.fm/music/NTO"
+    },
+    {
+      "artist": "surrenderdorothy",
+      "plays": 1297,
+      "url": "https://www.last.fm/music/surrenderdorothy"
+    },
+    {
+      "artist": "Daft Punk",
+      "plays": 986,
+      "url": "https://www.last.fm/music/Daft+Punk"
+    },
+    {
+      "artist": "Bones",
+      "plays": 975,
+      "url": "https://www.last.fm/music/Bones"
+    }
+  ],
+  "scrobbles": {
+    "thisWeek": 124,
+    "lastWeek": 647
+  }
+}
