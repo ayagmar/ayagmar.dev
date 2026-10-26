@@ -418,6 +418,55 @@ describe('a pull spread over cron invocations', () => {
   });
 });
 
+describe("Last.fm's Retry-After", () => {
+  /** Last.fm refusing with error 29 and HTTP 429, with `headers`. */
+  const refused = (headers: Record<string, string> = {}) =>
+    http.post('https://ws.audioscrobbler.com/2.0/', () =>
+      HttpResponse.json({ error: 29, message: 'Rate Limit Exceeded' }, { status: 429, headers })
+    );
+
+  /** The minutes from `from`, `count` triggers in all, at which the history asked Last.fm. */
+  async function asked(requests: unknown[], from: string, count: number) {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    const minutes: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const scheduled = at(from) + i * 60_000;
+      vi.setSystemTime(scheduled + 1500);
+      const before = requests.length;
+      await runScheduled(withKey, [listeningHistory], scheduled);
+      if (requests.length > before) minutes.push(new Date(scheduled).toISOString().slice(11, 16));
+    }
+    return minutes;
+  }
+
+  // Catches a retry before the time Last.fm named, which keeps the shared key refused, in
+  // both of Retry-After's forms.
+  it.each([
+    ['seconds', '3600'],
+    ['an HTTP date', 'Tue, 27 Oct 2026 01:01:02 GMT'],
+  ])('waits until the time it gives as %s', async (_form, value) => {
+    const requests = recordRequests(refused({ 'Retry-After': value }));
+    expect(await asked(requests, '2026-10-27T00:01:00Z', 62)).toEqual(['00:01', '01:02']);
+    expect(await health()).toMatchObject({ lastErrorCode: 'upstream_rate_limited' });
+  });
+
+  // Catches the new date's eagerness, or a restarted isolate, running before the deadline.
+  it('holds across midnight in Rabat', async () => {
+    const requests = recordRequests(refused({ 'Retry-After': '1200' }));
+    expect(await asked(requests, '2026-10-26T23:50:00Z', 23)).toEqual(['23:50', '00:11']);
+  });
+
+  // Catches error 29 without a usable header retried every minute, or never.
+  it.each([
+    ['no header', {}],
+    ['a header it cannot read', { 'Retry-After': 'soon' }],
+    ['a time already past', { 'Retry-After': 'Mon, 26 Oct 2026 00:00:00 GMT' }],
+  ])('falls back to 5 minutes with %s', async (_case, headers) => {
+    const requests = recordRequests(refused(headers));
+    expect(await asked(requests, '2026-10-27T00:01:00Z', 7)).toEqual(['00:01', '00:06']);
+  });
+});
+
 describe('when a pull is due', () => {
   const status = (fields: Partial<SourceStatus>): SourceStatus => ({
     source: 'listening-history',
@@ -426,6 +475,7 @@ describe('when a pull is due', () => {
     lastErrorCode: null,
     lastAttemptAt: null,
     describedDate: null,
+    retryAfterAt: null,
     ...fields,
   });
   const due = (fields: Partial<SourceStatus>, now: string) =>

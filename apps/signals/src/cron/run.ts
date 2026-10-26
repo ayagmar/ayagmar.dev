@@ -26,6 +26,12 @@ function errorCode(error: unknown, fallback: string): string {
   return typeof code === 'string' && errorCodePattern.test(code) ? code : fallback;
 }
 
+/** The adapter's own `retryAt` property: the upstream's `Retry-After` time, if it gave one. */
+function retryAt(error: unknown): number | undefined {
+  const at = (error as { retryAt?: unknown } | null)?.retryAt;
+  return typeof at === 'number' && Number.isFinite(at) ? at : undefined;
+}
+
 async function pull(adapter: PullAdapter, env: Env, store: SnapshotStore): Promise<void> {
   let stage = 'fetch_failed';
   try {
@@ -39,7 +45,7 @@ async function pull(adapter: PullAdapter, env: Env, store: SnapshotStore): Promi
     // A pull spread over several invocations that read its part (ADR 0030) did not fail.
     if (code === 'in_progress') logEvent('log', 'pull in progress', { source: adapter.id });
     else logEvent('warn', 'pull failed', { source: adapter.id, code });
-    await store.recordFailure(adapter.id, code, new Date().toISOString());
+    await store.recordFailure(adapter.id, code, new Date().toISOString(), retryAt(error));
   }
 }
 
@@ -48,7 +54,8 @@ async function pull(adapter: PullAdapter, env: Env, store: SnapshotStore): Promi
  * Workers Free allows 10 ms of CPU and 50 subrequests per invocation, and one cold adapter
  * can need most of that (ADR 0009), so adapters never share an invocation. The one that runs
  * is the most overdue: never tried first, then the one furthest past the time it is due,
- * `intervalSeconds` after its last attempt unless the adapter's `dueAt` says otherwise. A
+ * `intervalSeconds` after its last attempt unless the adapter's `dueAt` says otherwise, and
+ * never before a time the upstream gave in `Retry-After`. A
  * source pulled every minute therefore skips a minute now and then, and none waits behind it.
  */
 export async function runScheduled(
@@ -61,6 +68,8 @@ export async function runScheduled(
   let next: { adapter: PullAdapter; overdueMs: number } | undefined;
   for (const adapter of adapters) {
     const status = statuses.get(adapter.id);
+    // Never before the time an upstream asked for, with no early allowance (ADR 0030).
+    if (status?.retryAfterAt != null && scheduledTime < status.retryAfterAt) continue;
     const last = status?.lastAttemptAt;
     const overdueMs =
       status === undefined || last == null

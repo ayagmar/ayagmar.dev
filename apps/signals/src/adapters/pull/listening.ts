@@ -130,7 +130,7 @@ export function readLastfm<T>(response: UpstreamResponse, schema: Schema<T>): T 
   const failure = lastfmErrorSchema.safeParse(response.body);
   if (failure.success) {
     if (failure.data.error === 6) throw new PullError('upstream_not_found'); // no such user
-    if (failure.data.error === 29) throw new PullError('upstream_rate_limited');
+    if (failure.data.error === 29) throw new PullError('upstream_rate_limited', response.retryAt);
     throw new PullError('upstream_error');
   }
   return parseBody(response, schema);

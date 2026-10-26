@@ -12,11 +12,11 @@ signals keeps the latest snapshot of five sources, takes pushes from two produce
 
 `apps/signals/migrations/0001_snapshots_and_push_deliveries.sql`:
 
-| Table             | Key                       | Columns                                                                                                                         |
-| ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `snapshots`       | `source`                  | `json`, `fetched_at`, `last_success_at`, `last_error_code`, `last_attempt_at` (pull), `last_push_at`, `last_delivery_id` (push) |
-| `push_deliveries` | `(producer, delivery_id)` | `body_sha256`, `received_at`; index on `received_at`                                                                            |
-| `pull_progress`   | `source`                  | `described_date`, `step`, `json`: what a pull spread over invocations has read (`0002_pull_progress.sql`, ADR 0030)             |
+| Table             | Key                       | Columns                                                                                                                                                     |
+| ----------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `snapshots`       | `source`                  | `json`, `fetched_at`, `last_success_at`, `last_error_code`, `last_attempt_at`, `retry_after_at` (pull, ADR 0030), `last_push_at`, `last_delivery_id` (push) |
+| `push_deliveries` | `(producer, delivery_id)` | `body_sha256`, `received_at`; index on `received_at`                                                                                                        |
+| `pull_progress`   | `source`                  | `described_date`, `step`, `json`: what a pull spread over invocations has read (`0002_pull_progress.sql`, ADR 0030)                                         |
 - `fetched_at` is when the data was true: the fetch time for pulled sources, the producer's `sentAt` for pushed ones. It is served as `fetchedAt`. `last_success_at` is when signals stored the snapshot, and is what `/v1/health` reports.
 - TEXT times are UTC with milliseconds (`toISOString()`), so they compare correctly as strings; INTEGER times are Unix milliseconds.
 - Migrations are expand/contract only, so the Worker version before a deploy, or after a rollback, runs against the current schema. A rollback does not roll back D1.
@@ -48,7 +48,7 @@ A zero-row upsert is a successful statement in D1, not a rollback, so the second
 
 ### Cron
 
-One trigger, every minute (`* * * * *`). `runScheduled` (`src/cron/run.ts`) reads each source's last attempt and runs one adapter from `adapters/pull/index.ts` per invocation, with a 20 s timeout: of those whose due time has passed (30 s early allowed, since the trigger fires once a minute), the most overdue, a never-tried one first. The due time is `intervalSeconds` after the last attempt unless the adapter's `dueAt` says otherwise, as the history's does by date (ADR 0030). One cold adapter can use most of the 10 ms CPU and 50-subrequest budget of an invocation (ADR 0009), so adapters never share one. A source pulled every minute skips a minute when another source is due, which keeps it well inside its 15-minute stale threshold. A success stores the normalized snapshot; a failure stores a short code (the adapter's own `code` property if it is a lowercase identifier, else `fetch_failed`, `normalize_failed`, `store_failed` or `timeout`) and keeps the last good snapshot. Then it deletes `push_deliveries` older than 7 days, 500 rows per query, at most 10 queries per run. It works with an empty adapter list. Cron Triggers never run for Previews.
+One trigger, every minute (`* * * * *`). `runScheduled` (`src/cron/run.ts`) reads each source's last attempt and runs one adapter from `adapters/pull/index.ts` per invocation, with a 20 s timeout: of those whose due time has passed (30 s early allowed, since the trigger fires once a minute), the most overdue, a never-tried one first. The due time is `intervalSeconds` after the last attempt unless the adapter's `dueAt` says otherwise, as the history's does by date, and never before a `Retry-After` time the last failure recorded (ADR 0030). One cold adapter can use most of the 10 ms CPU and 50-subrequest budget of an invocation (ADR 0009), so adapters never share one. A source pulled every minute skips a minute when another source is due, which keeps it well inside its 15-minute stale threshold. A success stores the normalized snapshot; a failure stores a short code (the adapter's own `code` property if it is a lowercase identifier, else `fetch_failed`, `normalize_failed`, `store_failed` or `timeout`) and keeps the last good snapshot. Then it deletes `push_deliveries` older than 7 days, 500 rows per query, at most 10 queries per run. It works with an empty adapter list. Cron Triggers never run for Previews.
 
 ### Previews
 
