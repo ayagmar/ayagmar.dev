@@ -34,6 +34,20 @@ test.describe('on a 390px phone', () => {
   });
 });
 
+// Catches a Menu panel taller than a short landscape phone, which leaves the theme switch below
+// the screen with no way to scroll to it.
+test.describe('on a 568x320 landscape phone', () => {
+  test.use({ viewport: { width: 568, height: 320 }, hasTouch: true });
+
+  test('Menu scrolls inside itself so a theme button can be pressed', async ({ page }) => {
+    await page.goto(post);
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const theme = page.getByRole('group', { name: 'Theme' });
+    await theme.getByRole('button', { name: 'Night' }).click({ timeout: 3000 });
+    await expect(theme.getByRole('button', { pressed: true })).toHaveText('Night');
+  });
+});
+
 // Catches reader colours (text, links, the quote and rule pixels, the paper diagram cards) that
 // pass in day and fail on the night ground; pages.spec.ts checks the day.
 for (const width of [360, 1280]) {

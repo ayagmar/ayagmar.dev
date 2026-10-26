@@ -349,6 +349,9 @@ kbd {
 .site-header nav[popover] {
   inset: var(--header-h) var(--gutter) auto auto;
   width: min(17rem, 100% - 2 * var(--gutter));
+  /* On a short landscape phone the panel scrolls inside itself, so the theme switch stays reachable. */
+  max-block-size: calc(100dvh - var(--header-h) - var(--gutter));
+  overflow-y: auto;
   margin: 0;
   border: 0;
   padding: 0.5rem 1.1rem 1.1rem;
