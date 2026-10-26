@@ -53,14 +53,15 @@ const standIns = (fetch: (id: SourceId) => Promise<unknown>) =>
         vi.setSystemTime(Date.now() + (durationMs[id] ?? 1000));
         return fetch(id);
       }),
-      { dueAt }
+      // The history's snapshot is stored as it comes, so its `describedDate` is seen.
+      id === 'listening-history' ? { dueAt, normalize: (raw: unknown) => raw } : { dueAt }
     )
   );
 
 /**
  * A stand-in for the history's upstream (ADR 0030): a pull of three years takes three
  * invocations, its progress kept for the Rabat date the pull began on, as the real one keeps
- * it in D1. `published` holds the time of each finished pull.
+ * it in D1, and publishes that date. `published` holds the time of each finished pull.
  */
 function historyStandIn() {
   const progress = { date: '', read: 0 };
@@ -74,7 +75,7 @@ function historyStandIn() {
       if (++progress.read < 3) throw Object.assign(new Error('part'), { code: 'in_progress' });
       progress.date = '';
       published.push(Date.now());
-      return {};
+      return { describedDate: date };
     },
   };
 }

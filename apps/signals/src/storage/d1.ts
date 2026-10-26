@@ -7,9 +7,11 @@ type StatusRow = {
   last_success_at: string | null;
   last_error_code: string | null;
   last_attempt_at: number | null;
+  described_date: unknown;
 };
 
-const statusColumns = 'source, fetched_at, last_success_at, last_error_code, last_attempt_at';
+const statusColumns =
+  "source, fetched_at, last_success_at, last_error_code, last_attempt_at, json_extract(json, '$.describedDate') AS described_date";
 
 /** Every stored time is UTC with milliseconds, so the TEXT columns sort as instants. */
 export const utc = (time: string | number) => new Date(time).toISOString();
@@ -23,6 +25,7 @@ const toStatus = (row: StatusRow): SourceStatus | null => {
     lastSuccessAt: row.last_success_at,
     lastErrorCode: row.last_error_code,
     lastAttemptAt: row.last_attempt_at,
+    describedDate: typeof row.described_date === 'string' ? row.described_date : null,
   };
 };
 

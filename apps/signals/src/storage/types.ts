@@ -11,6 +11,11 @@ export interface SourceStatus {
   lastErrorCode: string | null;
   /** Unix milliseconds of the cron's last attempt (pull sources only). */
   lastAttemptAt: number | null;
+  /**
+   * The date the stored snapshot says it describes (`describedDate`, ADR 0030), or null for a
+   * snapshot that names none.
+   */
+  describedDate: string | null;
 }
 
 export interface StoredSnapshot extends SourceStatus {

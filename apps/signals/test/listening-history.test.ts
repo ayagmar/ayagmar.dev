@@ -18,6 +18,7 @@ import {
 } from '../src/adapters/pull/listening-history.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import { D1SnapshotStore } from '../src/storage/d1.ts';
+import { D1ProgressStore } from '../src/storage/progress.ts';
 import type { SourceStatus } from '../src/storage/types.ts';
 import { clearState, fetchApi } from './helpers.ts';
 
@@ -27,6 +28,7 @@ beforeAll(() => network.enable());
 afterEach(() => {
   network.resetHandlers();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 afterAll(() => network.disable());
 beforeEach(clearState);
@@ -306,6 +308,41 @@ describe('a pull spread over cron invocations', () => {
     expect(await health()).toMatchObject({ lastErrorCode: 'date_changed' });
   });
 
+  // Catches a snapshot for yesterday, written after midnight because D1 was slow, taken for
+  // today's: the new date's pull would then wait 7 hours.
+  it("starts the new date's pull at once after yesterday's lands past midnight", async () => {
+    const ok = snapshotFixtures['listening-history'].ok;
+    // The last part of 26 October's pull: 2025 and 2024 are read.
+    await env.DB.prepare(
+      "INSERT INTO pull_progress (source, described_date, step, json) VALUES ('listening-history', '2026-10-26', 2, ?)"
+    )
+      .bind(JSON.stringify({ firstYear: ok.firstYear, read: 2, years: ok.years.slice(0, 2) }))
+      .run();
+    await new D1SnapshotStore(env.DB).recordFailure(
+      'listening-history',
+      'in_progress',
+      '2026-10-26T23:58:54Z'
+    );
+    const requests = recordRequests(...upstreamHandlers());
+    // D1 takes 7 seconds to clear the progress.
+    const clear = D1ProgressStore.prototype.clear;
+    vi.spyOn(D1ProgressStore.prototype, 'clear').mockImplementation(async function (
+      this: D1ProgressStore
+    ) {
+      vi.setSystemTime(Date.now() + 7_000);
+      return clear.call(this);
+    });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(at('2026-10-26T23:59:54Z'));
+    await runScheduled(withKey, [listeningHistory], at('2026-10-26T23:59:00Z'));
+    expect(await served()).toMatchObject({ data: { describedDate: '2026-10-26' } });
+
+    const before = requests.length;
+    vi.setSystemTime(at('2026-10-27T00:01:01.500Z'));
+    await runScheduled(withKey, [listeningHistory], at('2026-10-27T00:01:00Z'));
+    expect(requests.slice(before).map((r) => r.form.method)).toContain('user.getinfo');
+  });
+
   // Catches a slow write from before midnight replacing the new date's history.
   it("never replaces a date's history with an earlier date's", async () => {
     const store = new D1SnapshotStore(env.DB);
@@ -388,6 +425,7 @@ describe('when a pull is due', () => {
     lastSuccessAt: null,
     lastErrorCode: null,
     lastAttemptAt: null,
+    describedDate: null,
     ...fields,
   });
   const due = (fields: Partial<SourceStatus>, now: string) =>
@@ -400,7 +438,8 @@ describe('when a pull is due', () => {
   ])('is overdue at the first trigger of a new date after a pull at %s', (last, now, midnight) => {
     // A success, or a failure, minutes before midnight does not hold back the new date, and
     // the history goes ahead of sources that fell due at midnight.
-    for (const fields of [{ fetchedAt: last }, { lastErrorCode: 'upstream_timeout' }]) {
+    const yesterday = { describedDate: last.slice(0, 10) };
+    for (const fields of [yesterday, { ...yesterday, lastErrorCode: 'upstream_timeout' }]) {
       expect(at(due({ lastAttemptAt: at(last), ...fields }, now))).toBeLessThan(at(midnight));
     }
   });
@@ -414,7 +453,7 @@ describe('when a pull is due', () => {
     ).toBe('2026-10-26T00:01:30.000Z');
     expect(
       due(
-        { lastAttemptAt: at('2026-10-26T00:02:00Z'), fetchedAt: '2026-10-26T00:02:00Z' },
+        { lastAttemptAt: at('2026-10-26T00:02:00Z'), describedDate: '2026-10-26' },
         '2026-10-26T01:00:00Z'
       )
     ).toBe('2026-10-26T07:02:00.000Z');

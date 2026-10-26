@@ -216,19 +216,24 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
   intervalSeconds: refreshMs / 1000,
 
   /**
-   * On a new date in Rabat, with the snapshot for an earlier one, due since the last attempt,
-   * so the first trigger of the date runs it ahead of sources only just due; soon again while
+   * Whether the snapshot is today's is read from its `describedDate`, never from when it was
+   * written. Without today's, on a new date in Rabat or after a success that published an
+   * earlier date's, due since the last attempt, so the next trigger runs it ahead of sources
+   * only just due; soon again while
    * a pull is in progress; after a failure on a date with no snapshot, again
    * in 5 minutes, then at half the time since midnight, at most an hour later; with today's
    * snapshot, 7 hours after the last attempt (ADR 0030).
    */
   dueAt(status: SourceStatus, now: number): number {
     const last = status.lastAttemptAt ?? Number.NEGATIVE_INFINITY;
-    const midnight = rabatDayStart(rabatDate(now)) * 1000;
+    const today = rabatDate(now);
+    const midnight = rabatDayStart(today) * 1000;
     if (status.lastErrorCode === 'in_progress' && last >= midnight) return last + continueMs;
-    const current = status.fetchedAt !== null && Date.parse(status.fetchedAt) >= midnight;
-    if (current) return last + refreshMs;
-    if (last < midnight) return last;
+    // The snapshot's own date, never when it was written: a write that D1 held past midnight
+    // is still yesterday's.
+    if (status.describedDate === today) return last + refreshMs;
+    // A new date, or a success that published an earlier date's: due since the last attempt.
+    if (last < midnight || status.lastErrorCode === null) return last;
     return last + Math.min(maxRetryMs, Math.max(retryMs, (last - midnight) / 2));
   },
 
