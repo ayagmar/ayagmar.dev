@@ -48,6 +48,22 @@ test.describe('on a 568x320 landscape phone', () => {
   });
 });
 
+// Catches a Menu left open on a phone staying a floating panel after the window grows to the
+// desktop layout (a rotated tablet, a resized window), where the nav row should be in the header.
+test('an open Menu closes when the window grows to the desktop layout', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(post);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await expect(page.locator('#site-menu')).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const link = page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'TIL' });
+  await expect(link).toBeVisible();
+  const header = await page.locator('.site-header').boundingBox();
+  const box = await link.boundingBox();
+  expect(box?.y).toBeLessThan((header?.y ?? 0) + (header?.height ?? 0));
+  await expect(page.locator('#site-menu')).not.toHaveJSProperty('popoverOpen', true);
+});
+
 // Catches reader colours (text, links, the quote and rule pixels, the paper diagram cards) that
 // pass in day and fail on the night ground; pages.spec.ts checks the day.
 for (const width of [360, 1280]) {
