@@ -1,0 +1,89 @@
+# Posts each pull request's Preview URLs as one comment, updated as Workers Builds finishes.
+# Cloudflare's GitHub app reports Workers builds as check runs only (it comments for Pages),
+# and its check links to the dashboard, not to the Preview. The Preview's slug is in that
+# link (`.../previews/<slug>/builds/...`), so this needs no Cloudflare credential
+# (`just ci-policy`). Not a check: nothing here gates a merge (ADR 0018).
+name: Preview links
+
+on:
+  check_run:
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: preview-links-${{ github.event.check_run.check_suite.head_branch }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  comment:
+    if: >-
+      github.event.check_run.app.slug == 'cloudflare-workers-and-pages' &&
+      startsWith(github.event.check_run.name, 'Workers Builds: ') &&
+      github.event.check_run.check_suite.head_branch != 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      checks: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      BRANCH: ${{ github.event.check_run.check_suite.head_branch }}
+      SHA: ${{ github.event.check_run.head_sha }}
+      # The account's workers.dev subdomain: Preview URLs are <slug>-<worker>.<subdomain>.workers.dev.
+      SUBDOMAIN: ayagmar
+    steps:
+      - name: Post or update the Preview links comment
+        run: |
+          set -euo pipefail
+          marker='<!-- min7-preview-links -->'
+
+          pr=$(gh pr list --repo "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [[ -z $pr ]]; then
+            echo "No open pull request for $BRANCH"
+            exit 0
+          fi
+
+          # Latest Workers Builds run per Worker on this commit, so a re-run replaces a failure.
+          runs=$(gh api --paginate "repos/$REPO/commits/$SHA/check-runs?per_page=100" \
+            --jq '.check_runs[] | select(.app.slug == "cloudflare-workers-and-pages" and (.name | startswith("Workers Builds: ")))' |
+            jq -s 'group_by(.name) | map(max_by(.started_at))')
+
+          rows=''
+          while IFS=$'\t' read -r worker conclusion details; do
+            if [[ $conclusion != success ]]; then
+              rows+="| \`$worker\` | build ${conclusion:-pending}: [logs]($details) |"$'\n'
+              continue
+            fi
+            slug=$(sed -nE 's|.*/previews/([a-z0-9-]+)/builds/.*|\1|p' <<<"$details")
+            url="https://$slug-$worker.$SUBDOMAIN.workers.dev"
+            # The site serves /, signals only its API.
+            path=/
+            [[ $worker == min7-signals ]] && path=/v1/health
+            if [[ -n $slug ]] && curl -fsS -o /dev/null --max-time 15 --retry 3 --retry-all-errors "$url$path"; then
+              rows+="| \`$worker\` | $url$path |"$'\n'
+            else
+              rows+="| \`$worker\` | built, URL not answering yet: [build]($details) |"$'\n'
+            fi
+          done < <(jq -r '.[] | [(.name | ltrimstr("Workers Builds: ")), (.conclusion // ""), .details_url] | @tsv' <<<"$runs")
+
+          body="$marker
+          Previews for ${SHA:0:7}:
+
+          | Worker | Preview |
+          | --- | --- |
+          $rows"
+
+          existing=$(gh api --paginate "repos/$REPO/issues/$pr/comments?per_page=100" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n 1)
+          if [[ -n $existing ]]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$existing" -f body="$body" > /dev/null
+          else
+            gh api --method POST "repos/$REPO/issues/$pr/comments" -f body="$body" > /dev/null
+          fi
+          echo "Updated the Preview links on #$pr"
