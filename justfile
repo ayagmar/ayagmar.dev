@@ -3,10 +3,15 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # The version of every build: Workers Builds' commit, else the local checkout, else "dev".
+# renovate: datasource=npm depName=renovate
+renovate_version := "44.178.3"
 commit_sha := env("WORKERS_CI_COMMIT_SHA", `git rev-parse HEAD 2>/dev/null || echo dev`)
 site := "pnpm --filter @min7/site exec"
 signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
+
+# Pinned tools from scripts/bootstrap.sh come first, so local runs match CI.
+export PATH := justfile_directory() / ".tools/bin" + ":" + env("PATH")
 
 [private]
 default:
@@ -57,14 +62,29 @@ typecheck: typegen
     {{ site }} svelte-check --fail-on-warnings
 
 # Unit and Worker tests
-test:
+test: test-contracts test-signals test-site test-scripts
+
+# Contracts: zod and JSON Schema agree on the corpus, frozen v1 consumers still parse
+test-contracts:
     {{ contracts }} vitest run
+
+# Signals: Worker tests in workerd
+test-signals:
     {{ signals }} vitest run
+
+# Site: unit tests (feeds, headers, frontmatter schema, postbuild)
+test-site:
     {{ site }} vitest run
-    node --test scripts/check-boundaries.test.ts scripts/workers-config.test.ts
+
+# Repo scripts: boundaries, Wrangler configs, CI plan and gate, secret scanner
+test-scripts:
+    node --test scripts/*.test.ts
 
 # Browser tests against the built site served by its real Worker (wrangler dev)
-e2e: site-build
+e2e: site-build e2e-test
+
+# Browser tests against an existing apps/site/dist (CI downloads it from the build job)
+e2e-test:
     {{ site }} playwright test
 
 # Download the Chromium build Playwright uses (once per Playwright version)
@@ -91,11 +111,34 @@ contracts-schema:
 contracts-schema-check:
     node packages/contracts/scripts/export-schema.ts --check
 
-# Scan git history and built output for secrets
-scan-secrets:
-    gitleaks git --redact --no-banner .
-    gitleaks dir --redact --no-banner apps/site/dist
-    if [ -d apps/signals/dist ]; then gitleaks dir --redact --no-banner apps/signals/dist; fi
+# Scan the git history for secrets (gitleaks)
+scan-secrets-source: (tools "gitleaks")
+    gitleaks git --redact=100 --no-banner --verbose .
+
+# Scan the built site and signals bundle for secrets; run site-build and signals-build first
+scan-secrets: scan-site scan-signals
+
+# Scan apps/site/dist for secrets
+scan-site: (tools "gitleaks")
+    node scripts/scan-secrets.ts apps/site/dist
+    gitleaks dir --redact=100 --no-banner --verbose apps/site/dist
+
+# Scan the signals bundle (apps/signals/dist) for secrets
+scan-signals: (tools "gitleaks")
+    node scripts/scan-secrets.ts apps/signals/dist
+    gitleaks dir --redact=100 --no-banner --verbose apps/signals/dist
+
+# Site: fail if the built site has no search index (run after site-build)
+site-dist-check:
+    node -e 'const e = require("./apps/site/dist/pagefind/pagefind-entry.json"); const n = Object.values(e.languages).reduce((s, l) => s + l.page_count, 0); if (n === 0) throw new Error("pagefind indexed no pages"); console.log(`pagefind: ${n} pages indexed`)'
+
+# Links in the built site: internal ones offline first, then external ones (lychee.toml)
+links: links-internal
+    lychee --config lychee.toml --root-dir "{{ justfile_directory() }}/apps/site/dist" --remap '^https://ayagmar\.dev/?(.*)$ file://{{ justfile_directory() }}/apps/site/dist/$1' apps/site/dist
+
+# Links in the built site that stay on ayagmar.dev, without network
+links-internal: (tools "lychee")
+    lychee --config lychee.toml --offline --root-dir "{{ justfile_directory() }}/apps/site/dist" --remap '^https://ayagmar\.dev/?(.*)$ file://{{ justfile_directory() }}/apps/site/dist/$1' apps/site/dist
 
 # Site: dev server (no search index; run site-build for that)
 site-dev:
@@ -142,3 +185,45 @@ deployments worker:
 # Roll a Worker (site or signals) back to a version id, or to the previous one when omitted
 rollback worker version="":
     pnpm --filter @min7/{{ worker }} exec wrangler rollback {{ version }}
+
+# Install pinned CI tools into .tools/bin (sha256-checked): just tools gitleaks lychee
+tools *names:
+    ./scripts/bootstrap.sh {{ names }}
+
+# CI: which jobs this change needs (see scripts/ci.ts)
+ci-plan:
+    node scripts/ci.ts plan
+
+# CI: pass only if every planned job succeeded ($NEEDS is the needs context)
+ci-gate:
+    node scripts/ci.ts gate
+
+# CI: the plan and gate decisions for known changes, and ci.yml matching them
+ci-test:
+    node --test scripts/ci-filter.test.ts scripts/ci-policy.test.ts
+
+# CI: no Wrangler call or Cloudflare credential in GitHub Actions
+ci-policy:
+    node scripts/ci-policy.ts
+
+# Lint GitHub workflows and actions (actionlint with shellcheck, zizmor)
+workflows-lint: (tools "actionlint" "shellcheck" "zizmor")
+    actionlint
+    zizmor --no-progress .
+
+# Lint and format-check shell scripts
+shell-lint: (tools "shellcheck" "shfmt")
+    git ls-files -z '*.sh' .githooks | xargs -0 shellcheck
+    git ls-files -z '*.sh' .githooks | xargs -0 shfmt --diff --indent 2 --case-indent
+
+# Known vulnerabilities in locked dependencies (osv-scanner)
+osv: (tools "osv-scanner")
+    osv-scanner scan source --lockfile pnpm-lock.yaml
+
+# Validate renovate.json with the pinned Renovate
+renovate-check:
+    npm exec --yes --package renovate@{{ renovate_version }} -- renovate-config-validator --strict --no-global renovate.json
+
+# Apply the main branch ruleset and merge settings on GitHub (owner, needs gh with admin)
+repo-ruleset:
+    ./scripts/repo-ruleset.sh
