@@ -1,0 +1,38 @@
+---
+import type { Envelope } from '@min7/contracts';
+import { projectPath, type SiteProject } from '../lib/projects.ts';
+import { type Post, postPath } from '../lib/writing.ts';
+import Freshness from './Freshness.astro';
+import ProjectLinks from './ProjectLinks.astro';
+import ProjectStats from './ProjectStats.astro';
+
+interface Props {
+  project: SiteProject;
+  envelope: Envelope<unknown>;
+  /** The project's other posts, newest first. */
+  more: readonly Post[];
+}
+
+const { project, envelope, more } = Astro.props;
+const headingId = `project-${project.slug}`;
+---
+
+<aside class="project-card" aria-labelledby={headingId}>
+  <h2 id={headingId}>About <a href={projectPath(project.slug)}>{project.slug}</a></h2>
+  {project.summary !== null && <p class="project-summary">{project.summary}</p>}
+  <ProjectStats project={project} />
+  <ProjectLinks project={project} />
+  {project.live !== null && <Freshness envelope={envelope} />}
+  {more.length > 0 && (
+    <section class="project-more" aria-labelledby={`${headingId}-more`}>
+      <h3 id={`${headingId}-more`}>More on {project.slug}</h3>
+      <ul>
+        {more.map((post) => (
+          <li>
+            <a href={postPath(post.id)}>{post.data.title}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</aside>

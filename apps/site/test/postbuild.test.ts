@@ -62,4 +62,30 @@ describe('postbuild CSP', () => {
     expect(result.stderr).toContain('writing/styled.html');
     expect(result.stderr).toContain('<style>');
   });
+
+  // A GitHub description becomes a project page's meta description; Astro escapes the quotes
+  // but leaves angle brackets, which are text inside an attribute, not an element.
+  it('ignores tag-like text inside quoted attribute values', () => {
+    const description = 'Fixes <script>alert(2)</script> and <style>p{}</style> in docs';
+    const result = build({
+      'projects/ccdesk.html': page('').replace(
+        '<head>',
+        `<head><meta name="description" content="${description}"><meta content='<script>x</script>'>`
+      ),
+    });
+    expect(result.stderr).toBe('');
+    expect(result.status).toBe(0);
+  });
+
+  it('still rejects inline scripts that only pretend to load a src', () => {
+    for (const script of [
+      '<script data-note="src=/x.js">fetch("/x")</script>',
+      '<SCRIPT>fetch("/x")</SCRIPT>',
+      '<p title="a>b"></p><script>fetch("/x")</script>',
+    ]) {
+      const result = build({ 'writing/sneaky.html': page(script) });
+      expect(result.status, script).toBe(1);
+      expect(result.stderr, script).toContain('writing/sneaky.html');
+    }
+  });
 });

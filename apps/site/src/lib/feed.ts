@@ -1,3 +1,5 @@
+import type { ProjectSlug } from '@min7/contracts';
+import { projectPath } from './projects.ts';
 import { site, siteUrl } from './site.ts';
 import { isoDay, lastUpdated, type Post, postPath, tagPath } from './writing.ts';
 
@@ -29,16 +31,45 @@ const epoch = new Date('2026-10-26T00:00:00Z');
 
 const absolute = (path: string) => new URL(path, siteUrl).href;
 
-/** Paths of the site-wide feeds, or of one tag's feeds. */
-export function feedPaths(tag?: string) {
-  const base = tag === undefined ? '' : tagPath(tag);
+/** Which posts a feed carries: all of them, one tag's, or one project's. */
+export type FeedScope = { tag: string } | { project: ProjectSlug };
+
+/** The page, title and description of a feed, and which posts belong in it. */
+export function feedScope(scope?: FeedScope) {
+  if (scope === undefined) {
+    return {
+      page: '/writing',
+      title: `${site.name} writing`,
+      description: site.description,
+      includes: (_post: Post) => true,
+    };
+  }
+  if ('tag' in scope) {
+    return {
+      page: tagPath(scope.tag),
+      title: `${site.name} writing tagged ${scope.tag}`,
+      description: `Posts tagged ${scope.tag} on ${site.name}.`,
+      includes: (post: Post) => post.data.tags.includes(scope.tag),
+    };
+  }
+  return {
+    page: projectPath(scope.project),
+    title: `${site.name} writing about ${scope.project}`,
+    description: `Posts about ${scope.project} on ${site.name}.`,
+    includes: (post: Post) => post.data.projects.includes(scope.project),
+  };
+}
+
+/** Paths of the site-wide feeds, or of one tag's or project's feeds. */
+export function feedPaths(scope?: FeedScope) {
+  const base = scope === undefined ? '' : feedScope(scope).page;
   return { rss: `${base}/feed.xml`, atom: `${base}/atom.xml` };
 }
 
-/** `posts` must already be the published set; a tag narrows it to that tag. */
-export function buildFeed(posts: readonly Post[], tag?: string): Feed {
-  const selected = tag === undefined ? posts : posts.filter((post) => post.data.tags.includes(tag));
-  const entries = selected.map(
+/** `posts` must already be the published set; a scope narrows it to a tag or a project. */
+export function buildFeed(posts: readonly Post[], scope?: FeedScope): Feed {
+  const { page, title, description, includes } = feedScope(scope);
+  const entries = posts.filter(includes).map(
     (post): FeedEntry => ({
       id: `tag:ayagmar.dev,${isoDay(post.data.date)}:${postPath(post.id)}`,
       url: absolute(postPath(post.id)),
@@ -49,14 +80,14 @@ export function buildFeed(posts: readonly Post[], tag?: string): Feed {
       tags: post.data.tags,
     })
   );
-  const paths = feedPaths(tag);
+  const paths = feedPaths(scope);
   const newest =
     entries.length === 0 ? epoch.getTime() : Math.max(...entries.map((e) => e.updated.getTime()));
   return {
-    id: `tag:ayagmar.dev,2026:${tag === undefined ? '/writing' : tagPath(tag)}`,
-    title: tag === undefined ? `${site.name} writing` : `${site.name} writing tagged ${tag}`,
-    description: tag === undefined ? site.description : `Posts tagged ${tag} on ${site.name}.`,
-    htmlUrl: absolute(tag === undefined ? '/writing' : tagPath(tag)),
+    id: `tag:ayagmar.dev,2026:${page}`,
+    title,
+    description,
+    htmlUrl: absolute(page),
     rssUrl: absolute(paths.rss),
     atomUrl: absolute(paths.atom),
     updated: new Date(newest),

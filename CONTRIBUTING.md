@@ -9,15 +9,16 @@
 
 Frontmatter:
 
-| Field     | Required | Rule                                                                 |
-| --------- | -------- | -------------------------------------------------------------------- |
-| `title`   | yes      | Non-empty.                                                           |
-| `date`    | yes      | `YYYY-MM-DD`, the publish date.                                      |
-| `updated` | no       | `YYYY-MM-DD`, not before `date`. Shown as "last updated".            |
-| `summary` | yes      | One sentence. Used in lists, feeds and search.                       |
-| `tags`    | no       | Lowercase slugs like `rust` or `home-lab`, no repeats.               |
-| `series`  | no       | A lowercase slug shared by the posts of a series.                    |
-| `draft`   | no       | `true` keeps the post out of production builds. Defaults to `false`. |
+| Field      | Required | Rule                                                                 |
+| ---------- | -------- | -------------------------------------------------------------------- |
+| `title`    | yes      | Non-empty.                                                           |
+| `date`     | yes      | `YYYY-MM-DD`, the publish date.                                      |
+| `updated`  | no       | `YYYY-MM-DD`, not before `date`. Shown as "last updated".            |
+| `summary`  | yes      | One sentence. Used in lists, feeds and search.                       |
+| `tags`     | no       | Lowercase slugs like `rust` or `home-lab`, no repeats.               |
+| `series`   | no       | A lowercase slug shared by the posts of a series.                    |
+| `draft`    | no       | `true` keeps the post out of production builds. Defaults to `false`. |
+| `projects` | no       | Slugs of the featured projects the post is about, like `[runnerd]`.  |
 
 Any other field fails the build, so a typo such as `sumary:` does not pass silently. The error names the file and the field.
 
@@ -46,6 +47,27 @@ pie
 - `title="..."` after `mermaid` names the diagram and shows the text as a caption below it. It is the only option the code block accepts.
 
 The build fails, naming the file and line, when a diagram has no name, has a Mermaid error or uses an unknown option. Check how it looks with `just dev`. Prefer `flowchart TB` to `LR` once a flowchart has more than three nodes: a wide diagram shrinks on phones, text included. Any diagram type Mermaid 12.1 supports works ([Pele](https://pele.run) renders them); colors come from the site theme, so leave out `style` and `classDef` unless a color carries meaning.
+
+## Projects
+
+The featured projects are listed in `packages/contracts/src/projects.ts`. Each gets a page at `/projects/<slug>` and feeds at `/projects/<slug>/feed.xml` and `atom.xml`. A post with `projects: [<slug>]` shows that project's card and appears on its page.
+
+To describe a project, add `content/projects/<slug>.md`:
+
+```md
+---
+
+slug: runnerd
+status: active # active, maintained, archived or spec
+tagline: 'One line shown under the name.' # optional
+subdomain: runnerd # optional: links https://runnerd.ayagmar.dev
+order: 1 # optional: lower comes first on /projects
+---
+
+The long description, in Markdown.
+```
+
+The build fails when `slug` is not a featured project or differs from the file name, and warns about featured projects that have no file.
 
 ## Code changes
 

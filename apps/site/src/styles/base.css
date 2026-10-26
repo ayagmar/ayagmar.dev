@@ -122,6 +122,18 @@ input {
   }
 }
 
+/* Project names, descriptions and release tags come from GitHub and may hold long unbroken
+   tokens: let them break anywhere, and let flex children of the page header shrink. */
+.project,
+.project-card,
+.projects {
+  overflow-wrap: anywhere;
+}
+
+.project > header > * {
+  min-inline-size: 0;
+}
+
 .posts {
   padding: 0;
   list-style: none;

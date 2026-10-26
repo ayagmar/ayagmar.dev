@@ -6,6 +6,8 @@ interface Result {
   url: string;
   excerpt: string;
   meta: { title?: string };
+  /** Set on post pages by `data-pagefind-filter="project"`. */
+  filters: { project?: string[] };
 }
 interface Pagefind {
   debouncedSearch(term: string): Promise<{ results: { data(): Promise<Result> }[] } | null>;
@@ -99,6 +101,9 @@ const href = (url: string) => url.replace(/\.html$/, '');
     {#each results as result (result.url)}
       <li>
         <a href={href(result.url)}>{result.meta.title ?? href(result.url)}</a>
+        {#if result.filters.project?.length}
+          <p class="search-projects">About {result.filters.project.join(', ')}</p>
+        {/if}
         <!-- Pagefind escapes the excerpt and only adds <mark>. -->
         <p>{@html result.excerpt}</p>
       </li>

@@ -9,7 +9,7 @@ apps/signals         Hono Worker on api.ayagmar.dev. Pulls sources on a cron, ac
                      serves the latest snapshot per source. Knows no pages.
 packages/contracts   zod schemas for every snapshot, push payload and the response envelope,
                      their JSON Schema export, and the shared test fixtures.
-content/             Posts in Markdown. Data for the site, not code.
+content/             Posts and optional project descriptions in Markdown. Data for the site, not code.
 ```
 
 Dependencies point one way:
@@ -79,6 +79,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                                  |
 | Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                                         |
 | Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                                            |
+| Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025)                                       |
 | RSS and Atom (one model, two renderers)                                   | `apps/site/src/lib/feed.ts`                                                                                   |
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                         |
 | Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                              |
