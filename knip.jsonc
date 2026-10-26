@@ -33,9 +33,7 @@
         "e2e/**/*.ts"
       ],
       // Run by justfile recipes, which knip does not read.
-      "ignoreDependencies": ["@astrojs/check", "pagefind", "svelte-check"],
-      // poppler-utils, system tools the resume e2e test reads the PDF with.
-      "ignoreBinaries": ["pdftotext", "pdfinfo"]
+      "ignoreDependencies": ["@astrojs/check", "pagefind", "svelte-check"]
     }
   }
 }
