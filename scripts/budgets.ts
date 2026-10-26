@@ -73,7 +73,42 @@ const tag =
 const attribute = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 const inlineCode = /<(script|style)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
 const staticImport = /\b(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+)["']/g;
-const cssReference = /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)|url\(\s*["']?([^"')]+?)["']?\s*\)/g;
+// CSS function and at-rule names are case-insensitive. `@import` takes a string or url();
+// url() a quoted or bare URL; image-set() also takes bare strings as URLs.
+const cssImport = /@import\s*(?:url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^"')\s;]+))/gi;
+const cssUrl = /\burl\(\s*(?:"([^"]*)"|'([^']*)'|([^"')\s]*))\s*\)/gi;
+const cssImageSet = /(?:-webkit-)?image-set\(/gi;
+
+/** The URLs a stylesheet makes the browser load; `imported` marks another stylesheet. */
+function cssUrls(css: string): { url: string; imported: boolean }[] {
+  const code = css.replace(/\/\*[\s\S]*?\*\//g, ' ');
+  const first = (groups: (string | undefined)[]) => groups.find((g) => g !== undefined) ?? '';
+  const out = [...code.matchAll(cssImport)].map((m) => ({
+    url: first(m.slice(1)),
+    imported: true,
+  }));
+  for (const m of code.matchAll(cssUrl)) {
+    // An @import url() is already listed as an import.
+    if (!/@import\s*$/i.test(code.slice(0, m.index)))
+      out.push({ url: first(m.slice(1)), imported: false });
+  }
+  // image-set()'s own strings, at its top level: a string inside type() is a MIME type.
+  for (const m of code.matchAll(cssImageSet)) {
+    let depth = 1;
+    for (let i = m.index + m[0].length; i < code.length && depth > 0; i++) {
+      const char = code[i];
+      if (char === '(') depth++;
+      else if (char === ')') depth--;
+      else if (char === '"' || char === "'") {
+        const end = code.indexOf(char, i + 1);
+        if (end === -1) break;
+        if (depth === 1) out.push({ url: code.slice(i + 1, end), imported: false });
+        i = end;
+      }
+    }
+  }
+  return out;
+}
 
 /** A character reference as a browser reads it; one out of range becomes U+FFFD. */
 const codePoint = (n: number) => String.fromCodePoint(n > 0 && n <= 0x10ffff ? n : 0xfffd);
@@ -161,11 +196,10 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     references(readFileSync(join(dist, file), 'utf8'), `/${file}`, file, into);
   };
   const references = (css: string, from: string, where: string, into: Set<string>) => {
-    const code = css.replace(/\/\*[\s\S]*?\*\//g, '');
-    for (const [, imported, url] of code.matchAll(cssReference)) {
-      const target = resolve((imported ?? url ?? '').trim(), from, where);
+    for (const { url, imported } of cssUrls(css)) {
+      const target = resolve(url, from, where);
       if (!target) continue;
-      if (imported !== undefined) cssClosure(target, into);
+      if (imported) cssClosure(target, into);
       else into.add(target);
     }
   };

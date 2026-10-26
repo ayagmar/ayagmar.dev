@@ -90,6 +90,28 @@ describe('page weight and fonts', () => {
     ]);
   });
 
+  it('counts what CSS loads in every form a browser accepts', () => {
+    write({
+      'index.html': page('<p>hi</p>', '<link rel="stylesheet" href="/a.css">'),
+      'a.css': [
+        '@IMPORT "/b.css";',
+        'a{background:URL("/one.png")}',
+        'b{background-image:image-set("/two.avif" type("image/avif") 1x, url(/two.png) 2x)}',
+        'i{background-image:-WebKit-Image-Set("/three.png" 1x)}',
+      ].join(''),
+      'b.css': 'p{color:red}',
+      'one.png': incompressible(52_000),
+      'two.avif': incompressible(52_000),
+      'two.png': incompressible(1),
+      'three.png': incompressible(52_000),
+    });
+    const report = measure(dist, limits);
+    assert.ok((report.pages[0]?.weight ?? 0) > 156_000, `weight ${report.pages[0]?.weight}`);
+    assert.deepEqual(report.problems, [
+      `index.html: weighs ${report.pages[0]?.weight} B (gzip, no fonts), budget 153600 B`,
+    ]);
+  });
+
   it('leaves fonts out of page weight and checks them in total, woff2 only', () => {
     const css = '@font-face{font-family:a;src:url(/fonts/a.woff2)}@import "/b.css";';
     write({
@@ -127,8 +149,11 @@ describe('external origins', () => {
           '<!-- <link rel="stylesheet" href="https://commented.example.com/x.css"> -->',
         ].join('')
       ),
-      'a.css':
+      'a.css': [
         '@import url("https://fonts.googleapis.com/css2?family=X");/* url(https://c.example.com) */',
+        'a{background:URL("https://upper.example.com/a.png")}',
+        'b{background:image-set("https://set.example.com/a.png" 1x)}',
+      ].join(''),
     });
     const found = problems().flatMap((p) => /loads (\S+) from another origin/.exec(p)?.[1] ?? []);
     assert.deepEqual(found.sort(), [
@@ -137,6 +162,8 @@ describe('external origins', () => {
       'https://fonts.googleapis.com/css2?family=X',
       'https://fonts.gstatic.com/',
       'https://img.example.com/a.png',
+      'https://set.example.com/a.png',
+      'https://upper.example.com/a.png',
     ]);
   });
 
