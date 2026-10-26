@@ -4,6 +4,11 @@
 `room-night.png` is the desk at night, lit by the lamp, the monitor and the fairy lights;
 `room-day.png` is the same desk in daylight with the lamp off. Everything is geometry plus an
 ordered (Bayer) dither onto a fixed palette; no photo or portrait is involved.
+
+The room details (ADR 0027) add four layers the home page script picks by Casablanca time:
+`window-{day,dusk,night}.png`, only the view through the window on a transparent scene, and
+`room-night-dim.png`, the night room with the lamp turned down between 02:00 and 07:00. The
+moon is not drawn here: the script draws the real phase over the window.
 Run `just scene`; the outputs in src/assets/ are committed.
 
 The hotspot rectangles over the scene live in src/styles/room.css, in percentages of these
@@ -18,39 +23,50 @@ from PIL import Image, ImageDraw
 OUT_DIR = Path(__file__).resolve().parent.parent / "src" / "assets"
 
 
-def draw(DAY: bool) -> Image.Image:
+def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0) -> tuple[Image.Image, Image.Image]:
+    """The room in daylight or at night, and the mask of the view through the window that
+    nothing in the room covers. `sky` is that view (day, dusk or night, the theme's own by
+    default) and `lamp` scales the desk lamp's light."""
+    sky = sky or ("day" if DAY else "night")
     W, H = 480, 160
     rnd = random.Random(7)
 
     A = Image.new("RGB", (W, H), (0, 0, 0))   # albedo
     E = Image.new("L", (W, H), 0)             # emissive mask (255 = self-lit)
-    da, de = ImageDraw.Draw(A), ImageDraw.Draw(E)
+    V = Image.new("L", (W, H), 0)             # the view through the window (255), see draw()
+    da, de, dv = ImageDraw.Draw(A), ImageDraw.Draw(E), ImageDraw.Draw(V)
+    view = [False]                            # whether shapes drawn now are the view
 
 
     def R(x0, y0, x1, y1, col, em=False):
         da.rectangle([x0, y0, x1 - 1, y1 - 1], fill=col)
         de.rectangle([x0, y0, x1 - 1, y1 - 1], fill=255 if em else 0)
+        dv.rectangle([x0, y0, x1 - 1, y1 - 1], fill=255 if view[0] else 0)
 
 
     def P(x, y, col, em=False):
         if 0 <= x < W and 0 <= y < H:
             A.putpixel((x, y), col)
             E.putpixel((x, y), 255 if em else 0)
+            V.putpixel((x, y), 255 if view[0] else 0)
 
 
     def POLY(pts, col, em=False):
         da.polygon(pts, fill=col)
         de.polygon(pts, fill=255 if em else 0)
+        dv.polygon(pts, fill=255 if view[0] else 0)
 
 
     def ELL(x0, y0, x1, y1, col, em=False):
         da.ellipse([x0, y0, x1 - 1, y1 - 1], fill=col)
         de.ellipse([x0, y0, x1 - 1, y1 - 1], fill=255 if em else 0)
+        dv.ellipse([x0, y0, x1 - 1, y1 - 1], fill=255 if view[0] else 0)
 
 
     def LINE(pts, col, width=1, em=False):
         da.line(pts, fill=col, width=width)
         de.line(pts, fill=255 if em else 0, width=width)
+        dv.line(pts, fill=255 if view[0] else 0, width=width)
 
 
     # ---------------------------------------------------------------- materials
@@ -103,11 +119,13 @@ def draw(DAY: bool) -> Image.Image:
         for x in range(55, 155):
             if in_arch(x, y, RAD + 4) and not in_arch(x, y, RAD):
                 P(x, y, (178, 164, 170))
-    # sky
-    if DAY:
-        SKY = [(110, 168, 222), (136, 186, 230), (164, 204, 236), (196, 222, 238), (214, 226, 232), (222, 222, 214)]
-    else:
-        SKY = [(8, 10, 34), (14, 18, 52), (26, 28, 72), (52, 44, 96), (104, 62, 98), (168, 92, 90)]
+    # sky: from here to the mullions, everything drawn is the view
+    view[0] = True
+    SKY = {
+        "day": [(110, 168, 222), (136, 186, 230), (164, 204, 236), (196, 222, 238), (214, 226, 232), (222, 222, 214)],
+        "dusk": [(30, 34, 68), (52, 44, 96), (104, 62, 98), (168, 92, 90), (222, 150, 78), (250, 196, 104)],
+        "night": [(8, 10, 34), (14, 18, 52), (26, 28, 72), (52, 44, 96), (104, 62, 98), (168, 92, 90)],
+    }[sky]
     for y in range(0, 90):
         for x in range(CX - RAD, CX + RAD + 1):
             if in_arch(x, y, RAD):
@@ -116,22 +134,19 @@ def draw(DAY: bool) -> Image.Image:
                 a, b = SKY[int(i)], SKY[min(len(SKY) - 1, int(i) + 1)]
                 f = i - int(i)
                 P(x, y, tuple(int(a[k] + (b[k] - a[k]) * f) for k in range(3)), True)
-    if DAY:
+    if sky == "day":
         # two small clouds
         for cx0, cy0, cw in ((70, 24, 16), (114, 16, 20)):
             ELL(cx0, cy0, cx0 + cw, cy0 + 6, (246, 246, 242), True)
             ELL(cx0 + 4, cy0 - 3, cx0 + cw - 4, cy0 + 4, (250, 250, 248), True)
     else:
-        # stars
+        # stars; at dusk only the brightest
         for sx, sy in ((78, 22), (92, 14), (118, 18), (130, 30), (84, 40), (110, 28), (72, 52), (136, 46), (100, 10)):
-            if in_arch(sx, sy, RAD - 1):
+            if in_arch(sx, sy, RAD - 1) and (sky == "night" or sy < 16):
                 P(sx, sy, (226, 230, 255), True)
-        # crescent moon
-        ELL(114, 20, 126, 32, (232, 232, 250), True)
-        ELL(117, 18, 129, 30, (26, 28, 72), True)
     # skyline (rooftops, a minaret, a dome, a palm): whitewashed walls by day, silhouettes by night
-    SIL = (232, 222, 204) if DAY else (8, 9, 22)
-    SIL_D = (196, 176, 150) if DAY else SIL
+    SIL = (232, 222, 204) if sky == "day" else (8, 9, 22)
+    SIL_D = (196, 176, 150) if sky == "day" else SIL
     R(64, 82, 144, 90, SIL, True)
     R(66, 76, 80, 84, SIL, True)
     R(82, 72, 96, 84, SIL, True)
@@ -144,16 +159,17 @@ def draw(DAY: bool) -> Image.Image:
     R(117, 47, 123, 52, SIL_D, True)
     R(119, 42, 121, 47, SIL_D, True)
     P(120, 40, SIL_D, True)
-    R(117, 62, 123, 63, (46, 140, 110) if DAY else (26, 28, 72), True)  # shaft band
-    lit = (96, 80, 90) if DAY else AMBER
+    R(117, 62, 123, 63, (46, 140, 110) if sky == "day" else (26, 28, 72), True)  # shaft band
+    lit = (96, 80, 90) if sky == "day" else AMBER
     for wx, wy in ((69, 79), (86, 76), (102, 81), (136, 78), (120, 70), (120, 76)):
         P(wx, wy, lit, True)
     P(120, 57, lit, True)
     # palm
-    PALM = (52, 96, 62) if DAY else SIL
-    R(70, 66, 72, 82, (110, 80, 50) if DAY else SIL, True)
+    PALM = (52, 96, 62) if sky == "day" else SIL
+    R(70, 66, 72, 82, (110, 80, 50) if sky == "day" else SIL, True)
     for ex, ey in ((60, 64), (66, 60), (78, 60), (84, 64), (64, 70), (80, 70)):
         LINE([(71, 66), (ex, ey)], PALM, 1, True)
+    view[0] = False
     # mullions + sill
     R(CX - 1, 8, CX + 1, 90, (178, 164, 170))
     R(57 + 7, 58, 144, 60, (178, 164, 170))
@@ -294,7 +310,8 @@ def draw(DAY: bool) -> Image.Image:
     P(138, 92, BRASS_D)
     POLY([(104, 74), (126, 70), (132, 84), (100, 90)], (40, 70, 130))
     POLY([(104, 74), (126, 70), (127, 73), (106, 77)], (110, 150, 215))
-    ELL(108, 88, 124, 94, (210, 204, 186) if DAY else (255, 232, 168), not DAY)  # bulb
+    bulb = (210, 204, 186) if DAY else (255, 232, 168) if lamp == 1 else (222, 150, 78)
+    ELL(108, 88, 124, 94, bulb, not DAY)
 
     # ------------------------------------------------------------ monitor
     R(172, 40, 268, 101, (30, 32, 46))
@@ -384,7 +401,7 @@ def draw(DAY: bool) -> Image.Image:
     else:
         AMB = (0.32, 0.31, 0.48)
         SRC = [  # (x, y, radius, intensity, rgb, up-weight)
-            (116, 94, 105, 1.55, (1.00, 0.74, 0.40), 0.5),
+            (116, 94, 105, 1.55 * lamp, (1.00, 0.74, 0.40), 0.5),
             (418, 94, 85, 0.75, (1.0, 0.72, 0.38), 0.6),
             (220, 72, 130, 1.0, (0.30, 0.95, 0.72), 1.0),
             (104, 52, 72, 0.40, (0.45, 0.55, 1.00), 1.0),
@@ -416,7 +433,7 @@ def draw(DAY: bool) -> Image.Image:
         (150, 110, 40), (214, 170, 70), (122, 82, 140), (60, 40, 80),
         (232, 232, 250), (26, 28, 72), (104, 62, 98), (168, 92, 90),
     ]
-    if DAY:
+    if DAY or sky == "day":
         PAL += [
             (110, 168, 222), (150, 196, 234), (196, 222, 238), (240, 226, 200),
             (250, 248, 240), (232, 222, 204), (196, 176, 150), (170, 146, 160), (204, 184, 196),
@@ -452,10 +469,29 @@ def draw(DAY: bool) -> Image.Image:
             off = (BAYER[y % 8][x % 8] / 64 - 0.5) * SPREAD
             OUT.putpixel((x, y), nearest(max(0, min(255, r + off)), max(0, min(255, g + off)), max(0, min(255, b + off))))
 
-    return OUT.quantize(colors=len(PAL) + 4, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+    room = OUT.quantize(colors=len(PAL) + 4, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+    return room, V
 
 
-for name, day in (("room-night.png", False), ("room-day.png", True)):
+def window_only(room: Image.Image, view: Image.Image) -> Image.Image:
+    """`room` with everything but the uncovered view through the window made transparent. The
+    frame, the mullions and the lamp stay in the room underneath, so they keep its light."""
+    # Stay a palette image: one spare palette entry becomes the transparent one.
+    clear = len(room.getpalette()) // 3
+    out = room.copy()
+    out.putpalette(room.getpalette() + [0, 0, 0])
+    out.paste(clear, mask=Image.eval(view, lambda v: 255 - v))
+    out.info["transparency"] = clear
+    return out
+
+
+outputs = {
+    "room-night.png": draw(False)[0],
+    "room-day.png": draw(True)[0],
+    "room-night-dim.png": draw(False, lamp=0.35)[0],
+    **{f"window-{sky}.png": window_only(*draw(False, sky)) for sky in ("day", "dusk", "night")},
+}
+for name, image in outputs.items():
     target = OUT_DIR / name
-    draw(day).save(target, optimize=True)
+    image.save(target, optimize=True)
     print(f"{target.name}: {target.stat().st_size / 1024:.1f} KiB")
