@@ -34,7 +34,8 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
                                                                                  ▼
                                                      build: astro build reads /v1/* (or fixtures)
                                                      browser: now-playing island reads /v1/listening,
-                                                              room script reads /v1/weather
+                                                              room script reads /v1/weather,
+                                                              /stats script reads /v1/listening-history
 ```
 
 Every read API response is an envelope from `contracts`:
@@ -51,7 +52,7 @@ Every read API response is an envelope from `contracts`:
 
 `data` is `null` until a source succeeds once. `stale` is computed when the response is served, by `isStale(fetchedAt, threshold, now)` with the per-source threshold in `packages/contracts/src/sources.ts`. `fetchedAt` is the fetch time for pulled sources and the producer's `sentAt` for pushed ones. If signals is down or a response fails validation, the site build still succeeds and renders an empty state.
 
-The read routes, `/v1/health`, both push routes and the cron are in place ([ADR 0010](docs/adr/0010-storage-d1.md), [ADR 0011](docs/adr/0011-push-intake-security.md)). The cron runs the pull adapters for listening (Last.fm), shipping (repo-pulse), projects (GitHub and npm) and weather (Open-Meteo), one per invocation ([ADR 0009](docs/adr/0009-pull-adapters.md), [ADR 0029](docs/adr/0029-rabat-weather-in-the-window.md)). Locally and in Previews the site renders the shared fixtures (ADR 0015).
+The read routes, `/v1/health`, both push routes and the cron are in place ([ADR 0010](docs/adr/0010-storage-d1.md), [ADR 0011](docs/adr/0011-push-intake-security.md)). The cron runs the pull adapters for listening (Last.fm), shipping (repo-pulse), projects (GitHub and npm), weather (Open-Meteo) and the listening history behind "On this day" (Last.fm, one past year per invocation), one adapter per invocation ([ADR 0009](docs/adr/0009-pull-adapters.md), [ADR 0029](docs/adr/0029-rabat-weather-in-the-window.md), [ADR 0030](docs/adr/0030-on-this-day-in-listening.md)). Locally and in Previews the site renders the shared fixtures (ADR 0015).
 
 A push goes through, in order: content type, a 64 KiB streamed body cap, token (and for trellis an HMAC over timestamp and body), the wire schema, a delivery-id lookup, the rate limiter, a freshness window, the allowlist projection, and one D1 batch that stores the snapshot and the delivery together or neither.
 
@@ -97,6 +98,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Home page room: scene, hotspots, list                                     | `apps/site/src/lib/room.ts`, `src/styles/room.css`, `src/assets/room-*.png` (drawn by `scripts/scene.py`)     |
 | Room clock: sun, moon, Rabat time (ADR 0027)                              | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/window-*.png`                                  |
 | Weather in the window: code table, art (ADR 0029)                         | `apps/site/src/lib/weather.ts`, `src/scripts/room.ts`, `src/assets/weather-*.png`                             |
+| On this day: Rabat dates, history check (ADR 0030)                        | `packages/contracts/src/rabat.ts`, `apps/site/src/lib/history.ts`, `src/scripts/history.ts`                   |
 | Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                    |
 | Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`         |
 | Commands                                                                  | `justfile`                                                                                                    |

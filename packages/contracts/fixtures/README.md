@@ -55,7 +55,7 @@ The history behind "On this day" (`lastfm-history`, ADR 0030) is one pull per Ra
 | `single-item`          | A day of one scrobble, sent as a bare object.                                                            |
 | `now-playing`          | A now-playing track first in the list; it has no date and is not counted.                                |
 | `leap-day`             | 2028-02-29: only 2024 has the date; 2025 to 2027 are not asked for.                                      |
-| `feb-28`               | 2027-02-28: 2024's day ends where 29 February starts; the 29th's scrobbles are never asked for.             |
+| `feb-28`               | 2027-02-28: 2024's day ends where 29 February starts; the 29th's scrobbles are never asked for.          |
 | `ties`                 | Tracks tied on plays: the earliest first scrobble wins, then artist and title by code point.             |
 | `approximate`          | 450 scrobbles, 200 read: the count is Last.fm's total and the top track is marked as among the 200 read. |
 | `error-in-200`         | Error 29 with HTTP 200 for one year: `upstream_rate_limited`, nothing published.                         |
