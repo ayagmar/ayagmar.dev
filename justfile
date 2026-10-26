@@ -200,7 +200,7 @@ ci-gate:
 
 # CI: the plan and gate decisions for known changes, and ci.yml matching them
 ci-test:
-    node --test scripts/ci-filter.test.ts scripts/ci-policy.test.ts
+    node --test scripts/ci-*.test.ts
 
 # CI: no Wrangler call or Cloudflare credential in GitHub Actions
 ci-policy:

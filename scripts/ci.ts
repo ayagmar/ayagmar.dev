@@ -119,13 +119,19 @@ export function gate(needs: Record<string, Need>): string[] {
 }
 
 function changedFiles(): readonly string[] | 'all' {
-  const git = (...args: string[]) =>
-    execFileSync('git', args, { encoding: 'utf8' }).split('\n').filter(Boolean);
+  // NUL-separated paths are never quoted; without rename detection a moved file lists both
+  // its old and its new path, so the unit it left is checked too.
+  const diff = (...range: string[]) =>
+    execFileSync('git', ['diff', '--name-only', '--no-renames', '-z', ...range], {
+      encoding: 'utf8',
+    })
+      .split('\0')
+      .filter(Boolean);
   const event = process.env.GITHUB_EVENT_NAME;
   // A pull request checks out its merge commit: parent 1 is the base branch.
-  if (event === 'pull_request') return git('diff', '--name-only', 'HEAD^1', 'HEAD');
+  if (event === 'pull_request') return diff('HEAD^1', 'HEAD');
   if (event) return 'all';
-  return git('diff', '--name-only', 'origin/main...HEAD');
+  return diff('origin/main...HEAD');
 }
 
 if (import.meta.main) {
