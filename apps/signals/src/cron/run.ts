@@ -4,8 +4,6 @@ import { deleteDeliveriesBefore } from '../storage/admission.ts';
 import { D1SnapshotStore } from '../storage/d1.ts';
 import type { SnapshotStore } from '../storage/types.ts';
 
-/** Adapters fetched at the same time. */
-const concurrency = 4;
 /** An upstream call that takes longer than this is abandoned and recorded as `timeout`. */
 const fetchTimeoutMs = 20_000;
 /**
@@ -44,8 +42,11 @@ async function pull(adapter: PullAdapter, env: Env, store: SnapshotStore): Promi
 }
 
 /**
- * One cron run: every adapter whose interval has passed since its last attempt, at most
- * `concurrency` at a time, then old push deliveries in bounded batches.
+ * One cron run: at most one pull adapter, then old push deliveries in bounded batches.
+ * Workers Free allows 10 ms of CPU and 50 subrequests per invocation, and one cold adapter
+ * can need most of that (ADR 0009), so adapters never share an invocation. The one that runs
+ * is the most overdue: never tried first, then the one furthest past its interval. A source
+ * pulled every minute therefore skips a minute now and then, and no source waits behind it.
  */
 export async function runScheduled(
   env: Env,
@@ -54,18 +55,22 @@ export async function runScheduled(
 ): Promise<void> {
   const store = new D1SnapshotStore(env.DB);
   const lastAttempt = new Map((await store.list()).map((s) => [s.source, s.lastAttemptAt]));
-  const due = adapters.filter((adapter) => {
+  let next: { adapter: PullAdapter; overdueMs: number } | undefined;
+  for (const adapter of adapters) {
     const last = lastAttempt.get(adapter.id);
-    return last == null || scheduledTime - last >= adapter.intervalSeconds * 1000 - scheduleSlackMs;
-  });
-
-  for (let start = 0; start < due.length; start += concurrency) {
-    await Promise.all(due.slice(start, start + concurrency).map((a) => pull(a, env, store)));
+    const overdueMs =
+      last == null
+        ? Number.POSITIVE_INFINITY
+        : scheduledTime - last - adapter.intervalSeconds * 1000;
+    if (overdueMs >= -scheduleSlackMs && (next === undefined || overdueMs > next.overdueMs)) {
+      next = { adapter, overdueMs };
+    }
   }
+  if (next) await pull(next.adapter, env, store);
 
   const deleted = await deleteDeliveriesBefore(env.DB, scheduledTime - deliveryRetentionMs, {
     batchSize: 500,
     maxBatches: 10,
   });
-  logEvent('log', 'cron run', { pulled: due.length, deliveriesDeleted: deleted });
+  logEvent('log', 'cron run', { pulled: next?.adapter.id ?? null, deliveriesDeleted: deleted });
 }

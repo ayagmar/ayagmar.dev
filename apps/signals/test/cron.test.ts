@@ -50,17 +50,19 @@ describe('scheduled', () => {
     expect(body).toMatchObject({ stale: false, data: { normalized: { id: 'listening' } } });
   });
 
-  it('pulls an adapter again only once its interval has passed', async () => {
-    const listening = adapter('listening', 60);
-    const projects = adapter('projects', 24 * 3600);
+  it('pulls one adapter per run, the most overdue first, so a frequent one starves none', async () => {
+    const pulled: string[] = [];
+    const track = (id: SourceId, intervalSeconds: number) =>
+      adapter(id, intervalSeconds, async () => {
+        pulled.push(id);
+        return {};
+      });
+    const adapters = [track('listening', 60), track('projects', 24 * 3600), track('shipping', 900)];
     const start = Date.now();
 
-    for (let run = 0; run < 3; run++) {
-      await runScheduled(env, [listening, projects], start + run * minute);
-    }
-    // The stored attempt time is the fetch time, a little after the first scheduled time.
-    expect(listening.calls).toBe(3);
-    expect(projects.calls).toBe(1);
+    for (let run = 0; run < 5; run++) await runScheduled(env, adapters, start + run * minute);
+
+    expect(pulled).toEqual(['listening', 'projects', 'shipping', 'listening', 'listening']);
   });
 
   it('records a failure as a code, keeps the last good snapshot and never logs the message', async () => {
@@ -77,6 +79,7 @@ describe('scheduled', () => {
       throw new Error('token=abc in message');
     });
     await runScheduled(env, [failing, untyped], start + minute);
+    await runScheduled(env, [failing, untyped], start + 2 * minute);
 
     const health = await fetchApi('/v1/health').then((r) =>
       r.json<{ sources: { source: string; lastErrorCode: string | null }[] }>()
@@ -90,24 +93,6 @@ describe('scheduled', () => {
     expect(logs).toContain('upstream_5xx');
     expect(logs).not.toMatch(/ghp_secret|token=|<html>/);
     warn.mockRestore();
-  });
-
-  it('fetches at most four adapters at a time', async () => {
-    let inFlight = 0;
-    let most = 0;
-    const slow: PullAdapter['fetch'] = async () => {
-      most = Math.max(most, ++inFlight);
-      await new Promise((resolve) => setTimeout(resolve, 5));
-      inFlight--;
-      return {};
-    };
-    const ids: SourceId[] = ['listening', 'shipping', 'projects', 'llm-usage', 'shelf'];
-    await runScheduled(
-      env,
-      ids.map((id) => adapter(id, 60, slow)),
-      Date.now()
-    );
-    expect(most).toBe(4);
   });
 
   it('deletes push deliveries older than 7 days, in batches, and keeps newer ones', async () => {
