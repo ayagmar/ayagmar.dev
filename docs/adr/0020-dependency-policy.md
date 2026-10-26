@@ -20,6 +20,7 @@ Every dependency is code that runs at build time, in a Worker or in a browser, a
 | Node.js                   | 24.22.1 | runtime                  | Current LTS; Astro 7 needs >= 22.23.4.                                                                                 |
 | pnpm                      | 12.15.0 | tooling                  | Strict workspace installs, release-age gate (ADR 0003).                                                                |
 | just                      | 1.59.0  | tooling                  | The single command runner (ADR 0006).                                                                                  |
+| typst                     | 0.15.1  | tooling                  | Compiles the resume PDF from `content/about.json` (ADR 0023). `mise.toml` locally, `scripts/bootstrap.sh` in Builds.   |
 | typescript                | 6.0.3   | all                      | Type checking. Held at 6: `astro check` and `svelte-check` do not accept TypeScript 7 yet.                             |
 | @types/node               | 24.19.2 | root, contracts, site    | Types for Node scripts and test configs, matching Node 24.                                                             |
 | @biomejs/biome            | 2.6.2   | root                     | Format and lint for TS, JS, JSON, CSS, Markdown, YAML, Astro and Svelte. 2.6.3 was under three days old.               |

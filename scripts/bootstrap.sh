@@ -17,6 +17,9 @@ case "$(uname -s)-$(uname -m)" in
     ;;
 esac
 
+tmp="$(mktemp -d)"
+trap 'rm -rf "${tmp}"' EXIT
+
 # download <url> <sha256> <file>
 download() {
   curl --fail --silent --show-error --location --retry 3 --output "$3" "$1"
@@ -33,8 +36,6 @@ declare -A just_sha256=(
   [aarch64-unknown-linux-musl]="23871b1702bfd550fb5f901778fd4290ecf2ee034a45a889fbe96d89b188086d"
 )
 if [[ "$("${bin}/just" --version 2>/dev/null || true)" != "just ${just_version}" ]]; then
-  tmp="$(mktemp -d)"
-  trap 'rm -rf "${tmp}"' EXIT
   archive="${tmp}/just.tar.gz"
   download \
     "https://github.com/casey/just/releases/download/${just_version}/just-${just_version}-${target}.tar.gz" \
@@ -43,6 +44,19 @@ if [[ "$("${bin}/just" --version 2>/dev/null || true)" != "just ${just_version}"
   install -m 0755 "${tmp}/just" "${bin}/just"
 fi
 
-# typst: added with the resume build.
+# typst: https://github.com/typst/typst/releases (sha256 digests of the release assets)
+typst_version="0.15.1"
+declare -A typst_sha256=(
+  [x86_64-unknown-linux-musl]="a6d077d0a95eed5a2eba715b2dae06be954f624ccbf85758a03f389ded33118c"
+  [aarch64-unknown-linux-musl]="5aa8d74a3d906e60ea12a66ac2f37f8eef1b14cbad7182a745e393a10c23dcee"
+)
+if [[ "$("${bin}/typst" --version 2>/dev/null || true)" != "typst ${typst_version} "* ]]; then
+  archive="${tmp}/typst.tar.xz"
+  download \
+    "https://github.com/typst/typst/releases/download/v${typst_version}/typst-${target}.tar.xz" \
+    "${typst_sha256[${target}]}" "${archive}"
+  tar --extract --xz --file "${archive}" --directory "${tmp}" --strip-components 1 "typst-${target}/typst"
+  install -m 0755 "${tmp}/typst" "${bin}/typst"
+fi
 
-echo "bootstrap: $("${bin}/just" --version) in .tools/bin"
+echo "bootstrap: $("${bin}/just" --version), $("${bin}/typst" --version) in .tools/bin"
