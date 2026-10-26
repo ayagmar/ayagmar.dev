@@ -72,12 +72,19 @@ footer ul,
 /* Targets of at least 24 by 24 CSS pixels (WCAG 2.2 target size). */
 nav a,
 footer a,
+dialog a,
 .tags a,
-button {
+button,
+input {
   display: inline-block;
   min-width: 24px;
   min-height: 24px;
   padding-block: 0.25rem;
+}
+
+input {
+  max-width: 100%;
+  font: inherit;
 }
 
 .posts {
