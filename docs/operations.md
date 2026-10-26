@@ -2,7 +2,7 @@
 
 ## Push secrets
 
-signals has six push secrets, listed in `secrets.required` in `apps/signals/wrangler.jsonc` with `LASTFM_API_KEY`, so a deploy fails while one is missing (the pull secrets are in [docs/deploy.md](deploy.md)):
+signals has eight push secrets, listed in `secrets.required` in `apps/signals/wrangler.jsonc` with `LASTFM_API_KEY`, so a deploy fails while one is missing (the pull secrets are in [docs/deploy.md](deploy.md)):
 
 | Secret                      | Used for                               |
 | --------------------------- | -------------------------------------- |
@@ -12,6 +12,8 @@ signals has six push secrets, listed in `secrets.required` in `apps/signals/wran
 | `PUSH_TOKEN_TRELLIS_NEXT`   | Next trellis token during a rotation   |
 | `PUSH_HMAC_TRELLIS`         | Key trellis signs requests with        |
 | `PUSH_HMAC_TRELLIS_NEXT`    | Next signing key during a rotation     |
+| `PUSH_TOKEN_DESKTOP`        | Bearer token of the desktop producer   |
+| `PUSH_TOKEN_DESKTOP_NEXT`   | Next desktop token during a rotation   |
 
 signals accepts a request that matches either slot. A missing value, or one shorter than 32 characters, never matches, so the current slot alone works. Outside a rotation, each `_NEXT` slot holds a random value nobody has.
 
@@ -20,11 +22,24 @@ Generate every value with `openssl rand -hex 32`. Wrangler reads it from the pro
 ### First setup
 
 ```sh
-just signals-secrets           # prompts for LASTFM_API_KEY and each of the six values
+just signals-secrets           # prompts for LASTFM_API_KEY and each of the eight values
 just signals-preview-secrets   # random fakes for Previews, shown to no one
 ```
 
 `just signals-secrets` runs `just signals-secret <name>` (`wrangler secret put`) for each name. If the Worker does not exist yet, Wrangler offers to create it; accept. Every `secret put` deploys a new version of the Worker.
+
+### Adding a producer's secrets
+
+A new name in `secrets.required` makes the next production deploy fail until it is set, and merging to `main` deploys. So set a new producer's slots before its change is merged: the current slot with the value the producer will use, the next slot with a random value nobody keeps. For the desktop producer (ADR 0032):
+
+```sh
+just signals-secret PUSH_TOKEN_DESKTOP        # paste the value of PUSH_TOKEN_DESKTOP from ~/.config/ayagmar.dev/signals.env
+openssl rand -hex 32 | just signals-secret PUSH_TOKEN_DESKTOP_NEXT
+openssl rand -hex 32 | pnpm --filter @min7/signals exec wrangler preview base-config secret put PUSH_TOKEN_DESKTOP
+openssl rand -hex 32 | pnpm --filter @min7/signals exec wrangler preview base-config secret put PUSH_TOKEN_DESKTOP_NEXT
+```
+
+The current Worker ignores secrets it does not use, so setting them early is safe. The producers on the owner's machine read their tokens from `~/.config/ayagmar.dev/signals.env` (mode 600), one `NAME=value` line each, and only their own line (docs/producers/).
 
 ### Rotate a token or key
 

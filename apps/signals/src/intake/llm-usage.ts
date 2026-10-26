@@ -7,11 +7,15 @@ import {
 import { byCodeUnit, type Producer } from './producers.ts';
 import { agentLabels } from './public-labels.ts';
 
+/** `{ activeMs }` when the producer sent it, else nothing, so the key stays absent. */
+const hours = (activeMs: number | undefined) => (activeMs === undefined ? {} : { activeMs });
+
 /**
  * Builds the published snapshot field by field from the validated push, so nothing reaches
  * storage that is not named here. Agents without a reviewed label are dropped; a repeated
  * label keeps its first entry. Shares are of the month's total tokens, unknown agents
- * included, so dropping one never inflates the others.
+ * included, so dropping one never inflates the others. Estimated agent time (`activeMs`) is
+ * kept where the producer sent it and left out where it did not: unknown, never 0.
  */
 function projectLlmUsage({ payload }: LlmUsagePush): LlmUsageSnapshot {
   const month = payload.monthToDate;
@@ -29,15 +33,20 @@ function projectLlmUsage({ payload }: LlmUsagePush): LlmUsageSnapshot {
   }
 
   const days = new Map<string, LlmUsageSnapshot['days'][number]>();
-  for (const { date, costUsd, totalTokens } of payload.days) {
-    if (!days.has(date)) days.set(date, { date, costUsd, totalTokens });
+  for (const { date, costUsd, totalTokens, activeMs } of payload.days) {
+    if (!days.has(date)) days.set(date, { date, costUsd, totalTokens, ...hours(activeMs) });
   }
 
   return {
-    last7Days: { costUsd: payload.last7Days.costUsd, totalTokens: payload.last7Days.totalTokens },
+    last7Days: {
+      costUsd: payload.last7Days.costUsd,
+      totalTokens: payload.last7Days.totalTokens,
+      ...hours(payload.last7Days.activeMs),
+    },
     monthToDate: {
       costUsd: month.costUsd,
       totalTokens: month.totalTokens,
+      ...hours(month.activeMs),
       cacheSavingsUsd: month.cacheSavingsUsd,
       agents: [...agents.values()].sort(
         (a, b) => b.totalTokens - a.totalTokens || byCodeUnit(a.agent, b.agent)

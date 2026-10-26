@@ -10,6 +10,8 @@ const fakeSecrets = {
   PUSH_TOKEN_TRELLIS_NEXT: 'test-trellis-token-next-0000000000000',
   PUSH_HMAC_TRELLIS: 'test-trellis-hmac-key-00000000000000',
   PUSH_HMAC_TRELLIS_NEXT: 'test-trellis-hmac-key-next-000000000',
+  PUSH_TOKEN_DESKTOP: 'test-desktop-token-000000000000000000',
+  PUSH_TOKEN_DESKTOP_NEXT: 'test-desktop-token-next-0000000000000',
 };
 
 // The limiter is real; this only raises its limit so the suite never trips it by accident.

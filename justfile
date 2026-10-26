@@ -15,7 +15,7 @@ signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
 # Every required signals secret, matching secrets.required in apps/signals/wrangler.jsonc.
 # GITHUB_TOKEN is optional and set on its own: `just signals-secret GITHUB_TOKEN`.
-required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT"
+required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT PUSH_TOKEN_DESKTOP PUSH_TOKEN_DESKTOP_NEXT"
 
 # Pinned tools from scripts/bootstrap.sh come first, so local runs match CI.
 export PATH := justfile_directory() / ".tools/bin" + ":" + env("PATH")
