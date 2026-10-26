@@ -27,6 +27,8 @@ exclude = [
   '^https://github\.com/ayagmar/ayagmar\.dev/commit/',
   # X answers 403 to requests from CI runners whether or not the profile exists.
   '^https://(x|twitter)\.com/',
+  # LinkedIn answers 999 to automated requests whether or not the profile exists.
+  '^https://([a-z]+\.)?linkedin\.com/',
   # The signals API is a separate Worker, checked by its own tests; it may not be deployed yet.
   '^https://api\.ayagmar\.dev/',
 ]

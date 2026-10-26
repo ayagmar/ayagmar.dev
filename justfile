@@ -20,6 +20,10 @@ required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NE
 # Pinned tools from scripts/bootstrap.sh come first, so local runs match CI.
 export PATH := justfile_directory() / ".tools/bin" + ":" + env("PATH")
 
+# poppler-utils in Ubuntu 24.04 updates/security. An exact apt pin fails once Ubuntu supersedes
+# it; bump it then (https://launchpad.net/ubuntu/noble/+source/poppler).
+poppler_version := "24.02.0-1ubuntu9.11"
+
 [private]
 default:
     @just --list
@@ -94,6 +98,11 @@ e2e: site-build e2e-test
 e2e-test:
     {{ site }} playwright test
 
+# CI: pdftotext and pdfinfo for the resume tests, pinned to the Ubuntu 24.04 (noble) build
+poppler-install:
+    sudo apt-get update --quiet
+    sudo apt-get install --yes --no-install-recommends poppler-utils={{ poppler_version }}
+
 # Download the Chromium build Playwright uses (once per Playwright version)
 e2e-install:
     {{ site }} playwright install chromium
@@ -152,11 +161,16 @@ links-internal: (tools "lychee")
 site-dev:
     {{ site }} astro dev
 
-# Site: static build, search index, headers
-site-build:
+# Site: static build, search index, headers, and the resume PDF once it is published
+site-build: resume
     COMMIT_SHA={{ commit_sha }} SIGNALS_MODE={{ signals_mode }} {{ site }} astro build
     {{ site }} pagefind --site dist --quiet
     {{ site }} node scripts/postbuild.ts
+    {{ site }} node scripts/ship-resume.ts
+
+# Resume: write resume/build/resume.pdf from content/about.json
+resume:
+    {{ site }} node scripts/resume.ts
 
 # Site: serve the built site through its Worker on http://localhost:8790
 site-serve:
