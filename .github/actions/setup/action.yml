@@ -1,0 +1,43 @@
+name: Set up
+description: >-
+  Node from .node-version, just from scripts/bootstrap.sh (sha256-checked) on PATH, and with
+  `install`, pnpm from packageManager (corepack checks its sha512) and the locked dependencies.
+inputs:
+  install:
+    description: Install the pnpm dependencies ("true" or "false").
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .node-version
+        package-manager-cache: false
+
+    # The PATH entry is a fixed directory in the workspace, not a value from the event.
+    - name: Install just
+      shell: bash
+      run: | # zizmor: ignore[github-env]
+        ./scripts/bootstrap.sh
+        echo "${GITHUB_WORKSPACE}/.tools/bin" >> "${GITHUB_PATH}"
+
+    - name: Enable pnpm
+      id: pnpm
+      if: inputs.install == 'true'
+      shell: bash
+      run: |
+        corepack enable pnpm
+        echo "store=$(pnpm store path --silent)" >> "${GITHUB_OUTPUT}"
+
+    - name: Cache the pnpm store
+      if: inputs.install == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.pnpm.outputs.store }}
+        key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-store-${{ runner.os }}-
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: just install

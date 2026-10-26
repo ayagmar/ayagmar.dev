@@ -1,0 +1,8 @@
+# zizmor runs at its default level with zero findings allowed (`just workflows-lint`).
+rules:
+  # Wants `uses: $/.github/actions/setup` (GitHub's self-repository syntax, July 2026), which
+  # actionlint 1.7.12 rejects as an invalid action reference. Re-enable once actionlint
+  # accepts it. CI checks out the same commit the workflow runs from, so `./` loads that
+  # commit's action.
+  self-repository:
+    disable: true
