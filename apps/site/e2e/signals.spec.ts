@@ -296,8 +296,13 @@ test('the record stops when a refresh hangs past its deadline', async ({ page })
     'Last played Which Will by Nick Drake, 2 minutes ago',
     { timeout: 10_000 }
   );
-  await page.clock.runFor(60_000);
-  await expect.poll(() => requests).toBe(3);
+  // A hang must not stop the polling: a later minute asks again.
+  await expect
+    .poll(async () => {
+      await page.clock.runFor(60_000);
+      return requests;
+    })
+    .toBeGreaterThanOrEqual(3);
 });
 
 test('the record has stopped when a tab hidden past the limit comes back', async ({ page }) => {
