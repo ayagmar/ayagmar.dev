@@ -28,11 +28,11 @@ RELEASES = {
         "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip",
         "6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf",
     ),
-    # Pixelify Sans has no releases: its latest change to the variable font is this commit
-    # (2023-09-13), the same design as @fontsource-variable/pixelify-sans 5.3.0. A bare TTF, not a zip.
-    "pixel": (
-        "https://raw.githubusercontent.com/eifetx/Pixelify-Sans/33f4b197c68c8fd24771a54de5c9acaf0e432589/fonts/variable/PixelifySans%5Bwght%5D.ttf",
-        "9ba86cd010a4de309d263ceff8e8044092c9db7efda869620cb9ff1c4389e8a5",
+    # Fraunces: the latest tagged release (1.000, 2020) predates the variable font the site uses,
+    # so this is upstream's latest commit (2025-10-21, font version 1.003). A bare TTF, not a zip.
+    "display": (
+        "https://raw.githubusercontent.com/undercasetype/Fraunces/7ccdec31c6028118dce3e47fe864e3744460371d/fonts/variable/Fraunces%5BSOFT,WONK,opsz,wght%5D.ttf",
+        "0776a870a0856b296e11639505ac0cf9be5e7800bb1849dfa21a1bd182455fc0",
     ),
 }
 
@@ -56,8 +56,9 @@ FONTS = [
     ("serif-roman.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Roman.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("serif-italic.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Italic.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("mono.woff2", "mono", "fonts/variable/JetBrainsMono[wght].ttf", {"wght": (400, 700)}, None),
-    # Display and interface only (name, headings, nav, buttons, footer, big numbers); never body text.
-    ("pixel.woff2", "pixel", None, {"wght": (400, 700)}, None),
+    # The name, headings and big numbers; never running text. Pinned to the soft, wonky cut at one
+    # optical size, so only the weight axis stays (600 to 800).
+    ("display.woff2", "display", None, {"wght": (600, 800), "opsz": 48, "SOFT": 100, "WONK": 1}, None),
 ]
 FEATURES = ["kern", "liga", "calt", "onum", "lnum", "tnum", "pnum", "frac", "sups", "subs", "ccmp", "locl", "mark", "mkmk", "case"]
 
@@ -85,8 +86,7 @@ def main() -> None:
             data = zipfile.ZipFile(io.BytesIO(data)).read(member)
         font = TTFont(io.BytesIO(data), lazy=False)
         options = subset.Options()
-        # The pixel face's "fi" ligature is a different shape, which reads "file" as "Ale".
-        options.layout_features = [f for f in FEATURES if out != "pixel.woff2" or f not in ("liga", "calt")]
+        options.layout_features = FEATURES
         options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14]
         options.notdef_outline = True
         subsetter = subset.Subsetter(options)

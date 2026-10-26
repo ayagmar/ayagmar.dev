@@ -1,4 +1,4 @@
-/* The late-night room (ADR 0026), as a little desk computer (ADR 0034): one token layer for day
+/* The late-night room (ADR 0026), lit and set in windows (ADR 0034): one token layer for day
    and night, mobile first.
    Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
    It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
@@ -19,12 +19,12 @@
   font-display: swap;
 }
 
-/* The pixel face: the name, headings, navigation, buttons, the footer and big numbers. Never
-   running text. */
+/* The display face: the name, headings and big numbers. Never running text. One cut, soft and
+   a little wonky, at one optical size; only the weight varies. */
 @font-face {
-  font-family: "min7 Pixel";
-  src: url("../fonts/pixel.woff2") format("woff2");
-  font-weight: 400 700;
+  font-family: "min7 Display";
+  src: url("../fonts/display.woff2") format("woff2");
+  font-weight: 600 800;
   font-style: normal;
   font-display: swap;
 }
@@ -40,33 +40,21 @@
 :root {
   color-scheme: light dark;
 
-  /* The desk: the screen's ground, window chrome (--line), the amber lamp (links, time), the
-     phosphor glow (projects), rose for what is not real. */
-  --ground: light-dark(#f0e4c8, #07060f);
-  --surface: light-dark(#fff8e4, #110e24);
+  /* The room by lamplight: aubergine night and sunlit plaster, the amber lamp (links, time), the
+     screen's mint (projects), rose for what is not real. --line is the windows' chrome. */
+  --ground: light-dark(#efe3cb, #0d0a17);
+  --surface: light-dark(#e6d6b8, #191430);
   --line: light-dark(#2a2144, #5a4fd6);
-  --text: light-dark(#1d1733, #f3ead3);
-  --muted: light-dark(#4f4666, #b4b0d0);
-  --lamp: light-dark(#8f4700, #ffb21f);
-  --glow: light-dark(#0b6249, #4dffb0);
-  --rose: light-dark(#a8243f, #ff7592);
+  --text: light-dark(#241a2c, #f6ead2);
+  --muted: light-dark(#4a3f4d, #b9b0c8);
+  --lamp: light-dark(#7a3a00, #ffb54a);
+  --glow: light-dark(#0b4f3c, #6ee7b0);
+  --rose: light-dark(#a3372a, #ff8e7c);
   --cyan: light-dark(#0b5f87, #5ad7ff);
   /* The hard shadow under a window, and the text on a title bar or the status bar. */
   --shade: light-dark(#2a2144, #2b2470);
   --bar-text: light-dark(#fff8e4, #f3ead3);
   --rose-bar: #a8243f;
-  /* Faint scanlines over the page. */
-  --scan: repeating-linear-gradient(
-    0deg,
-    light-dark(rgb(42 33 68 / 0.05), rgb(90 79 214 / 0.06)) 0 1px,
-    transparent 1px 4px
-  );
-  /* The window's, a little stronger. */
-  --crt: repeating-linear-gradient(
-    0deg,
-    light-dark(rgb(0 0 0 / 0.03), rgb(0 0 0 / 0.22)) 0 1px,
-    transparent 1px 3px
-  );
 
   /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
   --paper: light-dark(#fbf6ea, #efe3c6);
@@ -77,16 +65,31 @@
   --code-bg: #1f1b2e;
   --code-fg: #efe6d0;
 
-  /* Panel materials: each panel wears its object's surface. */
-  --screen: light-dark(#d9efe4, #04140f);
-  --vinyl: light-dark(#ece3f4, #0f0b24);
-  --cork: light-dark(#f3dfb4, #2b1b10);
-  --wood: light-dark(#f1e0c3, #211410);
+  /* Panel materials: each panel is lit from its top left corner (--hi) and falls off to its
+     bottom right (--lo), in its object's colour. */
+  --screen: light-dark(#d5e8dd, #08201f);
+  --screen-hi: light-dark(#e6f3ea, #0f3a35);
+  --screen-lo: light-dark(#c6dccf, #041312);
+  --vinyl: light-dark(#e6dae4, #17102a);
+  --vinyl-hi: light-dark(#f1e6ef, #2d2150);
+  --vinyl-lo: light-dark(#dccddb, #0d0918);
+  --cork: light-dark(#e8cfa8, #3d2619);
+  --cork-hi: light-dark(#f4dcae, #5e3a22);
+  --cork-lo: light-dark(#e0c595, #26150f);
+  --wood: light-dark(#ead9c0, #2b1a12);
+  --wood-hi: light-dark(#f1e1c9, #4a3022);
+  --wood-lo: light-dark(#dbc6a6, #1b100b);
   --tea: light-dark(#d9e8dd, #10241f);
-  --frame: light-dark(#e3e6fb, #0b1030);
+  --tea-hi: light-dark(#e8f3ea, #1a3a33);
+  --tea-lo: light-dark(#c8dccf, #08130f);
+  --frame: light-dark(#e2e1f2, #151b3d);
+  --frame-hi: light-dark(#e9e6f4, #232a52);
+  --frame-lo: light-dark(#d0cde4, #0b0e22);
+  --surface-hi: light-dark(#f6e9cb, #2e2038);
+  --surface-lo: light-dark(#e0cfae, #0f0c1f);
 
   --serif: "min7 Serif", Charter, "Iowan Old Style", Georgia, serif;
-  --display: "min7 Pixel", var(--mono);
+  --display: "min7 Display", var(--serif);
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --gutter: clamp(1rem, 0.5rem + 2.5vw, 2rem);
   --measure: 66ch;
@@ -125,7 +128,18 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-wrap: break-word;
-  background: var(--scan), var(--ground);
+  background:
+    radial-gradient(
+      ellipse 60rem 28rem at 78% -4rem,
+      light-dark(rgb(255 236 190 / 0.85), rgb(255 170 60 / 0.16)),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40rem 40rem at -10% 30%,
+      light-dark(rgb(255 255 255 / 0.35), rgb(110 231 176 / 0.06)),
+      transparent 70%
+    ),
+    var(--ground);
 }
 
 ::selection {
@@ -160,39 +174,32 @@ h2,
 h3 {
   margin: 1.6em 0 0.5em;
   font-family: var(--display);
-  font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: 0;
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
 h1 {
   margin-top: 0.5em;
-  font-size: clamp(2.2rem, 1.4rem + 4vw, 4rem);
+  font-size: clamp(2.2rem, 1.4rem + 3.6vw, 3.8rem);
+  font-weight: 800;
   line-height: 1;
-  text-transform: lowercase;
+  letter-spacing: -0.03em;
 }
 
-/* A page's title ends in a blinking cursor. Decoration: CSS content is not read. */
-main > .wrap > h1:not(.intro)::after {
-  content: "_";
-  margin-inline-start: 0.1em;
-  color: var(--glow);
-  animation: blink 1.1s steps(2) infinite;
+h2 {
+  font-size: 1.55rem;
+}
+
+h3 {
+  font-size: 1.2rem;
 }
 
 @keyframes blink {
   50% {
     opacity: 0;
   }
-}
-
-h2 {
-  font-size: 1.45rem;
-}
-
-h3 {
-  font-size: 1.1rem;
 }
 
 p,
@@ -291,7 +298,7 @@ button,
   padding-inline: 0.6rem;
   background: transparent;
   color: var(--fg);
-  font: 500 0.875rem / 1.2 var(--display);
+  font: 500 0.8125rem / 1.2 var(--mono);
   cursor: pointer;
 }
 
@@ -375,7 +382,8 @@ kbd {
 
 .wordmark {
   margin-inline-end: auto;
-  font: 700 1.9rem / 1 var(--display);
+  font: 700 1.6rem / 1 var(--mono);
+  letter-spacing: -0.03em;
   text-decoration: none;
 }
 
@@ -429,29 +437,17 @@ kbd {
   min-height: 2.75rem;
   padding-block: 0.6rem;
   color: var(--fg);
-  font-family: var(--display);
   font-size: 1.1rem;
   font-weight: 500;
   text-decoration: none;
 }
 
-/* The page you are on, and the one under the pointer, is picked out in brackets, like a menu
-   cursor. */
+/* The page you are on, and the one under the pointer, is lit like a menu item. */
 .site-header nav a:hover,
 .site-header nav a[aria-current="page"] {
   background: var(--lamp);
   color: var(--ground);
   text-decoration: none;
-}
-
-.site-header nav a:hover::before,
-.site-header nav a[aria-current="page"]::before {
-  content: "[";
-}
-
-.site-header nav a:hover::after,
-.site-header nav a[aria-current="page"]::after {
-  content: "]";
 }
 
 .site-tools {
@@ -545,19 +541,11 @@ kbd {
   }
 }
 
-/* Between 52rem and 64rem the six nav links need the room the keyboard hint would take, a
-   little less space between them and a smaller pixel face (ADR 0034). */
+/* Between 52rem and 64rem the six nav links need the room the keyboard hint would take, and
+   a little less space between them. */
 @media (min-width: 52rem) and (max-width: 63.99rem) {
-  .site-header {
-    gap: 0.5rem 1rem;
-  }
-
   .site-header nav ul {
-    gap: 0 0.6rem;
-  }
-
-  .site-header nav a {
-    font-size: 0.9rem;
+    gap: 0 1rem;
   }
 }
 
@@ -578,7 +566,7 @@ kbd {
   padding: 0.7rem 1rem;
   background: var(--line);
   color: var(--bar-text);
-  font: 500 0.95rem / 1.5 var(--display);
+  font: 500 0.8125rem / 1.5 var(--mono);
 }
 
 .site-footer p {
@@ -618,7 +606,7 @@ kbd {
   margin-block: 1.6rem;
   padding: calc(var(--bar) + 1.25rem) 1.1rem 1.4rem;
   border: 3px solid var(--wbar);
-  background: var(--bg);
+  background: linear-gradient(150deg, var(--hi), var(--bg) 48%, var(--lo));
   color: var(--fg);
   box-shadow: 7px 7px 0 var(--shade);
 }
@@ -633,8 +621,7 @@ kbd {
   overflow: hidden;
   background: var(--wbar);
   color: var(--bar-text);
-  font: 600 0.95rem / var(--bar) var(--display);
-  letter-spacing: 0.02em;
+  font: 600 0.8125rem / var(--bar) var(--mono);
   white-space: nowrap;
 }
 
@@ -666,51 +653,51 @@ kbd {
 
 .panel {
   --bg: var(--surface);
+  --hi: var(--surface-hi);
+  --lo: var(--surface-lo);
 }
 
 .panel h2 {
   margin-top: 0;
 }
 
-/* The CRT windows: the green, violet and blue ones carry scanlines. */
-.m-screen,
-.m-vinyl,
-.m-frame {
-  background: var(--crt), var(--bg);
-}
-
 .m-screen {
   --bg: var(--screen);
+  --hi: var(--screen-hi);
+  --lo: var(--screen-lo);
   --accent: var(--glow);
   --wbar: light-dark(#0b6249, #176b4e);
   --title: "projects.json";
 }
 
-.m-screen h2,
-.m-screen a {
-  text-shadow: 0 0 10px color-mix(in srgb, var(--glow) 40%, transparent);
-}
-
 .m-vinyl {
   --bg: var(--vinyl);
+  --hi: var(--vinyl-hi);
+  --lo: var(--vinyl-lo);
   --wbar: light-dark(#5a3f8a, #5a4fd6);
   --title: "listening.app";
 }
 
 .m-cork {
   --bg: var(--cork);
+  --hi: var(--cork-hi);
+  --lo: var(--cork-lo);
   --wbar: light-dark(#8f4700, #8a5410);
   --title: "shipping.log";
 }
 
 .m-wood {
   --bg: var(--wood);
+  --hi: var(--wood-hi);
+  --lo: var(--wood-lo);
   --wbar: light-dark(#7a4a30, #8a5a3a);
   --title: "shelf.md";
 }
 
 .m-tea {
   --bg: var(--tea);
+  --hi: var(--tea-hi);
+  --lo: var(--tea-lo);
   --accent: var(--glow);
   --wbar: light-dark(#0b6249, #176b4e);
   --title: "tea.txt";
@@ -718,6 +705,8 @@ kbd {
 
 .m-frame {
   --bg: var(--frame);
+  --hi: var(--frame-hi);
+  --lo: var(--frame-lo);
   --wbar: light-dark(#0b5f87, #1f6a96);
   --title: "llm-usage.db";
 }
@@ -725,6 +714,8 @@ kbd {
 /* The notebook: a window holding the writing. */
 .paper {
   --bg: var(--surface);
+  --hi: var(--surface-hi);
+  --lo: var(--surface-lo);
   --fg: var(--text);
   --fg-2: var(--muted);
   --accent: var(--lamp);
@@ -798,8 +789,8 @@ kbd {
   display: block;
   color: var(--fg);
   font-family: var(--display);
-  font-size: 1.2rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   line-height: 1.2;
   text-decoration: none;
   text-wrap: balance;
@@ -841,7 +832,7 @@ kbd {
 }
 
 /* Shipping as a git graph: a dashed rail with a square node for each event, the newest one
-   amber and blinking, the time in phosphor. */
+   amber and blinking, the time in mint. */
 .shipping {
   position: relative;
   margin: 0;
@@ -906,20 +897,19 @@ kbd {
 }
 
 .heat i[data-l="1"] {
-  background: color-mix(in srgb, var(--glow) 30%, transparent);
+  background: color-mix(in srgb, var(--lamp) 35%, transparent);
 }
 
 .heat i[data-l="2"] {
-  background: color-mix(in srgb, var(--glow) 55%, transparent);
+  background: color-mix(in srgb, var(--lamp) 60%, transparent);
 }
 
 .heat i[data-l="3"] {
-  background: color-mix(in srgb, var(--glow) 80%, transparent);
+  background: color-mix(in srgb, var(--lamp) 85%, transparent);
 }
 
 .heat i[data-l="4"] {
-  background: var(--glow);
-  box-shadow: 0 0 8px var(--glow);
+  background: light-dark(#5e2a00, #ffd58a);
 }
 
 .heat-cap {
@@ -938,14 +928,10 @@ kbd {
 /* The lamp's pool, behind the top of the page, header included so it has no edge. */
 body:has(.reader) {
   background:
-    var(--scan),
     radial-gradient(
-      ellipse 42rem 20rem at 50% 0,
-      light-dark(
-        color-mix(in srgb, var(--lamp) 14%, transparent),
-        color-mix(in srgb, var(--lamp) 12%, transparent)
-      ),
-      transparent
+      ellipse 46rem 24rem at 50% -2rem,
+      light-dark(rgb(255 236 190 / 0.9), rgb(255 170 60 / 0.2)),
+      transparent 70%
     )
     no-repeat,
     var(--ground);
@@ -994,9 +980,7 @@ main:has(.toc) .reader ~ .project-card {
 .post-header h1 {
   margin: 0 0 0.75rem;
   font-size: clamp(1.9rem, 1.2rem + 3.6vw, 3.5rem);
-  line-height: 1.05;
-  text-shadow: 3px 3px 0 var(--shade);
-  text-transform: none;
+  line-height: 1.02;
 }
 
 .post-meta {
@@ -1226,7 +1210,7 @@ main:has(.toc) .reader ~ .project-card {
   justify-content: space-between;
   min-height: 2.75rem;
   padding: 0.5rem 1.1rem;
-  font: 600 0.875rem / 1.5 var(--display);
+  font: 600 0.8125rem / 1.5 var(--mono);
   cursor: pointer;
   list-style: none;
 }
@@ -1544,17 +1528,16 @@ main:has(.toc) .reader ~ .project-card {
   text-transform: uppercase;
 }
 
-/* The big numbers: the pixel face, with the hard shadow of a window. */
+/* The big numbers: the display face, lit. */
 .stats-grid dd {
   margin: 0 0 0.75rem;
-  color: var(--glow);
-  font: 700 3.4rem / 1 var(--display);
-  text-shadow: 3px 3px 0 var(--shade);
+  color: var(--lamp);
+  font: 800 3.2rem / 1 var(--display);
 }
 
 .stats-grid li::marker {
   color: var(--lamp);
-  font-family: var(--display);
+  font-family: var(--mono);
 }
 
 /* Track names as on home: an italic here loads the italic font, whose swap reflows the
