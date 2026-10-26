@@ -8,6 +8,12 @@ const ground = { day: 'rgb(236, 226, 207)', night: 'rgb(12, 11, 20)' } as const;
 const background = (page: Page) =>
   page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
 
+// The background recorded in the page's first animation frame, which can run after goto() ends.
+const firstFrame = async (page: Page) => {
+  await page.waitForFunction(() => typeof window.firstFrame === 'string');
+  return page.evaluate(() => window.firstFrame);
+};
+
 declare global {
   interface Window {
     firstFrame: string;
@@ -39,13 +45,13 @@ for (const { system, choice } of [
     expect(await background(page)).toBe(ground[choice]);
 
     await page.goto('/writing/token-logs');
-    expect(await page.evaluate(() => window.firstFrame)).toBe(ground[choice]);
+    expect(await firstFrame(page)).toBe(ground[choice]);
     await expect(theme.getByRole('button', { pressed: true })).toHaveText(new RegExp(choice, 'i'));
 
     // Auto forgets the choice: the next page follows the system again.
     await theme.getByRole('button', { name: 'Auto' }).click();
     await page.goto('/about');
-    expect(await page.evaluate(() => window.firstFrame)).toBe(ground[systemTheme]);
+    expect(await firstFrame(page)).toBe(ground[systemTheme]);
   });
 }
 
