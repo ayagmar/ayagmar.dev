@@ -25,6 +25,8 @@ exclude = [
   # The colophon links the commit the site was built from. A pull request's merge commit is
   # not a stable URL, and the link is right by construction.
   '^https://github\.com/ayagmar/ayagmar\.dev/commit/',
+  # X answers 403 to requests from CI runners whether or not the profile exists.
+  '^https://(x|twitter)\.com/',
   # The signals API is a separate Worker, checked by its own tests; it may not be deployed yet.
   '^https://api\.ayagmar\.dev/',
 ]
