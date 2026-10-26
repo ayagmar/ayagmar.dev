@@ -852,6 +852,13 @@ kbd {
   font-family: var(--mono);
 }
 
+/* Track names as on home: an italic here loads the italic font, whose swap reflows the
+   wrapped list rows (mobile CLS 0.05 in Lighthouse). */
+.stats-grid cite {
+  font-style: normal;
+  font-weight: 600;
+}
+
 @media (min-width: 60rem) {
   .stats-grid {
     grid-template-columns: repeat(12, 1fr);

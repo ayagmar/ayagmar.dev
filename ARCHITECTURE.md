@@ -96,6 +96,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Home page room: scene, hotspots, list                                     | `apps/site/src/lib/room.ts`, `src/styles/room.css`, `src/assets/room-*.png` (drawn by `scripts/scene.py`)     |
 | Room clock: sun, moon, Casablanca time (ADR 0027)                         | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/window-*.png`                                  |
 | Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                    |
+| Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`         |
 | Commands                                                                  | `justfile`                                                                                                    |
 | Decisions                                                                 | `docs/adr/`                                                                                                   |
 

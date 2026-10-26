@@ -1,0 +1,24 @@
+# Known vulnerabilities osv-scanner reports that have no fix this repo can take, each scoped to
+# the exact package version and reviewed again by the date below. ADR 0020 lists them.
+
+# GHSA-7pqw-9j4j-h8q3, GHSA-jmr9-qjv8-65gv: no fixed version exists. Reached through
+# lighthouse > puppeteer-core > @puppeteer/browsers, which unzips browser downloads. Lighthouse
+# CI never downloads a browser: it runs Playwright's Chromium (CHROME_PATH), and only in CI.
+[[PackageOverrides]]
+name = "extract-zip"
+version = "2.0.1"
+ecosystem = "npm"
+effectiveUntil = 2027-04-26
+vulnerability.ignore = true
+reason = "Only @puppeteer/browsers' download path uses it; Lighthouse CI never downloads a browser."
+
+# GHSA-mrhx-c7xc-m3w5: fixed only in zod 4, a different API. Reached through lighthouse >
+# puppeteer-core > chromium-bidi, which validates WebDriver BiDi messages; Lighthouse talks
+# CDP to a local Chromium loading this site's own pages.
+[[PackageOverrides]]
+name = "zod"
+version = "3.25.76"
+ecosystem = "npm"
+effectiveUntil = 2027-04-26
+vulnerability.ignore = true
+reason = "chromium-bidi under puppeteer-core; Lighthouse uses CDP, not BiDi, against the site's own pages."

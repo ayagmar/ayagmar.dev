@@ -1,0 +1,73 @@
+{
+  "static": {
+    "jsWithoutIslands": 0,
+    "jsWithIslands": 20480,
+    "pageWeight": 153600,
+    "fonts": 204800,
+    "onDemand": ["/pagefind/pagefind.js"],
+    "allowances": [
+      {
+        "name": "theme switch",
+        "file": "/_astro/theme.*.js",
+        "bytes": 1420
+      },
+      {
+        "name": "room clock",
+        "file": "/_astro/index.astro_astro_type_script_index_0_lang.*.js",
+        "bytes": 1700
+      }
+    ]
+  },
+  "lighthouse": {
+    "runs": 3,
+    "pages": {
+      "home": "/",
+      "post": "/writing/*",
+      "writing": "/writing",
+      "projects": "/projects",
+      "project": "/projects/*",
+      "about": "/about",
+      "stats": "/stats"
+    },
+    "assert": {
+      "mobile": {
+        "performance": 0.95,
+        "accessibility": 1,
+        "bestPractices": 0.95,
+        "lcp": 2000,
+        "tbt": 100,
+        "cls": 0.01
+      },
+      "desktop": {
+        "performance": 0.95,
+        "accessibility": 1,
+        "bestPractices": 0.95,
+        "lcp": 1000,
+        "tbt": 100,
+        "cls": 0.01
+      }
+    },
+    "regression": {
+      "mobile": {
+        "lcp": {
+          "ratio": 1.1,
+          "delta": 200
+        },
+        "tbt": {
+          "ratio": 1.1,
+          "delta": 50
+        }
+      },
+      "desktop": {
+        "lcp": {
+          "ratio": 1.1,
+          "delta": 100
+        },
+        "tbt": {
+          "ratio": 1.1,
+          "delta": 50
+        }
+      }
+    }
+  }
+}
