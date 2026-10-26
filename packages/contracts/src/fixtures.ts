@@ -111,6 +111,26 @@ import llmUsageSnapshotOk from '../fixtures/llm-usage/snapshot/ok.json' with { t
 import llmUsageSnapshotSensitiveFields from '../fixtures/llm-usage/snapshot/sensitive-fields.json' with {
   type: 'json',
 };
+import monkeytypeRawEmpty from '../fixtures/monkeytype/raw/empty.json' with { type: 'json' };
+import monkeytypeRawMalformed from '../fixtures/monkeytype/raw/malformed.json' with {
+  type: 'json',
+};
+import monkeytypeRawMissing from '../fixtures/monkeytype/raw/missing.json' with { type: 'json' };
+import monkeytypeRawOk from '../fixtures/monkeytype/raw/ok.json' with { type: 'json' };
+import monkeytypeRawPartial from '../fixtures/monkeytype/raw/partial.json' with { type: 'json' };
+import monkeytypeRawSensitiveFields from '../fixtures/monkeytype/raw/sensitive-fields.json' with {
+  type: 'json',
+};
+import monkeytypeSnapshotEmpty from '../fixtures/monkeytype/snapshot/empty.json' with {
+  type: 'json',
+};
+import monkeytypeSnapshotOk from '../fixtures/monkeytype/snapshot/ok.json' with { type: 'json' };
+import monkeytypeSnapshotPartial from '../fixtures/monkeytype/snapshot/partial.json' with {
+  type: 'json',
+};
+import monkeytypeSnapshotSensitiveFields from '../fixtures/monkeytype/snapshot/sensitive-fields.json' with {
+  type: 'json',
+};
 import npmRawEmpty from '../fixtures/npm/raw/empty.json' with { type: 'json' };
 import npmRawMalformed from '../fixtures/npm/raw/malformed.json' with { type: 'json' };
 import npmRawMissing from '../fixtures/npm/raw/missing.json' with { type: 'json' };
@@ -205,6 +225,14 @@ export const rawFixtures = {
     partial: lastfmRawPartial,
     'single-item': lastfmRawSingleItem,
   },
+  monkeytype: {
+    empty: monkeytypeRawEmpty,
+    malformed: monkeytypeRawMalformed,
+    missing: monkeytypeRawMissing,
+    ok: monkeytypeRawOk,
+    partial: monkeytypeRawPartial,
+    'sensitive-fields': monkeytypeRawSensitiveFields,
+  },
   npm: {
     empty: npmRawEmpty,
     malformed: npmRawMalformed,
@@ -262,6 +290,12 @@ export const snapshotFixtures = {
     minimal: llmUsageSnapshotMinimal,
     ok: llmUsageSnapshotOk,
     'sensitive-fields': llmUsageSnapshotSensitiveFields,
+  },
+  monkeytype: {
+    empty: monkeytypeSnapshotEmpty,
+    ok: monkeytypeSnapshotOk,
+    partial: monkeytypeSnapshotPartial,
+    'sensitive-fields': monkeytypeSnapshotSensitiveFields,
   },
   projects: {
     empty: projectsSnapshotEmpty,

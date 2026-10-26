@@ -10,6 +10,7 @@ export const sourceIds = [
   'weather',
   'listening-history',
   'desktop',
+  'monkeytype',
 ] as const;
 
 export const sourceIdSchema = z.enum(sourceIds);
@@ -38,4 +39,7 @@ export const staleAfterSeconds: Readonly<Record<SourceId, number>> = {
   'listening-history': 24 * 60 * 60,
   // Pushed at login and daily from the owner's desktop (ADR 0032).
   desktop: 2 * 24 * 60 * 60,
+  // Monkeytype pulled every 6 hours; a day is three missed pulls (ADR 0033). Personal bests
+  // stay true for years, so this is about the pull, never about when a best was set.
+  monkeytype: 24 * 60 * 60,
 };
