@@ -89,6 +89,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                   |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                   |
 | Base stylesheet                                                           | `apps/site/src/styles/base.css`                                                                               |
+| Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`         |
 | Commands                                                                  | `justfile`                                                                                                    |
 | Decisions                                                                 | `docs/adr/`                                                                                                   |
 

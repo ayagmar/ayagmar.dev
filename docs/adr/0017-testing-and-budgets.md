@@ -1,0 +1,72 @@
+# 0017. Testing strategy and performance budgets
+
+Status: accepted, 2026-10-26
+
+## Context
+
+The site is static pages with two small islands (search, now playing). It should stay fast on a phone without anyone having to remember to check, and a regression should fail the pull request that causes it, with numbers that say where. Tests should be few and each one should catch a bug that can really happen.
+
+## Decision
+
+### What each layer proves
+
+| Layer           | Where                                              | Proves                                                                                                                                                             |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Contract tests  | `packages/contracts/test`                          | zod and the exported JSON Schema accept and reject the same payloads; frozen v1 consumers still parse current output (ADR 0008).                                   |
+| Worker tests    | `apps/signals/test`, in workerd                    | Push intake rejects bad auth, schemas, replays and oversized bodies; adapters normalize every fixture case; storage keeps only allowlisted fields (ADR 0009–0011). |
+| Site unit tests | `apps/site/test`                                   | Feeds, headers and CSP, frontmatter schema, the data reader in both modes, postbuild's inline-code rule, diagrams.                                                 |
+| Script tests    | `scripts/*.test.ts`                                | CI plan and gate decisions, the Cloudflare policy, the secret scanners, the budgets and the Lighthouse comment path.                                               |
+| e2e             | `apps/site/e2e`, Playwright against `wrangler dev` | Every page at 360 and 1280 px with zero axe violations, no sideways scroll at 320 px, headers and CSP as served, a real search, the now-playing island.            |
+| Links           | lychee on `dist/`                                  | No broken internal link; external links alive (ADR 0018).                                                                                                          |
+| Static budgets  | `just budgets` on `dist/`                          | The bytes each page ships, fonts, no other origin, image dimensions. Exact and deterministic, so it runs on every build.                                           |
+| Lighthouse      | `just lighthouse`, base and head                   | What a browser measures: scores, LCP, TBT, CLS, under Lighthouse's simulated throttling, and that the change did not make them worse.                              |
+
+### Static budgets
+
+`scripts/budgets.ts` reads the built site and `scripts/budgets.json`, prints one row per page (JavaScript, weight, both budgets) and fails on any problem. A page's JavaScript is every inline `<script>`, every `<script src>` and `modulepreload`, each island's component and renderer, and everything those import statically, each gzipped (level 9) on its own; a dynamic `import()` loads on demand, so Pagefind's bundle, loaded when someone searches, is not counted. A page's weight is its HTML, the stylesheets it links (with their `@import`s and `url()` images), its JavaScript and the images it references, gzip for text and bytes for the rest, fonts excluded.
+
+| Budget                       | Limit             | Why                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| JS, page without islands     | 0 B               | A static page needs none; any byte there is an accident (a stray `client:` directive, a snippet).                                                                                                                                                                                                                                                                            |
+| JS, page with islands        | 20 KB gzip        | What the two islands cost: Svelte's runtime (14.3 KB), Astro's island loader (2.4 KB inline) and both components come to 19.7 KB on the home and stats pages and 18.2 KB elsewhere. A new dependency in an island fails it.                                                                                                                                                  |
+| Page weight, fonts excluded  | 150 KB gzip       | Pages weigh about 22 KB today. 150 KB leaves room for an image per page in the design and still downloads in under a second on a slow mobile connection.                                                                                                                                                                                                                     |
+| Fonts, whole build           | 200 KB, woff2     | Checked apart from page weight so the design knows its envelope: a few subset woff2 files. Fonts are cached across pages, so they count once. Any other font format fails.                                                                                                                                                                                                   |
+| Other origins in HTML or CSS | none              | Everything is self-hosted: no third-party request can block rendering or see visitors. Any `src`, `srcset`, `poster`, fetching `<link>` (stylesheet, preload, preconnect, icon, manifest…), SVG `href`, CSS `url()` or `@import` with a scheme other than `data:` or a `//` prefix fails. Plain links (`<a href>`, `rel="canonical"`, `rel="me"`) are not requests and pass. |
+| `<img>` width and height     | both, every image | Without them the page reflows when the image arrives (layout shift).                                                                                                                                                                                                                                                                                                         |
+
+A reference to a file the build does not contain also fails, since its bytes could not be counted.
+
+### Lighthouse
+
+`scripts/lighthouse.ts` serves a build through its own site Worker with `wrangler dev` (local and offline, as e2e does, so `_headers` and the Worker apply), runs `lhci collect` (`@lhci/cli` 0.15.1, Lighthouse 12.6.1) on six pages, mobile and desktop, three runs each, and takes the median of each metric. Chromium is Playwright's, already cached for e2e, passed as `CHROME_PATH`, run headless with `--no-sandbox`, as Playwright itself launches it (the pages are this site's own). The pages are `/`, `/writing`, `/projects`, `/about`, `/stats` and the largest post (`/writing/*` in `budgets.json`: the largest HTML file directly under `writing/`, so a heavy post cannot hide behind a light one).
+
+Head values must meet these, with simulated throttling (Lighthouse's default mobile profile, and its `desktop` preset):
+
+| Metric         | Mobile   | Desktop  | Why                                                                                                                                                                           |
+| -------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Performance    | ≥ 0.95   | ≥ 0.95   | A static page with idle islands scores 100 today; 0.95 leaves room for scoring noise, not for a real regression.                                                              |
+| LCP            | ≤ 2.0 s  | ≤ 1.0 s  | Below web.dev's "good" 2.5 s, which is measured at the 75th percentile of real visits, because a lab run on a small static page has no excuse. Desktop measures 0.25 s today. |
+| TBT            | ≤ 100 ms | ≤ 100 ms | 30 % of the performance score. The islands hydrate when idle or visible; 0 ms today.                                                                                          |
+| CLS            | ≤ 0.01   | ≤ 0.01   | web.dev's "good" is 0.1; these pages have no late content, so anything above a rounding error is a bug. 0.003 on some pages today.                                            |
+| Accessibility  | 1        | 1        | e2e already requires zero axe violations; Lighthouse's audits must agree.                                                                                                     |
+| Best practices | ≥ 0.95   | ≥ 0.95   | 0.96 today: the missing favicon logs a 404 to the console. Adding one brings it to 1.                                                                                         |
+
+**Regressions.** Where the base has the page, a head LCP fails when it is over the base's by more than 10 % and more than 100 ms; TBT by more than 10 % and more than 50 ms. Both conditions, because a ratio alone fires on tiny absolute changes (250 → 280 ms on desktop) and a fixed delta alone on slow pages. Scores and CLS have absolute limits only. Simulated throttling computes timings from a trace model rather than wall-clock time, so run-to-run noise is small; the median of three takes care of the rest.
+
+**In CI.** `lighthouse` runs when `output` or `perf` paths change (ADR 0018), or when the pull request has the `lighthouse` label (`labeled` is one of the workflow's `pull_request` types, so adding it starts a run). Head is the run's `site-dist` artifact; base is a second checkout of the pull request's base commit (on `main`, the commit before the push), installed and built in the same job with its own `just site-build` in fixtures mode, so both use the same deterministic data. A page the base does not have is shown as new and not compared. The job uploads `lighthouse-metrics` even when a budget fails.
+
+**The metrics artifact** holds numbers and fixed names only: `{ version: 1, runs, results: [{ page, profile, head, base, over, regressed }] }`, six metrics per side, page names from a fixed list, `over` and `regressed` lists of metric names. `scripts/lighthouse-report.js` defines it; the Lighthouse job validates its own output with it before writing.
+
+**The comment.** `lighthouse-comment` is the only job with a write token, and it has `pull-requests: write` and nothing else. It needs `lighthouse`, runs only on same-repository pull requests (on a fork it is skipped and the budgets still fail the gate), checks out no code and uses no action but `download-artifact` for `lighthouse-metrics`. The artifact comes from a job that ran the pull request's code and its dependencies, so it is treated as hostile: before rendering, the validator refuses anything over 16 KB unread, anything that is not exactly the schema (extra or missing fields, own `__proto__` keys included), unknown page, profile or metric names, repeated entries, and numbers that are not finite or are outside their range (scores 0–1, times 0–120 s, CLS 0–10). The comment is built from the validator's fixed labels and formatted numbers only; no string from the artifact reaches the comment or the log. The step then finds the comment by its `<!-- min7-lighthouse -->` marker among comments by `github-actions[bot]` and edits it, or creates one. Because the job checks out nothing, its validator is a copy of `scripts/lighthouse-report.js` in a heredoc in `ci.yml`: plain JavaScript with Node built-ins, run by the runner's own Node. `just lighthouse-embed` writes the copy, and a test fails while it differs from the file. The same tests run the real post step against a stand-in `gh`.
+
+**Not in the gate.** `lighthouse-comment` is listed in `ungated` in `scripts/ci.ts` and is not in the gate's `needs`. The `lighthouse` job is what enforces the budgets; a comment that fails to post (an API error, a rejected artifact) shows as a failed check but cannot block a merge. `continue-on-error` was not used, because a rejected artifact should be visible.
+
+`budgets` and `lighthouse` are ordinary planned jobs in the gate: when the plan expects them they must succeed.
+
+### Changing a budget
+
+Edit `scripts/budgets.json`, the only place the numbers live (the static script, the Lighthouse script and the comment read it or are checked against it), and update the table above with the new number and its reason in the same pull request. The change touches `perf`, so CI runs Lighthouse with the new numbers. Adding a page means a key in `budgets.json` `lighthouse.pages` and a label in `pages` in `scripts/lighthouse-report.js` (then `just lighthouse-embed`); a test fails until both agree.
+
+## Consequences
+
+A pull request that adds weight, JavaScript, a third-party request or a slower page fails with the page and the number. The islands budget has 0.3 KB of headroom on the home and stats pages: a third island or a heavier Svelte needs a decision here first. Lighthouse adds a job of an estimated fifteen minutes to output-affecting pull requests (72 Lighthouse runs: six pages, two profiles, three runs, base and head). `@lhci/cli` brings in a large dependency tree; three transitive packages are overridden to fixed versions and two advisories without a usable fix are ignored by exact version in `osv-scanner.toml` until a set date (ADR 0020).
