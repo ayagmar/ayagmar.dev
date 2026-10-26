@@ -633,14 +633,26 @@ jobs:
            */
           export function render(m) {
             const failing = m.results.filter((r) => r.over.length > 0 || r.regressed.length > 0).length;
+            const missing = profiles.filter((p) => !m.results.some((r) => r.profile === p));
+            /** One paragraph per thing wrong; the all-clear only when nothing is wrong or missing. */
+            const summary = [
+              ...(missing.length > 0
+                ? [
+                    `Incomplete: no metrics from the ${missing.join(' and ')} ${missing.length === 1 ? 'job' : 'jobs'}, which failed before measuring. The \`lighthouse\` job fails.`,
+                  ]
+                : []),
+              ...(failing > 0
+                ? [
+                    `${failing} page and profile ${failing === 1 ? 'combination fails' : 'combinations fail'}: ✗ over budget, ▲ regressed against the base. The \`lighthouse\` job fails.`,
+                  ]
+                : []),
+            ];
+            if (summary.length === 0) summary.push('Every page is within budget and no metric regressed.');
             const lines = [
               marker,
               '## Lighthouse',
               '',
-              failing === 0
-                ? 'Every page is within budget and no metric regressed.'
-                : `${failing} page and profile ${failing === 1 ? 'combination fails' : 'combinations fail'}: ✗ over budget, ▲ regressed against the base. The \`lighthouse\` job fails.`,
-              '',
+              ...summary.flatMap((paragraph) => [paragraph, '']),
               `Base → head, median of ${m.runs} ${m.runs === 1 ? 'run' : 'runs'} with simulated throttling, both built in fixtures mode. Budgets: ADR 0017.`,
             ];
             for (const profile of profiles) {

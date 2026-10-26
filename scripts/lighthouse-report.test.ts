@@ -72,6 +72,19 @@ describe('validate and render', () => {
     assert.doesNotMatch(body, /✗|▲/);
   });
 
+  it('marks a profile with no artifact as incomplete instead of giving the all-clear', () => {
+    const mobileOnly = text((a) => {
+      a.results = a.results.filter((r) => r.profile === 'mobile' && r.over.length === 0);
+    });
+    const body = render(validate(mobileOnly));
+    assert.match(body, /Incomplete: no metrics from the desktop job/);
+    assert.doesNotMatch(body, /Every page is within budget/);
+    assert.doesNotMatch(body, /### Desktop/);
+    // Both problems are told, and the budget failure is still counted.
+    const failing = render(validate(text((a) => a.results.splice(2, 1))));
+    assert.match(failing, /Incomplete: no metrics from the desktop job[\s\S]*1 page and profile/);
+  });
+
   const hostile: [string, (a: Artifact) => void][] = [
     ['an injected page name', (a) => Object.assign(a.results[0] ?? {}, { page: injection })],
     [
