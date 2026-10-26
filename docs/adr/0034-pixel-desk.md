@@ -46,7 +46,7 @@ A code-3 sky (ADR 0029) has its own layer, `weather-overcast-{day,night}.png`, d
 
 ## Consequences
 
-- Fonts +11 KB (124 of 200 KB), CSS about +2.5 KB gzip, home page weight and JavaScript unchanged apart from 4 B in the room clock for the new state name.
+- Fonts +11 KB (124 of 200 KB), the source CSS about +1.6 KB gzip, home page weight and JavaScript unchanged apart from 4 B in the room clock for the new state name.
 - Home loads one more font than before, preloaded; Lighthouse for the pages is in the pull request.
 - Every window needs a file name; a new panel material needs a bar colour chosen for 4.5:1 with `--bar-text` in both themes.
 - Pixelify at body size is tiring, so the rule "never running text" is the one to hold in review.
