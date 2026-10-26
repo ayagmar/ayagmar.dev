@@ -1,0 +1,41 @@
+{
+  "events": [
+    {
+      "type": "push",
+      "repo": "ayagmar/runnerd",
+      "at": "2026-10-25T21:14:00Z",
+      "url": "https://github.com/ayagmar/runnerd/compare/3f2a1c0...9be47d2",
+      "commits": 12
+    },
+    {
+      "type": "merge",
+      "repo": "ayagmar/ccdesk",
+      "at": "2026-10-25T16:40:00Z",
+      "url": "https://github.com/ayagmar/ccdesk/pull/41",
+      "number": 41,
+      "title": "Edit hooks from the dashboard"
+    },
+    {
+      "type": "stars",
+      "repo": "ayagmar/pi-mobile",
+      "at": "2026-10-24T22:05:00Z",
+      "gained": 3,
+      "total": 115
+    },
+    {
+      "type": "release",
+      "repo": "ayagmar/llm-usage-metrics",
+      "at": "2026-10-23T13:51:53Z",
+      "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.1",
+      "tag": "v0.14.1"
+    },
+    {
+      "type": "stars",
+      "repo": "ayagmar/llm-usage-metrics",
+      "at": "2026-10-23T10:02:00Z",
+      "gained": 1,
+      "total": 35
+    }
+  ],
+  "starHistory": []
+}

@@ -1,0 +1,382 @@
+{
+  "recentTracks": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Rocketship"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "A Certain Sensation"
+            },
+            "name": "Friendships and Love",
+            "url": "https://www.last.fm/music/Rocketship/_/Friendships+and+Love",
+            "@attr": {
+              "nowplaying": "true"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Heatmiser"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "Mic City Sons"
+            },
+            "name": "Half Right",
+            "url": "https://www.last.fm/music/Heatmiser/_/Half+Right",
+            "date": {
+              "uts": "yesterday"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Starflyer 59"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "Old"
+            },
+            "name": "We're The Ordinary",
+            "url": "https://www.last.fm/music/Starflyer+59/_/We're+The+Ordinary",
+            "date": {
+              "uts": "1793004480",
+              "#text": "26 Oct 2026, 08:48"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Nick Drake"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "Pink Moon"
+            },
+            "name": "Which Will",
+            "url": "https://www.last.fm/music/Nick+Drake/_/Which+Will",
+            "date": {
+              "uts": "1793004300",
+              "#text": "26 Oct 2026, 08:45"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Elliott Smith"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "Elliott Smith (Expanded 25th Anniversary Edition)"
+            },
+            "name": "St. Ides Heaven - 25th Anniversary Mix",
+            "url": "https://www.last.fm/music/Elliott+Smith/_/St.+Ides+Heaven+-+25th+Anniversary+Mix",
+            "date": {
+              "uts": "1793004120",
+              "#text": "26 Oct 2026, 08:42"
+            }
+          }
+        ],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "8356",
+          "page": "1",
+          "perPage": "10",
+          "total": "83558"
+        }
+      }
+    }
+  },
+  "topArtists": {
+    "status": 200,
+    "body": {
+      "topartists": {
+        "artist": [
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/Elliott+Smith",
+            "playcount": "2423",
+            "@attr": {
+              "rank": "1"
+            },
+            "name": "Elliott Smith"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/NTO",
+            "playcount": "1559",
+            "@attr": {
+              "rank": "2"
+            },
+            "name": "NTO"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/surrenderdorothy",
+            "playcount": "1297",
+            "@attr": {
+              "rank": "3"
+            },
+            "name": "surrenderdorothy"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/Daft+Punk",
+            "playcount": "986",
+            "@attr": {
+              "rank": "4"
+            },
+            "name": "Daft Punk"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/Bones",
+            "playcount": "975",
+            "@attr": {
+              "rank": "5"
+            },
+            "name": "Bones"
+          }
+        ],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "393",
+          "page": "1",
+          "perPage": "10",
+          "total": "3922"
+        }
+      }
+    }
+  },
+  "thisWeek": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "13",
+          "page": "1",
+          "perPage": "10",
+          "total": "124"
+        }
+      }
+    }
+  },
+  "lastWeek": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "65",
+          "page": "1",
+          "perPage": "10",
+          "total": "647"
+        }
+      }
+    }
+  }
+}

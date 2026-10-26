@@ -1,0 +1,38 @@
+{
+  "nowPlaying": null,
+  "recent": [
+    {
+      "track": "Half Right",
+      "artist": "Heatmiser",
+      "album": null,
+      "url": "https://www.last.fm/music/Heatmiser/_/Half+Right",
+      "playedAt": "2026-10-26T08:53:00Z"
+    },
+    {
+      "track": "We're The Ordinary",
+      "artist": "Starflyer 59",
+      "album": "Old",
+      "url": null,
+      "playedAt": "2026-10-26T08:48:00Z"
+    },
+    {
+      "track": "Which Will",
+      "artist": "Nick Drake",
+      "album": "Pink Moon",
+      "url": null,
+      "playedAt": "2026-10-26T08:45:00Z"
+    },
+    {
+      "track": "St. Ides Heaven - 25th Anniversary Mix",
+      "artist": "Elliott Smith",
+      "album": "Elliott Smith (Expanded 25th Anniversary Edition)",
+      "url": "https://www.last.fm/music/Elliott+Smith/_/St.+Ides+Heaven+-+25th+Anniversary+Mix",
+      "playedAt": "2026-10-26T08:42:00Z"
+    }
+  ],
+  "topArtists": null,
+  "scrobbles": {
+    "thisWeek": 124,
+    "lastWeek": null
+  }
+}
