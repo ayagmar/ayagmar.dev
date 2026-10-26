@@ -63,7 +63,7 @@ CPU per cron invocation, measured with `just signals-cpu` (`scripts/signals-cpu.
 | History, middle: one full page of 200                       | 15.1 ms | 5.8 ms (8.4)      |
 | History, last of 24: a full page, then the largest snapshot | 8.7 ms  | 5.3 ms (6.2)      |
 
-Production numbers differ: the orchestrator's Workers Logs reading on 2026-10-26 had listening at 12 ms p50 and 27 ms max, and shipping at 25 ms p50, already over the 10 ms Free limit. By the local ratio a history invocation should land at roughly two to three times listening's warm cost. Profile it in Workers Logs after the first deploy, with the work on the other adapters.
+These are measurements, not a check that passed. The PR's review ran the same bench and got, over a baseline of 8.4 ms cold and 3.9 ms warm: history-first 10.4 ms cold, 4.6 warm median, 5.7 warm max; history-full-page 13.7, 7.5, 9.9; history-last-of-24 14.5, 5.6, 8.6; listening 6.3, 3.3, 4.9. Every cold history invocation, and the no-adapter baseline on its own, is over the 10 ms Free limit, as production already is for the existing adapters: the orchestrator's Workers Logs reading on 2026-10-26 had listening at 12 ms p50 and 27 ms max, and shipping at 25 ms p50. The owner decided on 2026-10-26 that the 10 ms limit is not a merge bar for this feature. Cron CPU, the history's included, is the subject of the separate `fix/cron-cpu` pull request; nothing here has been measured in production yet.
 
 | What                        | Use                                                                                                                                                                    |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -111,4 +111,4 @@ The script is 1,435 B gzip and has its own allowance in `budgets.json`, 1,500 B,
 - The time to today's history grows by about two minutes per past year, past the 10-minute target from four years on under worst-case contention. Keeping it under 10 minutes for older accounts needs another design, such as a second cron trigger for the history, which is the owner's call.
 - Listening skips a minute now and then while a history pull runs; its gap stays within 5 minutes.
 - If Morocco changes its clocks again, `knowsRabatDate` in `src/lib/history.ts` and `knowsRabatTime` in `src/lib/sky.ts` move with the new rules.
-- A history invocation's CPU in production is not measured yet; check it in Workers Logs after the first deploy.
+- A history invocation's CPU is over 10 ms cold locally and is not measured in production; `fix/cron-cpu` takes it up with the other adapters.
