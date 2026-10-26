@@ -11,6 +11,9 @@ signals_mode := env("SIGNALS_MODE", if env("WORKERS_CI_BRANCH", "") == "main" { 
 site := "pnpm --filter @min7/site exec"
 signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
+# Every required signals secret, matching secrets.required in apps/signals/wrangler.jsonc.
+# GITHUB_TOKEN is optional and set on its own: `just signals-secret GITHUB_TOKEN`.
+required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT"
 
 [private]
 default:
@@ -123,7 +126,7 @@ site-deploy:
 site-preview:
     {{ site }} wrangler preview --message "{{ commit_sha }}"
 
-# Signals: local Worker on http://localhost:8787
+# Signals: local Worker on http://localhost:8787 (run signals-migrate-local first)
 signals-dev:
     {{ signals }} wrangler dev --var COMMIT_SHA:{{ commit_sha }}
 
@@ -131,17 +134,42 @@ signals-dev:
 signals-build:
     {{ signals }} wrangler deploy --dry-run --outdir dist --var COMMIT_SHA:{{ commit_sha }}
 
-# Signals: deploy to production
-signals-deploy:
+# Signals: apply pending migrations to the production database, then deploy to production
+signals-deploy: signals-migrate-remote
     {{ signals }} wrangler deploy --var COMMIT_SHA:{{ commit_sha }} --message "{{ commit_sha }}"
 
-# Signals: upload a Preview (pull requests)
-signals-preview:
+# Signals: apply pending migrations to the shared preview database, then upload a Preview
+signals-preview: signals-migrate-preview
     {{ signals }} wrangler preview --var COMMIT_SHA:{{ commit_sha }} --message "{{ commit_sha }}"
 
-# Signals: set a Worker secret, prompting for its value (deploys a new version)
+# Signals: create the production and preview D1 databases (once; put the ids in the configs)
+signals-db-create:
+    {{ signals }} wrangler d1 create min7-signals
+    {{ signals }} wrangler d1 create min7-signals-preview
+
+# Signals: apply pending migrations to the local database that signals-dev uses
+signals-migrate-local:
+    {{ signals }} wrangler d1 migrations apply DB --local
+
+# Signals: apply pending migrations to the production database (min7-signals)
+signals-migrate-remote:
+    {{ signals }} wrangler d1 migrations apply DB --remote
+
+# Signals: apply pending migrations to the shared preview database (min7-signals-preview)
+signals-migrate-preview:
+    {{ signals }} wrangler d1 migrations apply DB --remote --config wrangler.preview-migrations.jsonc
+
+# Signals: set one production secret; Wrangler prompts for the value (deploys a new version)
 signals-secret name:
     {{ signals }} wrangler secret put {{ quote(name) }}
+
+# Signals: set each required production secret in turn
+signals-secrets:
+    for name in {{ required_secrets }}; do just signals-secret "$name"; done
+
+# Signals: give the Preview base config random fake required secrets, shown to no one
+signals-preview-secrets:
+    for name in {{ required_secrets }}; do openssl rand -hex 32 | {{ signals }} wrangler preview base-config secret put "$name"; done
 
 # List the 10 most recent deployments of a Worker (site or signals)
 deployments worker:

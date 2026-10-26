@@ -21,3 +21,33 @@ describe('wrangler configs', () => {
     });
   }
 });
+
+// A Preview runs untrusted branch code with public URLs, so it must never reach production
+// data, and the preview database its migrations go to must be the one Previews bind.
+describe('signals previews', () => {
+  const read = (file: string) => {
+    const path = join(apps, 'signals', file);
+    const { config, error } = ts.parseConfigFileTextToJson(path, readFileSync(path, 'utf8'));
+    assert.equal(error, undefined);
+    return config;
+  };
+  const main = read('wrangler.jsonc');
+  const migrations = read('wrangler.preview-migrations.jsonc');
+  const ids = (list: { database_id: string }[] = []) => list.map((db) => db.database_id);
+
+  it('bind no production database or rate limit namespace', () => {
+    for (const id of ids(main.previews.d1_databases)) {
+      assert.ok(!ids(main.d1_databases).includes(id), `preview binds production database ${id}`);
+    }
+    const production = new Set(
+      main.ratelimits.map((r: { namespace_id: string }) => r.namespace_id)
+    );
+    for (const { namespace_id } of main.previews.ratelimits) {
+      assert.ok(!production.has(namespace_id), `preview shares rate limit ${namespace_id}`);
+    }
+  });
+
+  it('migrate the database they bind', () => {
+    assert.deepEqual(ids(migrations.d1_databases), ids(main.previews.d1_databases));
+  });
+});
