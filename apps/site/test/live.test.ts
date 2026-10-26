@@ -64,12 +64,15 @@ const readers = [
     edges: {
       'negative stars': { projects: [{ stars: -1 }] },
       'stars as a string': { projects: [{ stars: '35' }] },
+      'a slug with capitals': { projects: [{ slug: 'Kipple' }] },
+      'a release on 30 February': {
+        projects: [{ latestRelease: { publishedAt: '2026-02-30T00:00:00Z' } }],
+      },
+      'an npm name with a space': { projects: [{ npm: { package: 'a b' } }] },
+      'archived as a string': { projects: [{ archived: 'no' }] },
     },
-    // /stats shows how many projects there are and their stars; these break neither.
-    unshown: [
-      'projects/reject/repo-url-off-github.json',
-      'projects/reject/stars-not-a-number.json',
-    ],
+    // Not projects at all, though each has a star count /stats could add up.
+    raw: { 'a project with only its stars': { projects: [{ stars: 9000 }] } },
   },
 ] as const;
 
@@ -90,7 +93,6 @@ function merge(base: unknown, edge: unknown): unknown {
 }
 
 describe.each(readers)('the $source reader', ({ source, read, schema, edges, ...rest }) => {
-  const unshown: readonly string[] = 'unshown' in rest ? rest.unshown : [];
   const ok = snapshotFixtures[source].ok;
   const cases: [string, unknown][] = [
     ...Object.entries(snapshotFixtures[source]).map(([name, data]): [string, unknown] => [
@@ -99,11 +101,12 @@ describe.each(readers)('the $source reader', ({ source, read, schema, edges, ...
     ]),
     ...files(`${source}/reject`),
     ...Object.entries(edges).map(([name, edge]): [string, unknown] => [name, merge(ok, edge)]),
+    ...Object.entries('raw' in rest ? rest.raw : {}),
   ];
 
   it.each(cases)('agrees with the contract on %s', (name, data) => {
     const accepted = schema.safeParse(data).success;
-    expect(read(data) !== undefined).toBe(accepted || unshown.includes(name));
+    expect(read(data) !== undefined, name).toBe(accepted);
   });
 
   it('keeps the edge cases meaningful', () => {

@@ -1,7 +1,8 @@
 /**
  * Which `/v1/shipping` and `/v1/projects` data /stats may show when its script reads them in
- * the browser (ADR 0015), checked as the contract states it. The browser does not load the
- * contracts' zod schemas; test/stats.test.ts holds these readers to them.
+ * the browser (ADR 0015), checked whole as the contract states it: an answer that is not a
+ * snapshot of featured projects is not counted, whatever star counts it carries. The browser
+ * does not load the contracts' zod schemas; test/live.test.ts holds these readers to them.
  */
 import type { ProjectsSnapshot, ShippingSnapshot } from '@min7/contracts';
 import { instantMs, list, text, whole } from './live.ts';
@@ -47,17 +48,45 @@ export function readShipping(data: unknown): ShippingSnapshot | undefined {
     : undefined;
 }
 
-/**
- * `data` if it is a projects snapshot whose star counts /stats can add up, else undefined.
- * Only what the page shows is checked: how many projects, and each one's stars.
- */
+const string = (value: unknown) => value === null || typeof value === 'string';
+
+function project(value: unknown) {
+  const {
+    slug,
+    repo: name,
+    name: title,
+    url,
+    description,
+    language,
+    stars,
+    archived,
+  } = Object(value);
+  const { latestRelease: release, npm } = Object(value);
+  return (
+    typeof slug === 'string' &&
+    slug.length <= 100 &&
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) &&
+    repo(name) &&
+    text(title) &&
+    github(url) &&
+    string(description) &&
+    string(language) &&
+    (stars === null || whole(stars)) &&
+    (archived === null || typeof archived === 'boolean') &&
+    (release === null ||
+      (text(Object(release).tag) &&
+        github(Object(release).url) &&
+        instantMs(Object(release).publishedAt, true) !== undefined)) &&
+    (npm === null ||
+      (text(Object(npm).package, 214) &&
+        /^(@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/.test(Object(npm).package) &&
+        (Object(npm).monthlyDownloads === null || whole(Object(npm).monthlyDownloads))))
+  );
+}
+
+/** `data` if it is a projects snapshot, else undefined. */
 export function readProjects(data: unknown): ProjectsSnapshot | undefined {
-  return list(Object(data).projects, 30, (project) => {
-    const { stars } = Object(project);
-    return stars === null || whole(stars);
-  })
-    ? (data as ProjectsSnapshot)
-    : undefined;
+  return list(Object(data).projects, 30, project) ? (data as ProjectsSnapshot) : undefined;
 }
 
 /** The words /stats shows around the numbers, at build time and live. */
