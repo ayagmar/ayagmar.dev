@@ -8,7 +8,7 @@ The site has no secrets, but it should not run scripts it did not ship, be frame
 
 ## Decision
 
-`apps/site/scripts/postbuild.ts` runs after `astro build` and `pagefind`. It hashes (sha256) the content of every inline `<script>` and `<style>` in `dist/**/*.html`, builds one policy from `src/lib/security-headers.ts`, and writes `dist/_headers` for `/*`:
+`apps/site/scripts/postbuild.ts` runs after `astro build` and `pagefind`. It reads every inline `<script>` and `<style>` in `dist/**/*.html`. An inline element is allowed only when its content is exactly one of Astro's own: the island runtime, a hydration directive (`idle`, `load`, `media`, `only`, `visible`) or the island style, compared against the strings in the installed `astro` package. Allowed ones are hashed (sha256). Any other inline script or style, such as raw HTML in a Markdown post, fails the build with the page named, so content can never widen the policy. The script then builds one policy from `src/lib/security-headers.ts` and writes `dist/_headers` for `/*`:
 - `Content-Security-Policy`: `default-src 'none'`; `script-src 'self' 'wasm-unsafe-eval'` plus the hashes; `style-src 'self'` plus the hashes; `img-src`, `font-src`, `manifest-src` and `form-action` `'self'`; `connect-src 'self' https://api.ayagmar.dev`; `worker-src 'self'`; `base-uri 'none'`; `object-src 'none'`; `frame-ancestors 'none'`. No `unsafe-inline`.
 - `Strict-Transport-Security: max-age=63072000; includeSubDomains` (no `preload`: that commits the domain to browser preload lists and is the owner's call).
 - `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` denying sensors, camera, microphone, geolocation, payment and USB, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Cross-Origin-Opener-Policy: same-origin`.
@@ -26,4 +26,4 @@ Playwright runs every page against `wrangler dev` and fails on any `securitypoli
 
 ## Consequences
 
-An inline script or style added later gets hashed automatically. A `style=""` attribute, an inline event handler or a third-party origin fails the e2e suite until the policy is changed here.
+An Astro upgrade that changes its inline runtime is picked up from the package automatically. An inline script or style from anywhere else fails the build. A `style=""` attribute, an inline event handler or a third-party origin fails the e2e suite until the policy is changed here.

@@ -82,6 +82,6 @@ As of this scaffold only `/v1/health` exists, the site pages show empty states, 
 `just site-build` runs three steps:
 1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
 2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post bodies) into `dist/pagefind/`.
-3. `scripts/postbuild.ts` hashes every inline script and style Astro emitted and writes `dist/_headers` with one Content-Security-Policy for the whole site.
+3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
 In production, Workers static assets serve `dist/`. The site Worker runs only for `/`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt`, anything else gets `index.html`. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.
