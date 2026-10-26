@@ -52,9 +52,12 @@ export async function getJson(
     maxBytes: number;
     headers?: Record<string, string>;
     form?: URLSearchParams;
+    /** This request's own deadline, whatever `signal` does. */
+    timeoutMs?: number;
   }
 ): Promise<UpstreamResponse> {
-  const signal = AbortSignal.any([options.signal, AbortSignal.timeout(requestTimeoutMs)]);
+  const timeout = AbortSignal.timeout(options.timeoutMs ?? requestTimeoutMs);
+  const signal = AbortSignal.any([options.signal, timeout]);
   try {
     const response = await fetch(url, {
       headers: { accept: 'application/json', 'user-agent': userAgent, ...options.headers },

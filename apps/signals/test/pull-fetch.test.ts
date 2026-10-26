@@ -7,6 +7,7 @@ import { upstreamHandlers } from '@min7/contracts/testing';
 import { setupNetwork } from '@msw/cloudflare';
 import { delay, HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { getJson } from '../src/adapters/pull/http.ts';
 import { PullError } from '../src/adapters/pull/index.ts';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { projects } from '../src/adapters/pull/projects.ts';
@@ -197,6 +198,17 @@ describe('pull adapter fetch', () => {
       })
     );
     const error = await pullError(shipping.fetch(env, AbortSignal.timeout(50)));
+    expect(error.code).toBe('upstream_timeout');
+  });
+
+  it('gives up on its own even when the caller never aborts', { timeout: 2_000 }, async () => {
+    network.use(
+      http.get(feed, async () => {
+        await delay('infinite');
+      })
+    );
+    const never = new AbortController().signal;
+    const error = await pullError(getJson(feed, { signal: never, maxBytes: 1024, timeoutMs: 50 }));
     expect(error.code).toBe('upstream_timeout');
   });
 
