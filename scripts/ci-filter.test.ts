@@ -4,20 +4,24 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { classify, gate, type Job, jobs, plan } from './ci.ts';
+import { classify, gate, type Job, jobs, lighthouseLabel, plan, ungated } from './ci.ts';
 
 const allJobs = Object.keys(jobs) as Job[];
 
 /** The jobs a change runs. */
-const runs = (files: string[]) =>
-  Object.entries(plan(classify(files)))
+const runs = (files: string[], labels: string[] = []) =>
+  Object.entries(plan(classify(files), labels))
     .filter(([, on]) => on)
     .map(([job]) => job)
     .sort();
 
 /** The `needs` context GitHub hands the gate when every planned job ends with `result`. */
-function needsFor(files: string[], results: Partial<Record<Job, string>> = {}) {
-  const planned: Partial<Record<Job, boolean>> = plan(classify(files));
+function needsFor(
+  files: string[],
+  results: Partial<Record<Job, string>> = {},
+  labels: string[] = []
+) {
+  const planned: Partial<Record<Job, boolean>> = plan(classify(files), labels);
   const needs: Record<string, { result: string; outputs?: Record<string, string> }> = {
     changes: { result: 'success', outputs: { plan: JSON.stringify(planned) } },
   };
@@ -28,14 +32,49 @@ function needsFor(files: string[], results: Partial<Record<Job, string>> = {}) {
 }
 
 describe('plan', () => {
-  it('builds and checks the output of a content-only change, without unit tests', () => {
+  it('builds, measures and checks the output of a content-only change, without unit tests', () => {
     assert.deepEqual(runs(['content/writing/new-post.md']), [
+      'budgets',
       'e2e',
       'format',
+      'lighthouse',
       'links',
       'secrets-source',
       'site-build',
     ]);
+  });
+
+  it('runs Lighthouse, with the build and budgets it needs, on a labelled docs-only change', () => {
+    assert.deepEqual(runs(['README.md']), ['format', 'secrets-source']);
+    assert.deepEqual(runs(['README.md'], ['docs', lighthouseLabel]), [
+      'budgets',
+      'format',
+      'lighthouse',
+      'secrets-source',
+      'site-build',
+    ]);
+  });
+
+  it('ignores labels other than lighthouse', () => {
+    assert.deepEqual(runs(['README.md'], ['Lighthouse', 'perf']), ['format', 'secrets-source']);
+  });
+
+  for (const file of [
+    'scripts/budgets.json',
+    'scripts/lighthouse.ts',
+    'scripts/lighthouse-report.js',
+  ]) {
+    it(`runs Lighthouse and the budgets when ${file} changes`, () => {
+      const jobs = runs([file]);
+      for (const job of ['site-build', 'budgets', 'lighthouse']) {
+        assert.ok(jobs.includes(job), `${job} should run`);
+      }
+    });
+  }
+
+  it('measures nothing for a Worker-only change', () => {
+    const jobs = runs(['apps/signals/src/index.ts']);
+    assert.ok(!jobs.includes('lighthouse') && !jobs.includes('budgets'));
   });
 
   it('gives a signals-only change the full static checks but no site build', () => {
@@ -137,6 +176,19 @@ describe('gate', () => {
     ]);
   });
 
+  it('fails a labelled run whose Lighthouse job was skipped or failed', () => {
+    for (const result of ['skipped', 'failure']) {
+      const needs = needsFor(['README.md'], { lighthouse: result }, [lighthouseLabel]);
+      assert.deepEqual(gate(needs), [`lighthouse: ${result}, expected success`]);
+    }
+    assert.deepEqual(gate(needsFor(['README.md'], {}, [lighthouseLabel])), []);
+  });
+
+  it('fails a content change over its static budgets', () => {
+    const needs = needsFor(['content/writing/a.md'], { budgets: 'failure' });
+    assert.deepEqual(gate(needs), ['budgets: failure, expected success']);
+  });
+
   it('fails when a job ran that the plan skipped', () => {
     const needs = needsFor(['content/writing/a.md'], { 'signals-test': 'success' });
     assert.deepEqual(gate(needs), ['signals-test: success, but the plan skipped it']);
@@ -161,9 +213,9 @@ describe('gate', () => {
   it('fails when a job is missing from needs or unknown to the plan', () => {
     const needs = needsFor(['content/writing/a.md']);
     delete needs.links;
-    needs.lighthouse = { result: 'success' };
+    needs.resume = { result: 'success' };
     assert.deepEqual(gate(needs), [
-      'lighthouse: not in scripts/ci.ts jobs',
+      'resume: not in scripts/ci.ts jobs',
       "links: missing from the gate's needs",
     ]);
   });
@@ -182,8 +234,8 @@ describe('ci.yml', () => {
     return next === -1 ? body.slice(start) : body.slice(start, start + 1 + next);
   };
 
-  it('defines exactly the planned jobs plus changes and gate', () => {
-    assert.deepEqual([...defined].sort(), [...allJobs, 'changes', 'gate'].sort());
+  it('defines exactly the planned jobs plus changes, gate and the ungated comment job', () => {
+    assert.deepEqual([...defined].sort(), [...allJobs, ...ungated, 'changes', 'gate'].sort());
   });
 
   it('makes the gate need every job and always run', () => {

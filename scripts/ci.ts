@@ -2,13 +2,13 @@
 // groups and the job conditions live only here: ci.yml runs a job when the plan says so, and
 // the gate requires each job the plan asked for to succeed. ADR 0018 explains the groups.
 // Usage:
-//   node scripts/ci.ts plan   On a pull request, the files the merge commit changes; on any
-//                             other GitHub event, everything; locally, HEAD against origin/main.
-//                             Writes `plan=<json>`, a boolean per job, to $GITHUB_OUTPUT
-//                             (stdout when it is not set).
+//   node scripts/ci.ts plan   On a pull request, the files the merge commit changes and the
+//                             pull request's labels; on any other GitHub event, everything;
+//                             locally, HEAD against origin/main. Writes `plan=<json>`, a boolean
+//                             per job, to $GITHUB_OUTPUT (stdout when it is not set).
 //   node scripts/ci.ts gate   Reads the `needs` context as JSON from $NEEDS; exits 1 on failure.
 import { execFileSync } from 'node:child_process';
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, readFileSync } from 'node:fs';
 
 // Files every unit is built and tested with. bootstrap.sh installs just (CI, Workers Builds)
 // and the CI tools.
@@ -42,12 +42,23 @@ export const groups = {
     'scripts/bootstrap.sh',
     'justfile',
   ],
+  // What the Lighthouse job runs and measures with (ADR 0017).
+  perf: ['scripts/budgets.*', 'scripts/lighthouse*'],
   shell: ['**/*.sh', '.githooks/**'],
-  deps: ['**/package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml'],
+  deps: ['**/package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'osv-scanner.toml'],
 } as const;
 
 export type Group = keyof typeof groups;
 export type Groups = Record<Group, boolean>;
+
+/** A pull request with this label runs Lighthouse whatever it changes. */
+export const lighthouseLabel = 'lighthouse';
+
+// Lighthouse measures the site-build artifact, so whatever runs it also builds the site.
+const lighthouse = (g: Groups, labels: readonly string[]) =>
+  g.output || g.perf || labels.includes(lighthouseLabel);
+const siteBuild = (g: Groups, labels: readonly string[]) =>
+  g.code || g.output || lighthouse(g, labels);
 
 // Every job in ci.yml except `changes` and `gate`, and when it must run.
 export const jobs = {
@@ -56,7 +67,8 @@ export const jobs = {
   checks: (g) => g.code || g.signals,
   contracts: (g) => g.contracts,
   'site-test': (g) => g.code,
-  'site-build': (g) => g.code || g.output,
+  'site-build': siteBuild,
+  budgets: siteBuild,
   e2e: (g) => g.code || g.output,
   links: (g) => g.output,
   'signals-test': (g) => g.signals,
@@ -65,11 +77,17 @@ export const jobs = {
   workflows: (g) => g.workflows || g.tooling,
   renovate: (g) => g.tooling,
   shell: (g) => g.shell,
-  // PR 5: `lighthouse: (g) => g.output,` and its comment job.
+  lighthouse,
   // PR 6: `resume: (g) => g.output,` once `resume/**` and `content/about.*` are in `output`.
-} satisfies Record<string, (g: Groups) => boolean>;
+} satisfies Record<string, (g: Groups, labels: readonly string[]) => boolean>;
 
 export type Job = keyof typeof jobs;
+
+/**
+ * Jobs in ci.yml outside the plan and the gate. `lighthouse-comment` only posts the comment:
+ * it follows `lighthouse`, is skipped on forks, and a failure to post must not block a merge.
+ */
+export const ungated = ['lighthouse-comment'] as const;
 
 /**
  * Whether a path matches a glob: `**` spans any directories, `*` stays within one. Unlike
@@ -96,8 +114,8 @@ export function classify(files: readonly string[]): Groups {
   return Object.fromEntries(entries) as Groups;
 }
 
-export function plan(g: Groups): Record<Job, boolean> {
-  const entries = Object.entries(jobs).map(([job, runs]) => [job, runs(g)]);
+export function plan(g: Groups, labels: readonly string[] = []): Record<Job, boolean> {
+  const entries = Object.entries(jobs).map(([job, runs]) => [job, runs(g, labels)]);
   return Object.fromEntries(entries) as Record<Job, boolean>;
 }
 
@@ -155,11 +173,24 @@ function changedFiles(): readonly string[] | 'all' {
   return diff('origin/main...HEAD');
 }
 
+/** The pull request's labels, read from the event payload GitHub writes for the run. */
+function labels(): string[] {
+  const path = process.env.GITHUB_EVENT_PATH;
+  if (process.env.GITHUB_EVENT_NAME !== 'pull_request' || !path) return [];
+  const event = JSON.parse(readFileSync(path, 'utf8')) as {
+    pull_request?: { labels?: { name?: unknown }[] };
+  };
+  return (event.pull_request?.labels ?? []).flatMap((l) =>
+    typeof l.name === 'string' ? [l.name] : []
+  );
+}
+
 if (import.meta.main) {
   const [command] = process.argv.slice(2);
   if (command === 'plan') {
     const files = changedFiles();
     const g = files === 'all' ? everything : classify(files);
+    const prLabels = labels();
     console.error(
       files === 'all'
         ? 'plan: not a pull request, running every job'
@@ -170,7 +201,8 @@ if (import.meta.main) {
         .map(([name, on]) => `${name}=${on}`)
         .join(' ')}`
     );
-    const line = `plan=${JSON.stringify(plan(g))}\n`;
+    console.error(`${lighthouseLabel} label: ${prLabels.includes(lighthouseLabel)}`);
+    const line = `plan=${JSON.stringify(plan(g, prLabels))}\n`;
     // In Actions the plan becomes the step's output; locally it is printed.
     if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, line);
     else process.stdout.write(line);

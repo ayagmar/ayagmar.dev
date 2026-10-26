@@ -24,16 +24,24 @@ const write = (path: string, text = 'x\n') => {
   writeFileSync(join(repo, path), text);
 };
 
-/** Commits `change` on top of a base commit and returns the jobs the planner runs. */
-function planFor(change: () => void): Record<string, boolean> {
+/**
+ * Commits `change` on top of a base commit and returns the jobs the planner runs, for a pull
+ * request event with `labels`.
+ */
+function planFor(change: () => void, labels: string[] = []): Record<string, boolean> {
   git('add', '-A');
   git('commit', '-q', '-m', 'base');
   change();
   git('add', '-A');
   git('commit', '-q', '-m', 'change');
+  const event = join(repo, '.git', 'event.json');
+  writeFileSync(
+    event,
+    JSON.stringify({ pull_request: { labels: labels.map((name) => ({ name })) } })
+  );
   const out = execFileSync(process.execPath, [planner, 'plan'], {
     cwd: repo,
-    env: { ...env(), GITHUB_EVENT_NAME: 'pull_request' },
+    env: { ...env(), GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: event },
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'ignore'],
   });
@@ -65,5 +73,11 @@ describe('plan on a real git diff', () => {
     const jobs = planFor(() => git('mv', 'apps/site/src/pages/a.astro', 'docs-a.astro'));
     assert.equal(jobs['site-build'], true);
     assert.equal(jobs.links, true);
+  });
+
+  it('reads the lighthouse label from the pull request event', () => {
+    const jobs = planFor(() => write('README.md', 'y\n'), ['docs', 'lighthouse']);
+    assert.equal(jobs.lighthouse, true);
+    assert.equal(jobs['site-build'], true);
   });
 });

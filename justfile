@@ -148,6 +148,22 @@ links: links-internal
 links-internal: (tools "lychee")
     lychee --config lychee.toml --offline --root-dir "{{ justfile_directory() }}/apps/site/dist" --remap '^https://ayagmar\.dev/?(.*)$ file://{{ justfile_directory() }}/apps/site/dist/$1' apps/site/dist
 
+# Site: fail if a page in apps/site/dist is over its static budget (run after site-build)
+budgets:
+    node scripts/budgets.ts
+
+# Site: Lighthouse on apps/site/dist through its Worker, both profiles (`--profile desktop` for
+# one) and `--base <dir>` to compare with another build's apps/site. Needs e2e-install once.
+lighthouse *args:
+    CHROME_PATH="$({{ site }} node -p 'require("@playwright/test").chromium.executablePath()')" node scripts/lighthouse.ts {{ args }}
+
+# CI: Lighthouse on the site artifact against the base build in .lighthouse/base (ci.yml)
+lighthouse-ci: (lighthouse "--base" ".lighthouse/base/apps/site")
+
+# CI: copy scripts/lighthouse-report.js into the lighthouse-comment job (run after editing it)
+lighthouse-embed:
+    node scripts/lighthouse-embed.ts
+
 # Site: dev server (no search index; run site-build for that)
 site-dev:
     {{ site }} astro dev
