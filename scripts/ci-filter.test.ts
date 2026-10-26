@@ -83,6 +83,20 @@ describe('plan', () => {
     assert.ok(!jobs.includes('signals-test'));
   });
 
+  for (const file of [
+    'apps/signals/migrations/0002_add_column.sql',
+    'apps/signals/src/cron/run.ts',
+    'apps/signals/wrangler.jsonc',
+    'apps/signals/.dev.vars.example',
+  ]) {
+    it(`runs the Worker checks, tests and bundle for ${file}`, () => {
+      const jobs = runs([file]);
+      for (const job of ['checks', 'signals-test', 'codeql'])
+        assert.ok(jobs.includes(job), `${job} should run`);
+      assert.ok(!jobs.includes('site-build'));
+    });
+  }
+
   it('runs the union for mixed changes', () => {
     const jobs = runs(['content/writing/a.md', '.github/workflows/ci.yml', 'scripts/bootstrap.sh']);
     for (const job of ['links', 'site-build', 'workflows', 'renovate', 'shell', 'checks']) {

@@ -9,7 +9,6 @@
 //   node scripts/ci.ts gate   Reads the `needs` context as JSON from $NEEDS; exits 1 on failure.
 import { execFileSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
-import { matchesGlob } from 'node:path';
 
 // Files every unit is built and tested with. bootstrap.sh installs just (CI, Workers Builds)
 // and the CI tools.
@@ -72,10 +71,27 @@ export const jobs = {
 
 export type Job = keyof typeof jobs;
 
+/**
+ * Whether a path matches a glob: `**` spans any directories, `*` stays within one. Unlike
+ * path.matchesGlob, dotfiles match too (`apps/signals/**` covers `.dev.vars.example`).
+ */
+export function matches(file: string, glob: string): boolean {
+  const source = glob
+    .split(/(\*\*\/|\/\*\*$|\*)/)
+    .map((part) => {
+      if (part === '**/') return '(?:.*/)?';
+      if (part === '/**') return '/.*';
+      if (part === '*') return '[^/]*';
+      return part.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+    })
+    .join('');
+  return new RegExp(`^${source}$`).test(file);
+}
+
 export function classify(files: readonly string[]): Groups {
   const entries = Object.entries(groups).map(([group, globs]) => [
     group,
-    files.some((file) => globs.some((glob) => matchesGlob(file, glob))),
+    files.some((file) => globs.some((glob) => matches(file, glob))),
   ]);
   return Object.fromEntries(entries) as Groups;
 }
