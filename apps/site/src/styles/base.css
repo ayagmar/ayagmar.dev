@@ -732,6 +732,12 @@ kbd {
   --title: "writing.md";
 }
 
+/* A page that names its windows sets data-file (ADR 0034). */
+.panel[data-file]::before,
+.paper[data-file]::before {
+  content: attr(data-file);
+}
+
 .t-about {
   --title: "whoami.txt";
 }

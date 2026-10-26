@@ -1,6 +1,7 @@
 # 0017. Testing strategy and performance budgets
 
 Status: accepted, 2026-10-26. Amended 2026-10-26: the room clock's allowance is 2.3 KB (ADR 0029); the /stats script has its own of 1.5 KB (ADR 0030); the /uses script (1.1 KB) and the chunk it shares with /stats (1.47 KB) have their own, and Lighthouse measures /uses (ADR 0032); the fonts are 124 KB with the pixel face (ADR 0034).
+
 ## Context
 
 The site is static pages with two small islands (search, now playing). It should stay fast on a phone without anyone having to remember to check, and a regression should fail the pull request that causes it, with numbers that say where. Tests should be few and each one should catch a bug that can really happen.
