@@ -333,6 +333,25 @@ describe('Retry-After across runs', () => {
     assert.equal(state.built, 2);
   });
 
+  // Catches the server's minimum delay shortened: only one run's wait is bounded.
+  it('keeps a Retry-After of two days whole', async () => {
+    const { producer } = standIn();
+    const first = signals({ status: 429, headers: { 'retry-after': '172800' } });
+    assert.equal(await deliver(at(0, first.fetch).rt, producer), exitCodes.retryLater);
+
+    for (const hours of [25, 47]) {
+      const restart = signals(accepted());
+      assert.equal(
+        await deliver(at(hours * 60 * minute, restart.fetch).rt, producer),
+        exitCodes.retryLater
+      );
+      assert.equal(restart.requests.length, 0, `${hours} h`);
+    }
+    const due = signals(accepted());
+    assert.equal(await deliver(at(48 * 60 * minute, due.fetch).rt, producer), exitCodes.ok);
+    assert.equal(due.requests.length, 1);
+  });
+
   // Catches a corrupt deadline read as "no deadline" and the body sent anyway.
   it('fails closed on a deadline file it cannot read', async () => {
     const { producer } = standIn();

@@ -90,8 +90,6 @@ const firstBackoffMs = 5_000;
 const maxBackoffMs = 120_000;
 /** A longer wait ends the run; systemd starts it again (RestartForceExitStatus=75). */
 const maxWaitMs = 5 * 60_000;
-/** A longer Retry-After is taken as this long, so a bad header cannot stop the producer. */
-const maxRetryAfterMs = 24 * 60 * 60 * 1000;
 const requestTimeoutMs = 30_000;
 /** More of an answer than this is never read. */
 const maxAnswerBytes = 4096;
@@ -240,11 +238,9 @@ async function readBounded(response: Response): Promise<string> {
 /** `Retry-After` in seconds or as an HTTP date, in ms from `now`; 0 when absent or unreadable. */
 export function retryAfterMs(header: string | null, now: number): number {
   if (header === null) return 0;
-  if (/^\d{1,6}$/.test(header.trim())) {
-    return Math.min(maxRetryAfterMs, Number(header.trim()) * 1000);
-  }
+  if (/^\d{1,6}$/.test(header.trim())) return Number(header.trim()) * 1000;
   const at = Date.parse(header);
-  return Number.isNaN(at) ? 0 : Math.min(maxRetryAfterMs, Math.max(0, at - now));
+  return Number.isNaN(at) ? 0 : Math.max(0, at - now);
 }
 
 async function post(rt: Runtime, body: string): Promise<Answer> {
@@ -300,8 +296,7 @@ async function send(rt: Runtime, producer: ProducerId, body: string): Promise<Ex
   const { deliveryId } = JSON.parse(body) as Delivery;
   const deadline = readDeadline(rt.stateDir);
   if (deadline !== undefined) {
-    // Capped, so a clock set back cannot hold the delivery for longer than signals could ask.
-    const wait = Math.min(maxRetryAfterMs, deadline - rt.now());
+    const wait = deadline - rt.now();
     if (wait > maxWaitMs) {
       rt.log({ producer, deliveryId, attempt: 0, event: 'retry_later', waitMs: wait });
       return exitCodes.retryLater;
