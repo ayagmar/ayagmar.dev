@@ -68,6 +68,7 @@ As of this scaffold only `/v1/health` exists, the site pages show empty states, 
 | Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                         |
 | Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                            |
 | RSS and Atom (one model, two renderers)                                   | `apps/site/src/lib/feed.ts`                                                                   |
+| Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                         |
 | Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                              |
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts` |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)           |

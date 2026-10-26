@@ -1,6 +1,8 @@
+import { satteri } from '@astrojs/markdown-satteri';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 import { defineConfig, envField } from 'astro/config';
+import { diagrams } from './src/lib/markdown/diagrams.ts';
 import { siteUrl } from './src/lib/site.ts';
 
 export default defineConfig({
@@ -15,7 +17,8 @@ export default defineConfig({
   },
   // Shiki writes style="" attributes, which the CSP forbids. A highlighter that emits
   // classes can be added with the visual design.
-  markdown: { syntaxHighlight: false },
+  // ```mermaid fences become inline SVG at build time (ADR 0024).
+  markdown: { syntaxHighlight: false, processor: satteri({ hastPlugins: [diagrams] }) },
   integrations: [svelte(), sitemap()],
   env: {
     schema: {
