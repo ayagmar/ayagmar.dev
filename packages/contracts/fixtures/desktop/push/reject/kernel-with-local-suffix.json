@@ -1,0 +1,10 @@
+{
+  "producer": "desktop",
+  "deliveryId": "5b0e2f6c-1d8a-4c3e-9f7b-2a6d4e8c1f03",
+  "sentAt": "2026-10-26T08:00:00Z",
+  "payload": {
+    "kernel": "7.2.11-arch1-1-owner-private-host",
+    "niri": "26.04",
+    "bootedAt": "2026-10-23T07:41:12.000Z"
+  }
+}

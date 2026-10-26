@@ -11,7 +11,8 @@
         "llm-usage",
         "shelf",
         "weather",
-        "listening-history"
+        "listening-history",
+        "desktop"
       ]
     },
     "version": {

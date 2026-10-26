@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./desktop": "./src/desktop.ts",
     "./fixtures": "./src/fixtures.ts",
     "./rabat": "./src/rabat.ts",
     "./testing": "./src/testing.ts"

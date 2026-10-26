@@ -9,6 +9,7 @@ export const sourceIds = [
   'shelf',
   'weather',
   'listening-history',
+  'desktop',
 ] as const;
 
 export const sourceIdSchema = z.enum(sourceIds);
@@ -35,4 +36,6 @@ export const staleAfterSeconds: Readonly<Record<SourceId, number>> = {
   // Last.fm history for today's date in Rabat, refreshed every 7 hours (ADR 0030). The page
   // also hides a snapshot for any other date, stale or not.
   'listening-history': 24 * 60 * 60,
+  // Pushed at login and daily from the owner's desktop (ADR 0032).
+  desktop: 2 * 24 * 60 * 60,
 };

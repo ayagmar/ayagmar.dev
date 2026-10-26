@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "const": "desktop"
+    },
+    "version": {
+      "type": "number",
+      "const": 1
+    },
+    "fetchedAt": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stale": {
+      "type": "boolean"
+    },
+    "data": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kernel": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 48,
+                  "pattern": "^\\d{1,2}\\.\\d{1,3}\\.\\d{1,3}-(?:arch\\d{1,2}-\\d{1,3}|\\d{1,3}-lts|zen\\d{1,2}-\\d{1,3}-zen|hardened\\d{1,2}-\\d{1,3}-hardened)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "niri": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 8,
+                  "pattern": "^\\d{2}\\.\\d{2}(?:\\.\\d{1,2})?$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "bootedAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          "required": [
+            "kernel",
+            "niri",
+            "bootedAt"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "source",
+    "version",
+    "fetchedAt",
+    "stale",
+    "data"
+  ]
+}

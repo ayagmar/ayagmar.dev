@@ -1,5 +1,17 @@
 // The shared fixture set (fixtures/README.md), importable from every runtime: Node, workerd
 // and the site build. Imported statically because workerd has no file system.
+import desktopPushMinimal from '../fixtures/desktop/push/accept/minimal.json' with { type: 'json' };
+import desktopPushOk from '../fixtures/desktop/push/accept/ok.json' with { type: 'json' };
+import desktopPushSensitiveFields from '../fixtures/desktop/push/accept/sensitive-fields.json' with {
+  type: 'json',
+};
+import desktopSnapshotMinimal from '../fixtures/desktop/snapshot/minimal.json' with {
+  type: 'json',
+};
+import desktopSnapshotOk from '../fixtures/desktop/snapshot/ok.json' with { type: 'json' };
+import desktopSnapshotSensitiveFields from '../fixtures/desktop/snapshot/sensitive-fields.json' with {
+  type: 'json',
+};
 import githubRawEmpty from '../fixtures/github/raw/empty.json' with { type: 'json' };
 import githubRawMalformed from '../fixtures/github/raw/malformed.json' with { type: 'json' };
 import githubRawMissing from '../fixtures/github/raw/missing.json' with { type: 'json' };
@@ -224,6 +236,11 @@ export const rawFixtures = {
 
 /** Normalized snapshots, as `/v1/<source>` serves them in `data`. */
 export const snapshotFixtures = {
+  desktop: {
+    minimal: desktopSnapshotMinimal,
+    ok: desktopSnapshotOk,
+    'sensitive-fields': desktopSnapshotSensitiveFields,
+  },
   'listening-history': {
     approximate: listeningHistorySnapshotApproximate,
     empty: listeningHistorySnapshotEmpty,
@@ -279,6 +296,11 @@ export const pushFixtures = {
     minimal: llmUsagePushMinimal,
     ok: llmUsagePushOk,
     'sensitive-fields': llmUsagePushSensitiveFields,
+  },
+  desktop: {
+    minimal: desktopPushMinimal,
+    ok: desktopPushOk,
+    'sensitive-fields': desktopPushSensitiveFields,
   },
   trellis: {
     minimal: trellisPushMinimal,

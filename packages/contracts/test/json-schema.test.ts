@@ -26,6 +26,7 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
   // weather's exported schema is its whole envelope; its snapshots join as fresh responses.
   weather: { accept: ['weather/snapshot'] },
   'listening-history': { accept: ['listening-history/snapshot'] },
+  desktop: { accept: ['desktop/snapshot'] },
   'repo-pulse-feed': {
     accept: ['repo-pulse/raw/ok.json', 'repo-pulse/raw/empty.json'],
     reject: ['repo-pulse/raw/malformed.json'],
@@ -33,10 +34,11 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
   // Push bodies are also the Worker's intake fixtures.
   'push-llm-usage': { accept: ['llm-usage/push/accept'], reject: ['llm-usage/push/reject'] },
   'push-trellis': { accept: ['trellis/push/accept'], reject: ['trellis/push/reject'] },
+  'push-desktop': { accept: ['desktop/push/accept'], reject: ['desktop/push/reject'] },
 };
 
 // Sources whose exported schema is the whole read API envelope rather than its `data`.
-const envelopes = new Set(['weather', 'listening-history']);
+const envelopes = new Set(['weather', 'listening-history', 'desktop']);
 
 const fixturePayloads = (name: string, path: string) => {
   const full = join(root, 'fixtures', path);

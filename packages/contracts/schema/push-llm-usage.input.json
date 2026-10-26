@@ -38,6 +38,11 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 1000000000000000
+            },
+            "activeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 630000000
             }
           },
           "required": [
@@ -64,6 +69,11 @@
               "type": "integer",
               "minimum": 0,
               "maximum": 1000000000000000
+            },
+            "activeMs": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2790000000
             },
             "cacheSavingsUsd": {
               "anyOf": [
@@ -167,6 +177,11 @@
                 "type": "integer",
                 "minimum": 0,
                 "maximum": 1000000000000000
+              },
+              "activeMs": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 90000000
               }
             },
             "required": [

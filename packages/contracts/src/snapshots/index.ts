@@ -1,4 +1,5 @@
 // Normalized snapshot schemas, one file per source, re-exported here.
+export * from './desktop.ts';
 export * from './listening.ts';
 export * from './listening-history.ts';
 export * from './llm-usage.ts';
