@@ -121,7 +121,15 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
   await expect(page.locator('.scene a').first()).toBeHidden();
 });
 
-for (const path of ['/', '/writing/token-logs', '/about', '/stats']) {
+// The three posts carry the three kinds of art (ADR 0027): ascii, dither, pattern.
+for (const path of [
+  '/',
+  '/writing/token-logs',
+  '/writing/ephemeral-runners',
+  '/writing/cache-reads',
+  '/about',
+  '/stats',
+]) {
   // Catches text or links that lose contrast in the night theme (pages.spec.ts checks the day).
   test(`${path} has no axe violations at night`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });

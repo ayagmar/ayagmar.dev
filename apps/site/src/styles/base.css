@@ -653,6 +653,19 @@ kbd {
   margin: 0 0 1.5rem;
 }
 
+/* Per-post art (ADR 0027): build-time SVG in the room's colours, its own background in both
+   themes. */
+.post-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.post-art text {
+  font: 10px var(--mono);
+  white-space: pre;
+}
+
 .prose {
   max-width: var(--measure);
   font-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
