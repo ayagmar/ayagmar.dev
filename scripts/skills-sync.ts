@@ -9,6 +9,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import { localPath, publicModels, semver } from '../apps/site/src/lib/skills-public.ts';
 import { rules } from './scan-secrets.ts';
 
 export const repo = 'ayagmar/agents-skills';
@@ -157,7 +158,9 @@ function evaluation(dir: string, name: string): { value: SkillEntry['eval']; war
     startedAt === null ||
     Number.isNaN(Date.parse(startedAt)) ||
     model === null ||
-    version === null
+    !(publicModels as readonly string[]).includes(model) ||
+    version === null ||
+    !semver.test(version)
   ) {
     throw new Error(`${path} is not an aggregate result with this skill's cases and suite`);
   }
@@ -186,6 +189,21 @@ export function leaks(content: string): string[] {
     ['an email address', /[\w.+-]+@[\w-]+\.[\w.-]+/],
   ];
   for (const [what, pattern] of patterns) if (pattern.test(content)) found.push(what);
+  // Decoded values, so an escaped backslash or slash in JSON is the character it stands for.
+  const decoded = (value: unknown): string[] =>
+    typeof value === 'string'
+      ? [value]
+      : typeof value === 'object' && value !== null
+        ? Object.values(value).flatMap(decoded)
+        : [];
+  let values = [content];
+  try {
+    values = decoded(JSON.parse(content));
+  } catch {}
+  for (const value of values) {
+    const kind = localPath(value);
+    if (kind !== null && !found.includes(kind)) found.push(kind);
+  }
   for (const rule of rules) {
     const hit = [...content.matchAll(rule.pattern)].some(
       (match) => !rule.accept || rule.accept(match[1] ?? match[0])
@@ -228,6 +246,7 @@ export function extractSkills(repoDir: string, evalsDir: string | null): SyncRes
       if (name === null || pkg === null || version === null || license === null) {
         throw new Error('needs a name, a package name, a version and a license');
       }
+      if (!semver.test(version)) throw new Error('version is not SemVer');
       if (pkg !== `@ayagmar/${name}`) throw new Error(`package ${pkg} is not @ayagmar/${name}`);
       const readmeText = file('README.md');
 

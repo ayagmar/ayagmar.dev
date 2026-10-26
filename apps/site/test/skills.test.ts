@@ -28,7 +28,14 @@ const skill = (overrides: Partial<Skill> = {}): Skill => ({
   credit: null,
   readme: 'https://github.com/ayagmar/agents-skills/blob/main/plugins/commit/README.md',
   npm: 'https://www.npmjs.com/package/@ayagmar/commit',
-  eval: { passed: 2, total: 3, threshold: 0.8, date: '2026-10-11', model: 'm', version: '0.1.1' },
+  eval: {
+    passed: 2,
+    total: 3,
+    threshold: 0.8,
+    date: '2026-10-11',
+    model: 'claude-sonnet-5-5',
+    version: '0.1.1',
+  },
   ...overrides,
 });
 
@@ -57,6 +64,33 @@ describe('skills.json schema', () => {
   });
 });
 
+describe('skills.json values', () => {
+  const [first] = committed.skills;
+  const issues = (skill: unknown) =>
+    skillsSchema.safeParse({ ...committed, skills: [skill] }).error?.issues.map((i) => i.message);
+
+  // Catches a private model alias, path or version string reaching the eval line on the page.
+  it('rejects an eval model that is not a public id, and a version that is not SemVer', () => {
+    for (const model of ['/tmp/private/trace.jsonl', 'C:\\Users\\x\\notes', 'private-host.corp']) {
+      expect(issues({ ...first, eval: { ...first.eval, model } })).toEqual([
+        'must be a public model id',
+      ]);
+    }
+    expect(issues({ ...first, eval: { ...first.eval, version: '/srv/x/y' } })).toEqual([
+      'must be a SemVer version',
+    ]);
+  });
+
+  it('rejects a local path of any kind in shown text, and keeps ordinary slashes', () => {
+    for (const summary of ['See /srv/app/data.', 'At C:\\Work\\notes.']) {
+      expect(issues({ ...first, summary })).toEqual(['must not hold a local path']);
+    }
+    expect(
+      issues({ ...first, summary: 'Read and/or write 3/3 files (https://example.com/a/b).' })
+    ).toBeUndefined();
+  });
+});
+
 describe('eval summary', () => {
   // The compact mark must agree with the sentence in the detail.
   it('is a ratio, with the same counts in words and a flag for a clean run', () => {
@@ -73,7 +107,7 @@ describe('eval summary', () => {
             total: 3,
             threshold: 0.8,
             date: '2026-10-11',
-            model: 'm',
+            model: 'claude-sonnet-5-5',
             version: '0.1.2',
           },
         })
@@ -83,7 +117,7 @@ describe('eval summary', () => {
 
   // Catches a result for an older release being read as a result for the current one.
   it('says when the run was against an older version, and is absent without a result', () => {
-    expect(evalLine(skill())?.ran).toBe('2026-10-11, m, skill 0.1.1 (now 0.1.2)');
+    expect(evalLine(skill())?.ran).toBe('2026-10-11, claude-sonnet-5-5, skill 0.1.1 (now 0.1.2)');
     expect(evalLine(skill({ eval: null }))).toBeNull();
   });
 });

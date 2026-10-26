@@ -252,6 +252,67 @@ describe('skills sync provenance', () => {
   });
 });
 
+describe('skills sync values', () => {
+  const withEval = (suite: Record<string, unknown>, extra: Record<string, unknown> = {}) => {
+    const evals = join(root, `evals-values-${counter++}`);
+    const base = aggregate();
+    write(
+      evals,
+      'alpha/aggregate-result.json',
+      JSON.stringify({ ...base, ...extra, suite: { ...base.suite, ...suite } })
+    );
+    return evals;
+  };
+
+  // Catches a private model alias or path in the eval's model field reaching the page.
+  for (const model of [
+    '/tmp/private/trace.jsonl',
+    '/srv/private/notes',
+    'C:\\Users\\x\\notes',
+    'private-host.corp local-user',
+    'my-private-model',
+  ]) {
+    it(`rejects the eval model ${JSON.stringify(model).slice(0, 20)}`, () => {
+      assert.throws(
+        () => extractSkills(standard(), withEval({ modelOverride: model })),
+        /alpha\/aggregate-result\.json/
+      );
+    });
+  }
+
+  it('rejects an eval version that is not SemVer', () => {
+    const plugins = [{ name: 'alpha', version: '/tmp/x/y' }];
+    assert.throws(
+      () => extractSkills(standard(), withEval({ plugins })),
+      /alpha\/aggregate-result\.json/
+    );
+  });
+
+  // Catches an absolute path of any kind in published text, not only the home directory.
+  for (const text of [
+    'See /tmp/private/notes.',
+    'Kept in /srv/app/data.',
+    'At C:\\Work\\notes.',
+    'On \\\\host\\share.',
+  ]) {
+    it(`refuses text holding ${JSON.stringify(text)}`, () => {
+      const dir = repo((base) => {
+        write(base, 'README.md', readme.replace('Plan things before doing them.', text));
+        plugin(base, 'alpha');
+        plugin(base, 'gamma');
+      });
+      assert.throws(() => extractSkills(dir, null), /the output contains/);
+    });
+  }
+
+  it('keeps ordinary slashes and web addresses', () => {
+    assert.deepEqual(
+      leaks(JSON.stringify({ a: 'and/or, https://github.com/ayagmar/x, 3/3, README.md' })),
+      []
+    );
+  });
+});
+
 describe('the committed content/skills.json', () => {
   const path = join(import.meta.dirname, '..', 'content', 'skills.json');
 

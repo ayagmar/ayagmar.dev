@@ -1,6 +1,10 @@
 import { z } from 'astro/zod';
+import { localPath, publicModels, semver } from './skills-public.ts';
 
 const text = z.string({ error: 'is required' }).trim().min(1, 'must not be empty');
+/** Text shown on the page: no local path of any kind (skills-public.ts). */
+const publicText = text.refine((value) => localPath(value) === null, 'must not hold a local path');
+const version = z.string().regex(semver, 'must be a SemVer version');
 const url = z.url({ protocol: /^https$/, error: 'must be an https:// URL' });
 const count = z.number().int('must be a whole number').min(0);
 
@@ -11,9 +15,9 @@ const evaluation = z
     /** Share of a case's runs that must pass, 0 to 1. */
     threshold: z.number().gt(0).max(1),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'must be a day like 2026-10-11'),
-    model: text,
+    model: z.enum(publicModels, { error: 'must be a public model id' }),
     /** The skill version the suite ran against, which may be older than the skill's. */
-    version: text,
+    version,
   })
   .refine((result) => result.passed <= result.total, {
     path: ['passed'],
@@ -23,13 +27,13 @@ const evaluation = z
 /** One skill, as `just skills-sync` extracts it from the skills repo. */
 const skill = z.strictObject({
   name: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be a lowercase skill name'),
-  summary: text,
-  version: text,
+  summary: publicText,
+  version,
   package: text,
   license: text,
-  runtime: text.nullable(),
-  install: text.nullable(),
-  credit: text.nullable(),
+  runtime: publicText.nullable(),
+  install: publicText.nullable(),
+  credit: publicText.nullable(),
   readme: url,
   npm: url,
   eval: evaluation.nullable(),
