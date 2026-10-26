@@ -2,20 +2,23 @@
 // Casablanca now, and between 02:00 and 07:00 there the lamp is turned down with a note. Also
 // the keys 1 to 7, which open the room's objects in reading order, unless the list of keys has
 // turned single-key shortcuts off. Without this script the room is the static scene of the
-// page's theme, with no moon and no note.
-import { casablancaTime, isLate, moonAt, moonPath, skyAt } from '../lib/sky.ts';
+// page's theme, with no moon and no note; a browser with outdated time zone rules gets the sky
+// and the moon, but not the lamp or the note.
+import { casablancaTime, isLate, knowsCasablanca, moonAt, moonPath, skyAt } from '../lib/sky.ts';
 
 const scene = document.querySelector<HTMLElement>('.scene');
 const view = document.querySelector('.room-window');
 const moon = document.querySelector('.room-moon path');
 const note = document.querySelector<HTMLElement>('.room-note');
+// Without Casablanca's current rules the hour there is a guess: no lamp or note from it.
+const knows = knowsCasablanca();
 
 function tick() {
   if (scene === null) return;
   const now = Date.now();
   const sky = skyAt(now);
   const phase = moonAt(now);
-  const late = isLate(now);
+  const late = knows && isLate(now);
   scene.dataset.sky = sky;
   scene.toggleAttribute('data-late', late);
   // A moon this thin would be a single pixel or none: leave it out.

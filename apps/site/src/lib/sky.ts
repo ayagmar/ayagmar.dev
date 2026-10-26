@@ -143,6 +143,14 @@ const clock = new Intl.DateTimeFormat('en-GB', {
 /** The time in Casablanca, `03:12`. */
 export const casablancaTime = (time: number) => clock.format(time);
 
+/**
+ * Whether the browser's tzdata knows Morocco's current rules: +00 for good since 2026-09-20
+ * 01:00 UTC (tzdata 2026c). An older browser still says +01 and would put the lamp an hour off,
+ * so the room then leaves the lamp and the note alone. If Morocco changes its clocks again,
+ * this check moves with the new rules.
+ */
+export const knowsCasablanca = () => casablancaTime(Date.UTC(2026, 9, 1, 12)) === '12:00';
+
 /** Between 02:00 and 07:00 in Casablanca the lamp is turned down: probably asleep. */
 export function isLate(time: number): boolean {
   const hour = Number(casablancaTime(time).slice(0, 2));

@@ -221,6 +221,30 @@ test.describe('the room keeps Casablanca time', () => {
     await expect(page.locator('.room-note')).toBeHidden();
   });
 
+  // Catches a browser whose tzdata predates 2026c dimming the lamp on the wrong hour: it still
+  // puts Casablanca at +01, so at 01:30 there it would say 02:30 and show "probably asleep".
+  // The sky and the moon come from UTC and stay.
+  test('with outdated time zone rules the lamp stays on and no note shows', async ({ page }) => {
+    await page.addInitScript(() => {
+      const Original = Intl.DateTimeFormat;
+      // Etc/GMT-1 is +01 all year, as Casablanca was before the rules changed.
+      Intl.DateTimeFormat = class extends Original {
+        constructor(locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
+          const outdated = options?.timeZone === 'Africa/Casablanca';
+          super(locales, outdated ? { ...options, timeZone: 'Etc/GMT-1' } : options);
+        }
+      } as typeof Intl.DateTimeFormat;
+    });
+    await visit(page, '2026-10-26T01:30:00Z', 'dark');
+    expect(await room(page)).toMatchObject({
+      sky: 'night',
+      window: 'window-night',
+      night: 'room-night',
+    });
+    expect((await room(page)).moon).not.toBe('');
+    await expect(page.locator('.room-note')).toBeHidden();
+  });
+
   test('just after sunset the window shows dusk', async ({ page }) => {
     await visit(page, '2026-10-26T17:55:00Z', 'dark');
     expect(await room(page)).toMatchObject({ sky: 'dusk', window: 'window-dusk' });
