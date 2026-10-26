@@ -32,7 +32,19 @@ const headings = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
 export const scopeIds: HastPluginEntry = (factory) => {
   const scope = idScope(factory.fileURL);
   if (scope === '') return null;
+  // github-slugger's rule: a repeated slug gets -1, -2, ... and every slug it emits is reserved,
+  // so Example, Example, Example-1 give example, example-1, example-1-1 as Astro would.
   const used = new Map<string, number>();
+  const unique = (base: string) => {
+    let slug = base;
+    while (used.has(slug)) {
+      const next = (used.get(base) ?? 0) + 1;
+      used.set(base, next);
+      slug = `${base}-${next}`;
+    }
+    used.set(slug, 0);
+    return slug;
+  };
   return {
     name: 'min7-scope-ids',
     element: {
@@ -42,10 +54,8 @@ export const scopeIds: HastPluginEntry = (factory) => {
         if (typeof props.id === 'string') {
           ctx.setProperty(node, 'id', scope + props.id);
         } else if (headings.includes(node.tagName)) {
-          const slug = slugOf(ctx.textContent(node));
-          const seen = used.get(slug) ?? 0;
-          used.set(slug, seen + 1);
-          ctx.setProperty(node, 'id', `${scope}${slug}${seen === 0 ? '' : `-${seen}`}`);
+          const slug = unique(slugOf(ctx.textContent(node)));
+          ctx.setProperty(node, 'id', scope + slug);
         }
         if (typeof props.href === 'string' && props.href.length > 1 && props.href.startsWith('#')) {
           ctx.setProperty(node, 'href', `#${scope}${props.href.slice(1)}`);

@@ -8,6 +8,9 @@ import { type SiteFixture, siteFixture } from './site-fixture.ts';
 
 let fixture: SiteFixture;
 
+// Headings that collide twice: Astro gives example, example-1, example-1-1 (ADR 0028).
+const collision = `---\ntitle: Collision\ndate: 2026-10-01\n---\n\n[third](#example-1-1)\n\n## Example\n\n## Example\n\n## Example-1\n`;
+
 const note = (title: string, footnote: string) =>
   `---\ntitle: ${title}\ndate: 2026-10-01\n---\n\nSee [the section](#example) and a footnote.[^1]\n\n## Example\n\nBody of ${title}.\n\n[^1]: ${footnote}\n`;
 
@@ -36,6 +39,7 @@ const notes = await Promise.all((await getCollection('til')).map(async (n) => ({
 `
   );
   fixture.write('content/til/first.md', note('First', 'This footnote belongs to First.'));
+  fixture.write('content/til/collision.md', collision);
   fixture.write('content/til/second.md', note('Second', 'This footnote belongs to Second.'));
 });
 afterEach(() => {
@@ -49,6 +53,14 @@ it('keeps ids, fragment links and aria references inside their own note', () => 
 
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(([, id]) => id);
   expect(new Set(ids).size, `repeated ids: ${ids.join(' ')}`).toBe(ids.length);
+
+  const collisionArticle = /<article id="in-collision">([\s\S]*?)<\/article>/.exec(html)?.[1] ?? '';
+  expect([...collisionArticle.matchAll(/<h2 id="([^"]+)"/g)].map(([, id]) => id)).toEqual([
+    'collision-example',
+    'collision-example-1',
+    'collision-example-1-1',
+  ]);
+  expect(collisionArticle).toContain('href="#collision-example-1-1"');
 
   for (const name of ['first', 'second']) {
     const article = new RegExp(`<article id="in-${name}">([\\s\\S]*?)</article>`).exec(html)?.[1];
