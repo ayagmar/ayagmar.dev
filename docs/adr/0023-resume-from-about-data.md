@@ -15,8 +15,8 @@ The about page and the resume list the same facts: roles, certifications, educat
 - Public data stays minimal: no phone number, street address or birth date in the data file, the page or the PDF; an email only if the owner adds one for this purpose. No photo.
 - `apps/site/src/lib/site.ts` keeps the identity the layout, feeds and `astro.config.ts` need, since those cannot read a content collection. A unit test fails when it disagrees with `about.json`.
 
-Tests: schema errors name the field; shipping covers unpublished, published, override and a missing PDF; the component renders both states; Playwright checks the committed state end to end (link served as `application/pdf`, or placeholder and 404) and that the PDF's text (via `pdftotext`) contains the name and every role. The about page runs through the existing axe and 320 px overflow checks.
+Tests: schema errors name the field; `ship-resume` runs as a CLI against a temporary repo root for unpublished, published, override and missing-PDF cases; the component renders both states; Playwright checks the committed state end to end (link served as `application/pdf`, or placeholder and 404), that the page and the PDF (`pdftotext`, `pdfinfo -url`) show every fact and verify link in `about.json`, and that oversized content fails the Typst build. The about page runs through the existing axe and 320 px overflow checks.
 
 ## Consequences
 
-Editing the resume means editing JSON, not a document. The PDF layout is plain until the visual design; restyling it touches only `resume/resume.typ`. CI needs Typst and `pdftotext` (poppler-utils); without `pdftotext` the PDF text test skips locally and fails under `CI`.
+Editing the resume means editing JSON, not a document. The PDF layout is plain until the visual design; restyling it touches only `resume/resume.typ`. CI needs Typst and poppler-utils (`pdftotext`, `pdfinfo`); without them the PDF tests skip locally and fail under `CI`.

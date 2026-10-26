@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { compileResume } from '../scripts/resume.ts';
 import { generatedResume, readAbout, repoRoot } from '../scripts/ship-resume.ts';
+import { formatMonth } from '../src/data/about.ts';
 import { expect, test } from './fixtures.ts';
 
 const about = readAbout();
@@ -36,23 +37,64 @@ if (about.resume.published) {
   });
 }
 
-test('the generated resume names the owner and every role', () => {
-  let text: string;
+/** Every fact the page and the PDF must show, as plain strings. */
+const facts = [
+  about.identity.name,
+  about.summary,
+  ...about.experience.flatMap((role) => [
+    role.role,
+    role.company,
+    role.place,
+    formatMonth(role.start),
+    role.end === null ? 'present' : formatMonth(role.end),
+    ...role.outcomes,
+  ]),
+  ...about.certifications.flatMap((cert) => [
+    cert.name,
+    cert.issuer,
+    formatMonth(cert.issued),
+    ...(cert.expires === undefined ? [] : [formatMonth(cert.expires)]),
+    ...(cert.credentialId === undefined ? [] : [cert.credentialId]),
+  ]),
+  ...about.education.flatMap((school) => [
+    school.school,
+    school.degree,
+    ...(school.field === undefined ? [] : [school.field]),
+    formatMonth(school.start),
+    formatMonth(school.end),
+  ]),
+  ...about.skills,
+];
+const verifyUrls = about.certifications.map((cert) => cert.verifyUrl);
+// Typst sets typographic apostrophes; compare text with plain ones and single spaces.
+const flat = (text: string) => text.replace(/\u2019/g, "'").replace(/\s+/g, ' ');
+
+test('the about page shows every fact and verify link', async ({ page }) => {
+  await page.goto('/about');
+  const text = flat((await page.locator('main').textContent()) ?? '');
+  for (const fact of facts) expect(text).toContain(flat(fact));
+  const links = await page
+    .getByRole('link', { name: /^Verify / })
+    .evaluateAll((anchors) => anchors.map((a) => a.getAttribute('href')));
+  expect(links).toEqual(verifyUrls);
+});
+
+/** Runs a poppler-utils tool: optional locally, required in CI. */
+function poppler(tool: string, args: string[]): string {
   try {
-    text = execFileSync('pdftotext', [generatedResume, '-'], { encoding: 'utf8' });
+    return execFileSync(tool, args, { encoding: 'utf8' });
   } catch (error) {
-    // pdftotext (poppler-utils) is optional locally and required in CI.
     const missing = (error as NodeJS.ErrnoException).code === 'ENOENT';
-    test.skip(missing && !process.env.CI, 'pdftotext is not installed');
+    test.skip(missing && !process.env.CI, `${tool} is not installed`);
     throw error;
   }
-  const flat = text.replace(/\s+/g, ' ');
-  for (const line of [
-    about.identity.name,
-    ...about.experience.map((role) => `${role.role}, ${role.company}`),
-  ]) {
-    expect(flat).toContain(line);
-  }
+}
+
+test('the generated resume shows every fact and verify link', () => {
+  const text = flat(poppler('pdftotext', [generatedResume, '-']));
+  for (const fact of facts) expect(text).toContain(flat(fact));
+  const urls = poppler('pdfinfo', ['-url', generatedResume]);
+  for (const url of verifyUrls) expect(urls).toContain(url);
 });
 
 test('content that does not fit on one page fails the resume build', () => {
