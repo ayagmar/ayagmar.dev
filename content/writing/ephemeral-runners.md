@@ -5,6 +5,7 @@ date: 2026-10-02
 updated: 2026-10-12
 summary: 'Placeholder post for layout and tests. Fresh containers for every GitHub Actions job.'
 tags: [rust, ci]
+projects: [runnerd]
 ---
 
 **This is a placeholder post.** It will be replaced by real writing.

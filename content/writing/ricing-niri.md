@@ -4,6 +4,7 @@ title: 'Placeholder: ricing niri without losing a weekend'
 date: 2026-09-14
 summary: 'Placeholder draft. Only visible in preview builds.'
 tags: [linux, desktop]
+projects: [niri-computer-use]
 draft: true
 ---
 

@@ -1,4 +1,5 @@
 import { z } from 'astro/zod';
+import { projectSlug } from './project-schema.ts';
 
 const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const slugMessage = 'must be a lowercase slug like "rust" or "home-lab"';
@@ -23,6 +24,11 @@ export const writingSchema = z
       .default([]),
     series: z.string().regex(slug, slugMessage).optional(),
     draft: z.boolean({ error: 'must be true or false' }).default(false),
+    /** Slugs of the featured projects the post is about. */
+    projects: z
+      .array(projectSlug, { error: 'must be a list of project slugs' })
+      .refine((slugs) => new Set(slugs).size === slugs.length, 'must not repeat a project')
+      .default([]),
   })
   .refine((post) => post.updated === undefined || post.updated >= post.date, {
     path: ['updated'],
