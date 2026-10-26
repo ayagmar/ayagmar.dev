@@ -69,7 +69,7 @@ The systemd service has `RestartForceExitStatus=75` and `RestartSec=15min`: a ru
 - **When the agents show.** Under the same rules as agent hours on `/stats` (ADR 0014): only on the date in Rabat the snapshot was taken, from a `fetchedAt` checked the same way and not after the browser's clock, with "As of 26 Oct, 08:00 UTC.".
 - **Refresh.** `src/lib/live.ts`: one request per endpoint at a time with a 5 s deadline, on load and then every 30 minutes while the tab is visible; no request from a hidden tab. Each block is checked again every minute and on `visibilitychange`, `focus` and `pageshow`, so it hides the moment it stops holding, after sleep or the back/forward cache too. A failed request keeps the last good answer, which is still dropped once it no longer holds.
 - **Fixtures mode** (local builds, CI, public Previews): no endpoint attribute, no request, no live panel, and no sample shown as current.
-- Values from signals are set with `textContent`. The page has no nav link yet; the orchestrator adds one with the navigation change.
+- Values from signals are set with `textContent`. The header nav is full at six links, so the page is linked from the footer on every page.
 
 ## Consequences
 
