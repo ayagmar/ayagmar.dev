@@ -11,18 +11,17 @@ repo-pulse (a separate Worker, `ayagmar/repo-pulse`) records every GitHub webhoo
 repo-pulse adds one unauthenticated, read-only route. signals is its only planned consumer (`apps/signals/src/adapters/pull/shipping.ts`, ADR 0009); the site never calls it.
 
 ```
-GET https://repo-pulse.ayagmar.workers.dev/public/feed?limit=50&since=2026-10-01T00:00:00Z
+GET https://repo-pulse.ayagmar.workers.dev/public/feed?limit=50
 ```
 
 Query:
 
-| Parameter | Rule                                                        |
-| --------- | ----------------------------------------------------------- |
-| `limit`   | Integer 1 to 100, default 50. Maximum number of events.     |
-| `since`   | Optional RFC 3339 timestamp. Only events strictly after it. |
-| other     | Ignored.                                                    |
+| Parameter | Rule                                                    |
+| --------- | ------------------------------------------------------- |
+| `limit`   | Integer 1 to 100, default 50. Maximum number of events. |
+| other     | Ignored, and not part of the cache key.                 |
 
-An invalid `limit` or `since` answers `400 {"error":"invalid_query"}`. Only `GET` and `HEAD`; anything else is `405`.
+An invalid `limit` answers `400 {"error":"invalid_query"}`. Only `GET` and `HEAD`; anything else is `405`.
 
 Response `200`, `Content-Type: application/json`. The schema is `packages/contracts/schema/repo-pulse-feed.input.json` (generated from `repoPulseFeedSchema` in `packages/contracts/src/snapshots/shipping.ts`); repo-pulse should validate its output against it in its tests.
 - `version`: always `1`. A breaking change ships `/public/feed/v2` next to this one.
@@ -141,7 +140,7 @@ Privacy rules. The feed is public, so it carries only what GitHub already shows 
 - Never the sender or any login, avatar, or follower count; never issue or pull request bodies, labels, commit messages, branch names other than through the compare URL, delivery ids, notable stargazers, referrers or traffic, digests, or delivery and provider state.
 - Built from an explicit field list, not by removing fields from the stored event JSON, so a field repo-pulse starts storing later is not published by accident.
 
-Caching: `Cache-Control: public, max-age=300`, served through the Cache API keyed by the normalized query, so the D1 read runs at most once per five minutes per query and colo. signals pulls every 15 minutes. No CORS headers: browsers are not expected to call it.
+Caching: `Cache-Control: public, max-age=300`, served through the Cache API keyed by the normalized `limit`, so the D1 read runs at most once per five minutes per `limit` value and colo. There is deliberately no `since` or other free-form parameter: each distinct value would miss the cache and cost a D1 read, letting anyone bypass it on a public route. signals pulls every 15 minutes. No CORS headers: browsers are not expected to call it.
 
 Errors never include stack traces or D1 messages: `400`/`405` as above, `500 {"error":"internal_error"}`.
 
