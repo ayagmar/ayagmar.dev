@@ -70,6 +70,15 @@ export function checkBoundaries(rootDir: string): string[] {
             `${field} has ${named.name}, which ${unit.name} must not depend on`
           );
         }
+        // `workspace:@min7/signals@*` or `npm:...` installs another package under this name.
+        const aliasOf = /^(?:workspace|npm):((?:@[^/@]+\/)?[^/@.][^/@]*)@/.exec(spec)?.[1];
+        const aliased = aliasOf === undefined ? undefined : unitNamed(aliasOf);
+        if (aliased !== undefined && aliased !== unit && !unit.allowed.includes(aliased.name)) {
+          forbid(
+            rel(manifestPath),
+            `${field}.${name} is an alias of ${aliased.name}, which ${unit.name} must not depend on`
+          );
+        }
         const path = /^(?:file|link|portal|workspace):(\.{1,2}\/.*)$/.exec(spec)?.[1];
         if (path !== undefined)
           checkTarget(rel(manifestPath), resolve(unit.path, path), `${field}.${name} points into`);
@@ -122,13 +131,6 @@ export function checkBoundaries(rootDir: string): string[] {
       const text = readFileSync(file, 'utf8');
       for (const specifier of specifiersOf(file, text)) {
         const where = rel(file);
-        const named = unitNamed(specifier);
-        if (named !== undefined) {
-          if (named !== unit && !unit.allowed.includes(named.name)) {
-            forbid(where, `imports ${specifier}, which ${unit.name} must not depend on`);
-          }
-          continue;
-        }
         const resolved = ts.resolveModuleName(
           specifier,
           file,
@@ -139,8 +141,18 @@ export function checkBoundaries(rootDir: string): string[] {
         let target: string | undefined;
         if (resolved !== undefined) target = realpathSync(resolved.resolvedFileName);
         else if (isPath) target = resolve(dirname(file), specifier);
+        const owner = target === undefined ? undefined : ownerOf(target);
+        const named = unitNamed(specifier);
+        if (named !== undefined) {
+          // The name is only trusted when it resolves to that package, not to an alias of another.
+          if (named !== unit && !unit.allowed.includes(named.name)) {
+            forbid(where, `imports ${specifier}, which ${unit.name} must not depend on`);
+          } else if (owner !== undefined && owner !== named && owner !== unit) {
+            forbid(where, `imports ${specifier}, which resolves into ${owner.name}`);
+          }
+          continue;
+        }
         if (target === undefined) continue; // Virtual modules such as astro:content.
-        const owner = ownerOf(target);
         if (owner === unit) continue;
         if (owner !== undefined) {
           const how = unit.allowed.includes(owner.name)

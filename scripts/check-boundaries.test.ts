@@ -33,18 +33,20 @@ const allowed: Record<string, string> = {
 
 let root: string;
 
-function workspace(changes: Record<string, string>) {
+const defaultLinks = {
+  contracts: 'packages/contracts',
+  site: 'apps/site',
+  signals: 'apps/signals',
+};
+
+function workspace(changes: Record<string, string>, links: Partial<typeof defaultLinks> = {}) {
   for (const [path, content] of Object.entries({ ...allowed, ...changes })) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     writeFileSync(join(root, path), content);
   }
   // pnpm links workspace packages into node_modules; resolution follows the links.
   mkdirSync(join(root, 'node_modules/@min7'), { recursive: true });
-  for (const [name, dir] of [
-    ['contracts', 'packages/contracts'],
-    ['site', 'apps/site'],
-    ['signals', 'apps/signals'],
-  ] as const) {
+  for (const [name, dir] of Object.entries({ ...defaultLinks, ...links })) {
     symlinkSync(join(root, dir), join(root, 'node_modules/@min7', name));
   }
   return checkBoundaries(root);
@@ -60,6 +62,35 @@ afterEach(() => {
 describe('check-boundaries', () => {
   it('accepts the allowed graph', () => {
     assert.deepEqual(workspace({}), []);
+  });
+
+  it('rejects a workspace alias that installs signals under the contracts name', () => {
+    const aliased = JSON.stringify({
+      name: '@min7/site',
+      dependencies: { '@min7/contracts': 'workspace:@min7/signals@*' },
+    });
+    const violations = workspace(
+      {
+        'apps/site/package.json': aliased,
+        'apps/site/src/page.ts': "export { local } from '@min7/contracts/src/local.ts';\n",
+        'apps/site/src/Page.astro': '<p>no imports</p>\n',
+      },
+      { contracts: 'apps/signals' }
+    );
+    assert.ok(
+      violations.some((v) =>
+        /package.json: dependencies.@min7\/contracts is an alias of @min7\/signals/.test(v)
+      ),
+      violations.join('\n')
+    );
+    assert.ok(
+      violations.some((v) =>
+        /src\/page.ts: imports @min7\/contracts\/src\/local.ts, which resolves into @min7\/signals/.test(
+          v
+        )
+      ),
+      violations.join('\n')
+    );
   });
 
   const forbidden: [string, Record<string, string>, RegExp][] = [
