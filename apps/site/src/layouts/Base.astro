@@ -38,7 +38,9 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <link rel="preload" href={serifRoman} as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href={display} as="font" type="font/woff2" crossorigin>
+    {/* Not on home: its headings are under the room scene, the LCP, which a preload would slow by
+        a round trip on mobile (ADR 0034); elsewhere the swap would shift the first screen. */}
+    {current !== '/' && <link rel="preload" href={display} as="font" type="font/woff2" crossorigin>}
     <title>{pageTitle}</title>
     <meta name="description" content={description}>
     <link rel="canonical" href={canonical}>

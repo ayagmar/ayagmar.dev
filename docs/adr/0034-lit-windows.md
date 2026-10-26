@@ -12,9 +12,9 @@ The owner found the site flat and generic under its one illustrated scene: panel
 
 Fraunces for the name, headings, post titles and big numbers. Source Serif 4 still sets everything read; JetBrains Mono the data, dates, slugs, window title bars, buttons and the footer. No pixel face anywhere, no text-shadow on text, no glow, no scanlines, no lowercased headings.
 
-Fraunces is a variable font (OFL 1.1, no Reserved Font Name) with four axes. The build keeps one: weight, 600 to 800. The other three are pinned in the subset, to the soft cut (`SOFT` 100), the wonky forms (`WONK` 1) and an optical size of 48, which reads well from 1.2 rem sub-headings to a 3.8 rem title. `just fonts` fetches the TTF, checks its sha256, subsets it to the same Latin set as the others and writes `display.woff2`: 30.8 KB. The latest tagged release (1.000, October 2020) predates the variable font, so the build pins upstream's latest commit (7ccdec3, 2025-10-21, font version 1.003); `@fontsource-variable/fraunces` 5.3.0 is the same family. `font-display: swap` as for the others (ADR 0026); it is preloaded on every page next to the serif roman, because the name on home is set in it and a late swap would move the page. Home therefore loads three fonts (`e2e/room.spec.ts` checks which).
+Fraunces is a variable font (OFL 1.1, no Reserved Font Name) with four axes. The build keeps none: the subset is one static cut, weight 750, the soft form (`SOFT` 100), the wonky glyphs (`WONK` 1) and an optical size of 48, which reads well from 1.2 rem sub-headings to a 3.8 rem title. Every display use is that weight. `just fonts` fetches the TTF, checks its sha256, subsets it to what a heading needs (ASCII, Latin-1 letters and the typographic punctuation, with kerning and ligatures but not the text faces' small caps and figure styles) and writes `display.woff2`: 14.3 KB. The first cut, a weight axis from 600 to 800 and the whole Latin-1 set, was 30.8 KB and put mobile home LCP at 1.96 s against ADR 0017's 2.0 s; this one measures 1.81 s. The latest tagged release (1.000, October 2020) predates the variable font, so the build pins upstream's latest commit (7ccdec3, 2025-10-21, font version 1.003); `@fontsource-variable/fraunces` 5.3.0 is the same family. `font-display: swap` as for the others (ADR 0026). It is preloaded on every page but home, where the headings sit under the room scene and the preload gained nothing; without it, a swap on /stats at 320 px shifted the first screen by 0.0103, over ADR 0017's 0.01. Home loads three fonts (`e2e/room.spec.ts` checks which).
 
-**Font budget (ADR 0017).** 143.8 of 200 KB for the whole build, up from 113 KB: the display face adds 30.8 KB. Home loads the serif roman, the mono and the display face, 103 KB.
+**Font budget (ADR 0017).** 127.4 of 200 KB for the whole build, up from 113 KB: the display face adds 14.3 KB. Home loads the serif roman, the mono and the display face, 87 KB.
 
 ### Palette and light
 
@@ -44,7 +44,7 @@ A code-3 sky (ADR 0029) has its own layer, `weather-overcast-{day,night}.png`, d
 
 ## Consequences
 
-- Fonts +31 KB (144 of 200 KB); the source CSS about +1.6 KB gzip; home JavaScript unchanged apart from 4 B in the room clock for the new weather state, 2,299 of 2,300 B.
-- Home loads one more font than before, preloaded.
+- Fonts +14 KB (127 of 200 KB); the source CSS about +1.6 KB gzip; home JavaScript unchanged apart from 4 B in the room clock for the new weather state, 2,299 of 2,300 B.
+- Home loads one more font than before.
 - Every window needs a file name, and a new panel material needs a bar colour chosen for 4.5:1 with `--bar-text` and three gradient stops checked in both themes.
 - Fraunces is for display only; running text stays in Source Serif 4.
