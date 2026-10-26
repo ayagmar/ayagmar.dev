@@ -53,11 +53,16 @@ async function serveSnapshot(c: Context<AppEnv>, source: SourceId): Promise<Resp
   const cache = caches.default;
   const origin = c.req.header('origin');
 
+  // The edge may keep a copy longer than asked; past its own expiry it could claim a
+  // freshness that no longer holds, so it is rebuilt instead.
   const cached = await cache.match(key);
-  if (cached) return forClient(cached, Date.now(), origin);
+  if (cached && Number(cached.headers.get(expiresHeader)) > Date.now()) {
+    return forClient(cached, Date.now(), origin);
+  }
 
-  const now = Date.now();
   const stored = await new D1SnapshotStore(c.env.DB).get(source);
+  // Read after D1 answers, so a slow read cannot produce an envelope that is already wrong.
+  const now = Date.now();
   const envelope = envelopeFor(source, stored, now);
   const ttl = cacheSeconds(source, envelope.fetchedAt, now);
   const copy = new Response(JSON.stringify(envelope), {

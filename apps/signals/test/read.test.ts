@@ -1,6 +1,8 @@
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { staleAfterSeconds } from '@min7/contracts';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { app } from '../src/app.ts';
 import { clearState, fetchApi } from './helpers.ts';
 
 beforeEach(clearState);
@@ -149,5 +151,71 @@ describe('health', () => {
       { source: 'llm-usage', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'shelf', lastSuccessAt: null, stale: true, lastErrorCode: null },
     ]);
+  });
+});
+
+describe('freshness against a slow read', () => {
+  let clock = 0;
+  beforeEach(() => {
+    clock = Date.now();
+    vi.spyOn(Date, 'now').mockImplementation(() => clock);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const read = async (db: D1Database = env.DB) => {
+    const ctx = createExecutionContext();
+    const response = await app.fetch(
+      new Request('https://api.ayagmar.dev/v1/listening'),
+      { ...env, DB: db },
+      ctx
+    );
+    await waitOnExecutionContext(ctx);
+    return response;
+  };
+
+  /** A database whose reads take `delayMs` of clock time. */
+  const slow = (delayMs: number) =>
+    new Proxy(env.DB, {
+      get(target, property) {
+        if (property !== 'prepare') return Reflect.get(target, property);
+        return (sql: string) => ({
+          bind: (...values: unknown[]) => ({
+            first: async () => {
+              const row = await target
+                .prepare(sql)
+                .bind(...values)
+                .first();
+              clock += delayMs;
+              return row;
+            },
+          }),
+        });
+      },
+    });
+
+  const seedNearStale = () => {
+    const at = new Date(clock - staleAfterSeconds.listening * 1000 + 1500).toISOString();
+    return env.DB.prepare(
+      'INSERT INTO snapshots (source, json, fetched_at, last_success_at) VALUES (?, ?, ?, ?)'
+    )
+      .bind('listening', '{"track":"x"}', at, at)
+      .run();
+  };
+
+  it('computes stale after the D1 read, not before it', async () => {
+    await seedNearStale();
+    const response = await read(slow(2200));
+
+    expect(await response.json()).toMatchObject({ stale: true });
+    expect(response.headers.get('cache-control')).not.toBe('public, max-age=1');
+  });
+
+  it('does not serve a cached copy past its own expiry', async () => {
+    await seedNearStale();
+    expect(await (await read()).json()).toMatchObject({ stale: false });
+
+    // The edge cache still holds the copy; signals' own clock says it has expired.
+    clock += 5000;
+    expect(await (await read()).json()).toMatchObject({ stale: true });
   });
 });

@@ -41,7 +41,7 @@ A zero-row upsert is a successful statement in D1, not a rollback, so the second
 
 - A snapshot response is cached with the Cache API under one key per source (`https://api.ayagmar.dev/v1/<source>`, no query string), without any CORS header. CORS is added after the cache lookup, so one copy serves every origin.
 - `Access-Control-Allow-Origin: https://ayagmar.dev` is the only CORS grant, with `Vary: Origin` on every read response. `www.ayagmar.dev` is not routed and site Previews use the `fixtures` data mode (ADR 0015), so neither needs access. Health gets the same CORS rule.
-- A cached copy lives at most 60 s and never past the moment its `stale` flag would flip, so a cached response never claims to be fresh when it no longer is. The browser gets `max-age` set to the time the copy has left. No `stale-while-revalidate`: the Cache API does not support it on `put`/`match`, and plain TTL is enough at this scale.
+- A cached copy lives at most 60 s and never past the moment its `stale` flag would flip, so a cached response never claims to be fresh when it no longer is. `stale` and the lifetime are computed after the D1 read returns, and the copy carries its absolute expiry in an internal header (stripped before it reaches a client); a hit past that expiry is rebuilt from D1, even if the edge still holds it. The browser gets `max-age` set to the time the copy has left. No `stale-while-revalidate`: the Cache API does not support it on `put`/`match`, and plain TTL is enough at this scale.
 - Only successful GETs are cached. Errors, OPTIONS and every push response carry `Cache-Control: no-store`.
 - The Cache API only works on the custom domain. On Preview URLs (`workers.dev`) every request goes to D1.
 
