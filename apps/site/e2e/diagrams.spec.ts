@@ -2,10 +2,8 @@ import { expect, test } from './fixtures.ts';
 
 // The placeholder post with a flowchart and a chart.
 const post = '/writing/token-logs';
-const diagrams = [
-  { name: 'From session log to token totals' },
-  { name: 'Placeholder numbers: cache reads per agent, in millions of tokens' },
-];
+const chart = 'Placeholder numbers: cache reads per agent, in millions of tokens';
+const diagrams = [{ name: 'From session log to token totals' }, { name: chart }];
 
 for (const width of [320, 360, 1280]) {
   // Catches diagrams that are missing, unnamed, or wider than a phone screen.
@@ -49,3 +47,20 @@ test('diagrams add no script, no inline style and are fully styled by /diagrams.
   expect(used.size).toBeGreaterThan(0);
   for (const name of used) expect(rules).toContain(`.${name}{`);
 });
+
+// Catches a chart drawn in Pele's default blue, which ignores the theme and the paper.
+for (const [colorScheme, accent] of [
+  ['light', 'rgb(47, 109, 90)'],
+  ['dark', 'rgb(138, 44, 38)'],
+] as const) {
+  test(`chart bars take the paper's accent in the ${colorScheme} theme`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto(post);
+    const fill = await page
+      .getByRole('img', { name: chart })
+      .locator('.pele-bars rect')
+      .first()
+      .evaluate((bar) => getComputedStyle(bar).fill);
+    expect(fill).toBe(accent);
+  });
+}

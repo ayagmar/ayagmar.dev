@@ -71,7 +71,7 @@ Writing index, posts, tags, colophon and 404 are paper sheets. Projects and proj
 
 ### Diagrams
 
-Pele diagrams keep the class rewrite of ADR 0024; only the `--pele-*` variables changed. They take the paper's colors, which differ by time of day. Pele still measures labels for `system-ui, sans-serif`, so the diagram font stays that.
+Pele diagrams keep the class rewrite of ADR 0024; only the `--pele-*` variables changed. They take the paper's colors, which differ by time of day. Charts draw with `--pele-series-1` to `--pele-series-6`, also set from the paper tokens; the first series is the paper's accent. A seventh series would show Pele's own palette. Pele still measures labels for `system-ui, sans-serif`, so the diagram font stays that.
 
 ### Hooks for the next design PR
 

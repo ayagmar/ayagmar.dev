@@ -713,6 +713,13 @@ kbd {
   --pele-surface-alt: light-dark(#e4d8bd, #d6c39b);
   --pele-border: light-dark(#7c7083, #6b6074);
   --pele-accent: light-dark(#2f6d5a, #8a2c26);
+  /* Chart series, all at least 3:1 on the paper. Past six, Pele's own palette shows. */
+  --pele-series-1: var(--pele-accent);
+  --pele-series-2: var(--ink);
+  --pele-series-3: light-dark(#8a2c26, #2f6d5a);
+  --pele-series-4: var(--ink-2);
+  --pele-series-5: #7f4100;
+  --pele-series-6: var(--pele-border);
 }
 
 /* ---------- projects ---------- */
