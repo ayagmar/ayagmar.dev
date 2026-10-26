@@ -110,5 +110,5 @@ The script is 1,435 B gzip and has its own allowance in `budgets.json`, 1,500 B,
 - The history needs signals to have pulled today's date: a Last.fm outage across midnight leaves the block hidden all day, by design.
 - The time to today's history grows by about two minutes per past year, past the 10-minute target from four years on under worst-case contention. Keeping it under 10 minutes for older accounts needs another design, such as a second cron trigger for the history, which is the owner's call.
 - Listening skips a minute now and then while a history pull runs; its gap stays within 5 minutes.
-- If Morocco changes its clocks again, `knowsRabatDate` in `src/lib/history.ts` and `knowsRabatTime` in `src/lib/sky.ts` move with the new rules.
+- If Morocco changes its clocks again, `knowsRabatDate` in `src/lib/rabat-date.ts` and `knowsRabatTime` in `src/lib/sky.ts` move with the new rules.
 - A history invocation's CPU is over 10 ms cold locally and is not measured in production; `fix/cron-cpu` takes it up with the other adapters.

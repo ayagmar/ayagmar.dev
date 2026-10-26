@@ -1,0 +1,7 @@
+---
+import { signalsMode } from '../data/signals.ts';
+---
+
+<!-- Fixtures mode (local builds and public Previews, ADR 0015): the numbers near this tape are
+     the shared fixtures, some invented, never live. Nothing in api mode. -->
+{signalsMode === 'fixtures' && <p class="sample">Sample data, not live</p>}

@@ -1,6 +1,6 @@
 # 0027. Room details and per-post art
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco.
+Status: accepted, 2026-10-26. Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco. Amended 2026-10-26: the now-playing island became a page script shared with /stats (ADR 0015); the record's rules below hold, and a hung request now ends after a 5 s deadline.
 
 ## Context
 

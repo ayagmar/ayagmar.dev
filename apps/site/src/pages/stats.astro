@@ -1,12 +1,15 @@
 ---
 import Freshness from '../components/Freshness.astro';
-import NowPlayingPanel from '../components/NowPlayingPanel.astro';
+import NowPlaying from '../components/NowPlaying.astro';
 import ShippingList from '../components/ShippingList.astro';
+import Stamp from '../components/Stamp.astro';
 import { count, projectsSummary, repoName } from '../data/format.ts';
 import { emptyEnvelope } from '../data/reader.ts';
-import { signals, signalsApiBase, signalsMode } from '../data/signals.ts';
+import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
+import { dayName } from '../lib/history.ts';
 import { site } from '../lib/site.ts';
+import { starTotals, weekCount, statsWords as words } from '../lib/stats.ts';
 
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
@@ -16,66 +19,71 @@ const projects = await signals.read('projects');
 const shelf = emptyEnvelope('shelf');
 
 const music = listening.data;
-const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points }) => {
-  const last = points.at(-1);
-  return last === undefined ? [] : [{ repo, stars: last.stars, date: last.date }];
-});
+const stars = shipping.data === null ? [] : starTotals(shipping.data);
 ---
 
 <Base title="Stats">
   <h1>Stats</h1>
-  <p class="caption">
-    Numbers from my own tools, refreshed when the site is built. On this day and agent hours are
-    fetched by your browser, and shown only on the date in Rabat they describe.
-  </p>
+  {signalsMode === 'fixtures' ? (
+    <p class="sample sample-banner">
+      Sample data: this build shows the test fixtures, some of them made up. The live numbers are on{' '}
+      <a href={new URL('/stats', Astro.site)}>ayagmar.dev</a>.
+    </p>
+  ) : (
+    <p class="caption">
+      Numbers from my own tools, kept current by your browser while this page is open. On this day
+      and agent hours show only on the date in Rabat they describe.
+    </p>
+  )}
 
   <div class="stats-grid">
-    <section class="panel m-vinyl" aria-labelledby="listening">
+    {/* src/scripts/stats-live.ts replaces each panel's build-time snapshot with a newer live one. */}
+    <section
+      class="panel m-vinyl"
+      aria-labelledby="listening"
+      {...liveAttrs('listening', listening)}
+    >
       <h2 id="listening">Listening</h2>
-      {music === null ? (
-        <p>No listening data yet.</p>
-      ) : (
-        <>
-          <NowPlayingPanel listening={listening} />
-          <dl>
-            <dt>Scrobbles this week</dt>
-            <dd>
-              {music.scrobbles.thisWeek === null ? 'unknown' : count(music.scrobbles.thisWeek)}
-            </dd>
-            <dt>Scrobbles last week</dt>
-            <dd>
-              {music.scrobbles.lastWeek === null ? 'unknown' : count(music.scrobbles.lastWeek)}
-            </dd>
-          </dl>
-          <h3>Recent tracks</h3>
-          {music.recent.length === 0 ? (
-            <p>No scrobbles yet.</p>
-          ) : (
-            <ol>
-              {music.recent.map((track) => (
-                <li>
-                  <cite>{track.track}</cite> by {track.artist}
-                </li>
-              ))}
-            </ol>
-          )}
-          <h3>Top artists</h3>
-          {music.topArtists === null || music.topArtists.length === 0 ? (
-            <p>No top artists yet.</p>
-          ) : (
-            <ol>
-              {music.topArtists.map((artist) => (
-                <li>
-                  {artist.artist}, {count(artist.plays)} plays
-                </li>
-              ))}
-            </ol>
-          )}
-          <p>
-            <a href={site.links.lastfm}>All of it on Last.fm</a>
-          </p>
-        </>
-      )}
+      <NowPlaying listening={listening} />
+      <div class="listening-body">
+        {music !== null && (
+          <>
+            <dl>
+              <dt>{words.thisWeek}</dt>
+              <dd>{weekCount(music.scrobbles.thisWeek)}</dd>
+              <dt>{words.lastWeek}</dt>
+              <dd>{weekCount(music.scrobbles.lastWeek)}</dd>
+            </dl>
+            <h3>{words.recent}</h3>
+            {music.recent.length === 0 ? (
+              <p>{words.noRecent}</p>
+            ) : (
+              <ol>
+                {music.recent.map((track) => (
+                  <li>
+                    <cite>{track.track}</cite> by {track.artist}, <Stamp iso={track.playedAt} />
+                  </li>
+                ))}
+              </ol>
+            )}
+            <h3>{words.top}</h3>
+            {music.topArtists === null || music.topArtists.length === 0 ? (
+              <p>{words.noTop}</p>
+            ) : (
+              <ol>
+                {music.topArtists.map((artist) => (
+                  <li>
+                    {artist.artist}, {count(artist.plays)} plays
+                  </li>
+                ))}
+              </ol>
+            )}
+          </>
+        )}
+      </div>
+      <p>
+        <a href={site.links.lastfm}>All of it on Last.fm</a>
+      </p>
       <Freshness envelope={listening} />
       {/* Filled in, and shown, by src/scripts/history.ts (ADR 0030); hidden without it. */}
       <div
@@ -92,38 +100,42 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
       </div>
     </section>
 
-    <section class="panel m-cork" aria-labelledby="shipping">
+    <section class="panel m-cork" aria-labelledby="shipping" {...liveAttrs('shipping', shipping)}>
       <h2 id="shipping">Shipping</h2>
-      {shipping.data === null || shipping.data.events.length === 0 ? (
-        <p>No public activity to show yet.</p>
-      ) : (
-        <ShippingList events={shipping.data.events.slice(0, 15)} />
-      )}
-      {starTotals.length > 0 && (
-        <>
-          <h3>Stars</h3>
-          <ul>
-            {starTotals.map((entry) => (
-              <li>
-                {repoName(entry.repo)}: {count(entry.stars)} on{' '}
-                <time datetime={entry.date}>{entry.date}</time>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <div class="shipping-body">
+        {shipping.data === null || shipping.data.events.length === 0 ? (
+          <p>{words.noShipping}</p>
+        ) : (
+          <ShippingList events={shipping.data.events.slice(0, 15)} />
+        )}
+        {stars.length > 0 && (
+          <>
+            <h3>{words.stars}</h3>
+            <ul>
+              {stars.map((entry) => (
+                <li>
+                  {repoName(entry.repo)}: {count(entry.stars)} on{' '}
+                  <time datetime={entry.date}>{dayName(entry.date)}</time>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
       <Freshness envelope={shipping} />
     </section>
 
-    <section class="panel m-screen" aria-labelledby="projects">
+    <section class="panel m-screen" aria-labelledby="projects" {...liveAttrs('projects', projects)}>
       <h2 id="projects">Projects</h2>
-      {projects.data === null ? (
-        <p>No project data yet.</p>
-      ) : (
-        <p>
-          {projectsSummary(projects.data.projects)} <a href="/projects">See them</a>.
-        </p>
-      )}
+      <div class="projects-body">
+        {projects.data === null ? (
+          <p>{words.noProjects}</p>
+        ) : (
+          <p>
+            {projectsSummary(projects.data.projects)} <a href="/projects">See them</a>.
+          </p>
+        )}
+      </div>
       <Freshness envelope={projects} />
     </section>
 
@@ -164,14 +176,8 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
   </div>
 </Base>
 
-<style>
-/* Each row's pair sits in the list's grid; a hidden row (a value not sent) takes no space. */
-.agent-hours dl > div:not([hidden]) {
-  display: contents;
-}
-</style>
-
 <script>
 import '../scripts/history.ts';
 import '../scripts/agent-hours.ts';
+import '../scripts/stats-live.ts';
 </script>

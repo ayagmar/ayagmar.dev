@@ -82,9 +82,7 @@ test.describe('agent hours on /stats', () => {
     await expect(hoursBlock(page).locator('.agent-hours-month dd')).toHaveText('144 hours');
     await expect(hoursBlock(page).locator('.agent-hours-week dd')).toHaveText('60 hours');
     await expect(hoursBlock(page)).toContainText('not my hours at the keyboard');
-    await expect(hoursBlock(page).locator('.agent-hours-as-of')).toHaveText(
-      'As of 26 Oct, 08:00 UTC.'
-    );
+    await expect(hoursBlock(page).locator('.agent-hours-as-of')).toHaveText('Updated 4 hours ago');
     await expect(page.locator('.llm-usage-empty')).toBeHidden();
   });
 
@@ -135,8 +133,9 @@ test.describe('/uses', () => {
     await expect(facts(page).locator('.desktop-uptime dd')).toHaveText(
       '3 days, from the last reported boot'
     );
-    await expect(facts(page).locator('.desktop-reported')).toHaveText('Reported 4 hours ago.');
+    await expect(facts(page).locator('.desktop-reported')).toHaveText('Reported 4 hours ago');
     await expect(agents(page).locator('li')).toHaveText(['Claude Code', 'Codex', 'pi']);
+    await expect(agents(page).locator('.agents-as-of')).toHaveText('Updated 4 hours ago');
     expect(outside.sort()).toEqual([`${api}/desktop`, `${api}/llm-usage`]);
   });
 

@@ -3,8 +3,8 @@
 // hidden in the page's HTML, shown only while its last answer holds, and hidden on its own;
 // the panel holding them shows only while one of them does. In fixtures mode there is no
 // endpoint, no request and no panel.
-import { readDesktop, reportedAgo, uptime } from '../lib/desktop.ts';
-import { poll, timeElement, utcTime } from '../lib/live.ts';
+import { readDesktop, uptime } from '../lib/desktop.ts';
+import { poll, stamp, tick } from '../lib/live.ts';
 import { readLlmUsage } from '../lib/llm-usage.ts';
 
 const panel = document.querySelector<HTMLElement>('.uses-live');
@@ -39,14 +39,11 @@ if (desktop && desktopSrc) {
       );
       desktop
         .querySelector('.desktop-reported')
-        ?.replaceChildren(
-          'Reported ',
-          timeElement(facts.fetchedAt, reportedAgo(facts.fetchedAt, now)),
-          '.'
-        );
+        ?.replaceChildren('Reported ', stamp(facts.fetchedAt));
     }
     desktop.hidden = !facts;
     update();
+    tick(now);
   });
 }
 
@@ -68,16 +65,11 @@ if (agents && agentsSrc) {
             return item;
           })
         );
-        agents
-          .querySelector('.agents-as-of')
-          ?.replaceChildren(
-            'As of ',
-            timeElement(usage.fetchedAt, utcTime(Date.parse(usage.fetchedAt))),
-            '.'
-          );
+        agents.querySelector('.agents-as-of')?.replaceChildren('Updated ', stamp(usage.fetchedAt));
       }
       agents.hidden = !names;
     }
     update();
+    tick(now);
   });
 }

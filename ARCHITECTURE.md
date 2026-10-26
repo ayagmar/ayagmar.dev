@@ -33,10 +33,12 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
  trellis, desktop      ───────►                                per source        │
                                                                                  ▼
                                                      build: astro build reads /v1/* (or fixtures)
-                                                     browser: now-playing island reads /v1/listening,
+                                                     browser: home now-playing reads /v1/listening,
                                                               room script reads /v1/weather,
-                                                              /stats script reads /v1/listening-history
-                                                              and /v1/llm-usage, /uses script reads
+                                                              /stats script reads /v1/listening,
+                                                              /v1/shipping, /v1/projects,
+                                                              /v1/listening-history and
+                                                              /v1/llm-usage, /uses script reads
                                                               /v1/desktop and /v1/llm-usage
 ```
 
@@ -90,8 +92,8 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                                    |
 | Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                                         |
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                            |
-| Build-time snapshot reader (`fixtures` or `api` mode), freshness          | `apps/site/src/data/`                                                                                                    |
-| Now-playing island                                                        | `apps/site/src/components/NowPlaying.svelte`                                                                             |
+| Build-time snapshot reader (`fixtures` or `api` mode)                     | `apps/site/src/data/`                                                                                                    |
+| Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/live.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{now-playing,stats-live}.ts`        |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                      |
 | Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                              |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                              |
