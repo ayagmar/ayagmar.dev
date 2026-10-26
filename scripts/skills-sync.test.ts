@@ -231,6 +231,27 @@ describe('skills sync', () => {
   });
 });
 
+describe('skills sync provenance', () => {
+  // Catches local edits and unpublished plugins being published under the commit's SHA.
+  it('reads the commit, not the working tree', () => {
+    const dir = standard();
+    write(dir, 'README.md', readme.replace('Plan things before doing them.', 'Edited locally.'));
+    write(
+      dir,
+      'plugins/alpha/package.json',
+      JSON.stringify({ name: '@ayagmar/alpha', version: '9.9.9', license: 'MIT' })
+    );
+    plugin(dir, 'unpublished'); // untracked: never committed
+    const { file } = extractSkills(dir, null);
+    assert.deepEqual(
+      file.skills.map((skill) => skill.name),
+      ['alpha', 'gamma', 'beta']
+    );
+    assert.equal(file.skills[0]?.summary, 'Plan things before doing them.');
+    assert.equal(file.skills[0]?.version, '0.2.0');
+  });
+});
+
 describe('the committed content/skills.json', () => {
   const path = join(import.meta.dirname, '..', 'content', 'skills.json');
 

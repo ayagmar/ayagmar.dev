@@ -5,7 +5,7 @@
 //   --evals  the eval-results directory; default: <from>/eval-results when it exists. The repo
 //            does not track eval results, so with the default clone pass the local ones.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
@@ -54,8 +54,38 @@ const text = (value: unknown): string | null =>
   typeof value === 'string' && value.trim() !== '' ? value.trim() : null;
 const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'));
 
-function frontmatter(path: string): Record<string, unknown> {
-  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(readFileSync(path, 'utf8'));
+const git = (cwd: string, ...args: string[]) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+
+/** A file of the commit, or null when the commit has none; the working tree is never read. */
+function show(repoDir: string, commit: string, path: string): string | null {
+  try {
+    return execFileSync('git', ['show', `${commit}:${path}`], {
+      cwd: repoDir,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** The entries of a directory of the commit, or none when it has no such directory. */
+function entries(repoDir: string, commit: string, dir: string): string[] {
+  try {
+    return git(repoDir, 'ls-tree', '--name-only', `${commit}:${dir}`).split('\n').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+const needFile = (content: string | null, path: string) => {
+  if (content === null) throw new Error(`${path} is not in the commit`);
+  return content;
+};
+
+function frontmatter(source: string): Record<string, unknown> {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(source);
   const data: unknown = match?.[1] === undefined ? null : parseYaml(match[1]);
   if (!isRecord(data)) throw new Error('has no YAML frontmatter');
   return data;
@@ -165,32 +195,32 @@ export function leaks(content: string): string[] {
   return found;
 }
 
-const git = (cwd: string, ...args: string[]) =>
-  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
 export function extractSkills(repoDir: string, evalsDir: string | null): SyncResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const readme = readFileSync(join(repoDir, 'README.md'), 'utf8');
-  const rows = readmeRows(readme);
+  // Everything below is read from this commit's tree, so edits and untracked files in a checkout
+  // cannot enter a snapshot that names the commit.
+  const [commit = '', committed = ''] = git(repoDir, 'log', '-1', '--format=%H %ct', 'HEAD').split(
+    ' '
+  );
+  const rows = readmeRows(needFile(show(repoDir, commit, 'README.md'), 'README.md'));
   const skills: SkillEntry[] = [];
 
-  const plugins = readdirSync(join(repoDir, 'plugins'), { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort((a, b) => a.localeCompare(b));
+  const plugins = entries(repoDir, commit, 'plugins').sort((a, b) => a.localeCompare(b));
   // The README lists the skills in a deliberate order; plugins it does not list follow.
   const listed = [...rows.keys()].filter((dir) => plugins.includes(dir));
   const ordered = [...listed, ...plugins.filter((dir) => !listed.includes(dir))];
 
   for (const dir of ordered) {
-    const base = join(repoDir, 'plugins', dir);
+    const base = `plugins/${dir}`;
+    const file = (path: string) =>
+      needFile(show(repoDir, commit, `${base}/${path}`), `${base}/${path}`);
     try {
-      const manifest = readJson(join(base, 'package.json'));
+      const manifest: unknown = JSON.parse(file('package.json'));
       if (!isRecord(manifest)) throw new Error('package.json is not an object');
-      const skillDirs = readdirSync(join(base, 'skills'));
+      const skillDirs = entries(repoDir, commit, `${base}/skills`);
       if (skillDirs.length !== 1) throw new Error(`has ${skillDirs.length} skills, expected one`);
-      const meta = frontmatter(join(base, 'skills', skillDirs[0] ?? '', 'SKILL.md'));
+      const meta = frontmatter(file(`skills/${skillDirs[0] ?? ''}/SKILL.md`));
       const name = text(meta.name);
       const pkg = text(manifest.name);
       const version = text(manifest.version);
@@ -199,9 +229,7 @@ export function extractSkills(repoDir: string, evalsDir: string | null): SyncRes
         throw new Error('needs a name, a package name, a version and a license');
       }
       if (pkg !== `@ayagmar/${name}`) throw new Error(`package ${pkg} is not @ayagmar/${name}`);
-      const pluginReadme = join(base, 'README.md');
-      if (!existsSync(pluginReadme)) throw new Error('has no README.md');
-      const readmeText = readFileSync(pluginReadme, 'utf8');
+      const readmeText = file('README.md');
 
       const row = rows.get(dir);
       const summary = row?.summary ?? text(manifest.description);
@@ -236,9 +264,7 @@ export function extractSkills(repoDir: string, evalsDir: string | null): SyncRes
     }
   }
 
-  const found = git(repoDir, 'log', '-1', '--format=%H %ct').split(' ');
-  const commit = found[0] ?? '';
-  const committedAt = new Date(Number(found[1]) * 1000).toISOString();
+  const committedAt = new Date(Number(committed) * 1000).toISOString();
   if (!/^[0-9a-f]{40}$/.test(commit)) errors.push(`${repoDir} has no commit`);
   if (skills.length === 0 && errors.length === 0) errors.push('no skills found under plugins/');
   const file: SkillsFile = { source: { repo, commit, committedAt }, skills };
