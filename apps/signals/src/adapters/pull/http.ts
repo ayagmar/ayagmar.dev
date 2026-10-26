@@ -153,3 +153,23 @@ export function checkSnapshot<T>(schema: Schema<T>, snapshot: T): T {
   if (!parsed.success) throw new PullError('upstream_malformed');
   return parsed.data;
 }
+
+/**
+ * Workers keeps at most six connections waiting for response headers and queues the rest,
+ * with their timeouts already running. Adapters with more requests than that use `runLimited`.
+ */
+export const maxOpenRequests = 6;
+
+/** Runs `tasks` with at most `limit` of them pending at once; results keep the tasks' order. */
+export async function runLimited<T>(tasks: readonly (() => Promise<T>)[], limit: number) {
+  const results: T[] = [];
+  let next = 0;
+  const worker = async () => {
+    for (let index = next++; index < tasks.length; index = next++) {
+      const task = tasks[index];
+      if (task !== undefined) results[index] = await task();
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker));
+  return results;
+}

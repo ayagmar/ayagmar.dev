@@ -103,6 +103,25 @@ describe('pull adapter fetch', () => {
     );
   });
 
+  it('keeps at most six projects requests open, so none waits in the runtime queue', async () => {
+    // Workers queues connections past six; a queued request's timeout would already be running.
+    let open = 0;
+    let most = 0;
+    network.use(
+      http.all('*', async () => {
+        open += 1;
+        most = Math.max(most, open);
+        await delay(10);
+        open -= 1;
+      }),
+      ...upstreamHandlers()
+    );
+
+    await projects.fetch(env, signal());
+    expect(most).toBeGreaterThan(1);
+    expect(most).toBeLessThanOrEqual(6);
+  });
+
   it('calls GitHub without a token when none is set', async () => {
     const authorizations: (string | null)[] = [];
     network.use(

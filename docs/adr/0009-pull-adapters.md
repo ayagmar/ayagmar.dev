@@ -21,6 +21,8 @@ Per source:
 - **projects** (daily): for each entry of `featuredProjects` (`packages/contracts/src/projects.ts`), `GET /repos/{repo}` and `/repos/{repo}/releases/latest` on api.github.com, and `GET https://api.npmjs.org/downloads/point/last-month/{package}` when the entry names a package. `GITHUB_TOKEN` is optional (a token with no scopes; public data only) and is sent to api.github.com only. A 404 or a private repository drops the project; a renamed repository answers with its new name and URL, which the snapshot shows under the same slug; a release 404 means no release. Without a token GitHub allows 60 requests an hour per IP, and Cloudflare's egress IPs are shared, so the daily pull may be refused (`upstream_rate_limited`) until a token is set.
 - The featured list is in `contracts`, not in signals, because the site joins posts to projects by `slug`. Every project in the snapshot carries its slug.
 
+Connections: Workers keeps at most six subrequests waiting for response headers per invocation and queues the rest, and each request's 5 s timeout starts when `fetch` is called, queued or not. `projects` therefore runs its requests through `runLimited` with six at a time, so a slow GitHub does not time out the last batch while it waits. The limit is per invocation: the cron runner should run adapters one after another, not all at once.
+
 Bounds: at most 4 + 3 × 8 + 1 = 29 subrequests across the three adapters, each body capped, and lists capped at 10 tracks, 10 artists and 50 events, so parsing stays far below the CPU limit.
 
 ## Consequences

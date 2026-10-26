@@ -12,9 +12,11 @@ import type { PullAdapter } from '../types.ts';
 import {
   checkSnapshot,
   getOptionalJson,
+  maxOpenRequests,
   orNull,
   PullError,
   parseBody,
+  runLimited,
   type UpstreamResponse,
 } from './http.ts';
 import { readSecret } from './secrets.ts';
@@ -46,31 +48,35 @@ export const projects: PullAdapter<ProjectsRaw, ProjectsSnapshot> = {
       },
     };
     const npm = { signal, maxBytes };
-    const answers = await Promise.all(
-      featuredProjects.map(async (project) => {
-        const { repo } = project;
-        const npmPackage = 'npmPackage' in project ? project.npmPackage : undefined;
-        const [metadata, release, downloads] = await Promise.all([
-          getOptionalJson(`https://api.github.com/repos/${repo}`, github),
-          getOptionalJson(`https://api.github.com/repos/${repo}/releases/latest`, github),
-          npmPackage === undefined
-            ? null
-            : getOptionalJson(
-                `https://api.npmjs.org/downloads/point/last-month/${npmPackage}`,
-                npm
-              ),
-        ]);
-        return { repo, npmPackage, metadata, release, downloads };
-      })
-    );
     const raw: ProjectsRaw = { github: {}, npm: {} };
-    for (const { repo, npmPackage, metadata, release, downloads } of answers) {
-      raw.github[repo] = { repo: metadata, release };
-      if (npmPackage !== undefined) raw.npm[npmPackage] = downloads;
+    const tasks: (() => Promise<void>)[] = [];
+    for (const project of featuredProjects) {
+      const { repo } = project;
+      const answers: ProjectsRaw['github'][string] = { repo: null, release: null };
+      raw.github[repo] = answers;
+      tasks.push(async () => {
+        answers.repo = await getOptionalJson(`https://api.github.com/repos/${repo}`, github);
+      });
+      tasks.push(async () => {
+        answers.release = await getOptionalJson(
+          `https://api.github.com/repos/${repo}/releases/latest`,
+          github
+        );
+      });
+      if ('npmPackage' in project) {
+        const name = project.npmPackage;
+        raw.npm[name] = null;
+        tasks.push(async () => {
+          raw.npm[name] = await getOptionalJson(
+            `https://api.npmjs.org/downloads/point/last-month/${name}`,
+            npm
+          );
+        });
+      }
     }
+    await runLimited(tasks, maxOpenRequests);
     return raw;
   },
-
   normalize(raw) {
     const list: Project[] = [];
     const failures: PullError[] = [];
