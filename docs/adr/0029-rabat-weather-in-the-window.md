@@ -39,7 +39,7 @@ The build never reads weather: it is not in the reader's sources and no page ren
 
 `src/scripts/room.ts`, the room clock:
 - Asks on load if the page is visible, then on a minute tick or on becoming visible only when 15 minutes have passed since the last request. One request at a time, with `AbortSignal.timeout(5000)`, which covers the headers and the body. No cache-busting: the browser may answer from its 60-second cache.
-- `readWeather` (`src/lib/weather.ts`) decides whether an answer is usable: `source` is `weather`, `version` 1, `stale` false, `fetchedAt` and `data.observedAt` are strings that parse, neither is more than 2 minutes ahead of the visitor's clock, neither is more than 45 minutes old (equal is fresh, as in `isStale`), the code is one Open-Meteo documents, and the temperature is a number or null. Anything else, a failure, or the deadline clears the weather. A usable state is kept until a request ends or until it is 45 minutes old, whichever comes first.
+- `readWeather` (`src/lib/weather.ts`) decides whether an answer is usable: `source` is `weather`, `version` 1, `stale` false, `fetchedAt` and `data.observedAt` are strings that parse, neither is more than 2 minutes ahead of the visitor's clock, neither is more than 45 minutes old (equal is fresh, as in `isStale`), the code is one Open-Meteo documents, and every other value is present, of its type and in `weatherSnapshotSchema`'s range (a number in range or null; `isDay` a boolean or null). The browser does not load zod, so `test/weather.test.ts` checks that `readWeather` and the contract agree on each value at and past its bounds, of the wrong type, null and missing. Anything else, a failure, or the deadline clears the weather. The room keeps the last answer and reads it again on every tick, so it shows only while usable; a request in flight keeps it until the request ends.
 - The minute tick drops weather past its age limit without asking anything, and so does a tab coming back to visible, before it asks again. A later usable answer brings the weather back.
 - `tick()` owns the whole window: `data-sky`, `data-weather` (`clear`, `cloudy`, `fog`, `rain`, `snow`, `storm` or `none`) and the label, so the label never keeps an old temperature. Day: "Through the window: daylight over Rabat, slight rain, 14 °C." Night: "Through the window: night over Rabat, a full moon, overcast, 9 °C." With no usable weather, the label is ADR 0027's. The temperature is only in the label.
 
@@ -60,13 +60,13 @@ Sizes: 0.7 to 1.0 KiB per layer, 138 B per drops tile, 8.7 KiB for all twelve. A
 
 | What                              | Before   | After                          | Limit                                  |
 | --------------------------------- | -------- | ------------------------------ | -------------------------------------- |
-| Room script, gzip 9               | 1,541 B  | 2,294 B                        | 2,300 B (was 1,700 B; ADR 0017)        |
+| Room script, gzip 9               | 1,541 B  | 2,290 B                        | 2,300 B (was 1,700 B; ADR 0017)        |
 | Home islands JS                   | 20,465 B | 20,465 B                       | 20,480 B                               |
 | Home weight, fonts excluded       | 71,109 B | 81,395 B                       | 153,600 B (every weather file counted) |
 | Upstream requests (Open-Meteo)    | 0        | ~96 a day                      | under 10,000 a day                     |
 | Browser requests to `/v1/weather` | 0        | 4 an hour per visible home tab | Workers Free 100,000 a day (ADR 0010)  |
 
-The room script holds the code table and its words (about 290 B gzip), the request, the checks and the expiry. To fit, it lets `AbortSignal.timeout` bound the request and has one function render the whole window; no check was dropped. It has 6 B of headroom.
+The room script holds the code table and its words (about 290 B gzip), the request, the checks and the expiry. To fit, it lets `AbortSignal.timeout` bound the request, has one function render the whole window, checks both times with the same range helper as the values, and uses en-GB's short time style for the clock (the same `HH:mm`); no check was dropped. It has 10 B of headroom.
 
 Lighthouse on the built site (`just lighthouse`, median of three runs, 2026-10-26) scores the home page 100 for performance and accessibility on mobile and desktop, with LCP at 1,660 ms on mobile and 409 ms on desktop. That build is in `fixtures` mode, which asks for no weather, so it measures the room script's size and not a weather layer; the layer is a small decorative image that loads after the answer, behind the room picture that is the LCP element.
 
@@ -90,6 +90,6 @@ Lighthouse on the built site (`just lighthouse`, median of three runs, 2026-10-2
 
 - The room needs signals' weather to be fresh: an Open-Meteo outage over 45 minutes empties the window, by design.
 - Listening skips a minute more per quarter hour; its now-playing state still ends within its 15-minute threshold.
-- The room script has 6 B left under its 2,300 B allowance, the ceiling the owner set. The next addition to it needs a decision first.
+- The room script has 10 B left under its 2,300 B allowance, the ceiling the owner set. The next addition to it needs a decision first.
 - The first deployed pull, and the cron's CPU with weather in it, should be checked in `/v1/health` and Workers Logs after the deploy.
 - If Open-Meteo changes its codes or terms, this ADR and `weatherCodes` change with them.

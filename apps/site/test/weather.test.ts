@@ -1,4 +1,4 @@
-import { staleAfterSeconds } from '@min7/contracts';
+import { staleAfterSeconds, weatherEnvelopeSchema } from '@min7/contracts';
 import { describe, expect, it } from 'vitest';
 import {
   readWeather,
@@ -90,16 +90,21 @@ describe('which answers the room shows', () => {
     version: 1,
     fetchedAt: ago(60_000),
     stale: false,
-    data: { observedAt: ago(10 * 60_000), weatherCode: 61, temperatureC: 14.4, ...data },
+    data: {
+      observedAt: ago(10 * 60_000),
+      weatherCode: 61,
+      cloudCoverPercent: 100,
+      precipitationMm: 0.4,
+      windSpeedKmh: 12.6,
+      isDay: true,
+      temperatureC: 14.4,
+      ...data,
+    },
     ...envelope,
   });
 
   it('shows a fresh answer with its words and temperature', () => {
-    expect(readWeather(answer(), now)).toEqual({
-      state: 'rain',
-      words: 'slight rain, 14 °C',
-      until: now - 10 * 60_000 + weatherMaxAgeMs,
-    });
+    expect(readWeather(answer(), now)).toEqual({ state: 'rain', words: 'slight rain, 14 °C' });
     expect(readWeather(answer({ temperatureC: null }), now)?.words).toBe('slight rain');
     // -0.4 rounds to -0, which must not print as "-0 °C".
     expect(readWeather(answer({ temperatureC: -0.4 }), now)?.words).toBe('slight rain, 0 °C');
@@ -138,6 +143,26 @@ describe('which answers the room shows', () => {
     ['no body', undefined],
   ])('shows nothing for %s', (_case, body) => {
     expect(readWeather(body, now)).toBeUndefined();
+  });
+
+  // Catches the room showing weather from a snapshot the contract rejects, or hiding one it
+  // accepts: each value at and past its bounds, of the wrong type, null and missing.
+  const values: Record<string, unknown[]> = {
+    cloudCoverPercent: [0, 100, -0.1, 100.1],
+    precipitationMm: [0, 1000, -1, 1000.1],
+    windSpeedKmh: [0, 500, -1, 500.1],
+    temperatureC: [-100, 70, -100.1, 70.1, 1e300],
+    isDay: [true, false, 1, 'true'],
+  };
+  it.each(
+    Object.entries(values).flatMap(([field, cases]) =>
+      [...cases, null, '5', undefined].map((value) => [field, value] as const)
+    )
+  )('agrees with the contract on %s %j', (field, value) => {
+    const body = answer({ [field]: value });
+    expect(readWeather(body, now) !== undefined).toBe(
+      weatherEnvelopeSchema.safeParse(body).success
+    );
   });
 
   it('believes a server clock up to two minutes ahead', () => {

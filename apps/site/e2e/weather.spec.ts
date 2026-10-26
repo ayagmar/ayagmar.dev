@@ -29,7 +29,11 @@ const snapshot = (name: Case) =>
   ) as Record<string, unknown>;
 
 /** A `/v1/weather` answer fetched a minute before `at`, for values from ten minutes before. */
-const envelope = (name: Case, at: string, { stale = false, observedAgoMs = 10 * minute } = {}) => ({
+const envelope = (
+  name: Case,
+  at: string,
+  { stale = false, observedAgoMs = 10 * minute, data = {} as Record<string, unknown> } = {}
+) => ({
   status: 200,
   contentType: 'application/json',
   body: JSON.stringify({
@@ -40,6 +44,7 @@ const envelope = (name: Case, at: string, { stale = false, observedAgoMs = 10 * 
     data: {
       ...snapshot(name),
       observedAt: new Date(Date.parse(at) - observedAgoMs).toISOString(),
+      ...data,
     },
   }),
 });
@@ -196,6 +201,10 @@ for (const [name, answer] of [
     (route: Route) => route.fulfill(envelope('rain', noon, { observedAgoMs: 46 * minute })),
   ],
   ['the answer is not JSON', (route: Route) => route.fulfill({ status: 200, body: '<html>' })],
+  [
+    'a value has the wrong type',
+    (route: Route) => route.fulfill(envelope('rain', noon, { data: { isDay: 'broken' } })),
+  ],
 ] as const) {
   test(`the window shows no weather when ${name}`, async ({ page }) => {
     let asked = false;
@@ -207,6 +216,31 @@ for (const [name, answer] of [
     // Time for a wrong answer to land.
     await page.waitForTimeout(300);
     await none(page);
+  });
+}
+
+// Catches a broken refresh leaving the last good weather, or its temperature, in the window.
+for (const [name, answer] of [
+  [
+    'is out of range',
+    (route: Route) => route.fulfill(envelope('snow', noon, { data: { temperatureC: 1e300 } })),
+  ],
+  [
+    'lacks a value',
+    (route: Route) => route.fulfill(envelope('snow', noon, { data: { windSpeedKmh: undefined } })),
+  ],
+] as const) {
+  test(`a refresh that ${name} clears the weather`, async ({ page }) => {
+    let requests = 0;
+    await visit(page, noon, (route) =>
+      ++requests === 1 ? route.fulfill(envelope('rain', noon)) : answer(route)
+    );
+    await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'rain');
+    // The 15-minute tick asks again; stop right after it, before the request's deadline.
+    await page.clock.runFor(15 * minute);
+    await expect.poll(() => requests).toBe(2);
+    await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'none');
+    await expect(page.locator('.room-window')).not.toHaveAttribute('aria-label', /°C/);
   });
 }
 
