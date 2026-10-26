@@ -215,6 +215,69 @@ describe('answers', () => {
   });
 });
 
+describe('Retry-After across runs', () => {
+  const minute = 60_000;
+  const at = (ms: number, fetch: typeof globalThis.fetch) =>
+    runtime(fetch, { now: () => now + ms });
+
+  // Catches systemd's restart 15 minutes later resending while signals asked for an hour.
+  it('sends nothing before the deadline signals gave, then the same bytes', async () => {
+    const { producer, state } = standIn();
+    const first = signals({ status: 429, headers: { 'retry-after': '3600' } });
+    assert.equal(await deliver(at(0, first.fetch).rt, producer), exitCodes.retryLater);
+
+    const restart = signals(accepted());
+    const early = at(15 * minute, restart.fetch);
+    assert.equal(await deliver(early.rt, producer), exitCodes.retryLater);
+    assert.equal(restart.requests.length, 0);
+    assert.match(early.logs.at(-1) ?? '', /"event":"retry_later"/);
+
+    // Within the run's own wait of the deadline: it waits out the rest, then sends.
+    const later = signals(accepted());
+    const close = at(58 * minute, later.fetch);
+    assert.equal(await deliver(close.rt, producer), exitCodes.ok);
+    assert.deepEqual(close.waits, [2 * minute]);
+    assert.equal(later.requests[0]?.body, first.requests[0]?.body);
+    assert.equal(state.built, 1);
+
+    // Acknowledged: the deadline is gone with the body.
+    const next = signals(accepted());
+    assert.equal(await deliver(at(59 * minute, next.fetch).rt, producer), exitCodes.ok);
+    assert.equal(next.requests.length, 1);
+    assert.deepEqual(readdirSync(stateDir), []);
+  });
+
+  it('keeps a long Retry-After from the last attempt for the next run', async () => {
+    const { producer } = standIn();
+    const first = signals(
+      { status: 503 },
+      { status: 503 },
+      { status: 503 },
+      { status: 503 },
+      { status: 429, headers: { 'retry-after': '3600' } }
+    );
+    assert.equal(await deliver(at(0, first.fetch).rt, producer), exitCodes.retryLater);
+    assert.equal(first.requests.length, 5);
+
+    const restart = signals(accepted());
+    assert.equal(await deliver(at(15 * minute, restart.fetch).rt, producer), exitCodes.retryLater);
+    assert.equal(restart.requests.length, 0);
+  });
+
+  // Catches a corrupt deadline read as "no deadline" and the body sent anyway.
+  it('fails closed on a deadline file it cannot read', async () => {
+    const { producer } = standIn();
+    await deliver(
+      at(0, signals({ status: 429, headers: { 'retry-after': '3600' } }).fetch).rt,
+      producer
+    );
+    writeFileSync(join(stateDir, 'retry-after'), 'soon');
+    const { fetch, requests } = signals(accepted());
+    assert.equal(await deliver(at(2 * 60 * minute, fetch).rt, producer), exitCodes.operator);
+    assert.equal(requests.length, 0);
+  });
+});
+
 describe('restarts', () => {
   // Catches a crash before the body was written leaving anything behind.
   it('after a crash before persistence, the next run collects a new delivery', async () => {

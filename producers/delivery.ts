@@ -3,8 +3,9 @@
 // built-ins only, so the directory runs as installed, without the repo or its dependencies.
 //
 // A run: take the lock; resend the pending delivery if there is one and it still holds, else
-// collect a new one and persist it before the first attempt; send it until signals
-// acknowledges it, refuses it for good, or the attempts run out.
+// collect a new one and persist it before the first attempt; wait for any Retry-After deadline
+// an earlier run was given; send it until signals acknowledges it, refuses it for good, or the
+// attempts run out.
 import { spawnSync } from 'node:child_process';
 import {
   chmodSync,
@@ -89,6 +90,8 @@ const firstBackoffMs = 5_000;
 const maxBackoffMs = 120_000;
 /** A longer wait ends the run; systemd starts it again (RestartForceExitStatus=75). */
 const maxWaitMs = 5 * 60_000;
+/** A longer Retry-After is taken as this long, so a bad header cannot stop the producer. */
+const maxRetryAfterMs = 24 * 60 * 60 * 1000;
 const requestTimeoutMs = 30_000;
 /** More of an answer than this is never read. */
 const maxAnswerBytes = 4096;
@@ -99,7 +102,10 @@ const errorCode = /^[a-z][a-z0-9_]{0,63}$/;
 // State: one private directory per producer.
 
 const pendingFile = (dir: string) => join(dir, 'pending.json');
-const tempPrefix = 'pending.json.tmp-';
+/** When signals' last Retry-After ends, as an ISO instant; absent when there is none. */
+const deadlineFile = (dir: string) => join(dir, 'retry-after');
+const tempMarker = '.tmp-';
+const isoInstant = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 /** Creates the directory if needed and makes it private, even if it already existed. */
 export function privateDir(dir: string): void {
@@ -141,25 +147,54 @@ export function readPending(dir: string, producer: ProducerId): string | undefin
 }
 
 /**
- * Writes the body to a private temporary file, syncs it, renames it over the pending file and
- * syncs the directory, so a crash leaves the old complete body or the new one, never part.
+ * Writes `text` to a private temporary file, syncs it, renames it over `file` and syncs the
+ * directory, so a crash leaves the old complete file or the new one, never part.
  */
-export function persistPending(dir: string, body: string): void {
-  const temp = join(dir, `${tempPrefix}${process.pid}`);
+function writeAtomically(dir: string, file: string, text: string): void {
+  const temp = `${file}${tempMarker}${process.pid}`;
   const fd = openSync(temp, 'wx', 0o600);
   try {
-    writeSync(fd, body);
+    writeSync(fd, text);
     fsyncSync(fd);
   } finally {
     closeSync(fd);
   }
-  renameSync(temp, pendingFile(dir));
+  renameSync(temp, file);
   const dirFd = openSync(dir, 'r');
   try {
     fsyncSync(dirFd);
   } finally {
     closeSync(dirFd);
   }
+}
+
+export function persistPending(dir: string, body: string): void {
+  writeAtomically(dir, pendingFile(dir), body);
+}
+
+/**
+ * When signals said to try again, in ms since the epoch, or undefined. A file that is not an
+ * instant fails closed, like an unreadable pending delivery.
+ */
+function readDeadline(dir: string): number | undefined {
+  let text: string;
+  try {
+    text = readFileSync(deadlineFile(dir), 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw new ProducerError('retry_after_unreadable', exitCodes.operator);
+  }
+  const at = Date.parse(text);
+  if (!isoInstant.test(text) || Number.isNaN(at)) {
+    throw new ProducerError('retry_after_unreadable', exitCodes.operator);
+  }
+  return at;
+}
+
+/** Keeps signals' Retry-After for later runs, or clears it once signals has answered otherwise. */
+function saveDeadline(dir: string, at: number | undefined): void {
+  if (at === undefined) rmSync(deadlineFile(dir), { force: true });
+  else writeAtomically(dir, deadlineFile(dir), new Date(at).toISOString());
 }
 
 /** Removes the pending file only if it still holds `body`. */
@@ -172,7 +207,7 @@ function removePending(dir: string, body: string): void {
 /** Temporary files a crashed run left; under the lock no other run can be writing one. */
 function removeTemporaryFiles(dir: string): void {
   for (const file of readdirSync(dir)) {
-    if (file.startsWith(tempPrefix)) rmSync(join(dir, file), { force: true });
+    if (file.includes(tempMarker)) rmSync(join(dir, file), { force: true });
   }
 }
 
@@ -205,9 +240,11 @@ async function readBounded(response: Response): Promise<string> {
 /** `Retry-After` in seconds or as an HTTP date, in ms from `now`; 0 when absent or unreadable. */
 export function retryAfterMs(header: string | null, now: number): number {
   if (header === null) return 0;
-  if (/^\d{1,6}$/.test(header.trim())) return Number(header.trim()) * 1000;
+  if (/^\d{1,6}$/.test(header.trim())) {
+    return Math.min(maxRetryAfterMs, Number(header.trim()) * 1000);
+  }
   const at = Date.parse(header);
-  return Number.isNaN(at) ? 0 : Math.max(0, at - now);
+  return Number.isNaN(at) ? 0 : Math.min(maxRetryAfterMs, Math.max(0, at - now));
 }
 
 async function post(rt: Runtime, body: string): Promise<Answer> {
@@ -245,12 +282,31 @@ async function post(rt: Runtime, body: string): Promise<Answer> {
   return { kind: 'operator', status, code };
 }
 
-/** Sends `body` until it is acknowledged, refused for good, or the attempts run out. */
+/**
+ * Sends `body` until it is acknowledged, refused for good, or the attempts run out, never
+ * before a Retry-After deadline an earlier attempt or run was given.
+ */
 async function send(rt: Runtime, producer: ProducerId, body: string): Promise<ExitCode> {
   const { deliveryId } = JSON.parse(body) as Delivery;
+  const deadline = readDeadline(rt.stateDir);
+  if (deadline !== undefined) {
+    // Capped, so a clock set back cannot hold the delivery for longer than signals could ask.
+    const wait = Math.min(maxRetryAfterMs, deadline - rt.now());
+    if (wait > maxWaitMs) {
+      rt.log({ producer, deliveryId, attempt: 0, event: 'retry_later', waitMs: wait });
+      return exitCodes.retryLater;
+    }
+    if (wait > 0) await rt.sleep(wait);
+  }
   for (let attempt = 1; ; attempt++) {
     const answer = await post(rt, body);
     const fields = { producer, deliveryId, attempt, status: answer.status };
+    saveDeadline(
+      rt.stateDir,
+      answer.kind === 'retry' && answer.retryAfterMs > 0
+        ? rt.now() + answer.retryAfterMs
+        : undefined
+    );
     switch (answer.kind) {
       case 'accepted':
         removePending(rt.stateDir, body);
@@ -290,10 +346,12 @@ export async function deliver(rt: Runtime, producer: Producer): Promise<ExitCode
       if (rt.now() - Date.parse(pending.sentAt) > maxPendingAgeMs) {
         rt.log({ ...fields, event: 'retired', code: 'expired' });
         rmSync(pendingFile(rt.stateDir));
+        saveDeadline(rt.stateDir, undefined);
         body = undefined;
       } else if (producer.supersedes?.(pending)) {
         rt.log({ ...fields, event: 'retired', code: 'superseded' });
         rmSync(pendingFile(rt.stateDir));
+        saveDeadline(rt.stateDir, undefined);
         body = undefined;
       } else {
         rt.log({ ...fields, event: 'resending' });
