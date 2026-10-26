@@ -46,7 +46,7 @@
       "binding": "DB",
       "database_name": "min7-signals",
       // PLACEHOLDER: set to the id printed by `wrangler d1 create min7-signals` before the first deploy.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "3edbea5c-6325-4489-978c-ce3a95c2ad9f",
       "migrations_dir": "migrations"
     }
   ],
@@ -64,7 +64,7 @@
         "binding": "DB",
         "database_name": "min7-signals-preview",
         // PLACEHOLDER: set to the id printed by `wrangler d1 create min7-signals-preview`.
-        "database_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "5875597f-8d9c-4f35-a522-79efec2caf58",
         "migrations_dir": "migrations"
       }
     ]
