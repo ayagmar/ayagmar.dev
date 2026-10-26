@@ -15,7 +15,7 @@ The design has to keep what earlier ADRs promise: a strict CSP with no new inlin
 `apps/site/src/styles/base.css` holds one token layer. Every color is a `light-dark(day, night)` pair, so a theme is one switch: `color-scheme` on `<html>`.
 - Night: indigo-black ground `#0c0b14`, amber lamp `#f2b457` for links and dates, mint screen glow `#7fe0b4` for projects, cream text.
 - Day: the same room in daylight, not an inversion. Warm sunlit wall `#ece2cf`, dark ink text, the lamp darkened to `#7f4100` and the glow to `#155a46` so both stay above 4.5:1 on every day surface.
-- Writing sits on paper (`--paper`, `--ink`): lamp-lit cream at night, brighter cream by day, ink the same in both. The paper has a perforated left edge.
+- Paper (`--paper`, `--ink`): lamp-lit cream at night, brighter cream by day, ink the same in both, with a perforated left edge. The index pages and about sit on it; a post or note does not (see "The reader"), but its diagrams are paper cards.
 - Panel materials: screen (projects), vinyl (music), cork (shipping), wood (shelf), tea (about), frame (LLM usage), each a `light-dark()` pair. A surface sets four variables (`--bg`, `--fg`, `--fg-2`, `--accent`) and everything inside draws with them.
 - Panels have stepped pixel corners (`clip-path`).
 
@@ -43,7 +43,7 @@ Source Serif 4 for everything read, JetBrains Mono for data (dates, counts, the 
 - Home sets no italic text (the room list's section names are muted roman, the playing track is semibold), so it loads only the roman and the mono. An italic on home puts the italic font in front of the scene, which cost about 0.15 to 0.3 s of mobile LCP in Lighthouse. `e2e/room.spec.ts` fails if home loads a third font. Stats sets track names the same way: with the italic, its swap reflowed the wrapped list rows, mobile CLS 0.05 in Lighthouse against ADR 0017's 0.01.
 - "Source" is a Reserved Font Name under the OFL and a subset counts as a modified version, so the serif files and the CSS name the family "min7 Serif". The licenses are next to the files in `src/fonts/`.
 
-Posts get the largest type on the site: 18 to 21 px body at a 66ch measure, 32 to 52 px titles.
+Posts get the largest type on the site: 19 to 22 px body (`--read-size`, on a 17 px root) at a 66ch measure, 28 to 55 px titles.
 
 ### The scene
 
@@ -67,11 +67,24 @@ The only motion is the lamp coming on (a 1.8 s brightness fade, night only) and 
 
 ### Pages
 
-Writing index, posts, tags, colophon and 404 are paper sheets. Projects and project headers are screens; a project's own description is on paper. About is a tea panel (name, summary, resume button) over a paper sheet with experience, certifications, education and skills. Stats is a grid of panels, one material per source. The search dialog uses the room's surface and line colors.
+Writing index, tags, colophon and 404 are paper sheets. Posts and TIL notes are not: they are read on the ground ("The reader"). Projects and project headers are screens; a project's own description is on paper. About is a tea panel (name, summary, resume button) over a paper sheet with experience, certifications, education and skills. Stats is a grid of panels, one material per source. The search dialog uses the room's surface and line colors.
 
 ### Diagrams
 
 Pele diagrams keep the class rewrite of ADR 0024; only the `--pele-*` variables changed. They take the paper's colors, which differ by time of day. Charts draw with `--pele-series-1` to `--pele-series-6`, also set from the paper tokens; the first series is the paper's accent. A seventh series would show Pele's own palette. Pele still measures labels for `system-ui, sans-serif`, so the diagram font stays that.
+
+### The reader
+
+The owner reads on a phone and found the post cramped. At 390 px the paper card's margins and its perforated edge took about 70 px, the text column was about 300 px, and the header was three rows (wordmark, search and theme switch, nav). Posts and TIL notes (`/til` and `/til/<slug>`) now read like this:
+- **No card.** The text sits on the room's ground (`--ground`, `--text`, links in `--lamp`) in both themes. At 390 px the column is 354 px, the page gutter is 18 px, body text is 19 px at a line height of 1.65, and the measure is 66ch from 40 rem up. The bright cream slab was the weakest part of the design at night: a large lit rectangle in a dark room that read worse than cream text on indigo, and a phone held at night makes it worse. Day keeps ink on the sunlit wall.
+- **Edge to edge on phones.** Code blocks, tables, the per-post art and diagrams run to the screen edge below 40 rem and scroll inside themselves; the page never does. Tables keep a 7 rem minimum column so a wide table scrolls instead of squeezing into slivers. A lone image in a paragraph bleeds too. From 40 rem pixel-stepped corners return on code and diagrams.
+- **Diagrams are paper cards**, pinned to the ground. Pele's colors were chosen for the paper, so the cards keep their contrast in both themes without a second set of `--pele-*` values. They are the only paper left on a post.
+- **Table of contents** (`Toc.astro`, `lib/toc.ts`), from the h2 and h3 headings, only when a post has at least three. A `<details>` on phones; from 64 rem it is a sticky list beside the text, always open where the browser supports `::details-content` and still a disclosure where it does not. No script. Notes take the same component but have no headings today.
+- **Header.** One row on phones: wordmark, Search, Menu. Menu opens a `popover` panel (no script) holding the nav and the theme switch; from 52 rem the panel is `display: contents`, so the nav, Search and the switch are items of the header row, and browsers without popover show the nav as a plain list. The `Ctrl K` hint shows only for a fine pointer with hover from 52 rem. Search comes before Menu in the row so the Menu button holds still when the search island hydrates and changes width (a layout shift of 0.0007 before the reorder, 0.0004 after).
+- **Charm, from the lamp.** A warm pool of light behind the top of a post (a radial gradient on `main`, 13% lamp at night, 9% by day). Under the title, a four-row pixel edge where the light falls off: rows of single pixels at 50%, 50% (shifted), 25% and 12% density, an ordered dither like the scene's. A khatam, the eight-point tile star, drawn as a CSS `clip-path` polygon, marks a break (`hr`, with a rule of single pixels either side) and the end of a post. List markers are lamp-colored, and a quotation's bar is a column of pixels, not a rule. Nothing sits behind the body text except the first screen's glow, which is under 13% and is gone by the first paragraph on a phone.
+- **Rejected:** a drop cap (a dithered one needs an image or a font feature the subset lacks), a size toggle (no budget need, and browsers already scale `rem`), and a current-section highlight in the contents (`:target-current` is new enough that the CSS minifier warns on it).
+
+`.paper` is unchanged on the index pages and on home. They still lose width to it on phones; the overall direction pass is the place to decide whether paper stays.
 
 ### Hooks for the next design PR
 
