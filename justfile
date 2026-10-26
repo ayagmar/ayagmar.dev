@@ -139,9 +139,10 @@ scan-artifact dir: (tools "gitleaks")
 site-dist-check:
     node -e 'const e = require("./apps/site/dist/pagefind/pagefind-entry.json"); const n = Object.values(e.languages).reduce((s, l) => s + l.page_count, 0); if (n === 0) throw new Error("pagefind indexed no pages"); console.log(`pagefind: ${n} pages indexed`)'
 
-# Links in the built site: internal ones offline first, then external ones (lychee.toml)
+# Links in the built site: internal ones offline first, then external ones (lychee.toml),
+# except the sample links the fixtures-mode build renders (scripts/fixture-urls.ts)
 links: links-internal
-    lychee --config lychee.toml --root-dir "{{ justfile_directory() }}/apps/site/dist" --remap '^https://ayagmar\.dev/?(.*)$ file://{{ justfile_directory() }}/apps/site/dist/$1' apps/site/dist
+    lychee --config lychee.toml --exclude "$(node scripts/fixture-urls.ts)" --root-dir "{{ justfile_directory() }}/apps/site/dist" --remap '^https://ayagmar\.dev/?(.*)$ file://{{ justfile_directory() }}/apps/site/dist/$1' apps/site/dist
 
 # Links in the built site that stay on ayagmar.dev, without network
 links-internal: (tools "lychee")
