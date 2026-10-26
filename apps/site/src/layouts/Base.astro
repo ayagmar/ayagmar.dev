@@ -1,26 +1,24 @@
 ---
 import Search from '../components/Search.svelte';
-import { feedPaths } from '../lib/feed.ts';
+import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
 import { nav, publicPath, site } from '../lib/site.ts';
 import '../styles/base.css';
 
 interface Props {
   title?: string;
   description?: string;
-  /** Adds discovery links for this tag's feeds next to the site-wide ones. */
-  tag?: string;
+  /** Adds discovery links for this tag's or project's feeds next to the site-wide ones. */
+  feed?: FeedScope;
 }
 
-const { title, description = site.description, tag } = Astro.props;
+const { title, description = site.description, feed } = Astro.props;
 const pageTitle = title === undefined ? site.name : `${title} | ${site.name}`;
 const current = publicPath(Astro.url.pathname);
 const canonical = new URL(current, Astro.site);
-const feeds = [
-  { ...feedPaths(), label: `${site.name} writing` },
-  ...(tag === undefined
-    ? []
-    : [{ ...feedPaths(tag), label: `${site.name} writing tagged ${tag}` }]),
-];
+const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => ({
+  ...feedPaths(scope),
+  label: feedScope(scope).title,
+}));
 ---
 
 <!doctype html>

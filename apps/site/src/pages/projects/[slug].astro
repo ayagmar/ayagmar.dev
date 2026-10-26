@@ -1,0 +1,57 @@
+---
+import { render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Freshness from '../../components/Freshness.astro';
+import PostList from '../../components/PostList.astro';
+import ProjectLinks from '../../components/ProjectLinks.astro';
+import ProjectStats from '../../components/ProjectStats.astro';
+import Base from '../../layouts/Base.astro';
+import { feedPaths } from '../../lib/feed.ts';
+import { getPosts, getProjects } from '../../lib/posts.ts';
+import { postsAbout } from '../../lib/projects.ts';
+import { site } from '../../lib/site.ts';
+
+export const getStaticPaths = (async () => {
+  const posts = await getPosts();
+  const { projects, envelope } = await getProjects();
+  return projects.map((project) => ({
+    params: { slug: project.slug },
+    props: { project, envelope, posts: postsAbout(posts, project.slug) },
+  }));
+}) satisfies GetStaticPaths;
+
+const { project, envelope, posts } = Astro.props;
+const { Content } =
+  project.file === undefined ? { Content: undefined } : await render(project.file);
+const feeds = feedPaths({ project: project.slug });
+---
+
+<Base
+  title={project.slug}
+  description={project.summary ?? `${project.slug}, a project by ${site.author}.`}
+  feed={{ project: project.slug }}
+>
+  <article class="project">
+    <header>
+      <h1>{project.slug}</h1>
+      {project.summary !== null && <p class="project-summary">{project.summary}</p>}
+      {project.status !== null && <p class="project-status">Status: {project.status}</p>}
+    </header>
+    {Content !== undefined && (
+      <section class="project-description">
+        <Content />
+      </section>
+    )}
+    <h2>Numbers</h2>
+    <ProjectStats project={project} />
+    {project.live !== null && <Freshness envelope={envelope} />}
+    <h2>Links</h2>
+    <ProjectLinks project={project} />
+    <h2>Writing about {project.slug}</h2>
+    <PostList posts={posts} empty={`Nothing written about ${project.slug} yet.`} />
+    <p>
+      Follow writing about {project.slug}: <a href={feeds.rss}>RSS</a>,{' '}
+      <a href={feeds.atom}>Atom</a>.
+    </p>
+  </article>
+</Base>

@@ -59,9 +59,15 @@ test.describe('responses', () => {
 });
 
 test.describe('feeds', () => {
-  test('the build wrote site-wide and tag feeds', () => {
+  test('the build wrote site-wide, tag and project feeds', () => {
     expect(feeds).toEqual(
-      expect.arrayContaining(['/feed.xml', '/atom.xml', '/writing/tags/rust/feed.xml'])
+      expect.arrayContaining([
+        '/feed.xml',
+        '/atom.xml',
+        '/writing/tags/rust/feed.xml',
+        '/projects/runnerd/feed.xml',
+        '/projects/headroom/atom.xml',
+      ])
     );
   });
 

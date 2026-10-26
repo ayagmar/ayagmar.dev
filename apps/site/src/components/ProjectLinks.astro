@@ -1,0 +1,23 @@
+---
+import type { SiteProject } from '../lib/projects.ts';
+
+interface Props {
+  project: SiteProject;
+}
+
+const { project } = Astro.props;
+---
+
+<ul class="project-links">
+  <li><a href={project.repoUrl}>{project.repo} on GitHub</a></li>
+  {project.homepage !== null && (
+    <li>
+      <a href={project.homepage}>{new URL(project.homepage).host}</a>
+    </li>
+  )}
+  {project.npmUrl !== null && (
+    <li>
+      <a href={project.npmUrl}>npm package</a>
+    </li>
+  )}
+</ul>

@@ -1,68 +1,26 @@
 ---
-import Freshness from '../components/Freshness.astro';
-import { count, utcDay } from '../data/format.ts';
-import { signals } from '../data/signals.ts';
-import Base from '../layouts/Base.astro';
-import { site } from '../lib/site.ts';
+import Base from '../../layouts/Base.astro';
+import { getPosts, getProjects } from '../../lib/posts.ts';
+import { postCount, postsAbout, projectPath } from '../../lib/projects.ts';
 
-const projects = await signals.read('projects');
-const list = projects.data?.projects ?? [];
+const posts = await getPosts();
+const { projects } = await getProjects();
 ---
 
 <Base title="Projects">
   <h1>Projects</h1>
-  {list.length === 0 ? (
-    <p>
-      No project data right now. Everything lives on <a href={site.links.github}>GitHub</a>.
-    </p>
-  ) : (
-    <ul class="projects">
-      {list.map((project) => (
-        <li id={project.slug}>
-          <h2>
-            <a href={project.url}>{project.name}</a>
-          </h2>
-          {project.description !== null && <p>{project.description}</p>}
-          <dl>
-            {project.language !== null && (
-              <>
-                <dt>Language</dt>
-                <dd>{project.language}</dd>
-              </>
-            )}
-            {project.stars !== null && (
-              <>
-                <dt>Stars</dt>
-                <dd>{count(project.stars)}</dd>
-              </>
-            )}
-            {project.latestRelease !== null && (
-              <>
-                <dt>Latest release</dt>
-                <dd>
-                  <a href={project.latestRelease.url}>{project.latestRelease.tag}</a>,{' '}
-                  <time datetime={project.latestRelease.publishedAt}>
-                    {utcDay(project.latestRelease.publishedAt)}
-                  </time>
-                </dd>
-              </>
-            )}
-            {project.npm !== null && project.npm.monthlyDownloads !== null && (
-              <>
-                <dt>npm downloads, last 30 days</dt>
-                <dd>{count(project.npm.monthlyDownloads)}</dd>
-              </>
-            )}
-            {project.archived === true && (
-              <>
-                <dt>Status</dt>
-                <dd>Archived</dd>
-              </>
-            )}
-          </dl>
-        </li>
-      ))}
-    </ul>
-  )}
-  <Freshness envelope={projects} />
+  <ul class="projects">
+    {projects.map((project) => (
+      <li id={project.slug}>
+        <h2>
+          <a href={projectPath(project.slug)}>{project.slug}</a>
+        </h2>
+        {project.summary !== null && <p>{project.summary}</p>}
+        <p class="project-post-count">
+          {postCount(postsAbout(posts, project.slug).length)}
+          {project.status !== null && <>, {project.status}</>}
+        </p>
+      </li>
+    ))}
+  </ul>
 </Base>
