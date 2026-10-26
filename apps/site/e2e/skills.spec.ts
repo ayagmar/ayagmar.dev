@@ -90,3 +90,37 @@ test('the plain-text page lists the shelf on one line', async ({ request }) => {
     '  Skills     https://ayagmar.dev/skills',
   ]);
 });
+
+// Catches the sixth nav entry wrapping the header, overflowing at the width where the nav row
+// first appears, or missing from the phone Menu.
+test('Skills is in the header row from 52rem and in the phone Menu, and the header still fits', async ({
+  page,
+}) => {
+  for (const width of [832, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/skills');
+    const nav = page.getByRole('navigation', { name: 'Site' });
+    await expect(nav.getByRole('link', { name: 'Skills' })).toHaveAttribute('aria-current', 'page');
+    const links = await nav
+      .getByRole('link')
+      .evaluateAll((items) => items.map((item) => item.textContent));
+    expect(links).toEqual(['Writing', 'TIL', 'Projects', 'Skills', 'Stats', 'About']);
+    expect((await page.locator('.site-header').boundingBox())?.height).toBeLessThan(64);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      )
+    ).toBeLessThanOrEqual(0);
+  }
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await expect(
+    page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Skills' })
+  ).toHaveAttribute('href', '/skills');
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    )
+  ).toBeLessThanOrEqual(0);
+});

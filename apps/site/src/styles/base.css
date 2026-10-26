@@ -490,7 +490,15 @@ kbd {
   }
 }
 
-@media (min-width: 52rem) and (hover: hover) and (pointer: fine) {
+/* Between 52rem and 64rem the six nav links need the room the keyboard hint would take, and
+   a little less space between them. */
+@media (min-width: 52rem) and (max-width: 63.99rem) {
+  .site-header nav ul {
+    gap: 0 1rem;
+  }
+}
+
+@media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
   .site-tools kbd {
     display: inline;
   }

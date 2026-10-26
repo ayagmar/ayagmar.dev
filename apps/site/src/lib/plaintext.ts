@@ -2,7 +2,6 @@ import type { ProjectSlug } from '@min7/contracts';
 import { feedPaths } from './feed.ts';
 import { postCount, postsAbout, projectPath } from './projects.ts';
 import { nav, site, siteUrl } from './site.ts';
-import { skillsPath } from './skills.ts';
 import { type Note, notePath } from './til.ts';
 import { isoDay, type Post, postPath } from './writing.ts';
 
@@ -51,11 +50,6 @@ export function renderPlainText(
             `  ${isoDay(note.data.date)}  ${note.data.title}`,
             `              ${siteUrl}${notePath(note.id)}`,
           ]);
-  // Skills joins the nav in its own change; until then it is listed here.
-  const navItems: readonly { href: string; label: string }[] = nav;
-  const pages = navItems.some((item) => item.href === skillsPath)
-    ? navItems
-    : [...navItems, { href: skillsPath, label: 'Skills' }];
   const slugWidth = Math.max(0, ...projects.map((slug) => slug.length)) + 2;
   const projectLines = projects.map(
     (slug) =>
@@ -76,7 +70,7 @@ export function renderPlainText(
     'Projects',
     ...projectLines,
     rule,
-    ...pages.map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
+    ...nav.map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
     `  ${'RSS'.padEnd(10)} ${siteUrl}${feedPaths().rss}`,
     `  ${'Atom'.padEnd(10)} ${siteUrl}${feedPaths().atom}`,
     `  ${'GitHub'.padEnd(10)} ${site.links.github}`,

@@ -1,7 +1,6 @@
 import type { Skill, SkillsFile } from './skills-schema.ts';
 import { type Post, postsByTag, tagPath } from './writing.ts';
 
-export const skillsPath = '/skills';
 /** The tag posts about skills carry; the shelf links its page when a published post has it. */
 const skillsTag = 'skills';
 
