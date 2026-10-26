@@ -34,7 +34,8 @@ function refresh(now: number) {
   asked = now;
   pending = true;
   fetch(endpoint, { signal: AbortSignal.timeout(5_000) })
-    .then((response) => response.json())
+    // An error status is a failure, whatever its body says.
+    .then((response) => response.ok && response.json())
     .catch(() => {})
     .then((body) => {
       pending = false;

@@ -202,6 +202,10 @@ for (const [name, answer] of [
   ],
   ['the answer is not JSON', (route: Route) => route.fulfill({ status: 200, body: '<html>' })],
   [
+    'the API fails with a weather body',
+    (route: Route) => route.fulfill({ ...envelope('rain', noon), status: 500 }),
+  ],
+  [
     'a value has the wrong type',
     (route: Route) => route.fulfill(envelope('rain', noon, { data: { isDay: 'broken' } })),
   ],
@@ -224,6 +228,10 @@ for (const [name, answer] of [
   [
     'is out of range',
     (route: Route) => route.fulfill(envelope('snow', noon, { data: { temperatureC: 1e300 } })),
+  ],
+  [
+    'fails with a weather body',
+    (route: Route) => route.fulfill({ ...envelope('snow', noon), status: 503 }),
   ],
   [
     'lacks a value',
