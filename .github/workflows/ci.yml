@@ -405,15 +405,10 @@ jobs:
         env:
           LIGHTHOUSE_PROFILE: ${{ matrix.profile }}
         run: just lighthouse-ci
-      # Saved even when a budget fails: the numbers are right either way.
-      - name: Save the base's numbers
-        if: ${{ !cancelled() && steps.base-cache.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .lighthouse/cache/base.json
-          key: ${{ steps.base-cache.outputs.cache-primary-key }}
-      # What a push to main measured is the next pull request's base. Saved from the path the
-      # pull request restores: a cache's version includes its path, so another path never hits.
+      # Only a push to main writes the cache; a pull request only reads it, and measures the
+      # base itself on a miss. What a push measured is the next pull request's base, saved from
+      # the path the pull request restores: a cache's version includes its path. Saved even
+      # when a budget fails: the numbers are right either way.
       - name: Keep the head's numbers as the next base
         if: ${{ !cancelled() && github.event_name == 'push' && hashFiles('.lighthouse/cache/head.json') != '' }}
         run: cp .lighthouse/cache/head.json .lighthouse/cache/base.json

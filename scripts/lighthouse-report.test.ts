@@ -235,12 +235,14 @@ describe('ci.yml', () => {
   const cacheSteps = (action: 'restore' | 'save') =>
     lighthouse.steps.filter((step) => step.uses?.startsWith(`actions/cache/${action}@`));
 
-  it("saves main's numbers at the path pull requests restore, which is part of a cache version", () => {
+  it('saves only on a push, at the path pull requests restore (part of a cache version)', () => {
     const [restore] = cacheSteps('restore');
     assert.ok(restore?.with?.path);
     const saves = cacheSteps('save');
     assert.ok(saves.length > 0);
     for (const save of saves) assert.equal(save.with?.path, restore.with.path);
+    // A pull request run never writes the cache (ADR 0017): every save is for a push only.
+    for (const save of saves) assert.match(save.if ?? '', /github\.event_name == 'push'/);
     // The numbers a push saves are the commit's own, under that commit's key.
     assert.match(saves.at(-1)?.with?.key ?? '', /-\$\{\{ github\.sha \}\}$/);
     assert.match(
