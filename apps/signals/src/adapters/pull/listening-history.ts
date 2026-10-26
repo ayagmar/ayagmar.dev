@@ -51,12 +51,15 @@ export interface HistoryDay {
   to: number;
 }
 
-/** Each past year's day matching `describedDate`, newest first, its bounds from tzdata. */
+/** `describedDate`'s day in `year`, its bounds from tzdata. */
+function dayIn(year: number, describedDate: string): HistoryDay {
+  const date = `${year}${describedDate.slice(4)}`;
+  return { year, from: rabatDayStart(date), to: rabatDayStart(nextDate(date)) };
+}
+
+/** Each past year's day matching `describedDate`, newest first. */
 export function pastDays(describedDate: string, firstYear: number): HistoryDay[] {
-  return pastYears(describedDate, firstYear).map((year) => {
-    const date = `${year}${describedDate.slice(4)}`;
-    return { year, from: rabatDayStart(date), to: rabatDayStart(nextDate(date)) };
-  });
+  return pastYears(describedDate, firstYear).map((year) => dayIn(year, describedDate));
 }
 
 /**
@@ -259,11 +262,13 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
       });
       state = { firstYear: registrationYear(registration, describedDate), read: 0, years: [] };
     }
-    const days = pastDays(describedDate, state.firstYear);
-    if (days.length > historyMaxYears) throw new PullError('over_budget');
+    const years = pastYears(describedDate, state.firstYear);
+    if (years.length > historyMaxYears) throw new PullError('over_budget');
 
-    const day = days[state.read];
-    if (day !== undefined) {
+    // Only the year this invocation reads: tzdata lookups for all 24 would cost milliseconds.
+    const next = years[state.read];
+    if (next !== undefined) {
+      const day = dayIn(next, describedDate);
       const page = await getJson(lastfmEndpoint, {
         signal,
         maxBytes: pageMaxBytes,
@@ -288,7 +293,7 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
     if (rabatDate(Date.now() + finishMarginMs) !== describedDate) {
       throw new PullError('date_changed');
     }
-    if (state.read < days.length) {
+    if (state.read < years.length) {
       // False when an overlapping invocation saved first: its part stands, this one is dropped.
       await progress.save(describedDate, step, state);
       throw new PullError('in_progress');
