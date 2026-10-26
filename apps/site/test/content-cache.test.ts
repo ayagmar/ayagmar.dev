@@ -44,10 +44,12 @@ beforeEach(() => {
   // Same layout as the repo, so the site's own content config finds ../../content/writing.
   root = mkdtempSync(join(tmpdir(), 'min7-content-cache-'));
   app = join(root, 'apps/site');
-  for (const file of ['src/content.config.ts', 'src/lib/writing-schema.ts']) {
+  for (const file of ['src/content.config.ts', 'src/lib/writing-schema.ts', 'src/data/about.ts']) {
     mkdirSync(dirname(join(app, file)), { recursive: true });
     copyFileSync(join(site, file), join(app, file));
   }
+  mkdirSync(join(root, 'content'));
+  copyFileSync(join(site, '../../content/about.json'), join(root, 'content/about.json'));
   symlinkSync(join(site, 'node_modules'), join(app, 'node_modules'), 'dir');
   write(
     join(root, 'content/writing/post.md'),
