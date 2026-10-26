@@ -174,6 +174,24 @@ function collect(
 
 const pct = (n: number) => String(Math.round(n * 100));
 
+/**
+ * The pages the base build has. A page head picks that the base lacks (a new largest post)
+ * answers 404 and is left out, so it shows as new; any other answer than 200 or 404 is an error,
+ * since Lighthouse CI would fail on it anyway.
+ */
+async function existing(
+  origin: string,
+  paths: Record<string, string>
+): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  for (const [name, path] of Object.entries(paths)) {
+    const { status } = await fetch(`${origin}${path}`);
+    if (status === 200) out[name] = path;
+    else if (status !== 404) throw new Error(`${name} (${path}) answered ${status} on the base`);
+  }
+  return out;
+}
+
 async function main() {
   const { values: args } = parseArgs({
     options: {
@@ -203,7 +221,14 @@ async function main() {
   const problems: string[] = [];
   try {
     servers.push(await serve(head, 8791, bin('wrangler')));
-    if (base) servers.push(await serve(base, 8792, bin('wrangler')));
+    let basePaths: Record<string, string> = {};
+    if (base) {
+      servers.push(await serve(base, 8792, bin('wrangler')));
+      basePaths = await existing('http://127.0.0.1:8792', paths);
+      for (const name of Object.keys(paths).filter((n) => !(n in basePaths))) {
+        console.log(`lighthouse: ${name} (${paths[name]}) is new: not on the base`);
+      }
+    }
     for (const profile of args.profile as Profile[]) {
       const headRuns = collect(
         bin('lhci'),
@@ -212,15 +237,16 @@ async function main() {
         profile,
         join(work, `head-${profile}`)
       );
-      const baseRuns = base
-        ? collect(
-            bin('lhci'),
-            'http://127.0.0.1:8792',
-            paths,
-            profile,
-            join(work, `base-${profile}`)
-          )
-        : {};
+      const baseRuns =
+        Object.keys(basePaths).length > 0
+          ? collect(
+              bin('lhci'),
+              'http://127.0.0.1:8792',
+              basePaths,
+              profile,
+              join(work, `base-${profile}`)
+            )
+          : {};
       for (const page of Object.keys(paths)) {
         const h = headRuns[page];
         if (!h) {
