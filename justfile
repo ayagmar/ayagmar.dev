@@ -174,6 +174,13 @@ site-build:
     {{ site }} pagefind --site dist --quiet
     {{ site }} node scripts/postbuild.ts
 
+# Site: the same build with drafts shown, in apps/site/node_modules/.cache/preview, for the e2e
+# checks of TIL notes while every note is a draft (ADR 0028)
+site-build-preview:
+    PUBLIC_SHOW_DRAFTS=1 COMMIT_SHA={{ commit_sha }} SIGNALS_MODE=fixtures {{ site }} astro build --outDir node_modules/.cache/preview
+    {{ site }} pagefind --site node_modules/.cache/preview --quiet
+    {{ site }} node scripts/postbuild.ts node_modules/.cache/preview
+
 # Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026)
 fonts:
     cd apps/site && uv run --no-project --with fonttools==4.67.0 --with brotli==1.2.1 python scripts/fonts.py
