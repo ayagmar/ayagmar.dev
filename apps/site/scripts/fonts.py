@@ -28,6 +28,12 @@ RELEASES = {
         "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip",
         "6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf",
     ),
+    # Pixelify Sans has no releases: its latest change to the variable font is this commit
+    # (2023-09-13), the same design as @fontsource-variable/pixelify-sans 5.3.0. A bare TTF, not a zip.
+    "pixel": (
+        "https://raw.githubusercontent.com/eifetx/Pixelify-Sans/33f4b197c68c8fd24771a54de5c9acaf0e432589/fonts/variable/PixelifySans%5Bwght%5D.ttf",
+        "9ba86cd010a4de309d263ceff8e8044092c9db7efda869620cb9ff1c4389e8a5",
+    ),
 }
 
 # Basic Latin, Latin-1 (accented names, no-break space, middle dot, guillemets), and the
@@ -50,11 +56,13 @@ FONTS = [
     ("serif-roman.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Roman.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("serif-italic.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Italic.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("mono.woff2", "mono", "fonts/variable/JetBrainsMono[wght].ttf", {"wght": (400, 700)}, None),
+    # Display and interface only (name, headings, nav, buttons, footer, big numbers); never body text.
+    ("pixel.woff2", "pixel", None, {"wght": (400, 700)}, None),
 ]
 FEATURES = ["kern", "liga", "calt", "onum", "lnum", "tnum", "pnum", "frac", "sups", "subs", "ccmp", "locl", "mark", "mkmk", "case"]
 
 
-def release(name: str) -> zipfile.ZipFile:
+def release(name: str) -> bytes:
     url, sha256 = RELEASES[name]
     path = CACHE / url.rsplit("/", 1)[1]
     if not path.exists():
@@ -65,16 +73,20 @@ def release(name: str) -> zipfile.ZipFile:
     actual = hashlib.sha256(data).hexdigest()
     if actual != sha256:
         sys.exit(f"{path}: sha256 {actual}, expected {sha256}")
-    return zipfile.ZipFile(io.BytesIO(data))
+    return data
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     total = 0
     for out, name, member, limits, family in FONTS:
-        font = TTFont(io.BytesIO(release(name).read(member)), lazy=False)
+        data = release(name)
+        if member is not None:
+            data = zipfile.ZipFile(io.BytesIO(data)).read(member)
+        font = TTFont(io.BytesIO(data), lazy=False)
         options = subset.Options()
-        options.layout_features = FEATURES
+        # The pixel face's "fi" ligature is a different shape, which reads "file" as "Ale".
+        options.layout_features = [f for f in FEATURES if out != "pixel.woff2" or f not in ("liga", "calt")]
         options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14]
         options.notdef_outline = True
         subsetter = subset.Subsetter(options)
