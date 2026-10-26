@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { casablancaTime, isLate, moonAt, moonPath, skyAt } from '../src/lib/sky.ts';
+import { isLate, moonAt, moonPath, rabatTime, skyAt } from '../src/lib/sky.ts';
 
 const hour = 3_600_000;
 const minute = 60_000;
@@ -60,13 +60,13 @@ describe('the moon', () => {
   });
 });
 
-/** Local Casablanca times at which the sky turns to and from day, minute by minute. */
+/** Local Rabat times at which the sky turns to and from day, minute by minute. */
 function sunriseAndSunset(day: string): string[] {
   const changes: string[] = [];
   const start = Date.parse(`${day}T00:00Z`);
   for (let time = start; time < start + 24 * hour; time += 15_000) {
     if ((skyAt(time) === 'day') !== (skyAt(time - 15_000) === 'day')) {
-      changes.push(casablancaTime(time));
+      changes.push(rabatTime(time));
     }
   }
   return changes;
@@ -75,21 +75,21 @@ function sunriseAndSunset(day: string): string[] {
 const minutes = (clock: string) => Number(clock.slice(0, 2)) * 60 + Number(clock.slice(3));
 
 describe('the sun', () => {
-  // Sunrise and sunset in Casablanca local time from the NOAA Solar Calculator's own code
-  // (https://gml.noaa.gov/grad/solcalc/main.js, calcSunriseSet, fetched 2026-10-26) at 33.5731 N,
-  // 7.5898 W, with the offset tzdata gives that day. Morocco's clock changes in 2026 (tzdata
+  // Sunrise and sunset in Rabat local time from the NOAA Solar Calculator's own code
+  // (https://gml.noaa.gov/grad/solcalc/main.js, calcSunriseSet, fetched 2026-10-26) at Hassan Tower,
+  // 34.0240 N, 6.8228 W, with the offset tzdata gives that day. Morocco's clock changes in 2026 (tzdata
   // 2026c, the `africa` file): +01 to +00 on 15 Feb for Ramadan, back to +01 on 22 Mar, and to
   // +00 for good on 20 Sep. There are no changes in 2027, so these dates sit on both sides of the
   // 2026 ones. A fixed +01 offset fails every date at +00.
   it.each([
-    ['2026-02-14', '08:16', '19:14'], // +01
-    ['2026-02-15', '07:15', '18:15'], // +00
-    ['2026-03-21', '06:33', '18:43'], // +00
-    ['2026-03-22', '07:32', '19:43'], // +01
-    ['2026-09-19', '07:16', '19:31'], // +01
-    ['2026-09-20', '06:17', '18:30'], // +00
-    ['2026-12-21', '07:31', '17:26'], // +00
-    ['2027-06-21', '05:21', '19:44'], // +00
+    ['2026-02-14', '08:13', '19:10'], // +01
+    ['2026-02-15', '07:12', '18:11'], // +00
+    ['2026-03-21', '06:30', '18:40'], // +00
+    ['2026-03-22', '07:28', '19:40'], // +01
+    ['2026-09-19', '07:13', '19:28'], // +01
+    ['2026-09-20', '06:14', '18:27'], // +00
+    ['2026-12-21', '07:29', '17:22'], // +00
+    ['2027-06-21', '05:16', '19:42'], // +00
   ])('on %s rises at %s and sets at %s, within 2 minutes', (day, rise, set) => {
     const [up, down, ...rest] = sunriseAndSunset(day);
     expect(rest).toEqual([]);
@@ -112,7 +112,7 @@ describe('the sun', () => {
 });
 
 describe('the lamp', () => {
-  // The reference: the hour in Casablanca read with Intl alone, another way than casablancaTime.
+  // The reference: the hour in Rabat read with Intl alone, another way than rabatTime.
   const reference = (time: number) => {
     const hour = new Date(time).toLocaleString('en-US', {
       timeZone: 'Africa/Casablanca',
@@ -122,11 +122,11 @@ describe('the lamp', () => {
     return Number(hour) >= 2 && Number(hour) < 7;
   };
 
-  /** The instant of a Casablanca wall-clock time, trying both offsets Morocco has used. */
+  /** The instant of a Rabat wall-clock time, trying both offsets Morocco has used. */
   const local = (day: string, clock: string) =>
     [0, 1]
       .map((offset) => Date.parse(`${day}T${clock}:00Z`) - offset * hour)
-      .find((time) => casablancaTime(time) === clock) ?? Number.NaN;
+      .find((time) => rabatTime(time) === clock) ?? Number.NaN;
 
   // A fixed seed: the same instants on every run.
   let seed = 0x2027;

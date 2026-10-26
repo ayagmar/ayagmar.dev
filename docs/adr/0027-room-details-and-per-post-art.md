@@ -1,13 +1,13 @@
 # 0027. Room details and per-post art
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco.
 
 ## Context
 
 ADR 0026 left the room static and the post page's `art` slot empty. The owner asked for six details, and nothing more:
-1. The window shows the real moon phase, and its sky follows the real sun over Casablanca: day, dusk, night. The page theme's Auto stays on `prefers-color-scheme`; the window is the room's clock, not the visitor's.
+1. The window shows the real moon phase, and its sky follows the real sun over Rabat: day, dusk, night. The page theme's Auto stays on `prefers-color-scheme`; the window is the room's clock, not the visitor's.
 2. The record turns only when Last.fm says something is playing now.
-3. Between 02:00 and 07:00 Casablanca time the lamp dims and a small "probably asleep" note appears.
+3. Between 02:00 and 07:00 Rabat time the lamp dims and a small "probably asleep" note appears.
 4. `curl ayagmar.dev` prints the room as ASCII art above the text index.
 5. A `?` list of keyboard shortcuts (search, theme, the room's objects) and a short note for people who read the page source.
 6. Optional per-post art from frontmatter, drawn at build time from the room's palette, with no JavaScript.
@@ -21,9 +21,9 @@ Every detail has to keep what ADRs 0019, 0026 and the budgets of ADR 0017 promis
 `apps/site/src/lib/sky.ts` computes everything from an instant, with no state. `apps/site/src/scripts/room.ts` runs it on the home page only, once on load and then every minute, and sets three things on `.scene`:
 - `data-sky` is `day`, `dusk` or `night`. `room.css` then shows one of three window layers, `window-{day,dusk,night}.png`. Each is the full 480x160 scene, transparent except the view through the window, so it lines up with the scene at any size. The window frame, the mullions and the lamp in front stay in the room's own scene, so they keep the room's light. Only the layer in use downloads (1.3 to 1.4 KiB each).
 - The moon is an inline SVG over the scene in the same 480x160 coordinates. The script writes its `path`: the lit part of a 12-pixel disc, a run of unit squares per row, lit on the right while waxing as seen from Morocco, in the palette's moon colour `#e8e8fa`. It is drawn at dusk and at night, and left out when less than 3 % is lit.
-- `data-late` between 02:00 and 07:00 Casablanca time swaps the night scene for `room-night-dim.png` (the lamp at a third of its light, the bulb a dim amber) and shows the note `Probably asleep: it is 03:12 in Casablanca.` The note sits over the desk's front edge, below every hotspot, positioned absolutely, so showing it moves nothing. In the day theme the lamp is already off; only the note appears.
+- `data-late` between 02:00 and 07:00 Rabat time swaps the night scene for `room-night-dim.png` (the lamp at a third of its light, the bulb a dim amber) and shows the note `Probably asleep: it is 03:12 in Rabat.` The note sits over the desk's front edge, below every hotspot, positioned absolutely, so showing it moves nothing. In the day theme the lamp is already off; only the note appears.
 
-The window element gets `role="img"` and a label such as "Through the window: night over Casablanca, a waxing gibbous moon." from the script. The room's own text alternatives no longer mention the sky.
+The window element gets `role="img"` and a label such as "Through the window: night over Rabat, a waxing gibbous moon." from the script. The room's own text alternatives no longer mention the sky.
 
 Day is when the sun's centre is above −0.833° (NOAA's sunrise and sunset), dusk is civil twilight (down to −6°), night is below that. Dawn uses the dusk sky. The moon's position in the sky is not modelled: at night the window shows the phase, whether or not the moon has risen.
 
@@ -34,13 +34,13 @@ Day is when the sun's centre is above −0.833° (NOAA's sunrise and sunset), du
 - Moon: Meeus, _Astronomical Algorithms_, 2nd edition (Willmann-Bell, 1998): the mean elongation D and the anomalies M and M′ of chapter 47, and the phase angle i of formula 48.4 with its six periodic terms. The illuminated fraction is (1 + cos i) / 2. A named phase (new, first quarter, full, last quarter) is shown within about half a day of its instant (6.1° of elongation); the in-between names otherwise. Chapter 49's phase instants are not needed: the elongation gives the phase at any instant directly.
 - Time: `Intl.DateTimeFormat` with `timeZone: 'Africa/Casablanca'`, which reads the browser's IANA tzdata. No offset is written down anywhere.
 
-**Why tzdata matters here.** Morocco ran at +01 with a change to +00 for Ramadan each year until 2026. The tzdata `africa` file (release 2026c) records Decree 2.26.530: Morocco moved to +00 for good on 2026-09-20 at 02:00, with no further clock changes. So there are no 2027 Ramadan changes to test around; the tests use the three 2026 changes (15 Feb, 22 Mar, 20 Sep). A hand-written +01 would now be an hour wrong every day. A browser whose tzdata predates 2026c still thinks Morocco is at +01, and would dim the lamp and print the note an hour off. So before it uses the hour, `room.ts` asks `knowsCasablanca()` in `sky.ts`, which formats 2026-10-01 12:00 UTC in Casablanca and expects `12:00`. When the browser disagrees, the lamp stays as the theme draws it and the note stays hidden, as without JavaScript; the sky and the moon come from UTC and stay. Nothing writes the offset down: if Morocco changes its clocks again, that check moves with the new rules.
+**Why tzdata matters here.** Morocco ran at +01 with a change to +00 for Ramadan each year until 2026. The tzdata `africa` file (release 2026c) records Decree 2.26.530: Morocco moved to +00 for good on 2026-09-20 at 02:00, with no further clock changes. So there are no 2027 Ramadan changes to test around; the tests use the three 2026 changes (15 Feb, 22 Mar, 20 Sep). A hand-written +01 would now be an hour wrong every day. A browser whose tzdata predates 2026c still thinks Morocco is at +01, and would dim the lamp and print the note an hour off. So before it uses the hour, `room.ts` asks `knowsRabatTime()` in `sky.ts`, which formats 2026-10-01 12:00 UTC in Rabat and expects `12:00`. When the browser disagrees, the lamp stays as the theme draws it and the note stays hidden, as without JavaScript; the sky and the moon come from UTC and stay. Nothing writes the offset down: if Morocco changes its clocks again, that check moves with the new rules.
 
 **The visitor's clock is trusted.** The sky, the moon and the lamp all start from the device's `Date.now()`. A device clock that is hours off shows the wrong sky, and one that is an hour off near 02:00 or 07:00 shows the note when it should not, or hides it. This is an accepted limitation, not checked for: the three details are decoration, the page has no trustworthy time without an extra request (a same-origin time anchor would cost a request on every visit and a new route), and a device clock that far off already breaks TLS certificate checks and most of the web for that visitor. The time zone the visitor picks never matters; only the clock does.
 
 **Checks** (`apps/site/test/sky.test.ts`):
 - Moon: the illuminated fraction on 12 dates in 2026 is within 3 points of NASA SVS Dial-A-Moon (https://svs.gsfc.nasa.gov/api/dialamoon/, JPL ephemeris; it measured within 0.25 points). The named phase at 12 instants over 2026 and 2027 from Espenak's catalogue (https://eclipse.gsfc.nasa.gov/phase/phases2001.html) matches, and the elongation is within one day's motion of the phase (it measured within 0.6 hours). The USNO API and timeanddate.com refused connections from the build machine, so these two sources stand in for them.
-- Sun: sunrise and sunset on 8 dates, both sides of each 2026 clock change plus both solstices, are within 2 minutes of NOAA's calculator in Casablanca local time (they measured within 1 minute).
+- Sun: sunrise and sunset on 8 dates, both sides of each 2026 clock change plus both solstices, are within 2 minutes of NOAA's calculator in Rabat local time (they measured within 1 minute).
 - Lamp: over 2,000 seeded instants in 2026 and 2027, both sides of each clock change, and 01:59, 02:00, 06:59 and 07:00 local on days at either offset, `isLate` agrees with the hour read through `toLocaleString`.
 
 ### The record
@@ -100,24 +100,24 @@ The room script is imported from an Astro `<script>`, emitted as `/_astro/index.
 { "name": "theme switch", "file": "/_astro/theme.*.js", "bytes": 1420 }
 ```
 
-and ADR 0017's table has the row _Room clock, 1.7 KB gzip, home page only: the window, moon and lamp follow Casablanca's clock, which needs the visitor's current time; no island is grown for it_, and the theme script's row is _1.4 KB gzip, on its own_, with "It is 1.3 KB: the theme switch, plus the keys of ADR 0027 and their off switch (WCAG 2.1.4)". With those allowances, `just budgets` passes on this build (home: 20,446 B of islands, 34 B under 20 KB; 2.8 KB allowed; 69.4 KB page weight, which now counts every image the stylesheet can load).
+and ADR 0017's table has the row _Room clock, 1.7 KB gzip, home page only: the window, moon and lamp follow Rabat's clock, which needs the visitor's current time; no island is grown for it_, and the theme script's row is _1.4 KB gzip, on its own_, with "It is 1.3 KB: the theme switch, plus the keys of ADR 0027 and their off switch (WCAG 2.1.4)". With those allowances, `just budgets` passes on this build (home: 20,446 B of islands, 34 B under 20 KB; 2.8 KB allowed; 69.4 KB page weight, which now counts every image the stylesheet can load).
 
 Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, the fixtures-mode Worker, three runs): performance 0.99 to 1.00, accessibility 1.00, LCP 1.66 s in every run, TBT 0 ms, CLS 0.0004. That is the LCP ADR 0026 measured before these details; the room script loads as a module and the window layer is smaller than the scene, so neither is in front of it.
 
 ## What each detail falls back to
 
-| Detail          | No JavaScript                                                                                                          | Reduced motion           | Failed or stale data                                                                           | Other time zone                                                            |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Window and moon | The theme's own window, no moon (the static night scene no longer draws a fixed crescent, which was wrong most nights) | No change: nothing moves | None needed: no data                                                                           | Uses Casablanca's sun, not the visitor's                                   |
-| Lamp and note   | Lamp as the theme draws it, no note                                                                                    | No change                | None needed                                                                                    | Uses Casablanca's clock via tzdata; outdated tzdata: as without JavaScript |
-| Record          | Rests                                                                                                                  | Rests                    | Rests: only a live answer with a track turns it, and only for 15 minutes after its `fetchedAt` | Not time-based                                                             |
-| `curl`          | Not JavaScript                                                                                                         | n/a                      | n/a                                                                                            | n/a                                                                        |
-| Keys            | Nothing opens; the switch and links work as before                                                                     | n/a                      | n/a                                                                                            | n/a                                                                        |
-| Art             | Drawn at build time                                                                                                    | Static                   | n/a                                                                                            | n/a                                                                        |
+| Detail          | No JavaScript                                                                                                          | Reduced motion           | Failed or stale data                                                                           | Other time zone                                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Window and moon | The theme's own window, no moon (the static night scene no longer draws a fixed crescent, which was wrong most nights) | No change: nothing moves | None needed: no data                                                                           | Uses Rabat's sun, not the visitor's                                   |
+| Lamp and note   | Lamp as the theme draws it, no note                                                                                    | No change                | None needed                                                                                    | Uses Rabat's clock via tzdata; outdated tzdata: as without JavaScript |
+| Record          | Rests                                                                                                                  | Rests                    | Rests: only a live answer with a track turns it, and only for 15 minutes after its `fetchedAt` | Not time-based                                                        |
+| `curl`          | Not JavaScript                                                                                                         | n/a                      | n/a                                                                                            | n/a                                                                   |
+| Keys            | Nothing opens; the switch and links work as before                                                                     | n/a                      | n/a                                                                                            | n/a                                                                   |
+| Art             | Drawn at build time                                                                                                    | Static                   | n/a                                                                                            | n/a                                                                   |
 
 ## How to see each one
 
-- Window, moon, lamp and note: open the home page; it shows Casablanca now. For other hours, the e2e tests "the room keeps Casablanca time" in `apps/site/e2e/room.spec.ts` fix the clock at 03:00, noon and dusk; Playwright's `page.clock.setFixedTime` does the same by hand.
+- Window, moon, lamp and note: open the home page; it shows Rabat now. For other hours, the e2e tests "the room keeps Rabat time" in `apps/site/e2e/room.spec.ts` fix the clock at 03:00, noon and dusk; Playwright's `page.clock.setFixedTime` does the same by hand.
 - Record: only with a live `/v1/listening` answer. Locally, `signals.spec.ts` serves one from the shared fixtures.
 - `curl -s http://localhost:8790/` after `just site-build` and `just site-serve`.
 - Keys: press `?` on any page, or the footer's Keys button; `t`; `1` to `7` on home. The list's switch turns them all off.
@@ -131,5 +131,5 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 - Moving the window in `scene.py` means moving the moon's centre (122, 25) in `room.ts`.
 - Changing `art.ts` changes every post's art; the golden files make that a deliberate `vitest run -u`.
 - Visitors with tzdata older than 2026c see the theme's lamp and no note until their browser updates.
-- If Morocco changes its clocks again, `knowsCasablanca()` in `sky.ts` must follow the new rules, or every browser loses the lamp and the note.
+- If Morocco changes its clocks again, `knowsRabatTime()` in `sky.ts` must follow the new rules, or every browser loses the lamp and the note.
 - Every new single-key shortcut must check `data-shortcuts` on `<html>`, and show in the list.

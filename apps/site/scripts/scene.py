@@ -5,7 +5,7 @@
 `room-day.png` is the same desk in daylight with the lamp off. Everything is geometry plus an
 ordered (Bayer) dither onto a fixed palette; no photo or portrait is involved.
 
-The room details (ADR 0027) add four layers the home page script picks by Casablanca time:
+The room details (ADR 0027) add four layers the home page script picks by Rabat time:
 `window-{day,dusk,night}.png`, only the view through the window on a transparent scene, and
 `room-night-dim.png`, the night room with the lamp turned down between 02:00 and 07:00. The
 moon is not drawn here: the script draws the real phase over the window.
