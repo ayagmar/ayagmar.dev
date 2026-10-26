@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import {
   anyEnvelopeSchema,
   listeningSnapshotSchema,
+  monkeytypeSnapshotSchema,
   projectsSnapshotSchema,
   shippingSnapshotSchema,
 } from '@min7/contracts';
@@ -11,6 +12,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { nowPlaying, readListening } from '../src/lib/listening.ts';
 import { ago, readAnswer } from '../src/lib/live.ts';
 import { readProjects, readShipping } from '../src/lib/stats.ts';
+import { daysAgo, readMonkeytype } from '../src/lib/typing.ts';
 
 const corpus = join(import.meta.dirname, '../../../packages/contracts/corpus');
 const files = (dir: string): [string, unknown][] =>
@@ -74,6 +76,25 @@ const readers = [
     // Not projects at all, though each has a star count /stats could add up.
     raw: { 'a project with only its stars': { projects: [{ stars: 9000 }] } },
   },
+  {
+    source: 'monkeytype',
+    read: readMonkeytype,
+    schema: monkeytypeSnapshotSchema,
+    edges: {
+      'accuracy over 100': { time: { 60: { acc: 100.5 } } },
+      'negative raw': {
+        words: { 10: { wpm: 1, acc: 1, raw: -1, consistency: 1, date: '2026-10-26' } },
+      },
+      'consistency as a string': { time: { 15: { consistency: '73' } } },
+      'set on 29 February 2026': { time: { 30: { date: '2026-02-29' } } },
+      'set at a time': { time: { 60: { date: '2021-01-14T10:00:00Z' } } },
+      'zero for none': { time: { 120: 0 } },
+      'a slot left out': { words: { 100: undefined } },
+    },
+    raw: { 'words left out': { time: snapshotFixtures.monkeytype.ok.time } },
+    // Its corpus holds whole envelopes (ADR 0008); the reader reads their data.
+    envelopes: true,
+  },
 ] as const;
 
 /** `base` with `edge` merged in, list items merged into `base`'s first item. */
@@ -99,7 +120,10 @@ describe.each(readers)('the $source reader', ({ source, read, schema, edges, ...
       `fixture ${name}`,
       data,
     ]),
-    ...files(`${source}/reject`),
+    ...files(`${source}/reject`).map(([name, body]): [string, unknown] => [
+      name,
+      'envelopes' in rest ? Object(body).data : body,
+    ]),
     ...Object.entries(edges).map(([name, edge]): [string, unknown] => [name, merge(ok, edge)]),
     ...Object.entries('raw' in rest ? rest.raw : {}),
   ];
@@ -112,6 +136,23 @@ describe.each(readers)('the $source reader', ({ source, read, schema, edges, ...
   it('keeps the edge cases meaningful', () => {
     // Each edge case must differ from the fixture it is built on, or it tests nothing.
     for (const edge of Object.values(edges)) expect(merge(ok, edge)).not.toEqual(ok);
+  });
+});
+
+// Catches a best set years ago read in days, or a day off by the reader's time zone.
+describe('daysAgo', () => {
+  const now = Date.parse('2026-10-26T23:30:00Z');
+  it.each([
+    ['2026-10-26', 'today'],
+    ['2026-10-27', 'today'],
+    ['2026-10-25', 'yesterday'],
+    ['2026-10-14', '12 days ago'],
+    ['2026-09-26', 'last month'],
+    ['2026-07-15', '3 months ago'],
+    ['2025-10-26', 'last year'],
+    ['2021-01-14', '5 years ago'],
+  ])('reads %s as %s', (date, words) => {
+    expect(daysAgo(date, now)).toBe(words);
   });
 });
 

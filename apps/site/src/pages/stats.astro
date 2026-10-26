@@ -10,16 +10,20 @@ import Base from '../layouts/Base.astro';
 import { dayName } from '../lib/history.ts';
 import { site } from '../lib/site.ts';
 import { starTotals, weekCount, statsWords as words } from '../lib/stats.ts';
+import { bestRows, dayDate, headline, typingWords } from '../lib/typing.ts';
 
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 const projects = await signals.read('projects');
+const typing = await signals.read('monkeytype');
 // Shelf: not wired yet, shown empty until its contract lands. LLM usage shows only its
 // agent hours so far, read by the browser (ADR 0015).
 const shelf = emptyEnvelope('shelf');
 
 const music = listening.data;
 const stars = shipping.data === null ? [] : starTotals(shipping.data);
+const lead = typing.data === null ? null : headline(typing.data);
+const bests = typing.data === null ? [] : bestRows(typing.data);
 ---
 
 <Base title="Stats">
@@ -137,6 +141,47 @@ const stars = shipping.data === null ? [] : starTotals(shipping.data);
         )}
       </div>
       <Freshness envelope={projects} />
+    </section>
+
+    <section class="panel m-tea" aria-labelledby="typing" {...liveAttrs('monkeytype', typing)}>
+      <h2 id="typing">Typing</h2>
+      {/* The day each best was set; src/scripts/stats-live.ts reads it relative to now. */}
+      <div class="typing-body">
+        {typing.data === null ? (
+          <p>{typingWords.noData}</p>
+        ) : bests.length === 0 ? (
+          <p>{typingWords.none}</p>
+        ) : (
+          <>
+            {lead === null ? (
+              <p>{typingWords.noHeadline}</p>
+            ) : (
+              <p>
+                <strong>{lead.wpm}</strong>
+                {lead.text}
+                <time datetime={lead.date} data-day>
+                  {dayDate(lead.date)}
+                </time>
+              </p>
+            )}
+            <dl>
+              {bests.map((best) => (
+                <>
+                  <dt>{best.label}</dt>
+                  <dd>
+                    {best.text}
+                    <time datetime={best.date} data-day>
+                      {dayDate(best.date)}
+                    </time>
+                  </dd>
+                </>
+              ))}
+            </dl>
+            <p>{typingWords.settings}</p>
+          </>
+        )}
+      </div>
+      <Freshness envelope={typing} />
     </section>
 
     <section class="panel m-frame" aria-labelledby="llm-usage">

@@ -1,4 +1,4 @@
-// /stats's listening, shipping and projects panels, kept current in the browser (ADR 0015).
+// /stats's listening, shipping, projects and typing panels, kept current in the browser (ADR 0015).
 // Each panel's HTML is the build's snapshot; a newer valid answer from signals replaces it,
 // rendered as the page renders it (src/pages/stats.astro), and every time on the page reads
 // relative to now. In fixtures mode no panel has an endpoint and nothing is requested.
@@ -13,6 +13,7 @@ import {
   weekCount,
   statsWords as words,
 } from '../lib/stats.ts';
+import { bestRows, headline, readMonkeytype, relabelDays, typingWords } from '../lib/typing.ts';
 
 /** An element with text and element children; text is never parsed as markup. */
 function h(tag: string, ...children: (Node | string)[]) {
@@ -113,3 +114,36 @@ live('projects', 15 * minute, readProjects, (panel, { data }) => {
       h('p', `${projectsSummary(data.projects)} `, link('/projects', 'See them'), '.')
     );
 });
+
+/** The day a best was set, as `<time datetime="2021-01-14" data-day>`; `relabelDays` fills it. */
+function day(date: string) {
+  const time = h('time') as HTMLTimeElement;
+  time.dateTime = date;
+  time.dataset.day = '';
+  return time;
+}
+
+// Monkeytype is pulled every 6 hours; asking hourly is soon enough (ADR 0033).
+live('monkeytype', 60 * minute, readMonkeytype, (panel, { data }) => {
+  const lead = headline(data);
+  const rows = bestRows(data);
+  panel
+    .querySelector('.typing-body')
+    ?.replaceChildren(
+      ...(rows.length === 0
+        ? [h('p', typingWords.none)]
+        : [
+            lead === null
+              ? h('p', typingWords.noHeadline)
+              : h('p', h('strong', lead.wpm), lead.text, day(lead.date)),
+            h(
+              'dl',
+              ...rows.flatMap((row) => [h('dt', row.label), h('dd', row.text, day(row.date))])
+            ),
+            h('p', typingWords.settings),
+          ])
+    );
+  relabelDays(panel, Date.now());
+});
+// The build's days, read relative to now as soon as the page runs.
+relabelDays(document, Date.now());
