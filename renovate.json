@@ -1,0 +1,89 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Dependency policy: docs/adr/0020-dependency-policy.md",
+  "extends": ["config:best-practices"],
+  "rangeStrategy": "pin",
+  "minimumReleaseAge": "3 days",
+  "minimumReleaseAgeBehaviour": "timestamp-required",
+  "internalChecksFilter": "strict",
+  "fetchChangeLogs": "pr",
+  "automerge": false,
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "automergeStrategy": "merge-commit",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "customManagers": [
+    {
+      "description": "CI tool pins in scripts/bootstrap.sh and the Renovate pin in the justfile. The sha256 next to a bootstrap pin is not updated: CI fails on the mismatch until it is.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^scripts/bootstrap\\.sh$/", "/^justfile$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\n[^\\n]*?=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Automerge patch and minor updates once the gate check is green (the main ruleset requires it).",
+      "matchUpdateTypes": ["patch", "minor", "pin", "digest"],
+      "automerge": true
+    },
+    {
+      "description": "Tool pins with a checksum need a human to update the sha256.",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["scripts/bootstrap.sh"],
+      "automerge": false
+    },
+    {
+      "description": "Majors are reviewed by hand, with release notes in the PR.",
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    },
+    {
+      "groupName": "astro",
+      "matchPackageNames": ["astro", "@astrojs/**"]
+    },
+    {
+      "groupName": "svelte",
+      "matchPackageNames": ["svelte", "svelte-check"]
+    },
+    {
+      "groupName": "cloudflare",
+      "matchPackageNames": ["wrangler", "@cloudflare/**", "miniflare", "workerd"]
+    },
+    {
+      "groupName": "vitest",
+      "matchPackageNames": ["vitest", "@vitest/**"]
+    },
+    {
+      "groupName": "playwright",
+      "matchPackageNames": ["@playwright/test", "playwright", "@axe-core/**"]
+    },
+    {
+      "groupName": "biome",
+      "matchPackageNames": ["@biomejs/**"]
+    },
+    {
+      "groupName": "typescript",
+      "matchPackageNames": ["typescript"]
+    },
+    {
+      "description": "Hold TypeScript at 6: astro check (@astrojs/check) and svelte-check do not accept TypeScript 7 yet. Remove this rule when both list ^7 in their typescript peer range.",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7.0.0"
+    },
+    {
+      "groupName": "github-actions",
+      "matchManagers": ["github-actions"]
+    },
+    {
+      "description": "Node from .node-version (Workers Builds and mise read it), pnpm and just from mise.toml and packageManager.",
+      "groupName": "toolchain",
+      "matchManagers": ["nodenv", "mise"]
+    }
+  ]
+}
