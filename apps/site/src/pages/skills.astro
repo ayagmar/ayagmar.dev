@@ -1,0 +1,257 @@
+---
+import { getEntry } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { getPosts } from '../lib/posts.ts';
+import { commitUrl, creditParts, evalLine, postsMentioning, skillsTagPath } from '../lib/skills.ts';
+import { isoDay, postPath } from '../lib/writing.ts';
+
+// content/skills.json, validated by the collection schema in content.config.ts (ADR 0031).
+const entry = await getEntry('skills', 'skills');
+if (entry === undefined) throw new Error('content/skills.json is missing');
+const { source, skills } = entry.data;
+const posts = await getPosts();
+const tagPath = skillsTagPath(posts);
+const repoUrl = `https://github.com/${source.repo}`;
+---
+
+<Base
+  title="Skills"
+  description={`${skills.length} Agent Skills by Abdeslam Yassine Agmar: what each does, how to install it, and how it did on its evals.`}
+>
+  <div data-pagefind-body>
+    <span hidden data-pagefind-meta="title">Skills</span>
+    <header class="shelf-head">
+      <h1>Skills</h1>
+      <p class="intro">
+        An Agent Skill is a folder with a <code>SKILL.md</code> that tells a coding agent when to
+        use it and how to do one kind of job; the agent reads it only when the task matches.
+        {` These ${skills.length} are mine: `}each is its own npm package, for Pi, Claude Code,
+        Codex and Cursor, kept in <a href={repoUrl}>{source.repo}</a>.
+      </p>
+      {tagPath !== null && (
+        <p class="caption" data-pagefind-ignore>
+          Writing about them: <a href={tagPath}>posts tagged {tagPath.split('/').at(-1)}</a>.
+        </p>
+      )}
+    </header>
+
+    <ol class="shelf panel m-wood">
+      {skills.map((skill) => {
+        const result = evalLine(skill);
+        const mentions = postsMentioning(posts, skill);
+        return (
+          <li id={skill.name} class="spine">
+            <div class="head">
+              <h2>
+                <a href={`#${skill.name}`}>{skill.name}</a>
+              </h2>
+              <p class="facts mono">
+                <span>v{skill.version}</span>
+                <span>{skill.license}</span>
+                {skill.runtime !== null && <span>{skill.runtime}</span>}
+              </p>
+            </div>
+            <div class="body">
+              <p class="summary">{skill.summary}</p>
+              {skill.install !== null && <code class="install">{skill.install}</code>}
+              {result !== null && (
+                <p class="evals">
+                  <span class="marks" aria-hidden="true">
+                    {result.marks.map((ok) => (
+                      <span class={ok ? 'mark on' : 'mark'} />
+                    ))}
+                  </span>
+                  <span class="mono">
+                    Evals: {result.cases}, {result.passMark}.
+                    <span class="ran">Run {result.ran}.</span>
+                  </span>
+                </p>
+              )}
+              <p class="links">
+                <a href={skill.readme}>
+                  README<span class="sr-only"> for {skill.name}</span>
+                </a>
+                <a href={skill.npm}>
+                  npm<span class="sr-only"> page for {skill.name}</span>
+                </a>
+                {mentions.map((post) => (
+                  <a href={postPath(post.id)}>
+                    <span class="sr-only">Post: </span>
+                    {post.data.title}
+                    <span class="sr-only"> ({isoDay(post.data.date)})</span>
+                  </a>
+                ))}
+              </p>
+              {skill.credit !== null && (
+                <p class="credit">
+                  {creditParts(skill.credit).map((part) =>
+                    part.href === undefined ? part.text : <a href={part.href}>{part.text}</a>
+                  )}
+                </p>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+
+    <p class="caption" data-pagefind-ignore>
+      Copied from <a href={repoUrl}>{source.repo}</a> at
+      <a href={commitUrl(source)}><code>{source.commit.slice(0, 7)}</code></a>,
+      {isoDay(new Date(source.committedAt))}, by <code>just skills-sync</code>. Each skill keeps its
+      own licence and credits, shown above. Eval runs are Claude Code's plugin eval with Claude as
+      the judge, run by me; the repo does not publish them.
+    </p>
+  </div>
+</Base>
+
+<style>
+.shelf-head h1 {
+  margin-bottom: 0.25em;
+}
+
+.intro {
+  max-width: var(--measure);
+}
+
+/* The shelf is one board of wood; each skill is a spine standing on it, set off by a
+     lamp-coloured edge and a dashed line to the next. */
+.shelf {
+  display: grid;
+  gap: 0;
+  padding: 0.5rem 1.1rem;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+
+.spine {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1.1rem 0 1.2rem 0.9rem;
+  border-inline-start: 4px solid var(--accent);
+  border-block-end: 1px dashed color-mix(in srgb, var(--fg) 30%, transparent);
+  scroll-margin-top: 1rem;
+}
+
+.body {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.spine:last-child {
+  border-block-end: 0;
+}
+
+.spine :is(h2, p) {
+  margin: 0;
+}
+
+.spine h2 {
+  font-family: var(--mono);
+  font-size: 1.2rem;
+  letter-spacing: -0.02em;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.1rem;
+}
+
+.links a {
+  display: inline-block;
+  min-height: 24px;
+  padding-block: 0.25rem;
+}
+
+.spine h2 a {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.spine h2 a:hover {
+  text-decoration: underline;
+}
+
+.facts,
+.evals,
+.links,
+.credit {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  color: var(--fg-2);
+}
+
+.summary {
+  max-width: var(--measure);
+}
+
+.install {
+  display: block;
+  margin: 0.2rem 0;
+  padding: 0.55rem 0.75rem;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.evals {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  color: var(--fg-2);
+}
+
+.marks {
+  display: inline-flex;
+  flex: none;
+  gap: 0.25rem;
+  transform: translateY(0.1rem);
+}
+
+.mark {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 2px dashed var(--fg-2);
+  border-radius: 50%;
+}
+
+.mark.on {
+  border-style: solid;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.ran {
+  margin-inline-start: 0.4em;
+}
+
+.credit {
+  max-width: var(--measure);
+  color: var(--fg-2);
+}
+
+@media (min-width: 48rem) {
+  .shelf {
+    padding-inline: 1.9rem;
+  }
+
+  .spine {
+    grid-template-columns: 14rem 1fr;
+    column-gap: 2rem;
+    padding-inline-start: 1.25rem;
+  }
+
+  .facts {
+    flex-direction: column;
+  }
+}
+</style>

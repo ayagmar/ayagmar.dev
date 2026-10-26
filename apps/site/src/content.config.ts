@@ -3,6 +3,7 @@ import { file, glob, type Loader } from 'astro/loaders';
 import { aboutSchema } from './data/about.ts';
 import { projectSchema } from './lib/project-schema.ts';
 import { checkProjectFiles } from './lib/projects.ts';
+import { skillsSchema } from './lib/skills-schema.ts';
 import { tilSchema } from './lib/til-schema.ts';
 import { writingSchema } from './lib/writing-schema.ts';
 
@@ -49,5 +50,10 @@ export const collections = {
   about: defineCollection({
     loader: file('../../content/about.json', { parser: (text) => ({ about: JSON.parse(text) }) }),
     schema: aboutSchema,
+  }),
+  // One entry, id "skills": the whole file, written by `just skills-sync` (ADR 0031).
+  skills: defineCollection({
+    loader: file('../../content/skills.json', { parser: (text) => ({ skills: JSON.parse(text) }) }),
+    schema: skillsSchema,
   }),
 };
