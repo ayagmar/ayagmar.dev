@@ -1,0 +1,26 @@
+---
+import { resumePath } from '../data/about.ts';
+
+interface Props {
+  published: boolean;
+}
+
+const { published } = Astro.props;
+// Unpublished: a disabled control, not a link, so nothing points at a missing /resume.pdf.
+// The sentence after it says why, so the state never depends on colour.
+---
+
+{published ? (
+  <p>
+    <a href={resumePath} type="application/pdf">
+      Resume (PDF)
+    </a>
+  </p>
+) : (
+  <p>
+    <button type="button" aria-disabled="true" aria-describedby="resume-status">
+      Resume PDF: coming soon
+    </button>
+    <span id="resume-status">The PDF is being reviewed and is not available to download yet.</span>
+  </p>
+)}

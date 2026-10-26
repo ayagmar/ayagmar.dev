@@ -1,5 +1,6 @@
 import { defineCollection } from 'astro:content';
-import { glob, type Loader } from 'astro/loaders';
+import { file, glob, type Loader } from 'astro/loaders';
+import { aboutSchema } from './data/about.ts';
 import { projectSchema } from './lib/project-schema.ts';
 import { checkProjectFiles } from './lib/projects.ts';
 import { writingSchema } from './lib/writing-schema.ts';
@@ -38,4 +39,9 @@ export const collections = {
     schema: writingSchema,
   }),
   projects: defineCollection({ loader: projects, schema: projectSchema }),
+  // One entry, id "about": the whole file. The resume template reads the same file.
+  about: defineCollection({
+    loader: file('../../content/about.json', { parser: (text) => ({ about: JSON.parse(text) }) }),
+    schema: aboutSchema,
+  }),
 };

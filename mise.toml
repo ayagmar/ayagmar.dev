@@ -5,3 +5,4 @@ idiomatic_version_file_enable_tools = ["node"]
 [tools]
 pnpm = "12.15.0"
 just = "1.59.0"
+typst = "0.15.1"

@@ -2,7 +2,7 @@
 
 Both Workers deploy through [Cloudflare Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/): Cloudflare clones the repo, builds, and deploys `main` to production. Every other branch gets a [Preview](https://developers.cloudflare.com/workers/previews/) with a public URL. GitHub Actions never deploys and holds no Cloudflare token.
 
-Workers Builds has Node and pnpm but not `just`. `scripts/bootstrap.sh` downloads the pinned `just` from its GitHub release into `.tools/bin`, checks its sha256, and every command then goes through a `just` recipe, the same ones used locally.
+Workers Builds has Node and pnpm but not `just` or Typst. `scripts/bootstrap.sh` downloads the pinned `just` and `typst` from their GitHub releases into `.tools/bin` and checks each sha256. Every command then goes through a `just` recipe, the same ones used locally; `just site-build` builds the resume PDF with `.tools/bin/typst`.
 
 ## One-time setup
 
@@ -17,13 +17,13 @@ Both projects:
 
 ### Site (`min7-site`, ayagmar.dev)
 
-| Setting                              | Value                                                                                                                                                                       |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build command                        | `./scripts/bootstrap.sh && .tools/bin/just site-build`                                                                                                                      |
-| Deploy command                       | `.tools/bin/just site-deploy`                                                                                                                                               |
-| Non-production branch deploy command | `.tools/bin/just site-preview`                                                                                                                                              |
-| Build watch paths, include           | `apps/site/*`, `packages/contracts/*`, `content/*`, `scripts/*`, `justfile`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.node-version` |
-| Build watch paths, exclude           | none                                                                                                                                                                        |
+| Setting                              | Value                                                                                                                                                                                   |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build command                        | `./scripts/bootstrap.sh && .tools/bin/just site-build`                                                                                                                                  |
+| Deploy command                       | `.tools/bin/just site-deploy`                                                                                                                                                           |
+| Non-production branch deploy command | `.tools/bin/just site-preview`                                                                                                                                                          |
+| Build watch paths, include           | `apps/site/*`, `packages/contracts/*`, `content/*`, `resume/*`, `scripts/*`, `justfile`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.node-version` |
+| Build watch paths, exclude           | none                                                                                                                                                                                    |
 
 ### Signals (`min7-signals`, api.ayagmar.dev)
 
@@ -39,13 +39,7 @@ Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` r
 
 ## D1 (signals)
 
-`apps/signals/wrangler.jsonc` declares the `DB` binding with placeholder ids. Before the first signals deploy:
-
-```sh
-just signals-db-create
-```
-
-Put the first id in `d1_databases` and the second in `previews.d1_databases` of `wrangler.jsonc` and in `wrangler.preview-migrations.jsonc`, then commit. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database (`scripts/workers-config.test.ts` checks this).
+Both databases exist (created 2026-10-26 with `just signals-db-create`), and their ids are in the configs: `min7-signals` in `d1_databases` of `apps/signals/wrangler.jsonc`, `min7-signals-preview` in its `previews.d1_databases` and in `wrangler.preview-migrations.jsonc`. To recreate them on another account, run `just signals-db-create` and replace those ids. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database (`scripts/workers-config.test.ts` checks this).
 
 | Recipe                         | Applies `apps/signals/migrations/` to                           |
 | ------------------------------ | --------------------------------------------------------------- |
