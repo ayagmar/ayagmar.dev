@@ -2,7 +2,7 @@
 import NowPlayingPanel from '../components/NowPlayingPanel.astro';
 import PostList from '../components/PostList.astro';
 import ShippingList from '../components/ShippingList.astro';
-import { signals } from '../data/signals.ts';
+import { signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
@@ -19,7 +19,11 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 
 <Base>
   <section slot="room" class="room" aria-label="The room">
-    <div class="scene">
+    <!-- The weather endpoint only in api mode: fixtures mode makes no request (ADR 0029). -->
+    <div
+      class="scene"
+      data-weather-src={signalsMode === 'api' ? `${signalsApiBase}/v1/weather` : undefined}
+    >
       <span
         class="room-art night"
         role="img"
@@ -35,6 +39,7 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
       <svg class="room-moon" viewBox="0 0 480 160" preserveAspectRatio="none" aria-hidden="true">
         <path fill="#e8e8fa"></path>
       </svg>
+      <span class="room-weather" aria-hidden="true"></span>
       <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Rabat.</p>
       {roomObjects.map((item) => (
         <a class="hotspot" href={item.href} data-room={item.id}>
@@ -44,6 +49,12 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
         </a>
       ))}
     </div>
+    <!-- Open-Meteo's data is CC BY 4.0, which asks for credit next to where it shows (ADR 0029). -->
+    <p class="room-credit">
+      Weather data by <a href="https://open-meteo.com/">Open-Meteo</a>{' '}
+      (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>); simplified
+      visualization.
+    </p>
   </section>
 
   <h1 class="intro">{site.author}. <span>{site.role}, {site.location}.</span></h1>
