@@ -20,5 +20,7 @@
     "not_found_handling": "404-page",
     // The Worker only sees `/`, to answer terminal clients with index.txt.
     "run_worker_first": ["/"]
-  }
+  },
+  // Required by `wrangler preview` even though the site has no bindings to swap.
+  "previews": {}
 }

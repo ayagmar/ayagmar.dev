@@ -61,7 +61,7 @@ test:
     {{ contracts }} vitest run
     {{ signals }} vitest run
     {{ site }} vitest run
-    node --test scripts/check-boundaries.test.ts
+    node --test scripts/check-boundaries.test.ts scripts/workers-config.test.ts
 
 # Browser tests against the built site served by its real Worker (wrangler dev)
 e2e: site-build
