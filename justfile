@@ -41,7 +41,7 @@ fmt-check:
 
 # Lint (Biome lint plus import sorting)
 lint:
-    pnpm exec biome check --formatter-enabled=false .
+    pnpm exec biome check --formatter-enabled=false --error-on-warnings .
 
 # Generate Worker binding and runtime types from wrangler.jsonc
 typegen:
