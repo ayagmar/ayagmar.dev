@@ -13,8 +13,8 @@ const shipping = await signals.read('shipping');
 const projects = await signals.read('projects');
 // Pushed sources: not wired yet, shown empty until their contracts land.
 const pushed = [
-  { title: 'LLM usage', envelope: emptyEnvelope('llm-usage') },
-  { title: 'Shelf', envelope: emptyEnvelope('shelf') },
+  { title: 'LLM usage', envelope: emptyEnvelope('llm-usage'), material: 'm-frame' },
+  { title: 'Shelf', envelope: emptyEnvelope('shelf'), material: 'm-wood' },
 ];
 
 const music = listening.data;
@@ -26,94 +26,99 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
 
 <Base title="Stats">
   <h1>Stats</h1>
-  <p>Numbers from my own tools, refreshed when the site is built.</p>
+  <p class="caption">Numbers from my own tools, refreshed when the site is built.</p>
 
-  <section aria-labelledby="listening">
-    <h2 id="listening">Listening</h2>
-    {music === null ? (
-      <p>No listening data yet.</p>
-    ) : (
-      <>
-        <NowPlayingPanel listening={listening} />
-        <dl>
-          <dt>Scrobbles this week</dt>
-          <dd>{music.scrobbles.thisWeek === null ? 'unknown' : count(music.scrobbles.thisWeek)}</dd>
-          <dt>Scrobbles last week</dt>
-          <dd>{music.scrobbles.lastWeek === null ? 'unknown' : count(music.scrobbles.lastWeek)}</dd>
-        </dl>
-        <h3>Recent tracks</h3>
-        {music.recent.length === 0 ? (
-          <p>No scrobbles yet.</p>
-        ) : (
-          <ol>
-            {music.recent.map((track) => (
-              <li>
-                <cite>{track.track}</cite> by {track.artist}
-              </li>
-            ))}
-          </ol>
-        )}
-        <h3>Top artists</h3>
-        {music.topArtists === null || music.topArtists.length === 0 ? (
-          <p>No top artists yet.</p>
-        ) : (
-          <ol>
-            {music.topArtists.map((artist) => (
-              <li>
-                {artist.artist}, {count(artist.plays)} plays
-              </li>
-            ))}
-          </ol>
-        )}
-        <p>
-          <a href={site.links.lastfm}>All of it on Last.fm</a>
-        </p>
-      </>
-    )}
-    <Freshness envelope={listening} />
-  </section>
-
-  <section aria-labelledby="shipping">
-    <h2 id="shipping">Shipping</h2>
-    {shipping.data === null || shipping.data.events.length === 0 ? (
-      <p>No public activity to show yet.</p>
-    ) : (
-      <ShippingList events={shipping.data.events.slice(0, 15)} />
-    )}
-    {starTotals.length > 0 && (
-      <>
-        <h3>Stars</h3>
-        <ul>
-          {starTotals.map((entry) => (
-            <li>
-              {repoName(entry.repo)}: {count(entry.stars)} on{' '}
-              <time datetime={entry.date}>{entry.date}</time>
-            </li>
-          ))}
-        </ul>
-      </>
-    )}
-    <Freshness envelope={shipping} />
-  </section>
-
-  <section aria-labelledby="projects">
-    <h2 id="projects">Projects</h2>
-    {projects.data === null ? (
-      <p>No project data yet.</p>
-    ) : (
-      <p>
-        {projectsSummary(projects.data.projects)}
-        <a href="/projects">See them</a>.
-      </p>
-    )}
-    <Freshness envelope={projects} />
-  </section>
-
-  {pushed.map(({ title, envelope }) => (
-    <section aria-labelledby={envelope.source}>
-      <h2 id={envelope.source}>{title}</h2>
-      <p>No data yet.</p>
-      <Freshness envelope={envelope} />
+  <div class="stats-grid">
+    <section class="panel m-vinyl" aria-labelledby="listening">
+      <h2 id="listening">Listening</h2>
+      {music === null ? (
+        <p>No listening data yet.</p>
+      ) : (
+        <>
+          <NowPlayingPanel listening={listening} />
+          <dl>
+            <dt>Scrobbles this week</dt>
+            <dd>
+              {music.scrobbles.thisWeek === null ? 'unknown' : count(music.scrobbles.thisWeek)}
+            </dd>
+            <dt>Scrobbles last week</dt>
+            <dd>
+              {music.scrobbles.lastWeek === null ? 'unknown' : count(music.scrobbles.lastWeek)}
+            </dd>
+          </dl>
+          <h3>Recent tracks</h3>
+          {music.recent.length === 0 ? (
+            <p>No scrobbles yet.</p>
+          ) : (
+            <ol>
+              {music.recent.map((track) => (
+                <li>
+                  <cite>{track.track}</cite> by {track.artist}
+                </li>
+              ))}
+            </ol>
+          )}
+          <h3>Top artists</h3>
+          {music.topArtists === null || music.topArtists.length === 0 ? (
+            <p>No top artists yet.</p>
+          ) : (
+            <ol>
+              {music.topArtists.map((artist) => (
+                <li>
+                  {artist.artist}, {count(artist.plays)} plays
+                </li>
+              ))}
+            </ol>
+          )}
+          <p>
+            <a href={site.links.lastfm}>All of it on Last.fm</a>
+          </p>
+        </>
+      )}
+      <Freshness envelope={listening} />
     </section>
-  ))}
+
+    <section class="panel m-cork" aria-labelledby="shipping">
+      <h2 id="shipping">Shipping</h2>
+      {shipping.data === null || shipping.data.events.length === 0 ? (
+        <p>No public activity to show yet.</p>
+      ) : (
+        <ShippingList events={shipping.data.events.slice(0, 15)} />
+      )}
+      {starTotals.length > 0 && (
+        <>
+          <h3>Stars</h3>
+          <ul>
+            {starTotals.map((entry) => (
+              <li>
+                {repoName(entry.repo)}: {count(entry.stars)} on{' '}
+                <time datetime={entry.date}>{entry.date}</time>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <Freshness envelope={shipping} />
+    </section>
+
+    <section class="panel m-screen" aria-labelledby="projects">
+      <h2 id="projects">Projects</h2>
+      {projects.data === null ? (
+        <p>No project data yet.</p>
+      ) : (
+        <p>
+          {projectsSummary(projects.data.projects)} <a href="/projects">See them</a>.
+        </p>
+      )}
+      <Freshness envelope={projects} />
+    </section>
+
+    {pushed.map(({ title, envelope, material }) => (
+      <section class={`panel ${material}`} aria-labelledby={envelope.source}>
+        <h2 id={envelope.source}>{title}</h2>
+        <p>No data yet.</p>
+        <Freshness envelope={envelope} />
+      </section>
+    ))}
+  </div>
 </Base>

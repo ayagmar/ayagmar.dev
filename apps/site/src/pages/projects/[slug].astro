@@ -32,14 +32,16 @@ const feeds = feedPaths({ project: project.slug });
   feed={{ project: project.slug }}
 >
   <article class="project">
-    <header>
+    <header class="panel m-screen">
       <h1>{project.slug}</h1>
       {project.summary !== null && <p class="project-summary">{project.summary}</p>}
       {project.status !== null && <p class="project-status">Status: {project.status}</p>}
     </header>
     {Content !== undefined && (
-      <section class="project-description">
-        <Content />
+      <section class="paper project-description" aria-label={`About ${project.slug}`}>
+        <div class="prose">
+          <Content />
+        </div>
       </section>
     )}
     <h2>Numbers</h2>

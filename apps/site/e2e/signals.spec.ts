@@ -42,6 +42,8 @@ async function goLive(page: Page, answer: Parameters<Page['route']>[1]) {
   });
   await page.route(api, answer);
   await page.goto('/');
+  // The island hydrates when it scrolls into view (client:visible).
+  await page.locator('.now-playing').scrollIntoViewIfNeeded();
 }
 
 const listening = (stale: boolean, nowPlaying: unknown) => ({

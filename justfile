@@ -184,6 +184,14 @@ site-build: resume
     {{ site }} node scripts/postbuild.ts
     {{ site }} node scripts/ship-resume.ts
 
+# Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026)
+fonts:
+    cd apps/site && uv run --no-project --with fonttools==4.67.0 --with brotli==1.2.1 python scripts/fonts.py
+
+# Site: redraw the home page room, apps/site/src/assets/room-{night,day}.png (ADR 0026)
+scene:
+    cd apps/site && uv run --no-project --with pillow==13.0.0 python scripts/scene.py
+
 # Resume: write resume/build/resume.pdf from content/about.json
 resume:
     {{ site }} node scripts/resume.ts

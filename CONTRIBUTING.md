@@ -69,6 +69,15 @@ The long description, in Markdown.
 
 The build fails when `slug` is not a featured project or differs from the file name, and warns about featured projects that have no file.
 
+## Styling
+
+The design is the late-night room ([ADR 0026](docs/adr/0026-visual-design-late-night-room.md)).
+- Colors are tokens in `apps/site/src/styles/base.css`, each a `light-dark(day, night)` pair. Use a token, not a raw color, and check both themes: the switch in the header, or your system's dark mode. `just e2e` runs axe in both.
+- A surface (`.paper`, `.panel` with a material class such as `.m-screen`) sets `--bg`, `--fg`, `--fg-2` and `--accent`; draw with those inside it.
+- No `style=""` attributes or inline `<style>`/`<script>`: the CSP blocks them (ADR 0019).
+- The home page room is drawn by `apps/site/scripts/scene.py`. Change it, run `just scene`, and move the object's hotspot rectangle in `src/styles/room.css` if the object moved. Hotspots and the list under the scene come from `src/lib/room.ts`.
+- Fonts are subsets built by `just fonts`. Add characters to `UNICODES` in `scripts/fonts.py` if a post needs glyphs outside Latin-1 and common punctuation. Both recipes need `uv` (`mise install` provides it).
+
 ## Code changes
 
 - Every command is a `just` recipe. CI calls the same recipes.

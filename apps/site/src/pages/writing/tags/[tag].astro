@@ -17,7 +17,11 @@ const feeds = feedPaths({ tag });
 ---
 
 <Base title={`Tagged ${tag}`} feed={{ tag }}>
-  <h1>Tagged {tag}</h1>
-  <PostList posts={posts} />
-  <p>Follow this tag: <a href={feeds.rss}>RSS</a>, <a href={feeds.atom}>Atom</a>.</p>
+  <div class="paper">
+    <h1>Tagged {tag}</h1>
+    <PostList posts={posts} />
+    <p class="caption">
+      Follow this tag: <a href={feeds.rss}>RSS</a>, <a href={feeds.atom}>Atom</a>.
+    </p>
+  </div>
 </Base>

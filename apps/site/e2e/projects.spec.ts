@@ -78,15 +78,16 @@ test('search results name the project a post is about', async ({ page }) => {
 });
 
 // GitHub descriptions, names and tags are upstream text: one long unbroken token in any of
-// them must wrap instead of pushing the page sideways on a phone.
-for (const path of ['/projects/pi-mobile', '/projects', '/writing/token-logs']) {
-  for (const width of [320, 360]) {
-    test(`${path} wraps long project metadata at ${width}px`, async ({ page }) => {
+// them must wrap instead of pushing the page sideways on a phone. Post titles too: on home, one
+// long word in a grid track widens every panel.
+for (const path of ['/', '/projects/pi-mobile', '/projects', '/writing/token-logs']) {
+  for (const width of [320, 360, 390]) {
+    test(`${path} wraps long metadata at ${width}px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
       await page.goto(path);
       const filled = await page
         .locator(
-          '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a'
+          '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a, .home-projects a, .home-projects p, .posts a'
         )
         .evaluateAll((elements) => {
           for (const element of elements) element.textContent = 'A'.repeat(80);

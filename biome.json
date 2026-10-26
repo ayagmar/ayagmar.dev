@@ -23,6 +23,12 @@
     "experimentalFullSupportEnabled": true,
     "formatter": { "enabled": true }
   },
+  "overrides": [
+    {
+      "includes": ["apps/site/src/styles/**"],
+      "linter": { "rules": { "style": { "noDescendingSpecificity": "off" } } }
+    }
+  ],
   "linter": {
     "enabled": true,
     "rules": {

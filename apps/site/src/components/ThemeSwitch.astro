@@ -1,0 +1,18 @@
+---
+// Day, night or follow the system. src/scripts/theme.js sets aria-pressed and handles clicks;
+// without that script the switch stays hidden (base.css) and the system theme applies.
+const choices = [
+  { value: 'day', label: 'Day' },
+  { value: 'night', label: 'Night' },
+  { value: 'auto', label: 'Auto' },
+] as const;
+---
+
+<fieldset class="theme-switch">
+  <legend class="sr-only">Theme</legend>
+  {choices.map((choice) => (
+    <button type="button" data-theme-choice={choice.value} aria-pressed="false">
+      {choice.label}
+    </button>
+  ))}
+</fieldset>
