@@ -30,7 +30,7 @@ defaults:
 
 jobs:
   changes:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -51,7 +51,7 @@ jobs:
   format:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).format
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -65,7 +65,7 @@ jobs:
   secrets-source:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).secrets-source
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -83,7 +83,7 @@ jobs:
   checks:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).checks
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -101,7 +101,7 @@ jobs:
   contracts:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).contracts
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -116,7 +116,7 @@ jobs:
   site-test:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).site-test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -131,7 +131,7 @@ jobs:
   site-build:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).site-build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -159,7 +159,7 @@ jobs:
   e2e:
     needs: [changes, site-build]
     if: fromJSON(needs.changes.outputs.plan).e2e
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
       contents: read
@@ -185,7 +185,7 @@ jobs:
   links:
     needs: [changes, site-build]
     if: fromJSON(needs.changes.outputs.plan).links
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -211,7 +211,7 @@ jobs:
   signals-test:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).signals-test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -228,7 +228,7 @@ jobs:
   codeql:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).codeql
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 20
     permissions:
       contents: read
@@ -248,7 +248,7 @@ jobs:
   osv:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).osv
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -264,7 +264,7 @@ jobs:
   workflows:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).workflows
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -285,7 +285,7 @@ jobs:
   renovate:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).renovate
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -301,7 +301,7 @@ jobs:
   shell:
     needs: changes
     if: fromJSON(needs.changes.outputs.plan).shell
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -319,7 +319,7 @@ jobs:
   budgets:
     needs: [changes, site-build]
     if: fromJSON(needs.changes.outputs.plan).budgets
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
       contents: read
@@ -344,7 +344,7 @@ jobs:
   lighthouse:
     needs: [changes, site-build]
     if: fromJSON(needs.changes.outputs.plan).lighthouse
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 40
     permissions:
       contents: read
@@ -408,7 +408,7 @@ jobs:
   lighthouse-comment:
     needs: lighthouse
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && needs.lighthouse.outputs.metrics != '' }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
       pull-requests: write # create and edit its own comment
@@ -671,7 +671,7 @@ jobs:
         lighthouse,
       ]
     if: ${{ always() }}
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
       contents: read
