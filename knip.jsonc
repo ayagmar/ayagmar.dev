@@ -34,8 +34,8 @@
         "test/**/*.ts",
         "e2e/**/*.ts"
       ],
-      // Run by justfile recipes, which knip does not read.
-      "ignoreDependencies": ["@astrojs/check", "pagefind", "svelte-check"]
+      // Run by justfile recipes, which knip does not read; lhci by scripts/lighthouse.ts.
+      "ignoreDependencies": ["@astrojs/check", "pagefind", "svelte-check", "@lhci/cli"]
     }
   }
 }

@@ -45,6 +45,7 @@ Every dependency is code that runs at build time, in a Worker or in a browser, a
 | satteri                   | 0.10.5  | site                     | `htmlToHast` and plugin types for the diagram plugin. Same version the processor above uses.                                                                                                                       |
 | @playwright/test          | 1.64.1  | site                     | Browser tests against `wrangler dev` (Chromium only).                                                                                                                                                              |
 | @axe-core/playwright      | 4.14.0  | site                     | Accessibility checks (WCAG 2.2 AA) inside Playwright.                                                                                                                                                              |
+| @lhci/cli                 | 0.15.1  | site (CI only)           | Lighthouse CI's `collect` (Lighthouse 12.6.1) for the performance budgets (ADR 0017). The newest release; it is from 2025-06 and pulls in a large tree, see Overrides.                                             |
 
 gitleaks for the pre-commit hook is a system tool, not a package (`just tools gitleaks` installs the pinned one into `.tools/bin`).
 
@@ -67,7 +68,9 @@ GitHub Actions, pinned by commit SHA in `.github/`: `actions/checkout` 7.0.1, `a
 
 ### Overrides
 
-`pnpm-workspace.yaml` overrides two transitive dependencies osv-scanner flagged, both in the Worker test runtime only: `zod` 4.6.7 under `@cloudflare/vitest-plugin` (GHSA-mrhx-c7xc-m3w5) and `undici` 7.30.1 under `miniflare` (GHSA-4qv8-2p9j-2685, GHSA-f72v-6w45-q472, GHSA-xjj6-f33q-929c). Remove each once its parent depends on a fixed version.
+`pnpm-workspace.yaml` overrides transitive dependencies osv-scanner flagged. In the Worker test runtime: `zod` 4.6.7 under `@cloudflare/vitest-plugin` (GHSA-mrhx-c7xc-m3w5) and `undici` 7.30.1 under `miniflare` (GHSA-4qv8-2p9j-2685, GHSA-f72v-6w45-q472, GHSA-xjj6-f33q-929c). Under `@lhci/cli`: `tmp` 0.2.7 (GHSA-ph9p-34f9-6g65, GHSA-52f5-9888-hmc6; also under `external-editor`), `uuid` 11.1.1 (GHSA-w5hq-g745-h8pq) and `basic-ftp` 6.2.3 under `get-uri` (GHSA-c475-qrg2-pj4r), each the newest release of the first fixed line, at least three days old. Remove each once its parent depends on a fixed version.
+
+`osv-scanner.toml` ignores two advisories that have no fix this repo can take, each by exact package version and only until 2027-04-26, when they must be looked at again: `extract-zip` 2.0.1 (GHSA-7pqw-9j4j-h8q3, GHSA-jmr9-qjv8-65gv; no fixed release exists), which `@puppeteer/browsers` uses to unzip browser downloads, and Lighthouse CI never downloads a browser; and `zod` 3.25.76 under `chromium-bidi` (GHSA-mrhx-c7xc-m3w5, fixed only in zod 4), which validates WebDriver BiDi messages, while Lighthouse talks CDP to a local Chromium loading the site's own pages. Both are reached only through `lighthouse` > `puppeteer-core`, in the CI Lighthouse job.
 
 ### Renovate
 
