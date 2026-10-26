@@ -69,9 +69,20 @@ describe('agent hours and agents', () => {
     expect(readLlmUsage(lastOfMonth, at('2026-11-01T00:30:00Z'))).toBeUndefined();
   });
 
+  // Catches a snapshot from the future shown as current: the intake's clock tolerance is not the
+  // browser's.
+  it.each([1, 2, 3, 4, 5])('shows nothing from a snapshot %i min ahead', (ahead) => {
+    expect(readLlmUsage(envelope(ok), at(taken) - ahead * minute)).toBeUndefined();
+  });
+
+  // Catches 30 February read as 2 March, the date in Rabat the browser is on.
+  it('shows nothing from a snapshot dated on a day the calendar does not have', () => {
+    const body = envelope(ok, { fetchedAt: '2026-02-30T08:00:00Z' });
+    expect(readLlmUsage(body, at('2026-03-02T09:00:00Z'))).toBeUndefined();
+  });
+
   it.each([
     ['stale', { stale: true }],
-    ['dated ahead of the browser', { fetchedAt: '2026-10-26T08:06:00Z' }],
     ['of another source', { source: 'desktop' }],
     ['without a date', { fetchedAt: null }],
     ['without data', { data: null }],
@@ -121,13 +132,28 @@ describe('desktop facts', () => {
   // turned into a believable uptime.
   it.each([
     ['2 days and a minute after the report', envelope(), taken + 2 * day + minute],
-    ['when the report is 6 minutes ahead of the browser', envelope(), taken - 6 * minute],
+    ...[1, 2, 3, 4, 5].map((ahead): [string, object, number] => [
+      `when the report is ${ahead} min ahead of the browser`,
+      envelope(),
+      taken - ahead * minute,
+    ]),
     [
       'when the boot is after the report',
       envelope({ bootedAt: '2026-10-26T08:00:01.000Z' }),
       taken + hour,
     ],
     ['with a malformed boot time', envelope({ bootedAt: '26 Oct 2026' }), taken],
+    // Date.parse would read 30 February as 2 March and show a believable uptime.
+    [
+      'with a boot on a day the calendar does not have',
+      envelope({ bootedAt: '2026-02-30T12:00:00Z' }, { fetchedAt: '2026-03-03T12:00:00.000Z' }),
+      Date.parse('2026-03-03T12:00:00Z'),
+    ],
+    [
+      'with a report on a day the calendar does not have',
+      envelope({ bootedAt: '2026-02-27T12:00:00Z' }, { fetchedAt: '2026-02-29T08:00:00.000Z' }),
+      Date.parse('2026-03-01T09:00:00Z'),
+    ],
     ['with a boot time not in UTC', envelope({ bootedAt: '2026-10-23T08:41:12+01:00' }), taken],
     ['with a kernel outside the allowlist', envelope({ kernel: '7.2.11-arch1-1-host' }), taken],
     ['when the API calls it stale', envelope({}, { stale: true }), taken],
@@ -135,8 +161,13 @@ describe('desktop facts', () => {
     expect(readDesktop(body, now)).toBeUndefined();
   });
 
-  it('shows facts up to 2 days old, and unreadable values as absent', () => {
+  it('shows facts from the moment of the report up to 2 days old, and unreadable values as absent', () => {
+    expect(readDesktop(envelope(), taken)).toBeDefined();
     expect(readDesktop(envelope(), taken + 2 * day)).toBeDefined();
+    expect(readDesktop(envelope({ bootedAt: '2024-02-29T00:00:00Z' }), taken)).toBeDefined();
+    expect(
+      readDesktop(envelope({}, { fetchedAt: '2026-10-26T09:00:00.123456+01:00' }), taken + minute)
+    ).toBeDefined();
     expect(readDesktop(envelope({ kernel: null, niri: null }), taken)).toMatchObject({
       kernel: null,
       niri: null,

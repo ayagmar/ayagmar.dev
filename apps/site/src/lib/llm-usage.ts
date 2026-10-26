@@ -5,7 +5,7 @@
  * the tests hold them to the contract's corpus.
  */
 import { rabatDate } from '@min7/contracts/rabat';
-import { knowsRabatDate, maxAheadMs } from './live.ts';
+import { instantMs, knowsRabatDate } from './live.ts';
 
 const hourMs = 3_600_000;
 // The contract's bounds (packages/contracts/src/push/delivery.ts): 25-hour local days.
@@ -30,14 +30,14 @@ const within = (value: unknown, max: number): value is number =>
  * What a `/v1/llm-usage` answer lets the page show at `now`, or undefined for nothing. Its
  * month and week are the producer's, so they are shown only on the date in Rabat they were
  * taken: after midnight "this month" and "last 7 days" would describe another period. A
- * snapshot that is stale, dated ahead of the browser, or from a browser that does not know
- * Morocco's clock, shows nothing.
+ * snapshot that is stale, dated after the browser's clock or on a day the calendar does not
+ * have, or read by a browser that does not know Morocco's clock, shows nothing.
  */
 export function readLlmUsage(body: unknown, now: number): LlmUsage | undefined {
   const { source, version, stale, fetchedAt, data } = Object(body);
   if (source !== 'llm-usage' || version !== 1 || stale !== false || data === null) return;
-  const taken = typeof fetchedAt === 'string' ? Date.parse(fetchedAt) : Number.NaN;
-  if (Number.isNaN(taken) || taken > now + maxAheadMs || !knowsRabatDate()) return;
+  const taken = instantMs(fetchedAt, true);
+  if (taken === undefined || taken > now || !knowsRabatDate()) return;
   if (rabatDate(taken) !== rabatDate(now)) return;
   const { monthToDate, last7Days, days } = Object(data);
   const month = Object(monthToDate);

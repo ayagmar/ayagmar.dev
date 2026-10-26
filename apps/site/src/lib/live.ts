@@ -14,8 +14,22 @@ import { rabatDate } from '@min7/contracts/rabat';
  */
 export const knowsRabatDate = () => rabatDate(Date.UTC(2026, 9, 1, 23, 30)) === '2026-10-01';
 
-/** How far ahead of the browser's clock a snapshot may be dated: the intake's own tolerance. */
-export const maxAheadMs = 5 * 60_000;
+const instant =
+  /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+/**
+ * `value` in ms since the epoch if it is an instant the contract accepts (`z.iso.datetime()`,
+ * with an offset only if `offset`), else undefined. Date.parse alone moves a day the calendar
+ * does not have, such as 30 February, into the next month; its date read back shows that.
+ */
+export function instantMs(value: unknown, offset = false): number | undefined {
+  const match = typeof value === 'string' ? instant.exec(value) : null;
+  if (!match || (!offset && match[2] !== 'Z')) return;
+  const day = new Date(`${match[1]}T00:00:00Z`);
+  return !Number.isNaN(day.getTime()) && day.toISOString().startsWith(match[1] as string)
+    ? Date.parse(match[0])
+    : undefined;
+}
 
 /**
  * Asks `endpoint` while the page is visible, one request at a time with a 5 s deadline: on

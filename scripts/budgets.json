@@ -29,7 +29,7 @@
       {
         "name": "live reads",
         "file": "/_astro/llm-usage.*.js",
-        "bytes": 1330
+        "bytes": 1470
       }
     ]
   },

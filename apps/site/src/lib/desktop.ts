@@ -4,12 +4,10 @@
  * tests share them. The value allowlists are the contract's own, from a module without zod.
  */
 import { kernelReleasePattern, niriVersionPattern } from '@min7/contracts/desktop';
-import { maxAheadMs } from './live.ts';
+import { instantMs } from './live.ts';
 
 /** `staleAfterSeconds.desktop` in contracts (which loads zod); a test keeps them equal. */
 export const desktopStaleAfterMs = 2 * 24 * 60 * 60 * 1000;
-
-const utcInstant = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;
 
 export interface DesktopFacts {
   fetchedAt: string;
@@ -21,18 +19,18 @@ export interface DesktopFacts {
 /**
  * The facts in a `/v1/desktop` answer if the page may show them at `now`, else undefined: a
  * fresh envelope of this source, reported less than 2 days before `now` and not after it,
- * with each value in its allowlist and a boot time no later than the report. Freshness is
+ * with each value in its allowlist and a boot time (UTC) no later than the report. Both times
+ * must be days the calendar has. Freshness is
  * worked out here from `fetchedAt`, whatever `stale` said when the answer was served.
  */
 export function readDesktop(body: unknown, now: number): DesktopFacts | undefined {
   const { source, version, stale, fetchedAt, data } = Object(body);
   if (source !== 'desktop' || version !== 1 || stale !== false) return;
-  const taken = typeof fetchedAt === 'string' ? Date.parse(fetchedAt) : Number.NaN;
-  if (Number.isNaN(taken) || taken > now + maxAheadMs || now - taken > desktopStaleAfterMs) return;
+  const taken = instantMs(fetchedAt, true);
+  if (taken === undefined || taken > now || now - taken > desktopStaleAfterMs) return;
   const { kernel, niri, bootedAt } = Object(data);
-  const booted =
-    typeof bootedAt === 'string' && utcInstant.test(bootedAt) ? Date.parse(bootedAt) : Number.NaN;
-  if (Number.isNaN(booted) || booted < 0 || booted > taken || booted > now) return;
+  const booted = instantMs(bootedAt);
+  if (booted === undefined || booted < 0 || booted > taken) return;
   const valid = (value: unknown, pattern: RegExp, max: number) =>
     value === null || (typeof value === 'string' && value.length <= max && pattern.test(value));
   if (!valid(kernel, kernelReleasePattern, 48) || !valid(niri, niriVersionPattern, 8)) return;
