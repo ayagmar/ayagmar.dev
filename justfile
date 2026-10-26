@@ -15,7 +15,7 @@ signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
 # Every required signals secret, matching secrets.required in apps/signals/wrangler.jsonc.
 # GITHUB_TOKEN is optional and set on its own: `just signals-secret GITHUB_TOKEN`.
-required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT"
+required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT PUSH_TOKEN_DESKTOP PUSH_TOKEN_DESKTOP_NEXT"
 
 # Pinned tools from scripts/bootstrap.sh come first, so local runs match CI.
 export PATH := justfile_directory() / ".tools/bin" + ":" + env("PATH")
@@ -69,7 +69,7 @@ typecheck: typegen
     {{ site }} svelte-check --fail-on-warnings
 
 # Unit and Worker tests
-test: test-contracts test-signals test-site test-scripts
+test: test-contracts test-signals test-site test-scripts test-producers
 
 # Contracts: zod and JSON Schema agree on the corpus, frozen v1 consumers still parse
 test-contracts:
@@ -86,6 +86,20 @@ test-site:
 # Repo scripts: boundaries, Wrangler configs, CI plan and gate, secret scanner
 test-scripts:
     node --test scripts/*.test.ts
+
+# Producers on the owner's machine: delivery, desktop facts, llm-usage mapping (ADR 0014, 0032)
+test-producers:
+    node --test producers/*.test.ts
+
+# Producers: print both push bodies built from sample readings dated now. Reads no host
+# state, credentials or session logs, and sends nothing.
+producers-dry-run:
+    dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; node producers/samples.ts "$dir"; node producers/desktop.ts --dry-run --fixtures "$dir/desktop"; node producers/llm-usage.ts --dry-run --fixtures "$dir/llm-usage"
+
+# Producers: push sample bodies to the local Worker (just signals-dev) with the fake tokens in
+# apps/signals/.dev.vars, from a temporary state directory
+producers-local origin="http://127.0.0.1:8787":
+    dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; node producers/samples.ts "$dir"; for producer in desktop llm-usage; do name="PUSH_TOKEN_$(echo "$producer" | tr a-z- A-Z_)"; MIN7_TEST_ENDPOINT={{ quote(origin) }} MIN7_STATE_DIR="$dir/state-$producer" MIN7_TEST_TOKEN="$(sed -n "s/^$name=//p" apps/signals/.dev.vars)" node "producers/$producer.ts" --fixtures "$dir/$producer"; done
 
 # Browser tests against the built site served by its real Worker (wrangler dev)
 e2e: site-build e2e-test

@@ -1,6 +1,7 @@
 import { defineCollection } from 'astro:content';
 import { file, glob, type Loader } from 'astro/loaders';
 import { aboutSchema } from './data/about.ts';
+import { usesSchema } from './data/uses.ts';
 import { projectSchema } from './lib/project-schema.ts';
 import { checkProjectFiles } from './lib/projects.ts';
 import { skillsSchema } from './lib/skills-schema.ts';
@@ -55,5 +56,10 @@ export const collections = {
   skills: defineCollection({
     loader: file('../../content/skills.json', { parser: (text) => ({ skills: JSON.parse(text) }) }),
     schema: skillsSchema,
+  }),
+  // One entry, id "uses": the whole file.
+  uses: defineCollection({
+    loader: file('../../content/uses.json', { parser: (text) => ({ uses: JSON.parse(text) }) }),
+    schema: usesSchema,
   }),
 };

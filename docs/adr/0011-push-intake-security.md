@@ -1,16 +1,16 @@
 # 0011. Push intake security
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. Amended 2026-10-26: a third producer, the desktop facts (ADR 0032), with value patterns and a check across fields after the schema.
 
 ## Context
 
-Two producers push to signals over the public internet: the llm-usage-metrics timer on the owner's machine and trellis, a private server. What they push ends up on a public page. An attacker can send any request; a producer can have a bug and send too much. Every accepted byte must be authenticated, bounded, validated and reduced to what the site is meant to show.
+Three producers push to signals over the public internet: the llm-usage-metrics timer and the desktop facts timer on the owner's machine (ADR 0032), and trellis, a private server. What they push ends up on a public page. An attacker can send any request; a producer can have a bug and send too much. Every accepted byte must be authenticated, bounded, validated and reduced to what the site is meant to show.
 
 ## Decision
 
 ### Wire format
 
-`POST /v1/push/llm-usage` and `POST /v1/push/trellis`, `Content-Type: application/json`, body:
+`POST /v1/push/llm-usage`, `POST /v1/push/trellis` and `POST /v1/push/desktop`, `Content-Type: application/json`, body:
 
 ```json
 {
@@ -24,7 +24,7 @@ Two producers push to signals over the public internet: the llm-usage-metrics ti
 - `producer` must name the route.
 - `deliveryId` is a UUID and the idempotency key. A retry sends the same id and the same bytes.
 - `sentAt` (RFC 3339 with offset) is when the producer took the snapshot. It is served as `fetchedAt` and decides `stale` and ordering.
-- `payload` is defined per producer: ADR 0013 (trellis) and ADR 0014 (llm-usage). JSON Schema for producers: `packages/contracts/schema/push-<producer>.input.json`.
+- `payload` is defined per producer: ADR 0013 (trellis), ADR 0014 (llm-usage) and ADR 0032 (desktop). JSON Schema for producers: `packages/contracts/schema/push-<producer>.input.json`.
 
 ### Order of checks
 
@@ -32,10 +32,10 @@ Two producers push to signals over the public internet: the llm-usage-metrics ti
 1. Content type is `application/json` (parameters allowed), else **415**.
 2. Body read as a stream, at most 64 KiB (`maxPushBodyBytes` in contracts). Reading stops as soon as the stream passes the cap, whatever `Content-Length` says or whether there is one; a declared length over the cap is refused before reading. **413**.
 3. Authentication, else **401** `{ "error": "unauthorized" }`, the same body for every reason:
-   - Bearer token in `Authorization`, per producer: `PUSH_TOKEN_LLM_USAGE` or `PUSH_TOKEN_TRELLIS`, each with a `_NEXT` slot for rotation. Each slot is compared by SHA-256 digest (equal length) with `crypto.subtle.timingSafeEqual`, every slot is checked, and a slot that is missing, not a string, or shorter than 32 characters never matches. With no usable slot the answer is 401. A token for one producer fails on the other's route.
+   - Bearer token in `Authorization`, per producer: `PUSH_TOKEN_LLM_USAGE`, `PUSH_TOKEN_TRELLIS` or `PUSH_TOKEN_DESKTOP`, each with a `_NEXT` slot for rotation. Each slot is compared by SHA-256 digest (equal length) with `crypto.subtle.timingSafeEqual`, every slot is checked, and a slot that is missing, not a string, or shorter than 32 characters never matches. With no usable slot the answer is 401. A token for one producer fails on every other producer's route.
    - trellis also signs: `X-Min7-Timestamp` is Unix seconds within ±300 s of the Worker clock, and `X-Min7-Signature` is the lowercase hex HMAC-SHA256 of `timestamp + "." + rawBody` (exact bytes) under `PUSH_HMAC_TRELLIS` or `PUSH_HMAC_TRELLIS_NEXT`, checked with `crypto.subtle.verify`. Token and signature are both always checked.
 4. JSON parse (UTF-8, fatal on invalid bytes), else **400** `malformed_json`.
-5. Wire schema (zod, from contracts): strict types and ranges, arrays and strings bounded, unknown keys stripped at every level. Else **422** `invalid_payload` with up to 20 `{ path, code }` issues. Paths and codes come from the schema; values are never echoed.
+5. Wire schema (zod, from contracts): strict types and ranges, arrays and strings bounded, unknown keys stripped at every level. Else **422** `invalid_payload` with up to 20 `{ path, code }` issues. Paths and codes come from the schema; values are never echoed. Then the producer's own check across fields, for rules JSON Schema cannot state: desktop's `bootedAt` must not be before the Unix epoch or after `sentAt`, else **422** `booted_at_out_of_range`.
 6. Delivery lookup by `(producer, deliveryId)`: same SHA-256 of the raw body, **200** `{ "accepted": true }` and nothing changes; other hash, **409** `delivery_id_reused`. This runs before throttling, freshness and the interval, so a producer that lost the first response always gets its 200.
 7. Rate Limiting binding `PUSH_RATE_LIMIT`, keyed by producer, 10 requests per 60 s per Cloudflare location, for authenticated, unseen deliveries only, so strangers cannot use up a producer's allowance and retries cannot hide an accepted delivery. Best effort: counts are per location and eventually consistent. **429** `rate_limited`, `Retry-After: 60`.
 8. Freshness for a new delivery: `sentAt` at most 24 h old and at most 5 min ahead, else **422** `sent_at_out_of_window`.
@@ -55,11 +55,11 @@ Every push response has `Cache-Control: no-store` and no CORS headers. A D1 fail
 
 ### Allowlists cover values, not only keys
 
-Unknown keys are stripped by the schema, and the projection (`src/intake/llm-usage.ts`, `src/intake/trellis.ts`) builds the snapshot field by field, so nothing unnamed is stored. Identifiers are a second channel: a habit called after a medication, or an agent key that is a file path, would leak through a key-only allowlist. So habit ids and agent ids are looked up in `src/intake/public-labels.ts`, a reviewed map from id to public label; an unknown id is dropped and the label, not the id, is published. Lookups use `Map`, so `constructor` or `__proto__` reach nothing. The only producer-supplied free text that is published is a media or book title, which is public by design. Tests send sensitive strings in permitted fields and in identifiers and assert they are in neither the D1 row nor the response.
+Unknown keys are stripped by the schema, and the projection (`src/intake/llm-usage.ts`, `src/intake/trellis.ts`, `src/intake/desktop.ts`) builds the snapshot field by field, so nothing unnamed is stored. Identifiers are a second channel: a habit called after a medication, or an agent key that is a file path, would leak through a key-only allowlist. So habit ids and agent ids are looked up in `src/intake/public-labels.ts`, a reviewed map from id to public label; an unknown id is dropped and the label, not the id, is published. Lookups use `Map`, so `constructor` or `__proto__` reach nothing. The only producer-supplied free text that is published is a media or book title, which is public by design. The desktop's version strings are not free text: each must match a pattern for an official Arch kernel release or a niri release number (`packages/contracts/src/desktop.ts`, ADR 0032), so a local build suffix, a path or a hash fails the push. Tests send sensitive strings in permitted fields and in identifiers and assert they are in neither the D1 row nor the response.
 
 ### Secrets
 
-Set with `just signals-secrets` (production) and `just signals-preview-secrets` (random fakes in the Preview base config). `secrets.required` in `wrangler.jsonc` lists all six, so a production deploy fails while one is missing; a `_NEXT` slot that is not in use holds a random value nobody has. Rotation is in [docs/operations.md](../operations.md). Secrets are never in config, logs, responses or tests (tests use obviously fake values).
+Set with `just signals-secrets` (production) and `just signals-preview-secrets` (random fakes in the Preview base config). `secrets.required` in `wrangler.jsonc` lists all eight, so a production deploy fails while one is missing; a `_NEXT` slot that is not in use holds a random value nobody has. Rotation is in [docs/operations.md](../operations.md). Secrets are never in config, logs, responses or tests (tests use obviously fake values).
 
 ## Consequences
 

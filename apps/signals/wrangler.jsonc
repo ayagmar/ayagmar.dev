@@ -33,7 +33,9 @@
       "PUSH_TOKEN_TRELLIS",
       "PUSH_TOKEN_TRELLIS_NEXT",
       "PUSH_HMAC_TRELLIS",
-      "PUSH_HMAC_TRELLIS_NEXT"
+      "PUSH_HMAC_TRELLIS_NEXT",
+      "PUSH_TOKEN_DESKTOP",
+      "PUSH_TOKEN_DESKTOP_NEXT"
     ]
   },
   // Best-effort push limit per producer and Cloudflare location (ADR 0011). The hard ceiling

@@ -9,6 +9,11 @@ export interface Producer<Push extends { deliveryId: string; sentAt: string }> {
   /** Wire schema: strict types and ranges, unknown keys stripped at every level. */
   schema: z.ZodType<Push>;
   snapshotSchema: z.ZodType;
+  /**
+   * Rules across fields that the wire schema cannot state, checked after it: a fixed error
+   * code for a 422, or null when the push is consistent.
+   */
+  check?(push: Push): string | null;
   /** Allowlist projection from a validated push to the published snapshot. */
   project(push: Push): unknown;
   /** Current and next bearer token (rotation, see docs/operations.md); unset slots never match. */

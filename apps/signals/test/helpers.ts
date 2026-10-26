@@ -42,12 +42,12 @@ type PushOptions = {
 
 /** A correctly authenticated push unless options say otherwise. */
 export async function push(producer: ProducerId, body: BodyInit, options: PushOptions = {}) {
-  const token =
-    options.token === undefined
-      ? producer === 'trellis'
-        ? env.PUSH_TOKEN_TRELLIS
-        : env.PUSH_TOKEN_LLM_USAGE
-      : options.token;
+  const tokens = {
+    'llm-usage': env.PUSH_TOKEN_LLM_USAGE,
+    trellis: env.PUSH_TOKEN_TRELLIS,
+    desktop: env.PUSH_TOKEN_DESKTOP,
+  };
+  const token = options.token === undefined ? tokens[producer] : options.token;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token !== null) headers.Authorization = `Bearer ${token}`;
   if (producer === 'trellis' && typeof body === 'string') {

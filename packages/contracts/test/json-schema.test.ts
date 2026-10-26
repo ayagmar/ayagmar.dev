@@ -26,6 +26,7 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
   // weather's exported schema is its whole envelope; its snapshots join as fresh responses.
   weather: { accept: ['weather/snapshot'] },
   'listening-history': { accept: ['listening-history/snapshot'] },
+  desktop: { accept: ['desktop/snapshot'] },
   'repo-pulse-feed': {
     accept: ['repo-pulse/raw/ok.json', 'repo-pulse/raw/empty.json'],
     reject: ['repo-pulse/raw/malformed.json'],
@@ -33,10 +34,11 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
   // Push bodies are also the Worker's intake fixtures.
   'push-llm-usage': { accept: ['llm-usage/push/accept'], reject: ['llm-usage/push/reject'] },
   'push-trellis': { accept: ['trellis/push/accept'], reject: ['trellis/push/reject'] },
+  'push-desktop': { accept: ['desktop/push/accept'], reject: ['desktop/push/reject'] },
 };
 
 // Sources whose exported schema is the whole read API envelope rather than its `data`.
-const envelopes = new Set(['weather', 'listening-history']);
+const envelopes = new Set(['weather', 'listening-history', 'desktop']);
 
 const fixturePayloads = (name: string, path: string) => {
   const full = join(root, 'fixtures', path);
@@ -65,6 +67,23 @@ const cases = (name: string, kind: Kind) => {
 // in other languages differ on formats.
 const compile = (path: string) =>
   new Ajv2020({ strict: true, validateFormats: false }).compile(readJson(path) as object);
+
+// Optional fields added to a schema within v1 (ADR 0008). A Worker or consumer from before one
+// strips it from what it reads; what is left must stay valid, and parse without the field.
+const addedWithinV1: Record<string, string> = {
+  'push-llm-usage': 'activeMs',
+  'llm-usage': 'activeMs',
+};
+const without = (value: unknown, key: string): unknown =>
+  Array.isArray(value)
+    ? value.map((item) => without(item, key))
+    : value !== null && typeof value === 'object'
+      ? Object.fromEntries(
+          Object.entries(value)
+            .filter(([k]) => k !== key)
+            .map(([k, item]) => [k, without(item, key)])
+        )
+      : value;
 
 for (const [name, schema] of Object.entries(jsonSchemas)) {
   describe(`${name} contract`, () => {
@@ -104,6 +123,21 @@ for (const [name, schema] of Object.entries(jsonSchemas)) {
         expect(v1(payload), JSON.stringify(v1.errors)).toBe(true);
       }
     );
+
+    const field = addedWithinV1[name];
+    if (field !== undefined) {
+      it.each(accepted)(
+        'accepts %s as a v1 reader from before its added field leaves it, without a default',
+        (_file, payload) => {
+          const old = without(payload, field);
+          const parsed = schema.safeParse(old);
+          expect(parsed.error).toBeUndefined();
+          expect(JSON.stringify(parsed.data)).not.toContain(`"${field}"`);
+          expect(producer(old), JSON.stringify(producer.errors)).toBe(true);
+          expect(consumer(old), JSON.stringify(consumer.errors)).toBe(true);
+        }
+      );
+    }
 
     it('has a frozen v1 consumer schema', () => {
       expect(existsSync(frozen)).toBe(true);

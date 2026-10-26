@@ -30,12 +30,14 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
  Last.fm, GitHub, npm,   cron    pull adapter ─ normalize ─┐
  repo-pulse, Open-Meteo ──────►                            ├─► D1: latest  ─► GET /v1/<source>
  llm-usage-metrics,      push    intake ─ auth ─ validate ─┘   snapshot          │
- trellis               ───────►                                per source        │
+ trellis, desktop      ───────►                                per source        │
                                                                                  ▼
                                                      build: astro build reads /v1/* (or fixtures)
                                                      browser: now-playing island reads /v1/listening,
                                                               room script reads /v1/weather,
                                                               /stats script reads /v1/listening-history
+                                                              and /v1/llm-usage, /uses script reads
+                                                              /v1/desktop and /v1/llm-usage
 ```
 
 Every read API response is an envelope from `contracts`:
@@ -52,7 +54,7 @@ Every read API response is an envelope from `contracts`:
 
 `data` is `null` until a source succeeds once. `stale` is computed when the response is served, by `isStale(fetchedAt, threshold, now)` with the per-source threshold in `packages/contracts/src/sources.ts`. `fetchedAt` is the fetch time for pulled sources and the producer's `sentAt` for pushed ones. If signals is down or a response fails validation, the site build still succeeds and renders an empty state.
 
-The read routes, `/v1/health`, both push routes and the cron are in place ([ADR 0010](docs/adr/0010-storage-d1.md), [ADR 0011](docs/adr/0011-push-intake-security.md)). The cron runs the pull adapters for listening (Last.fm), shipping (repo-pulse), projects (GitHub and npm), weather (Open-Meteo) and the listening history behind "On this day" (Last.fm, one past year per invocation), one adapter per invocation ([ADR 0009](docs/adr/0009-pull-adapters.md), [ADR 0029](docs/adr/0029-rabat-weather-in-the-window.md), [ADR 0030](docs/adr/0030-on-this-day-in-listening.md)). Locally and in Previews the site renders the shared fixtures (ADR 0015).
+The read routes, `/v1/health`, the three push routes (llm-usage, trellis, desktop) and the cron are in place ([ADR 0010](docs/adr/0010-storage-d1.md), [ADR 0011](docs/adr/0011-push-intake-security.md)). The cron runs the pull adapters for listening (Last.fm), shipping (repo-pulse), projects (GitHub and npm), weather (Open-Meteo) and the listening history behind "On this day" (Last.fm, one past year per invocation), one adapter per invocation ([ADR 0009](docs/adr/0009-pull-adapters.md), [ADR 0029](docs/adr/0029-rabat-weather-in-the-window.md), [ADR 0030](docs/adr/0030-on-this-day-in-listening.md)). Locally and in Previews the site renders the shared fixtures (ADR 0015).
 
 A push goes through, in order: content type, a 64 KiB streamed body cap, token (and for trellis an HMAC over timestamp and body), the wire schema, a delivery-id lookup, the rate limiter, a freshness window, the allowlist projection, and one D1 batch that stores the snapshot and the delivery together or neither.
 
@@ -69,6 +71,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Push bodies (corpus and Worker test fixtures in one)                      | `packages/contracts/fixtures/<producer>/push/{accept,reject}/`                                                           |
 | MSW handlers built from the fixtures (tests only)                         | `packages/contracts/src/testing.ts` (`@min7/contracts/testing`)                                                          |
 | Producer guides, push secrets and rotation                                | `docs/producers/`, `docs/operations.md`                                                                                  |
+| Producers on the owner's machine: delivery, llm-usage, desktop (ADR 0032) | `producers/*.ts`, systemd units in `producers/systemd/`                                                                  |
 | Pull adapter interface and registry                                       | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                                                       |
 | Pull adapters, bounded upstream reads, `PullError`                        | `apps/signals/src/adapters/pull/`                                                                                        |
 | Snapshot storage interface and its D1 implementation                      | `apps/signals/src/storage/{types,d1}.ts`, schema in `apps/signals/migrations/`                                           |
@@ -100,6 +103,8 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Room clock: sun, moon, Rabat time (ADR 0027)                              | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/window-*.png`                                             |
 | Weather in the window: code table, art (ADR 0029)                         | `apps/site/src/lib/weather.ts`, `src/scripts/room.ts`, `src/assets/weather-*.png`                                        |
 | On this day: Rabat dates, history check (ADR 0030)                        | `packages/contracts/src/rabat.ts`, `apps/site/src/lib/history.ts`, `src/scripts/history.ts`                              |
+| Browser reads on /stats and /uses: freshness, agent hours, desktop facts  | `apps/site/src/lib/{live,llm-usage,desktop}.ts`, `src/scripts/{agent-hours,uses}.ts`                                     |
+| /uses page data, its schema (ADR 0032)                                    | `content/uses.json`, `apps/site/src/data/uses.ts`, `apps/site/src/pages/uses.astro`                                      |
 | Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                               |
 | Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`                    |
 | Commands                                                                  | `justfile`                                                                                                               |

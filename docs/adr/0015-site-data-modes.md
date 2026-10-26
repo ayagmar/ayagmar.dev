@@ -1,6 +1,6 @@
 # 0015. Data modes for the site build
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: weather (ADR 0029) and the listening history (ADR 0030) are read by the browser only.
+Status: accepted, 2026-10-26. Amended 2026-10-26: weather (ADR 0029), the listening history (ADR 0030), agent hours on /stats (ADR 0014) and the live part of /uses (ADR 0032) are read by the browser only.
 
 ## Context
 
@@ -15,7 +15,8 @@ The site reads snapshots at build time. Local development and tests must not dep
 - The now-playing island (`src/components/NowPlaying.svelte`, `client:visible`) renders the build-time value first, labelled with its UTC time ("as of 26 Oct, 09:00 UTC"), so a page built hours ago does not claim the track is playing now. In `api` mode it fetches `/v1/listening` on hydration and every minute while the page is visible, allowed by `connect-src` (ADR 0019). It shows "Now playing" only for a response with `stale: false`; on any error it keeps what it shows. It links only to `https://www.last.fm/` and loads nothing else. It has no animation, so reduced motion needs no special case. In `fixtures` mode it never fetches. `connect-src` allows only `https://api.ayagmar.dev`, so with another `SIGNALS_API_BASE` the build reads work but the browser blocks the island's fetch, and it keeps the build-time value.
 - Weather is the exception to build-time reads (ADR 0029): the build never reads `/v1/weather` and no page renders it, since a condition read at build time would stay on the page until the next merge. In `api` mode the home page's `.scene` carries `data-weather-src="${SIGNALS_API_BASE}/v1/weather"` and the room script reads it in the browser; in `fixtures` mode there is no attribute, no request and no weather, and no sample weather is shown as current.
 - The listening history behind "On this day" is the second exception (ADR 0030): the build never reads `/v1/listening-history`. `/stats` has the block `hidden` in its HTML; in `api` mode it carries `data-history-src` and the page's script shows a snapshot only while its `describedDate` is today's date in Rabat. In `fixtures` mode there is no attribute, no request and no block.
-- `llm-usage` and `shelf` render their empty state from `emptyEnvelope()` until their schemas exist.
+- `llm-usage` and `desktop` are also read by the browser only, for the same reason: `/stats` shows estimated agent hours (ADR 0014) and `/uses` the desktop facts and this month's agents (ADR 0032), and a build-time uptime or "this month" would stay on the page until the next merge. Each block is `hidden` in the HTML; in `api` mode it carries `data-llm-usage-src` or `data-desktop-src`, and `src/lib/live.ts` reads the endpoint on load and every 30 minutes while the tab is visible, one request at a time with a 5 s deadline. Each block is checked again every minute and when the tab comes back, and shows only while its answer holds: agent hours and agents on the date in Rabat the snapshot was taken, the desktop facts for 2 days from their report. A failed request keeps the last good answer until it stops holding. In `fixtures` mode there is no attribute, no request and no block. The static part of `/uses` (`content/uses.json`) renders whatever the reads do.
+- `shelf` renders its empty state from `emptyEnvelope()` until its schema exists; `llm-usage`'s tokens and costs are not shown yet.
 
 ## Consequences
 

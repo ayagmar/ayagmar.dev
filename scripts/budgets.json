@@ -17,9 +17,19 @@
         "bytes": 2300
       },
       {
-        "name": "on this day",
+        "name": "stats script",
         "file": "/_astro/stats.astro_astro_type_script_index_0_lang.*.js",
         "bytes": 1500
+      },
+      {
+        "name": "uses script",
+        "file": "/_astro/uses.astro_astro_type_script_index_0_lang.*.js",
+        "bytes": 1100
+      },
+      {
+        "name": "live reads",
+        "file": "/_astro/llm-usage.*.js",
+        "bytes": 1470
       }
     ]
   },
@@ -32,7 +42,8 @@
       "projects": "/projects",
       "project": "/projects/*",
       "about": "/about",
-      "stats": "/stats"
+      "stats": "/stats",
+      "uses": "/uses"
     },
     "assert": {
       "mobile": {

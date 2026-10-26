@@ -497,3 +497,37 @@ describe('push routes', () => {
     expect(response.headers.get('allow')).toBe('POST');
   });
 });
+
+describe('agent hours (ADR 0014)', () => {
+  // Catches a push from a producer without agent hours being published as 0 h.
+  it('leaves agent hours out of the snapshot when the producer sent none', async () => {
+    expect((await push('llm-usage', delivery(llmUsageOk, { payload: withoutHours }))).status).toBe(
+      202
+    );
+    const { data } = await served('llm-usage');
+    expect(JSON.stringify(data)).not.toContain('activeMs');
+  });
+
+  // Catches the projection dropping hours it was sent, or keeping some and not others.
+  it('keeps every agent-hours value it was sent', async () => {
+    expect((await push('llm-usage', delivery(llmUsageOk))).status).toBe(202);
+    const { data } = (await served('llm-usage')) as { data: typeof llmUsageSnapshotOk };
+    expect(data.last7Days.activeMs).toBe(llmUsageOk.payload.last7Days.activeMs);
+    expect(data.monthToDate.activeMs).toBe(llmUsageOk.payload.monthToDate.activeMs);
+    expect(data.days.map((day) => day.activeMs)).toEqual(
+      llmUsageOk.payload.days.map((day) => day.activeMs)
+    );
+  });
+});
+
+/** The ok payload as a producer from before agent hours sends it. */
+const withoutHours = (() => {
+  const { last7Days, monthToDate, streak, days } = llmUsageOk.payload;
+  const drop = <T extends { activeMs?: number }>({ activeMs: _, ...rest }: T) => rest;
+  return {
+    last7Days: drop(last7Days),
+    monthToDate: drop(monthToDate),
+    streak,
+    days: days.map(drop),
+  };
+})();

@@ -1,0 +1,11 @@
+[Unit]
+Description=Push desktop facts when the user manager starts and daily
+
+[Timer]
+OnStartupSec=2min
+OnCalendar=daily
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

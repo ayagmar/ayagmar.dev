@@ -1,0 +1,11 @@
+{
+  "source": "desktop",
+  "version": 1,
+  "fetchedAt": "2026-10-20T08:00:00.000Z",
+  "stale": true,
+  "data": {
+    "kernel": "7.2.11-arch1-1",
+    "niri": "26.04",
+    "bootedAt": "2026-10-23T07:41:12.000Z"
+  }
+}

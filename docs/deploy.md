@@ -53,7 +53,7 @@ Both databases exist (created 2026-10-26 with `just signals-db-create`), and the
 
 ## Secrets (signals)
 
-`LASTFM_API_KEY` (from https://www.last.fm/api/account/create) and the six push secrets are required; the push secrets and their rotation are in [docs/operations.md](operations.md). `GITHUB_TOKEN` is optional: a fine-grained token with no permissions (public data). Once, before the first signals deploy:
+`LASTFM_API_KEY` (from https://www.last.fm/api/account/create) and the eight push secrets are required; the push secrets and their rotation are in [docs/operations.md](operations.md). `GITHUB_TOKEN` is optional: a fine-grained token with no permissions (public data). Once, before the first signals deploy:
 
 ```sh
 just signals-secrets                 # production: prompts for each required value

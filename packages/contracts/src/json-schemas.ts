@@ -1,7 +1,9 @@
 import type { z } from 'zod';
 import { anyEnvelopeSchema } from './envelope.ts';
+import { desktopPushSchema } from './push/desktop.ts';
 import { llmUsagePushSchema } from './push/llm-usage.ts';
 import { trellisPushSchema } from './push/trellis.ts';
+import { desktopEnvelopeSchema } from './snapshots/desktop.ts';
 import { listeningSnapshotSchema } from './snapshots/listening.ts';
 import { listeningHistoryEnvelopeSchema } from './snapshots/listening-history.ts';
 import { llmUsageEnvelopeSchema } from './snapshots/llm-usage.ts';
@@ -26,7 +28,9 @@ export const jsonSchemas: Readonly<Record<string, z.ZodType>> = {
   // generic envelope's frozen consumer only knows the first five sources (ADR 0008).
   weather: weatherEnvelopeSchema,
   'listening-history': listeningHistoryEnvelopeSchema,
-  // Push bodies (ADR 0013, ADR 0014).
+  desktop: desktopEnvelopeSchema,
+  // Push bodies (ADR 0013, ADR 0014, ADR 0032).
   'push-llm-usage': llmUsagePushSchema,
   'push-trellis': trellisPushSchema,
+  'push-desktop': desktopPushSchema,
 };

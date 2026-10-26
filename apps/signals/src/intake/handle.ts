@@ -120,6 +120,8 @@ export async function handlePush<Push extends { deliveryId: string; sentAt: stri
     );
   }
   const push = parsed.data;
+  const inconsistent = producer.check?.(push) ?? null;
+  if (inconsistent !== null) return reject({ status: 422, error: inconsistent });
   const bodySha256 = hex(await crypto.subtle.digest('SHA-256', body));
 
   // A retry of a delivery already accepted is answered before throttling, freshness or interval.

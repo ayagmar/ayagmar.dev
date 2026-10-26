@@ -1,0 +1,20 @@
+{
+  "producer": "desktop",
+  "deliveryId": "2e7f9a1b-3c4d-4e5f-a6b7-c8d9e0f1a2b3",
+  "sentAt": "2026-10-26T08:00:00Z",
+  "payload": {
+    "kernel": "6.12.20-1-lts",
+    "niri": "25.05.1",
+    "bootedAt": "2026-10-25T21:03:00Z",
+    "hostname": "owner-private-host",
+    "user": "ayagmar-secret",
+    "machineId": "0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+    "mounts": ["/home/x"],
+    "serial": "SERIAL-ABC123",
+    "niriCommit": "8ed0da4",
+    "extra": {
+      "kernelCmdline": "root=UUID=deadbeef cryptdevice=/dev/nvme0n1p2"
+    }
+  },
+  "hostname": "workstation"
+}

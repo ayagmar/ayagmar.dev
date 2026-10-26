@@ -1,0 +1,14 @@
+# Pushes llm-usage totals (ADR 0014). Installed and enabled as in docs/producers/llm-usage.md.
+[Unit]
+Description=Push llm-usage totals to api.ayagmar.dev
+
+[Service]
+Type=oneshot
+UMask=0077
+WorkingDirectory=%h
+# Node 24 and llm-usage through mise's shims.
+Environment=PATH=%h/.local/share/mise/shims:/usr/local/bin:/usr/bin
+ExecStart=%h/.local/share/mise/shims/node %h/.local/lib/min7-producers/llm-usage.ts
+# 75: signals, the network or llm-usage failed; the run is tried again in 15 minutes.
+RestartForceExitStatus=75
+RestartSec=15min

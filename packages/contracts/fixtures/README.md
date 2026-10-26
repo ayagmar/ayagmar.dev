@@ -5,12 +5,12 @@ One shared fixture set for every test and for the site's offline `fixtures` data
 ```
 fixtures/<upstream>/raw/<case>.json                  what a pull adapter's `fetch` returns for that upstream
 fixtures/<source>/snapshot/<case>.json               normalized snapshot the adapter (or the push projection) must produce
-fixtures/<producer>/push/{accept,reject}/<case>.json push bodies (llm-usage, trellis)
+fixtures/<producer>/push/{accept,reject}/<case>.json push bodies (llm-usage, trellis, desktop)
 ```
 
-Raw fixtures are per upstream (`lastfm`, `lastfm-history`, `repo-pulse`, `github`, `npm`, `open-meteo`); snapshots are per source id from `src/sources.ts` (`listening`, `shipping`, `projects`, `llm-usage`, `shelf`, `weather`, `listening-history`). The `projects` source is built from `github` and `npm` together: case `<case>` of the snapshot comes from case `<case>` of both. Every raw, snapshot and push file is imported in `src/fixtures.ts`, which `test/fixtures.test.ts` checks.
+Raw fixtures are per upstream (`lastfm`, `lastfm-history`, `repo-pulse`, `github`, `npm`, `open-meteo`); snapshots are per source id from `src/sources.ts` (`listening`, `shipping`, `projects`, `llm-usage`, `shelf`, `weather`, `listening-history`, `desktop`). The `projects` source is built from `github` and `npm` together: case `<case>` of the snapshot comes from case `<case>` of both. Every raw, snapshot and push file is imported in `src/fixtures.ts`, which `test/fixtures.test.ts` checks.
 
-Push bodies are the payload corpus of `push-<producer>` (checked by zod and the exported JSON Schema in `test/json-schema.test.ts`) and the inputs of the Worker's intake tests. `fixtures/llm-usage/snapshot/` and `fixtures/shelf/snapshot/` hold what signals publishes for the accepted push cases of the same name.
+Push bodies are the payload corpus of `push-<producer>` (checked by zod and the exported JSON Schema in `test/json-schema.test.ts`) and the inputs of the Worker's intake tests. `fixtures/llm-usage/snapshot/`, `fixtures/shelf/snapshot/` and `fixtures/desktop/snapshot/` hold what signals publishes for the accepted push cases of the same name. The llm-usage `ok` case carries estimated agent hours (`activeMs`) and `minimal` has none, as a producer from before them sends; `corpus/push-llm-usage/accept/long-local-day.json` has a 25-hour day in Africa/Casablanca (2026-02-15). The desktop `minimal` case has a kernel and niri version the producer could not read (null), and its `reject/` cases put private-looking strings in the permitted fields.
 
 | Push case          | Meaning                                                                                                |
 | ------------------ | ------------------------------------------------------------------------------------------------------ |

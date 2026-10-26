@@ -97,6 +97,7 @@ jobs:
       - run: just knip
       - run: just boundaries
       - run: just test-scripts
+      - run: just test-producers
 
   contracts:
     needs: changes
@@ -447,6 +448,7 @@ jobs:
             project: 'A project',
             about: 'About',
             stats: 'Stats',
+            uses: 'Uses',
           };
           export const profiles = /** @type {const} */ (['mobile', 'desktop']);
 
