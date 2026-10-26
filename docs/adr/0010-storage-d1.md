@@ -1,0 +1,82 @@
+# 0010. Storage: D1, the read API and the cron
+
+Status: accepted, 2026-10-26
+
+## Context
+
+signals keeps the latest snapshot of five sources, takes pushes from two producers and is read by the site build and a browser island. It must stay on Workers Free, and an accepted push must never be half stored. KV was ruled out in the plan: Last.fm every minute exceeds KV's free daily writes, and KV is eventually consistent, which a replay check cannot use.
+
+## Decision
+
+### Tables
+
+`apps/signals/migrations/0001_snapshots_and_push_deliveries.sql`:
+
+| Table             | Key                       | Columns                                                                                                                         |
+| ----------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `snapshots`       | `source`                  | `json`, `fetched_at`, `last_success_at`, `last_error_code`, `last_attempt_at` (pull), `last_push_at`, `last_delivery_id` (push) |
+| `push_deliveries` | `(producer, delivery_id)` | `body_sha256`, `received_at`; index on `received_at`                                                                            |
+- `fetched_at` is when the data was true: the fetch time for pulled sources, the producer's `sentAt` for pushed ones. It is served as `fetchedAt`. `last_success_at` is when signals stored the snapshot, and is what `/v1/health` reports.
+- TEXT times are UTC with milliseconds (`toISOString()`), so they compare correctly as strings; INTEGER times are Unix milliseconds.
+- Migrations are expand/contract only, so the Worker version before a deploy, or after a rollback, runs against the current schema. A rollback does not roll back D1.
+
+`D1SnapshotStore` (`src/storage/d1.ts`) implements the PR 1 `SnapshotStore` interface for pull sources. The interface gained `list()` (status of every source, without the JSON, for health and the cron), `lastSuccessAt` and `lastAttemptAt` on the stored record, and a time argument on `recordFailure`, because the cron needs to know when each source was last tried. Pushes do not go through it; they need the conditional batch below.
+
+### Push admission is one batch
+
+`admitPush` (`src/storage/admission.ts`) sends two statements in one `db.batch`, which D1 runs as one transaction:
+1. Upsert the snapshot, only if the delivery id is not recorded, at least 60 s have passed since the producer's last accepted push (the hard ceiling of ADR 0011), and the stored `fetched_at` is not later than this push's `sentAt`. The upsert writes the delivery id into `last_delivery_id`.
+2. Insert the delivery row, only if the snapshot row now carries this delivery id.
+
+A zero-row upsert is a successful statement in D1, not a rollback, so the second statement's condition is what keeps a rejected delivery from leaving a row. When nothing changed, signals reads the state back to answer 200 (same id, same body), 409 (same id, other body; or older than the stored snapshot) or 429 with `Retry-After` (too soon). That read happens after the batch, so a concurrent push can blur the reason between 409 and 429; it can never turn a rejection into an acceptance. A batch that throws stores nothing; the producer retries the same delivery.
+
+### Read API
+
+- `GET /v1/{listening,shipping,projects,llm-usage,shelf}` returns the contract envelope. `data` and `fetchedAt` are null until the source has succeeded once. `stale` is computed per response by `isStale(fetchedAt, staleAfterSeconds[source], now)`: from the last successful fetch for pull sources and from the producer's `sentAt` for push sources, so a producer that keeps pushing an old snapshot still shows as stale.
+- `GET /v1/health` returns the commit SHA and, for every source, `lastSuccessAt`, `stale` and `lastErrorCode`. Never cached.
+- Read routes answer GET, HEAD (the GET response without a body) and OPTIONS; anything else is 405 with `Allow`. Push routes answer POST only.
+- Responses carry fixed error codes only. Errors are logged as JSON with a code, never with an error message, header value or body (`src/security/log.ts`, `src/errors.ts`).
+
+### Edge cache and CORS
+
+- A snapshot response is cached with the Cache API under one key per source (`https://api.ayagmar.dev/v1/<source>`, no query string), without any CORS header. CORS is added after the cache lookup, so one copy serves every origin.
+- `Access-Control-Allow-Origin: https://ayagmar.dev` is the only CORS grant, with `Vary: Origin` on every read response. `www.ayagmar.dev` is not routed and site Previews use the `fixtures` data mode (ADR 0015), so neither needs access. Health gets the same CORS rule.
+- A cached copy lives at most 60 s and never past the moment its `stale` flag would flip, so a cached response never claims to be fresh when it no longer is. The browser gets `max-age` set to the time the copy has left. No `stale-while-revalidate`: the Cache API does not support it on `put`/`match`, and plain TTL is enough at this scale.
+- Only successful GETs are cached. Errors, OPTIONS and every push response carry `Cache-Control: no-store`.
+- The Cache API only works on the custom domain. On Preview URLs (`workers.dev`) every request goes to D1.
+
+### Cron
+
+One trigger, every minute (`* * * * *`). `runScheduled` (`src/cron/run.ts`) reads each source's last attempt, runs the adapters from `adapters/pull/index.ts` whose `intervalSeconds` has passed (30 s early allowed, since the trigger fires once a minute), four at a time, each with a 20 s timeout. A success stores the normalized snapshot; a failure stores a short code (the adapter's own `code` property if it is a lowercase identifier, else `fetch_failed`, `normalize_failed`, `store_failed` or `timeout`) and keeps the last good snapshot. Then it deletes `push_deliveries` older than 7 days, 500 rows per query, at most 10 queries per run. It works with an empty adapter list. Cron Triggers never run for Previews.
+
+### Previews
+
+Configured per the current [Previews configuration](https://developers.cloudflare.com/workers/previews/configuration/) and [resources](https://developers.cloudflare.com/workers/previews/resources/) docs, checked against Wrangler 4.152's schema:
+- `previews.vars`, `previews.d1_databases` (the shared `min7-signals-preview` database) and `previews.ratelimits` (namespace `1002`, production uses `1001`). Previews inherit none of the production bindings.
+- The preview database's migrations use `wrangler.preview-migrations.jsonc`, which must name the same database. `scripts/workers-config.test.ts` fails if a Preview binds a production database or rate-limit namespace, or if the two files disagree.
+- Secrets cannot go in config. Previews take theirs from the Preview base config (`wrangler preview base-config secret put`), filled with random fake values by `just signals-preview-secrets`. Wrangler 4.152 rejects `previews.secrets`, so `secrets.required` applies to production deploys only.
+- No `triggers` in `previews`: Cron Triggers only target production.
+
+### Budgets against Workers Free
+
+Limits from [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) and [D1 pricing](https://developers.cloudflare.com/d1/platform/pricing/) on 2026-10-26.
+
+| Resource              | Free limit               | Use                                                                                                                                                                                                                   |
+| --------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Requests              | 100,000 / day            | Cron 1,440. Pushes: a few a day, at most 1,440 accepted per producer. Reads: site builds plus browser reads of `/v1/listening`; the edge cache saves D1 reads, not Worker requests.                                   |
+| CPU per request       | 10 ms                    | Worst accepted push (64 KiB, 371 days, 32 agents): about 0.6 ms warm and 5.5 ms on the first call of a fresh process, measured in Node 24 with zod in jitless mode as in workerd. Reads: one row.                     |
+| CPU per cron run      | 10 ms                    | Without adapters: two D1 queries, well under 1 ms. Adapters mostly wait on the network, which is not CPU time.                                                                                                        |
+| D1 queries per call   | 50                       | Push: at most 5 (lookup, batch, two reads to explain a rejection). Cron: 1 list + 1 write per adapter + at most 10 deletes.                                                                                           |
+| D1 rows written       | 100,000 / day            | About 5 per accepted push (snapshot row, delivery row, their indexes), so the 60 s ceiling caps pushes at about 14,400 a day for both producers; the listening pull adds about 3,000.                                 |
+| D1 rows read          | 5,000,000 / day          | Cron list of 5 rows a minute (7,200) plus one row per uncached read.                                                                                                                                                  |
+| D1 storage            | 500 MB per database      | 5 snapshot rows of at most about 25 KB, plus at most 7 days of delivery rows (about 150 B each): under 3 MB in the worst case.                                                                                        |
+| Cron Triggers         | 5 per account            | 1.                                                                                                                                                                                                                    |
+| Rate Limiting binding | no plan limit documented | 1 binding, keyed by producer. The [binding docs](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/) name no plan restriction or charge; if Cloudflare adds one, the D1 ceiling still holds. |
+
+The CPU numbers come from a rough local benchmark, not from production; check them with Workers Logs after the first deploy. Switching sorts from `localeCompare` to plain comparison cut the cold path from about 16 ms to 5.5 ms, because `localeCompare` loads ICU on first use.
+
+## Consequences
+
+- One push and one pull source share nothing but the `snapshots` table, so a broken adapter cannot block pushes.
+- The browser sees new data at most 60 s after it lands, per Cloudflare location.
+- `wrangler deploy` fails until every secret in `secrets.required` is set, and `signals-deploy` needs a Workers Builds token with D1 Edit (docs/deploy.md).

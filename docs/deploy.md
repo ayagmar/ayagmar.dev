@@ -42,21 +42,51 @@ Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` r
 `apps/signals/wrangler.jsonc` declares the `DB` binding with placeholder ids. Before the first signals deploy:
 
 ```sh
-cd apps/signals
-pnpm exec wrangler d1 create min7-signals
-pnpm exec wrangler d1 create min7-signals-preview
+just signals-db-create
 ```
 
-Put the first id in `d1_databases` and the second in `previews.d1_databases` of `wrangler.jsonc` and in `wrangler.preview-migrations.jsonc`, then commit. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database. Migration recipes arrive with the first migration.
+Put the first id in `d1_databases` and the second in `previews.d1_databases` of `wrangler.jsonc` and in `wrangler.preview-migrations.jsonc`, then commit. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database (`scripts/workers-config.test.ts` checks this).
 
-Migrations only add (expand) or remove what no deployed version still reads (contract), so the previous Worker version always runs against the current schema.
+| Recipe                         | Applies `apps/signals/migrations/` to                           |
+| ------------------------------ | --------------------------------------------------------------- |
+| `just signals-migrate-local`   | the local database `just signals-dev` uses                      |
+| `just signals-migrate-remote`  | `min7-signals` (production), via `wrangler.jsonc`               |
+| `just signals-migrate-preview` | `min7-signals-preview`, via `wrangler.preview-migrations.jsonc` |
+
+`just signals-deploy` runs `signals-migrate-remote` first and `just signals-preview` runs `signals-migrate-preview` first, so Workers Builds applies migrations before it uploads code. Migrations only add (expand) or remove what no deployed version still reads (contract), so the previous Worker version always runs against the current schema.
+
+**Workers Builds token.** The API token Workers Builds creates by default has no D1 permission. In the signals project's **Settings → Build → API token**, edit the token (or create one) to add **Account → D1 → Edit**. Without it, the deploy and preview commands fail at the migration step.
+
+## Secrets (signals)
+
+The six push secrets are listed in [docs/operations.md](operations.md), with rotation. Once, before the first signals deploy:
+
+```sh
+just signals-secrets           # production: prompts for each value
+just signals-preview-secrets   # Preview base config: random fake values
+```
+
+`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a secret is missing. Wrangler rejects `secrets` under `previews`, so Previews are not checked the same way; a Preview without its base config secrets answers every push with 401.
+
+## Resolved bindings (signals)
+
+Read from the configs with Wrangler 4.152's `unstable_readConfig` and `wrangler deploy --dry-run` on 2026-10-26:
+
+| Binding / target      | Production (`wrangler deploy`)     | Previews (`wrangler preview`)                                |
+| --------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| `DB`                  | `min7-signals`                     | `min7-signals-preview`                                       |
+| Migrations applied to | `min7-signals` (`wrangler.jsonc`)  | `min7-signals-preview` (`wrangler.preview-migrations.jsonc`) |
+| `PUSH_RATE_LIMIT`     | namespace `1001`, 10 per 60 s      | namespace `1002`, 10 per 60 s                                |
+| `COMMIT_SHA`          | commit SHA (`--var`)               | commit SHA (`--var`); `preview` without it                   |
+| Push secrets          | Worker secrets, required on deploy | Preview base config, random fakes                            |
+| Cron `* * * * *`      | runs                               | never runs                                                   |
 
 ## Previews
 
 - Preview URLs are public. Nothing secret is served, so they stay unprotected.
 - Previews get their own `vars` and D1 binding from the `previews` block; they never inherit production bindings.
 - Cron triggers never run for Previews.
-- Secrets for Previews are set with `wrangler preview secret put` or the Preview base config, never copied from production.
+- Secrets for Previews live in the Preview base config (`just signals-preview-secrets`, which runs `wrangler preview base-config secret put`), never copied from production. Base config secrets reach Previews created after they are set.
 
 ## Rollback
 
