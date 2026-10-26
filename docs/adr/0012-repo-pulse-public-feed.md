@@ -1,6 +1,6 @@
 # 0012. repo-pulse public feed contract
 
-Status: accepted, 2026-10-26. repo-pulse serves it since ayagmar/repo-pulse#28; the `503` rule below is not served yet.
+Status: accepted, 2026-10-26. repo-pulse serves it since ayagmar/repo-pulse#28, and the `503` rule below since ayagmar/repo-pulse#29 (deployed 2026-10-26).
 
 ## Context
 
