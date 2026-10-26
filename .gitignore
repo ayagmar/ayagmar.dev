@@ -18,3 +18,4 @@ worker-configuration.d.ts
 *.tsbuildinfo
 resume/build/
 .lycheecache
+.lighthouse/

@@ -94,6 +94,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Design tokens, type, panels, both themes (ADR 0026)                       | `apps/site/src/styles/base.css`, fonts in `src/fonts/` (built by `scripts/fonts.py`)                          |
 | Theme switch (blocking script in `<head>`)                                | `apps/site/src/scripts/theme.js`, `src/components/ThemeSwitch.astro`                                          |
 | Home page room: scene, hotspots, list                                     | `apps/site/src/lib/room.ts`, `src/styles/room.css`, `src/assets/room-*.png` (drawn by `scripts/scene.py`)     |
+| Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`         |
 | Commands                                                                  | `justfile`                                                                                                    |
 | Decisions                                                                 | `docs/adr/`                                                                                                   |
 

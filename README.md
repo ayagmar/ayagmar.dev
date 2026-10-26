@@ -37,6 +37,8 @@ just signals-dev    # the signals Worker, http://localhost:8787/v1/health
 ```sh
 just check          # format, lint, types, knip, boundaries, schema, unit tests
 just e2e            # builds, then Playwright + axe against wrangler dev
+just budgets        # after a build: JS, weight, fonts, origins, image sizes per page
+just lighthouse --profile desktop   # after a build: Lighthouse per page (ADR 0017)
 ```
 
 ## Write a post
