@@ -146,6 +146,18 @@ describe('preview-links', () => {
     assert.match(log, /head of 0 open pull requests/);
   });
 
+  it('keeps the logs link of a Worker that is still building', () => {
+    api('pulls/7', pull(7));
+    const { body } = run({
+      prs: [{ number: 7 }],
+      checks: [check('min7-site', 'success'), check('min7-signals', null)],
+    });
+    assert.match(body, /\| `min7-site` \| https:\/\/abc123-min7-site\.ayagmar\.workers\.dev\/ \|/);
+    assert.ok(
+      body.includes(`| \`min7-signals\` | build pending: [logs](${details('min7-signals')}) |`)
+    );
+  });
+
   it('finds the pull request by its commit when the check has no branch', () => {
     api(`commits/${sha}/pulls`, [pull(7)]);
     api('pulls/7', pull(7));

@@ -76,7 +76,7 @@ jobs:
           rows=''
           while IFS=$'\t' read -r worker conclusion details; do
             if [[ $conclusion != success ]]; then
-              rows+="| \`$worker\` | build ${conclusion:-pending}: [logs]($details) |"$'\n'
+              rows+="| \`$worker\` | build $conclusion: [logs]($details) |"$'\n'
               continue
             fi
             slug=$(sed -nE 's|.*/previews/([a-z0-9-]+)/builds/.*|\1|p' <<<"$details")
@@ -89,7 +89,7 @@ jobs:
             else
               rows+="| \`$worker\` | built, URL not answering yet: [build]($details) |"$'\n'
             fi
-          done < <(jq -r '.[] | [(.name | ltrimstr("Workers Builds: ")), (.conclusion // ""), .details_url] | @tsv' <<<"$runs")
+          done < <(jq -r '.[] | [(.name | ltrimstr("Workers Builds: ")), (.conclusion // "pending"), .details_url] | @tsv' <<<"$runs")
 
           body="$marker
           Previews for ${SHA:0:7}:
