@@ -77,6 +77,15 @@
       "allowedVersions": "<7.0.0"
     },
     {
+      "description": "Keep the security overrides in pnpm-workspace.yaml inside the major their parent declares. They patch test and local tooling only, and the newest 7.x of undici and 11.x of uuid already carry the fixes. Remove a rule when its parent depends on a fixed version and the override goes.",
+      "matchDepNames": ["miniflare>undici"],
+      "allowedVersions": "<8.0.0"
+    },
+    {
+      "matchDepNames": ["@lhci/cli>uuid"],
+      "allowedVersions": "<12.0.0"
+    },
+    {
       "groupName": "github-actions",
       "matchManagers": ["github-actions"]
     },
