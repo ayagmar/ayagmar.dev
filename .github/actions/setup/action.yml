@@ -1,6 +1,6 @@
 name: Set up
 description: >-
-  Node from .node-version, just from scripts/bootstrap.sh (sha256-checked) on PATH, and with
+  Node from .node-version, just and Typst from scripts/bootstrap.sh (sha256-checked) on PATH, and with
   `install`, pnpm from packageManager (corepack checks its sha512) and the locked dependencies.
 inputs:
   install:

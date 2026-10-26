@@ -19,4 +19,4 @@ Tests: schema errors name the field; `ship-resume` runs as a CLI against a tempo
 
 ## Consequences
 
-Editing the resume means editing JSON, not a document. The PDF layout is plain until the visual design; restyling it touches only `resume/resume.typ`. CI needs Typst and poppler-utils (`pdftotext`, `pdfinfo`); without them the PDF tests skip locally and fail under `CI`.
+Editing the resume means editing JSON, not a document. The PDF layout is plain until the visual design; restyling it touches only `resume/resume.typ`. In CI, Typst comes from `scripts/bootstrap.sh` and the `e2e` job installs poppler-utils (`pdftotext`, `pdfinfo`) at a pinned Ubuntu version (ADR 0018); without them the PDF tests skip locally and fail under `CI`. The apt pin breaks when Ubuntu supersedes that build and is then bumped by hand.
