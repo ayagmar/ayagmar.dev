@@ -11,7 +11,17 @@ const check = process.argv.includes('--check');
 const expected = new Map<string, string>();
 for (const [name, schema] of Object.entries(jsonSchemas)) {
   for (const io of ['input', 'output'] as const) {
-    const json = z.toJSONSchema(schema, { io, target: 'draft-2020-12' });
+    const json = z.toJSONSchema(schema, {
+      io,
+      target: 'draft-2020-12',
+      // Consumers must keep working when v1 gains a field, so the output schema never closes
+      // an object. Producers are held to the exact shape by zod in the Worker, not by this file.
+      override: ({ jsonSchema }) => {
+        if (io === 'output' && jsonSchema.additionalProperties === false) {
+          delete jsonSchema.additionalProperties;
+        }
+      },
+    });
     expected.set(`${name}.${io}.json`, `${JSON.stringify(json, null, 2)}\n`);
   }
 }

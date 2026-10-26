@@ -25,6 +25,7 @@ Every dependency is code that runs at build time, in a Worker or in a browser, a
 | @biomejs/biome            | 2.6.2   | root                     | Format and lint for TS, JS, JSON, CSS, Markdown, YAML, Astro and Svelte. 2.6.3 was under three days old.               |
 | knip                      | 6.42.1  | root                     | Unused files, exports and dependencies. 6.43.0 was under three days old.                                               |
 | vitest                    | 5.0.5   | contracts, signals, site | Unit tests, and Worker tests through the Cloudflare plugin.                                                            |
+| ajv                       | 8.20.0  | contracts (test only)    | Validates the payload corpus against the exported JSON Schema, the way a non-zod consumer would.                       |
 | zod                       | 4.6.7   | contracts                | Schemas for every contract; `z.toJSONSchema` exports JSON Schema with no extra package. Same major as Astro's own zod. |
 | hono                      | 4.13.13 | signals                  | Routing, JSON responses and error handling for the Worker. 4.13.14 was under three days old.                           |
 | wrangler                  | 4.152.0 | signals, site            | Local dev, type generation, bundling, deploy and Previews for both Workers.                                            |

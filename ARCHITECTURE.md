@@ -54,27 +54,28 @@ As of this scaffold only `/v1/health` exists, the site pages show empty states, 
 
 ## Where things live
 
-| Concern                                           | Place                                                                                         |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Source ids, stale thresholds, envelope, `isStale` | `packages/contracts/src/{sources,envelope}.ts`                                                |
-| Snapshot and push schemas (one file per source)   | `packages/contracts/src/snapshots/`, `src/push/`                                              |
-| JSON Schema for producers and consumers           | `packages/contracts/schema/*.{input,output}.json`, written by `just contracts-schema`         |
-| Test fixtures                                     | `packages/contracts/fixtures/<source>/{raw,snapshot}/<case>.json`                             |
-| Pull adapter interface and registry               | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                            |
-| Snapshot storage interface                        | `apps/signals/src/storage/types.ts`                                                           |
-| Read API routes (one file per route)              | `apps/signals/src/routes/v1/`                                                                 |
-| Error responses (JSON 404, generic 500)           | `apps/signals/src/errors.ts`                                                                  |
-| Post frontmatter schema                           | `apps/site/src/lib/writing-schema.ts`                                                         |
-| Post list, tags, drafts                           | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                            |
-| RSS and Atom (one model, two renderers)           | `apps/site/src/lib/feed.ts`                                                                   |
-| Plain-text home page (`dist/index.txt`)           | `apps/site/src/lib/plaintext.ts`                                                              |
-| Security headers and CSP                          | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts` |
-| Search island                                     | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)           |
-| Site Worker (terminal check on `/`)               | `apps/site/worker/index.ts`                                                                   |
-| Site identity and navigation                      | `apps/site/src/lib/site.ts`                                                                   |
-| Base stylesheet                                   | `apps/site/src/styles/base.css`                                                               |
-| Commands                                          | `justfile`                                                                                    |
-| Decisions                                         | `docs/adr/`                                                                                   |
+| Concern                                                                   | Place                                                                                         |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Source ids, stale thresholds, envelope, `isStale`                         | `packages/contracts/src/{sources,envelope}.ts`                                                |
+| Snapshot and push schemas (one file per source)                           | `packages/contracts/src/snapshots/`, `src/push/`                                              |
+| JSON Schema for producers and consumers                                   | `packages/contracts/schema/*.{input,output}.json`, written by `just contracts-schema`         |
+| Payload corpus checked by zod and JSON Schema; frozen v1 consumer schemas | `packages/contracts/corpus/<schema>/{accept,reject}/`, `packages/contracts/test/frozen/v1/`   |
+| Test fixtures                                                             | `packages/contracts/fixtures/<source>/{raw,snapshot}/<case>.json`                             |
+| Pull adapter interface and registry                                       | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                            |
+| Snapshot storage interface                                                | `apps/signals/src/storage/types.ts`                                                           |
+| Read API routes (one file per route)                                      | `apps/signals/src/routes/v1/`                                                                 |
+| Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                  |
+| Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                         |
+| Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                            |
+| RSS and Atom (one model, two renderers)                                   | `apps/site/src/lib/feed.ts`                                                                   |
+| Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                              |
+| Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts` |
+| Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)           |
+| Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                   |
+| Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                   |
+| Base stylesheet                                                           | `apps/site/src/styles/base.css`                                                               |
+| Commands                                                                  | `justfile`                                                                                    |
+| Decisions                                                                 | `docs/adr/`                                                                                   |
 
 ## Site build
 
