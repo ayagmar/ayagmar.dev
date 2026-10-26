@@ -81,6 +81,7 @@ Read from the configs with Wrangler 4.152's `unstable_readConfig` and `wrangler 
 ## Previews
 
 - Preview URLs are public. Nothing secret is served, so they stay unprotected.
+- Each pull request gets one comment listing its Preview URLs, updated as each Workers build finishes (`.github/workflows/preview-links.yml`). Cloudflare's GitHub app reports Workers builds only as check runs; the workflow reads the Preview's slug from the check's dashboard link and checks the URL answers before posting it.
 - Previews get their own `vars` and D1 binding from the `previews` block; they never inherit production bindings.
 - Cron triggers never run for Previews.
 - Secrets for Previews live in the Preview base config (`just signals-preview-secrets`, which runs `wrangler preview base-config secret put`), never copied from production. Base config secrets reach Previews created after they are set.
