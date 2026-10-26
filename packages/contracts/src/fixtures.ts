@@ -12,6 +12,42 @@ import lastfmRawMissing from '../fixtures/lastfm/raw/missing.json' with { type: 
 import lastfmRawOk from '../fixtures/lastfm/raw/ok.json' with { type: 'json' };
 import lastfmRawPartial from '../fixtures/lastfm/raw/partial.json' with { type: 'json' };
 import lastfmRawSingleItem from '../fixtures/lastfm/raw/single-item.json' with { type: 'json' };
+import lastfmHistoryRawApproximate from '../fixtures/lastfm-history/raw/approximate.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawEmpty from '../fixtures/lastfm-history/raw/empty.json' with { type: 'json' };
+import lastfmHistoryRawErrorIn200 from '../fixtures/lastfm-history/raw/error-in-200.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawFeb28 from '../fixtures/lastfm-history/raw/feb-28.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawInconsistent from '../fixtures/lastfm-history/raw/inconsistent.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawLeapDay from '../fixtures/lastfm-history/raw/leap-day.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawMalformed from '../fixtures/lastfm-history/raw/malformed.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawMissing from '../fixtures/lastfm-history/raw/missing.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawNewAccount from '../fixtures/lastfm-history/raw/new-account.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawNowPlaying from '../fixtures/lastfm-history/raw/now-playing.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawOk from '../fixtures/lastfm-history/raw/ok.json' with { type: 'json' };
+import lastfmHistoryRawSingleItem from '../fixtures/lastfm-history/raw/single-item.json' with {
+  type: 'json',
+};
+import lastfmHistoryRawTies from '../fixtures/lastfm-history/raw/ties.json' with { type: 'json' };
+import lastfmHistoryRawUnknownRegistration from '../fixtures/lastfm-history/raw/unknown-registration.json' with {
+  type: 'json',
+};
 import listeningSnapshotEmpty from '../fixtures/listening/snapshot/empty.json' with {
   type: 'json',
 };
@@ -20,6 +56,33 @@ import listeningSnapshotPartial from '../fixtures/listening/snapshot/partial.jso
   type: 'json',
 };
 import listeningSnapshotSingleItem from '../fixtures/listening/snapshot/single-item.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotApproximate from '../fixtures/listening-history/snapshot/approximate.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotEmpty from '../fixtures/listening-history/snapshot/empty.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotFeb28 from '../fixtures/listening-history/snapshot/feb-28.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotLeapDay from '../fixtures/listening-history/snapshot/leap-day.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotNewAccount from '../fixtures/listening-history/snapshot/new-account.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotNowPlaying from '../fixtures/listening-history/snapshot/now-playing.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotOk from '../fixtures/listening-history/snapshot/ok.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotSingleItem from '../fixtures/listening-history/snapshot/single-item.json' with {
+  type: 'json',
+};
+import listeningHistorySnapshotTies from '../fixtures/listening-history/snapshot/ties.json' with {
   type: 'json',
 };
 import llmUsagePushMinimal from '../fixtures/llm-usage/push/accept/minimal.json' with {
@@ -105,6 +168,22 @@ export const rawFixtures = {
     ok: githubRawOk,
     partial: githubRawPartial,
   },
+  'lastfm-history': {
+    approximate: lastfmHistoryRawApproximate,
+    empty: lastfmHistoryRawEmpty,
+    'error-in-200': lastfmHistoryRawErrorIn200,
+    'feb-28': lastfmHistoryRawFeb28,
+    inconsistent: lastfmHistoryRawInconsistent,
+    'leap-day': lastfmHistoryRawLeapDay,
+    malformed: lastfmHistoryRawMalformed,
+    missing: lastfmHistoryRawMissing,
+    'new-account': lastfmHistoryRawNewAccount,
+    'now-playing': lastfmHistoryRawNowPlaying,
+    ok: lastfmHistoryRawOk,
+    'single-item': lastfmHistoryRawSingleItem,
+    ties: lastfmHistoryRawTies,
+    'unknown-registration': lastfmHistoryRawUnknownRegistration,
+  },
   lastfm: {
     empty: lastfmRawEmpty,
     'error-in-200': lastfmRawErrorIn200,
@@ -145,6 +224,17 @@ export const rawFixtures = {
 
 /** Normalized snapshots, as `/v1/<source>` serves them in `data`. */
 export const snapshotFixtures = {
+  'listening-history': {
+    approximate: listeningHistorySnapshotApproximate,
+    empty: listeningHistorySnapshotEmpty,
+    'feb-28': listeningHistorySnapshotFeb28,
+    'leap-day': listeningHistorySnapshotLeapDay,
+    'new-account': listeningHistorySnapshotNewAccount,
+    'now-playing': listeningHistorySnapshotNowPlaying,
+    ok: listeningHistorySnapshotOk,
+    'single-item': listeningHistorySnapshotSingleItem,
+    ties: listeningHistorySnapshotTies,
+  },
   listening: {
     empty: listeningSnapshotEmpty,
     ok: listeningSnapshotOk,

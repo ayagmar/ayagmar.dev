@@ -1,0 +1,16 @@
+{
+  "describedDate": "2026-10-26",
+  "firstYear": 2025,
+  "years": [
+    {
+      "year": 2025,
+      "scrobbles": 9,
+      "read": 9,
+      "top": {
+        "track": "Intro",
+        "artist": "Artist A",
+        "plays": 2
+      }
+    }
+  ]
+}

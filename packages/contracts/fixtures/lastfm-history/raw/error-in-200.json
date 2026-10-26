@@ -1,0 +1,57 @@
+{
+  "describedDate": "2026-10-26",
+  "registration": {
+    "status": 200,
+    "body": {
+      "user": {
+        "registered": {
+          "unixtime": "1711929600"
+        }
+      }
+    }
+  },
+  "days": [
+    {
+      "year": 2025,
+      "from": 1761433200,
+      "to": 1761519600,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [
+              {
+                "artist": {
+                  "#text": "Caribou"
+                },
+                "name": "Sun",
+                "date": {
+                  "uts": "1761433200"
+                }
+              }
+            ],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "1",
+              "page": "1",
+              "perPage": "200",
+              "total": "1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "year": 2024,
+      "from": 1729897200,
+      "to": 1729983600,
+      "page": {
+        "status": 200,
+        "body": {
+          "error": 29,
+          "message": "Rate Limit Exceeded"
+        }
+      }
+    }
+  ]
+}

@@ -18,6 +18,7 @@ type Cases<Source extends keyof typeof rawFixtures> = keyof (typeof rawFixtures)
 
 export interface UpstreamCases {
   lastfm?: Cases<'lastfm'>;
+  lastfmHistory?: Cases<'lastfm-history'>;
   github?: Cases<'github'>;
   npm?: Cases<'npm'>;
   repoPulse?: Cases<'repo-pulse'>;
@@ -30,6 +31,12 @@ export interface UpstreamCases {
  */
 export function upstreamHandlers(cases: UpstreamCases = {}) {
   const lastfm: Record<string, Recorded> = rawFixtures.lastfm[cases.lastfm ?? 'ok'];
+  const history: {
+    registration: Recorded;
+    days: { from: number; to: number; page: Recorded }[];
+  } = rawFixtures['lastfm-history'][cases.lastfmHistory ?? 'ok'];
+  // Each history request is answered once: a repeated one is a bug in the pull.
+  const asked = new Set<string>();
   const github: Record<string, { repo: Recorded; release: Recorded }> =
     rawFixtures.github[cases.github ?? 'ok'];
   const npm: Record<string, Recorded> = rawFixtures.npm[cases.npm ?? 'ok'];
@@ -40,7 +47,29 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
     // signals POSTs its Last.fm parameters as a form, to keep the API key out of URLs.
     http.post('https://ws.audioscrobbler.com/2.0/', async ({ request }) => {
       const query = await request.formData();
-      if (query.get('method') === 'user.gettopartists') return reply(lastfm.topArtists);
+      const method = query.get('method');
+      // Listening history (ADR 0030): `user.getinfo`, and recent tracks by page. Answered only
+      // for min7_, a key and JSON, the exact day ranges of the case and page 1 of 200, once.
+      if (method === 'user.getinfo' || query.has('page')) {
+        const key = [...query.entries()].filter(([name]) => name !== 'api_key').join('&');
+        const valid =
+          query.get('user') === 'min7_' &&
+          query.get('format') === 'json' &&
+          (query.get('api_key') ?? '') !== '' &&
+          !asked.has(key);
+        asked.add(key);
+        if (!valid) return HttpResponse.error();
+        if (method === 'user.getinfo') return reply(history.registration);
+        const day = history.days.find(
+          (d) => String(d.from) === query.get('from') && String(d.to) === query.get('to')
+        );
+        const exact =
+          method === 'user.getrecenttracks' &&
+          query.get('limit') === '200' &&
+          query.get('page') === '1';
+        return day !== undefined && exact ? reply(day.page) : HttpResponse.error();
+      }
+      if (method === 'user.gettopartists') return reply(lastfm.topArtists);
       if (query.has('to')) return reply(lastfm.lastWeek);
       if (query.has('from')) return reply(lastfm.thisWeek);
       return reply(lastfm.recentTracks);

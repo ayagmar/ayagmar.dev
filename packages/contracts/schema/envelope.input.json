@@ -10,7 +10,8 @@
         "projects",
         "llm-usage",
         "shelf",
-        "weather"
+        "weather",
+        "listening-history"
       ]
     },
     "version": {

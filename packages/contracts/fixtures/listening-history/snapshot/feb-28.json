@@ -1,0 +1,36 @@
+{
+  "describedDate": "2027-02-28",
+  "firstYear": 2024,
+  "years": [
+    {
+      "year": 2026,
+      "scrobbles": 1,
+      "read": 1,
+      "top": {
+        "track": "Track 0",
+        "artist": "Floating Points",
+        "plays": 1
+      }
+    },
+    {
+      "year": 2025,
+      "scrobbles": 2,
+      "read": 2,
+      "top": {
+        "track": "Track 1",
+        "artist": "Floating Points",
+        "plays": 2
+      }
+    },
+    {
+      "year": 2024,
+      "scrobbles": 3,
+      "read": 3,
+      "top": {
+        "track": "Track 2",
+        "artist": "Floating Points",
+        "plays": 3
+      }
+    }
+  ]
+}

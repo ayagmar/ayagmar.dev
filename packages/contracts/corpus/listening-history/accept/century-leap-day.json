@@ -1,0 +1,11 @@
+{
+  "source": "listening-history",
+  "version": 1,
+  "fetchedAt": "2026-10-26T16:40:00Z",
+  "stale": false,
+  "data": {
+    "describedDate": "2000-02-29",
+    "firstYear": 2002,
+    "years": []
+  }
+}

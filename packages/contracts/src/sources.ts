@@ -8,6 +8,7 @@ export const sourceIds = [
   'llm-usage',
   'shelf',
   'weather',
+  'listening-history',
 ] as const;
 
 export const sourceIdSchema = z.enum(sourceIds);
@@ -31,4 +32,7 @@ export const staleAfterSeconds: Readonly<Record<SourceId, number>> = {
   shelf: 3 * 24 * 60 * 60,
   // Open-Meteo pulled every 15 minutes; the room's window drops weather this old (ADR 0029).
   weather: 45 * 60,
+  // Last.fm history for today's date in Rabat, refreshed every 7 hours (ADR 0030). The page
+  // also hides a snapshot for any other date, stale or not.
+  'listening-history': 24 * 60 * 60,
 };

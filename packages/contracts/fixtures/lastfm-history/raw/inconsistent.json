@@ -1,0 +1,54 @@
+{
+  "describedDate": "2026-10-26",
+  "registration": {
+    "status": 200,
+    "body": {
+      "user": {
+        "registered": {
+          "unixtime": "1748736000"
+        }
+      }
+    }
+  },
+  "days": [
+    {
+      "year": 2025,
+      "from": 1761433200,
+      "to": 1761519600,
+      "page": {
+        "status": 200,
+        "body": {
+          "recenttracks": {
+            "track": [
+              {
+                "artist": {
+                  "#text": "Jon Hopkins"
+                },
+                "name": "Open Eye Signal",
+                "date": {
+                  "uts": "1761519599"
+                }
+              },
+              {
+                "artist": {
+                  "#text": "Jon Hopkins"
+                },
+                "name": "Emerald Rush",
+                "date": {
+                  "uts": "1761433200"
+                }
+              }
+            ],
+            "@attr": {
+              "user": "min7_",
+              "totalPages": "1",
+              "page": "1",
+              "perPage": "200",
+              "total": "5"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

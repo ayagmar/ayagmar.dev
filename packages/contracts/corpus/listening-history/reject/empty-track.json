@@ -1,0 +1,22 @@
+{
+  "source": "listening-history",
+  "version": 1,
+  "fetchedAt": "2026-10-26T16:40:00Z",
+  "stale": false,
+  "data": {
+    "describedDate": "2026-10-26",
+    "firstYear": 2023,
+    "years": [
+      {
+        "year": 2025,
+        "scrobbles": 29,
+        "read": 29,
+        "top": {
+          "track": "",
+          "artist": "LTN",
+          "plays": 2
+        }
+      }
+    ]
+  }
+}

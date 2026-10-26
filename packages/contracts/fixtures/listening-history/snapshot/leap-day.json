@@ -1,0 +1,16 @@
+{
+  "describedDate": "2028-02-29",
+  "firstYear": 2023,
+  "years": [
+    {
+      "year": 2024,
+      "scrobbles": 3,
+      "read": 3,
+      "top": {
+        "track": "A New Error",
+        "artist": "Moderat",
+        "plays": 2
+      }
+    }
+  ]
+}
