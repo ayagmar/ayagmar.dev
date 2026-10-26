@@ -27,6 +27,11 @@ describe('writing frontmatter', () => {
     ['empty title', { title: '  ' }, 'title: must not be empty'],
     ['missing summary', { summary: undefined }, 'summary: is required'],
     ['unparseable date', { date: 'last tuesday' }, 'date: must be a date like 2026-10-26'],
+    ['blank date (YAML null)', { date: null }, 'date: must be a date like 2026-10-26'],
+    ['boolean date', { date: true }, 'date: must be a date like 2026-10-26'],
+    ['numeric date', { date: 42 }, 'date: must be a date like 2026-10-26'],
+    ['impossible quoted date', { date: '2026-02-30' }, 'date: must be a date like 2026-10-26'],
+    ['blank updated', { updated: null }, 'updated: must be a date like 2026-10-26'],
     [
       'uppercase tag',
       { tags: ['Rust'] },
@@ -41,6 +46,11 @@ describe('writing frontmatter', () => {
     ],
   ])('rejects %s', (_case, change, expected) => {
     expect(problems({ ...valid, ...change })).toEqual([expected]);
+  });
+
+  it('reads unquoted YAML dates and quoted ISO dates as the same day', () => {
+    const quoted = writingSchema.parse({ ...valid, date: '2026-10-20' });
+    expect(quoted.date).toEqual(valid.date);
   });
 
   it('rejects unknown fields so typos do not pass silently', () => {
