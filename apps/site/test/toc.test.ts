@@ -17,4 +17,15 @@ describe('a post table of contents', () => {
     expect(contents(long).map((item) => item.slug)).toEqual(['one', 'one-a', 'two']);
     expect(contents([heading(2, 'one'), heading(2, 'two')])).toEqual([]);
   });
+
+  // Catches a TIL note with two sections and a footnote getting a contents list: the note's ids
+  // carry its file name (ADR 0028), so its footnotes heading is `a-note-footnote-label`.
+  it('ignores the footnotes heading of a note, whose ids are scoped', () => {
+    const note = [
+      heading(2, 'a-note-one'),
+      heading(2, 'a-note-two'),
+      heading(2, 'a-note-footnote-label'),
+    ];
+    expect(contents(note)).toEqual([]);
+  });
 });
