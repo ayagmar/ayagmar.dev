@@ -46,6 +46,14 @@ describe('content/about.json', () => {
     ).toThrow(/Unrecognized key: "publish"\n {2}→ at resume/);
   });
 
+  it('rejects a certification that expires before it was issued', () => {
+    expect(
+      edit((data) => {
+        data.certifications[1].expires = '2020-01';
+      })
+    ).toThrow(/must not be before issued\n {2}→ at certifications\[1\]\.expires$/);
+  });
+
   it('keeps the resume order newest first', () => {
     expect(
       edit((data) => {

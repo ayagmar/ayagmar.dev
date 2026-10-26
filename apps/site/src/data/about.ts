@@ -42,14 +42,20 @@ export const aboutSchema = z.strictObject({
       { ...valid, message: 'must be newest first' }
     ),
   certifications: z.array(
-    z.strictObject({
-      name: text,
-      issuer: text,
-      issued: month,
-      expires: month.optional(),
-      credentialId: text.optional(),
-      verifyUrl: url,
-    })
+    z
+      .strictObject({
+        name: text,
+        issuer: text,
+        issued: month,
+        expires: month.optional(),
+        credentialId: text.optional(),
+        verifyUrl: url,
+      })
+      .refine((cert) => cert.expires === undefined || cert.expires >= cert.issued, {
+        ...valid,
+        path: ['expires'],
+        message: 'must not be before issued',
+      })
   ),
   education: z.array(
     z
