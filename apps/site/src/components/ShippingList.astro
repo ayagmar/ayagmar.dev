@@ -1,0 +1,20 @@
+---
+import type { ShippingEvent } from '@min7/contracts';
+import { describeEvent, repoName, utcDay } from '../data/format.ts';
+
+interface Props {
+  events: readonly ShippingEvent[];
+}
+
+const { events } = Astro.props;
+---
+
+<ul class="shipping">
+  {events.map((event) => (
+    <li>
+      <time datetime={event.at}>{utcDay(event.at)}</time>
+      {repoName(event.repo)}{' '}
+      {'url' in event ? <a href={event.url}>{describeEvent(event)}</a> : describeEvent(event)}
+    </li>
+  ))}
+</ul>

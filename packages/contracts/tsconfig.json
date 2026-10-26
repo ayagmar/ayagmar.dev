@@ -6,5 +6,5 @@
     "outDir": "../../node_modules/.cache/tsc/contracts",
     "types": ["node"]
   },
-  "include": ["src", "scripts", "test"]
+  "include": ["src", "scripts", "test", "fixtures/**/*.json"]
 }

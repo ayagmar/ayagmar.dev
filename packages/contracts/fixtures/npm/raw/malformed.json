@@ -1,0 +1,23 @@
+{
+  "llm-usage-metrics": {
+    "status": 200,
+    "body": {
+      "downloads": -3,
+      "package": "llm-usage-metrics"
+    }
+  },
+  "ccdesk": {
+    "status": 200,
+    "body": {
+      "downloads": -3,
+      "package": "ccdesk"
+    }
+  },
+  "pi-extmgr": {
+    "status": 200,
+    "body": {
+      "downloads": -3,
+      "package": "pi-extmgr"
+    }
+  }
+}

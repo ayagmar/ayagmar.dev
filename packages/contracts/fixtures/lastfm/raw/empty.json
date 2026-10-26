@@ -1,0 +1,62 @@
+{
+  "recentTracks": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "1",
+          "page": "1",
+          "perPage": "10",
+          "total": "0"
+        }
+      }
+    }
+  },
+  "topArtists": {
+    "status": 200,
+    "body": {
+      "topartists": {
+        "artist": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "0",
+          "page": "1",
+          "perPage": "10",
+          "total": "0"
+        }
+      }
+    }
+  },
+  "thisWeek": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "1",
+          "page": "1",
+          "perPage": "10",
+          "total": "0"
+        }
+      }
+    }
+  },
+  "lastWeek": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "1",
+          "page": "1",
+          "perPage": "10",
+          "total": "0"
+        }
+      }
+    }
+  }
+}

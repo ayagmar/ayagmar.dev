@@ -50,7 +50,7 @@ Every read API response is an envelope from `contracts`:
 
 `data` is `null` until a source succeeds once. `stale` is computed when the response is served, by `isStale(lastSuccessAt, threshold, now)` with the per-source threshold in `packages/contracts/src/sources.ts`. If signals is down or a response fails validation, the site build still succeeds and renders an empty state.
 
-As of this scaffold only `/v1/health` exists, the site pages show empty states, and no adapter or intake route is registered.
+The pull adapters for listening (Last.fm), shipping (repo-pulse) and projects (GitHub and npm) exist; their cron wiring, storage and read routes land with the intake work, so until then the production site build gets no data and shows empty states. Locally and in Previews the site renders the shared fixtures (ADR 0015).
 
 ## Where things live
 
@@ -60,8 +60,11 @@ As of this scaffold only `/v1/health` exists, the site pages show empty states, 
 | Snapshot and push schemas (one file per source)                           | `packages/contracts/src/snapshots/`, `src/push/`                                              |
 | JSON Schema for producers and consumers                                   | `packages/contracts/schema/*.{input,output}.json`, written by `just contracts-schema`         |
 | Payload corpus checked by zod and JSON Schema; frozen v1 consumer schemas | `packages/contracts/corpus/<schema>/{accept,reject}/`, `packages/contracts/test/frozen/v1/`   |
-| Test fixtures                                                             | `packages/contracts/fixtures/<source>/{raw,snapshot}/<case>.json`                             |
+| Featured projects (slug, repo, npm package), shared by site and signals   | `packages/contracts/src/projects.ts`                                                          |
+| Test fixtures                                                             | `packages/contracts/fixtures/<upstream>/raw/`, `fixtures/<source>/snapshot/`                  |
+| MSW handlers built from the fixtures (tests only)                         | `packages/contracts/src/testing.ts` (`@min7/contracts/testing`)                               |
 | Pull adapter interface and registry                                       | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                            |
+| Pull adapters, bounded upstream reads, `PullError`                        | `apps/signals/src/adapters/pull/`                                                             |
 | Snapshot storage interface                                                | `apps/signals/src/storage/types.ts`                                                           |
 | Read API routes (one file per route)                                      | `apps/signals/src/routes/v1/`                                                                 |
 | Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                  |
@@ -71,6 +74,8 @@ As of this scaffold only `/v1/health` exists, the site pages show empty states, 
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                         |
 | Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                              |
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts` |
+| Build-time snapshot reader (`fixtures` or `api` mode), freshness          | `apps/site/src/data/`                                                                         |
+| Now-playing island                                                        | `apps/site/src/components/NowPlaying.svelte`                                                  |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)           |
 | Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                   |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                   |

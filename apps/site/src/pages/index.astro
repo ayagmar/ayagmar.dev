@@ -1,10 +1,16 @@
 ---
+import NowPlayingPanel from '../components/NowPlayingPanel.astro';
 import PostList from '../components/PostList.astro';
+import ShippingList from '../components/ShippingList.astro';
+import { signals } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { getPosts } from '../lib/posts.ts';
 import { site } from '../lib/site.ts';
 
 const posts = (await getPosts()).slice(0, 5);
+const listening = await signals.read('listening');
+const shipping = await signals.read('shipping');
+const recentlyShipped = shipping.data?.events.slice(0, 5) ?? [];
 ---
 
 <Base>
@@ -13,4 +19,13 @@ const posts = (await getPosts()).slice(0, 5);
   <h2>Recent writing</h2>
   <PostList posts={posts} />
   <p><a href="/writing">All writing</a></p>
+  <h2>Listening</h2>
+  <NowPlayingPanel listening={listening} />
+  <h2>Recently shipped</h2>
+  {recentlyShipped.length === 0 ? (
+    <p>Nothing to show yet.</p>
+  ) : (
+    <ShippingList events={recentlyShipped} />
+  )}
+  <p><a href="/stats">More stats</a></p>
 </Base>

@@ -24,6 +24,19 @@ export default defineConfig({
     schema: {
       COMMIT_SHA: envField.string({ context: 'server', access: 'public', default: 'dev' }),
       PUBLIC_SHOW_DRAFTS: envField.string({ context: 'server', access: 'public', default: '' }),
+      // Where pages get source data at build time (ADR 0015). Workers Builds sets `api`.
+      SIGNALS_MODE: envField.enum({
+        context: 'server',
+        access: 'public',
+        values: ['fixtures', 'api'],
+        default: 'fixtures',
+      }),
+      SIGNALS_API_BASE: envField.string({
+        context: 'server',
+        access: 'public',
+        url: true,
+        default: 'https://api.ayagmar.dev',
+      }),
     },
   },
 });
