@@ -68,6 +68,21 @@ describe('plan', () => {
     }
   });
 
+  it('runs both apps, the contracts and the site output for a shared fixture change', () => {
+    const jobs = runs(['packages/contracts/fixtures/lastfm/raw/ok.json']);
+    for (const job of ['contracts', 'signals-test', 'site-test', 'site-build', 'e2e', 'links']) {
+      assert.ok(jobs.includes(job), `${job} should run`);
+    }
+  });
+
+  it('tests and builds the site for a change to its data layer', () => {
+    const jobs = runs(['apps/site/src/data/reader.ts']);
+    for (const job of ['checks', 'site-test', 'site-build', 'e2e', 'links']) {
+      assert.ok(jobs.includes(job), `${job} should run`);
+    }
+    assert.ok(!jobs.includes('signals-test'));
+  });
+
   it('runs the union for mixed changes', () => {
     const jobs = runs(['content/writing/a.md', '.github/workflows/ci.yml', 'scripts/bootstrap.sh']);
     for (const job of ['links', 'site-build', 'workflows', 'renovate', 'shell', 'checks']) {
