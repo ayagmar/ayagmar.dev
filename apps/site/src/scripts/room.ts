@@ -1,17 +1,17 @@
 // The room's clock on the home page (ADR 0027): the window shows the sky and the moon over
-// Casablanca now, and between 02:00 and 07:00 there the lamp is turned down with a note. Also
+// Rabat now, and between 02:00 and 07:00 there the lamp is turned down with a note. Also
 // the keys 1 to 7, which open the room's objects in reading order, unless the list of keys has
 // turned single-key shortcuts off. Without this script the room is the static scene of the
 // page's theme, with no moon and no note; a browser with outdated time zone rules gets the sky
 // and the moon, but not the lamp or the note.
-import { casablancaTime, isLate, knowsCasablanca, moonAt, moonPath, skyAt } from '../lib/sky.ts';
+import { isLate, knowsRabatTime, moonAt, moonPath, rabatTime, skyAt } from '../lib/sky.ts';
 
 const scene = document.querySelector<HTMLElement>('.scene');
 const view = document.querySelector('.room-window');
 const moon = document.querySelector('.room-moon path');
 const note = document.querySelector<HTMLElement>('.room-note');
-// Without Casablanca's current rules the hour there is a guess: no lamp or note from it.
-const knows = knowsCasablanca();
+// Without Morocco's current rules the hour there is a guess: no lamp or note from it.
+const knows = knowsRabatTime();
 
 function tick() {
   if (scene === null) return;
@@ -30,13 +30,13 @@ function tick() {
   view?.setAttribute(
     'aria-label',
     sky === 'day'
-      ? 'Through the window: daylight over Casablanca.'
-      : `Through the window: ${sky} over Casablanca, a ${phase.name}.`
+      ? 'Through the window: daylight over Rabat.'
+      : `Through the window: ${sky} over Rabat, a ${phase.name}.`
   );
   if (note !== null) {
     note.hidden = !late;
     const time = note.querySelector('time');
-    if (time !== null) time.textContent = casablancaTime(now);
+    if (time !== null) time.textContent = rabatTime(now);
   }
 }
 

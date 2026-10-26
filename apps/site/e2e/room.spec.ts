@@ -90,7 +90,7 @@ test('home loads one scene, one window and two fonts', async ({ page }) => {
       .filter((name) => name !== undefined)
       .sort()
   );
-  // Which window depends on the time in Casablanca; there is exactly one.
+  // Which window depends on the time in Rabat; there is exactly one.
   expect(assets.filter((name) => !name.startsWith('window-'))).toEqual([
     'mono',
     'room-day',
@@ -166,9 +166,9 @@ test('reduced motion stops the lamp', async ({ page }) => {
   expect(await lamp()).toBe('none');
 });
 
-// The room's clock (ADR 0027). The visitor is in Auckland, 13 hours ahead of Casablanca, so a
+// The room's clock (ADR 0027). The visitor is in Auckland, 13 hours ahead of Rabat, so a
 // window that followed the visitor's clock or the page theme would show the wrong sky.
-test.describe('the room keeps Casablanca time', () => {
+test.describe('the room keeps Rabat time', () => {
   test.use({ timezoneId: 'Pacific/Auckland' });
 
   const room = (page: Page) =>
@@ -192,19 +192,15 @@ test.describe('the room keeps Casablanca time', () => {
     await expect(page.locator('.scene')).toHaveAttribute('data-sky', /.+/);
   };
 
-  // 03:00 in Casablanca (+00) on the full moon of 26 Oct 2026, a sunny afternoon in Auckland.
+  // 03:00 in Rabat (+00) on the full moon of 26 Oct 2026, a sunny afternoon in Auckland.
   test('at 03:00 the window shows the night and the moon, and the lamp is down', async ({
     page,
   }) => {
     await visit(page, '2026-10-26T03:00:00Z', 'light');
     expect(await room(page)).toMatchObject({ sky: 'night', window: 'window-night' });
     expect((await room(page)).moon).not.toBe('');
-    await expect(
-      page.getByRole('img', { name: /night over Casablanca, a full moon/ })
-    ).toBeVisible();
-    await expect(page.locator('.room-note')).toHaveText(
-      'Probably asleep: it is 03:00 in Casablanca.'
-    );
+    await expect(page.getByRole('img', { name: /night over Rabat, a full moon/ })).toBeVisible();
+    await expect(page.locator('.room-note')).toHaveText('Probably asleep: it is 03:00 in Rabat.');
 
     await page.emulateMedia({ colorScheme: 'dark' });
     expect((await room(page)).night).toBe('room-night-dim');
@@ -222,12 +218,12 @@ test.describe('the room keeps Casablanca time', () => {
   });
 
   // Catches a browser whose tzdata predates 2026c dimming the lamp on the wrong hour: it still
-  // puts Casablanca at +01, so at 01:30 there it would say 02:30 and show "probably asleep".
+  // puts Rabat at +01, so at 01:30 there it would say 02:30 and show "probably asleep".
   // The sky and the moon come from UTC and stay.
   test('with outdated time zone rules the lamp stays on and no note shows', async ({ page }) => {
     await page.addInitScript(() => {
       const Original = Intl.DateTimeFormat;
-      // Etc/GMT-1 is +01 all year, as Casablanca was before the rules changed.
+      // Etc/GMT-1 is +01 all year, as Morocco was before the rules changed.
       Intl.DateTimeFormat = class extends Original {
         constructor(locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
           const outdated = options?.timeZone === 'Africa/Casablanca';

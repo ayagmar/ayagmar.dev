@@ -30,12 +30,12 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
         role="img"
         aria-label="A pixel-art desk in Morocco by day. Sunlight fills the room and the lamp is off; an arched window looks out over whitewashed rooftops and a minaret."
       ></span>
-      <!-- The room's clock (ADR 0027): src/scripts/room.ts fills these in by Casablanca time. -->
+      <!-- The room's clock (ADR 0027): src/scripts/room.ts fills these in by Rabat time. -->
       <span class="room-window"></span>
       <svg class="room-moon" viewBox="0 0 480 160" preserveAspectRatio="none" aria-hidden="true">
         <path fill="#e8e8fa"></path>
       </svg>
-      <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Casablanca.</p>
+      <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Rabat.</p>
       {roomObjects.map((item) => (
         <a class="hotspot" href={item.href} data-room={item.id}>
           <span>

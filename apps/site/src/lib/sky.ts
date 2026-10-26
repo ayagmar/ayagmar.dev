@@ -1,5 +1,5 @@
 /**
- * The room's clock (ADR 0027): the sky over Casablanca, the moon's phase and the local time,
+ * The room's clock (ADR 0027): the sky over Rabat, the moon's phase and the local time,
  * for any instant. Pure functions of a time in milliseconds; the home page script
  * (src/scripts/room.ts) and the tests share them.
  *
@@ -10,7 +10,8 @@
  * offset, since Morocco's offset has changed with Ramadan and, in 2026, by decree.
  */
 
-const casablanca = { lat: 33.5731, lon: -7.5898, timeZone: 'Africa/Casablanca' } as const;
+// Hassan Tower, Rabat. Africa/Casablanca is the IANA zone for all of Morocco.
+const rabat = { lat: 34.024, lon: -6.8228, timeZone: 'Africa/Casablanca' } as const;
 
 const rad = Math.PI / 180;
 const sin = (deg: number) => Math.sin(deg * rad);
@@ -21,7 +22,7 @@ const dayMs = 86_400_000;
 const centuries = (time: number) => (time / dayMs + 2440587.5 - 2451545) / 36525;
 
 /**
- * The sun's geometric elevation over Casablanca in degrees, without refraction. The terms in
+ * The sun's geometric elevation over Rabat in degrees, without refraction. The terms in
  * t² and t³ of NOAA's series are left out: this century they move the sun by under 0.0001°.
  */
 function sunElevation(time: number): number {
@@ -46,10 +47,9 @@ function sunElevation(time: number): number {
       0.5 * y * y * sin(4 * l0) -
       1.25 * e * e * sin(2 * m));
   const minutes = (((time % dayMs) + dayMs) % dayMs) / 60_000;
-  const hourAngle = (minutes + equationOfTime + 4 * casablanca.lon) / 4 - 180;
+  const hourAngle = (minutes + equationOfTime + 4 * rabat.lon) / 4 - 180;
   const cosZenith =
-    sin(casablanca.lat) * sin(declination) +
-    cos(casablanca.lat) * cos(declination) * cos(hourAngle);
+    sin(rabat.lat) * sin(declination) + cos(rabat.lat) * cos(declination) * cos(hourAngle);
   return 90 - Math.acos(Math.min(1, Math.max(-1, cosZenith))) / rad;
 }
 
@@ -134,14 +134,14 @@ export function moonPath(moon: Moon, x: number, y: number, r: number): string {
 }
 
 const clock = new Intl.DateTimeFormat('en-GB', {
-  timeZone: casablanca.timeZone,
+  timeZone: rabat.timeZone,
   hour: '2-digit',
   minute: '2-digit',
   hourCycle: 'h23',
 });
 
-/** The time in Casablanca, `03:12`. */
-export const casablancaTime = (time: number) => clock.format(time);
+/** The time in Rabat, `03:12`. */
+export const rabatTime = (time: number) => clock.format(time);
 
 /**
  * Whether the browser's tzdata knows Morocco's current rules: +00 for good since 2026-09-20
@@ -149,10 +149,10 @@ export const casablancaTime = (time: number) => clock.format(time);
  * so the room then leaves the lamp and the note alone. If Morocco changes its clocks again,
  * this check moves with the new rules.
  */
-export const knowsCasablanca = () => casablancaTime(Date.UTC(2026, 9, 1, 12)) === '12:00';
+export const knowsRabatTime = () => rabatTime(Date.UTC(2026, 9, 1, 12)) === '12:00';
 
-/** Between 02:00 and 07:00 in Casablanca the lamp is turned down: probably asleep. */
+/** Between 02:00 and 07:00 in Rabat the lamp is turned down: probably asleep. */
 export function isLate(time: number): boolean {
-  const hour = Number(casablancaTime(time).slice(0, 2));
+  const hour = Number(rabatTime(time).slice(0, 2));
   return hour >= 2 && hour < 7;
 }

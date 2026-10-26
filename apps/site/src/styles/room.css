@@ -61,7 +61,7 @@
 }
 
 /* The room's clock (ADR 0027), set by src/scripts/room.ts: the view through the window by
-   Casablanca's sun, the moon, and the lamp turned down late at night. Each layer covers the whole
+   Rabat's sun, the moon, and the lamp turned down late at night. Each layer covers the whole
    scene, so it lines up with it at every size; only the one in use is downloaded. */
 .room-window,
 .room-moon {
