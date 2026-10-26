@@ -30,13 +30,33 @@ const pages = readdirSync(dist, { recursive: true, encoding: 'utf8' }).filter((f
   file.endsWith('.html')
 );
 
+/**
+ * The inline <script> (without a src attribute) and <style> elements of a page, found the way
+ * a browser tokenizes tags: comments and quoted attribute values are skipped whole, so text
+ * like `content="<script>..."` is not an element, and tag and attribute names are matched
+ * case-insensitively.
+ */
+function* inlineElements(html: string): Generator<{ kind: 'script' | 'style'; body: string }> {
+  const markup = /<!--[\s\S]*?(?:-->|$)|<([a-zA-Z][^\s/>]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/g;
+  const attribute = /([^\s"'>/=]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/g;
+  const lower = html.toLowerCase();
+  for (let match = markup.exec(html); match !== null; match = markup.exec(html)) {
+    const [, name, attributes = ''] = match;
+    const kind = name?.toLowerCase();
+    if (kind !== 'script' && kind !== 'style') continue;
+    // Script and style content is raw text up to the matching end tag.
+    const end = lower.indexOf(`</${kind}`, markup.lastIndex);
+    const body = html.slice(markup.lastIndex, end === -1 ? html.length : end);
+    markup.lastIndex = end === -1 ? html.length : end;
+    const names = [...attributes.matchAll(attribute)].map(([, attr = '']) => attr.toLowerCase());
+    if (kind === 'style' || !names.includes('src')) yield { kind, body };
+  }
+}
+
 const hashes = { script: new Set<string>(), style: new Set<string>() };
 const rejected: string[] = [];
-// Inline elements only: <script> without src, any <style>.
-const inline = /<(script|style)\b(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/\1>/g;
 for (const file of pages) {
-  for (const [, tag, body = ''] of readFileSync(join(dist, file), 'utf8').matchAll(inline)) {
-    const kind = tag as 'script' | 'style';
+  for (const { kind, body } of inlineElements(readFileSync(join(dist, file), 'utf8'))) {
     if (allowed[kind].has(body)) {
       hashes[kind].add(`sha256-${createHash('sha256').update(body).digest('base64')}`);
     } else {
