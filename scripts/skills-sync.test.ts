@@ -294,6 +294,10 @@ describe('skills sync values', () => {
     'Kept in /srv/app/data.',
     'At C:\\Work\\notes.',
     'On \\\\host\\share.',
+    'Read `/srv/private/notes`.',
+    'Read [/srv/private/notes].',
+    'Read `C:\\Work\\notes`.',
+    'Read `\\\\host\\share`.',
   ]) {
     it(`refuses text holding ${JSON.stringify(text)}`, () => {
       const dir = repo((base) => {

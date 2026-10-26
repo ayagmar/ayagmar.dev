@@ -82,11 +82,21 @@ describe('skills.json values', () => {
   });
 
   it('rejects a local path of any kind in shown text, and keeps ordinary slashes', () => {
-    for (const summary of ['See /srv/app/data.', 'At C:\\Work\\notes.']) {
+    for (const summary of [
+      'See /srv/app/data.',
+      'At C:\\Work\\notes.',
+      'Read `/srv/app/data`.',
+      'Read [/srv/app/data].',
+      'Read `C:\\Work\\notes`.',
+      'Read `\\\\host\\share`.',
+    ]) {
       expect(issues({ ...first, summary })).toEqual(['must not hold a local path']);
     }
     expect(
-      issues({ ...first, summary: 'Read and/or write 3/3 files (https://example.com/a/b).' })
+      issues({
+        ...first,
+        summary: 'Read and/or write `3/3` files ([docs](https://example.com/a/b)).',
+      })
     ).toBeUndefined();
   });
 });

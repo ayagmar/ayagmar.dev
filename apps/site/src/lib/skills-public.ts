@@ -11,7 +11,8 @@ export const publicModels = [
 
 export const semver = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
-const start = String.raw`(?:^|[\s"'(=,;])`;
+// Where a path may begin: the start, white space, quotes, backticks and Markdown or list delimiters.
+const start = '(?:^|[\\s"\'`(\\[{<=,;|])';
 const localPaths: [string, RegExp][] = [
   ['an absolute path', new RegExp(`${start}/(?!/)[\\w.@~-]+/[\\w.@~/-]*`)],
   ['a Windows path', new RegExp(`${start}[A-Za-z]:[\\\\/]`)],
