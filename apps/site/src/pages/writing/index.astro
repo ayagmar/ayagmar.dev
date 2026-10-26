@@ -9,18 +9,20 @@ const tags = [...postsByTag(posts).keys()];
 ---
 
 <Base title="Writing">
-  <h1>Writing</h1>
-  <PostList posts={posts} />
-  {tags.length > 0 && (
-    <section aria-labelledby="tags">
-      <h2 id="tags">Tags</h2>
-      <ul class="tags">
-        {tags.map((tag) => (
-          <li>
-            <a href={tagPath(tag)}>{tag}</a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  )}
+  <div class="paper">
+    <h1>Writing</h1>
+    <PostList posts={posts} />
+    {tags.length > 0 && (
+      <section aria-labelledby="tags">
+        <h2 id="tags">Tags</h2>
+        <ul class="tags">
+          {tags.map((tag) => (
+            <li>
+              <a href={tagPath(tag)}>{tag}</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+  </div>
 </Base>

@@ -17,7 +17,7 @@ const { project, envelope, more } = Astro.props;
 const headingId = `project-${project.slug}`;
 ---
 
-<aside class="project-card" aria-labelledby={headingId}>
+<aside class="panel m-screen project-card" aria-labelledby={headingId}>
   <h2 id={headingId}>About <a href={projectPath(project.slug)}>{project.slug}</a></h2>
   {project.summary !== null && <p class="project-summary">{project.summary}</p>}
   <ProjectStats project={project} />
