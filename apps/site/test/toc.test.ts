@@ -26,6 +26,27 @@ describe('a post table of contents', () => {
       heading(2, 'a-note-two'),
       heading(2, 'a-note-footnote-label'),
     ];
-    expect(contents(note)).toEqual([]);
+    expect(contents(note, 'a-note-')).toEqual([]);
+  });
+
+  // Catches an authored section whose title ends in "footnote-label" vanishing from the list,
+  // or taking a three-section post's contents with it.
+  it('keeps an authored heading that only looks like the footnotes heading', () => {
+    const post = [
+      heading(2, 'first'),
+      heading(2, 'understanding-footnote-label'),
+      heading(2, 'last'),
+    ];
+    expect(contents(post).map((item) => item.slug)).toEqual([
+      'first',
+      'understanding-footnote-label',
+      'last',
+    ]);
+    const note = [
+      heading(2, 'a-note-first'),
+      heading(2, 'a-note-footnote-label'),
+      heading(2, 'a-note-last'),
+    ];
+    expect(contents(note, 'a-note-').map((item) => item.slug)).toEqual([]);
   });
 });

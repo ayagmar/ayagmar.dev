@@ -4,10 +4,12 @@ import { contents } from '../lib/toc.ts';
 
 interface Props {
   headings: MarkdownHeading[];
+  /** The prefix of a note's ids, `<note-id>-` (ADR 0028); empty for a post. */
+  idPrefix?: string;
 }
 
 // A disclosure on phones, always open beside the text from 64rem (base.css); no script.
-const items = contents(Astro.props.headings);
+const items = contents(Astro.props.headings, Astro.props.idPrefix);
 ---
 
 {items.length > 0 && (
