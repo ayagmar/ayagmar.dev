@@ -60,6 +60,52 @@
   }
 }
 
+/* The room's clock (ADR 0027), set by src/scripts/room.ts: the view through the window by
+   Casablanca's sun, the moon, and the lamp turned down late at night. Each layer covers the whole
+   scene, so it lines up with it at every size; only the one in use is downloaded. */
+.room-window,
+.room-moon {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+  pointer-events: none;
+}
+
+.scene[data-sky="day"] .room-window {
+  background-image: url("../assets/window-day.png");
+}
+
+.scene[data-sky="dusk"] .room-window {
+  background-image: url("../assets/window-dusk.png");
+}
+
+.scene[data-sky="night"] .room-window {
+  background-image: url("../assets/window-night.png");
+}
+
+.scene[data-late] .room-art.night {
+  background-image: url("../assets/room-night-dim.png");
+}
+
+/* Over the desk's front, below every hotspot, so showing it moves nothing. */
+.room-note {
+  position: absolute;
+  bottom: 2.5%;
+  left: 50%;
+  translate: -50% 0;
+  margin: 0;
+  padding: 0.15em 0.5em;
+  background: var(--ground);
+  color: var(--text);
+  font: 600 clamp(0.6875rem, 0.45rem + 0.75vw, 0.9375rem) / 1.2 var(--mono);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* Hotspots: real links over the scene's objects, as percentages of its 480x160 pixels
    (scripts/scene.py). Below 360px wide the smallest would be under 24px, so they give way to
    the list under the scene. */
@@ -312,6 +358,11 @@
       transparent 15.5px
     ),
     repeating-radial-gradient(circle, #15131d 0 2px, #2a2638 2px 3px);
+}
+
+/* The record turns only while Last.fm says something is playing now (ADR 0027): the island
+   marks a live, fresh answer with a track. The build-time value never turns it. */
+.record:has([data-playing]) .disc {
   animation: spin 9s linear infinite;
 }
 

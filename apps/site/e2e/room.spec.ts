@@ -55,7 +55,8 @@ for (const { system, choice } of [
   });
 }
 
-// Catches a switch that shows up but cannot work, or a page that needs JavaScript for its theme.
+// Catches a switch that shows up but cannot work, a page that needs JavaScript for its theme,
+// or a room detail that shows a guess without its script.
 test('without JavaScript the page follows the system theme and hides the switch', async ({
   browser,
   baseURL,
@@ -65,12 +66,16 @@ test('without JavaScript the page follows the system theme and hides the switch'
   await page.goto(`${baseURL}/`);
   expect(await background(page)).toBe(ground.night);
   await expect(page.getByRole('group', { name: 'Theme' })).toBeHidden();
+  // The room stays the static night scene: no sky from a clock, no moon, no note.
+  await expect(page.locator('.scene')).not.toHaveAttribute('data-sky', /.*/);
+  await expect(page.locator('.room-note')).toBeHidden();
   await context.close();
 });
 
-// Catches both scenes downloading when the stored choice differs from the system, and italic
-// text on home, which puts a third font in front of the scene and pushes mobile LCP past 2 s.
-test('home loads one scene and two fonts', async ({ page }) => {
+// Catches both scenes downloading when the stored choice differs from the system, more than one
+// window layer (ADR 0027), and italic text on home, which puts a third font in front of the
+// scene and pushes mobile LCP past 2 s.
+test('home loads one scene, one window and two fonts', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/about');
   await page.evaluate(() => localStorage.setItem('theme', 'day'));
@@ -83,7 +88,13 @@ test('home loads one scene and two fonts', async ({ page }) => {
       .filter((name) => name !== undefined)
       .sort()
   );
-  expect(assets).toEqual(['mono', 'room-day', 'serif-roman']);
+  // Which window depends on the time in Casablanca; there is exactly one.
+  expect(assets.filter((name) => !name.startsWith('window-'))).toEqual([
+    'mono',
+    'room-day',
+    'serif-roman',
+  ]);
+  expect(assets.filter((name) => name.startsWith('window-'))).toHaveLength(1);
 });
 
 const roomLinks = (page: Page) =>
@@ -142,17 +153,110 @@ for (const path of [
   });
 }
 
-// Catches motion that keeps running for people who asked for less.
-test('reduced motion stops the lamp and the record', async ({ page }) => {
-  const animations = () =>
-    page.evaluate(() =>
-      ['.room-art.night', '.disc'].map(
-        (selector) => getComputedStyle(document.querySelector(selector) as Element).animationName
-      )
-    );
+// Catches motion that keeps running for people who asked for less (the record: signals.spec.ts).
+test('reduced motion stops the lamp', async ({ page }) => {
+  const lamp = () =>
+    page.locator('.room-art.night').evaluate((art) => getComputedStyle(art).animationName);
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'no-preference' });
   await page.goto('/');
-  expect(await animations()).toEqual(['lamp-on', 'spin']);
+  expect(await lamp()).toBe('lamp-on');
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  expect(await animations()).toEqual(['none', 'none']);
+  expect(await lamp()).toBe('none');
+});
+
+// The room's clock (ADR 0027). The visitor is in Auckland, 13 hours ahead of Casablanca, so a
+// window that followed the visitor's clock or the page theme would show the wrong sky.
+test.describe('the room keeps Casablanca time', () => {
+  test.use({ timezoneId: 'Pacific/Auckland' });
+
+  const room = (page: Page) =>
+    page.locator('.scene').evaluate((scene) => {
+      const image = (selector: string) =>
+        getComputedStyle(scene.querySelector(selector) as Element).backgroundImage.match(
+          /\/_astro\/([\w-]+)\./
+        )?.[1] ?? null;
+      return {
+        sky: scene.getAttribute('data-sky'),
+        window: image('.room-window'),
+        night: image('.room-art.night'),
+        moon: scene.querySelector('.room-moon path')?.getAttribute('d') ?? '',
+      };
+    });
+
+  const visit = async (page: Page, time: string, colorScheme: 'light' | 'dark') => {
+    await page.clock.setFixedTime(time);
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await expect(page.locator('.scene')).toHaveAttribute('data-sky', /.+/);
+  };
+
+  // 03:00 in Casablanca (+00) on the full moon of 26 Oct 2026, a sunny afternoon in Auckland.
+  test('at 03:00 the window shows the night and the moon, and the lamp is down', async ({
+    page,
+  }) => {
+    await visit(page, '2026-10-26T03:00:00Z', 'light');
+    expect(await room(page)).toMatchObject({ sky: 'night', window: 'window-night' });
+    expect((await room(page)).moon).not.toBe('');
+    await expect(
+      page.getByRole('img', { name: /night over Casablanca, a full moon/ })
+    ).toBeVisible();
+    await expect(page.locator('.room-note')).toHaveText(
+      'Probably asleep: it is 03:00 in Casablanca.'
+    );
+
+    await page.emulateMedia({ colorScheme: 'dark' });
+    expect((await room(page)).night).toBe('room-night-dim');
+  });
+
+  test('at noon the window shows the day, with no moon and no note', async ({ page }) => {
+    await visit(page, '2026-10-26T12:00:00Z', 'dark');
+    expect(await room(page)).toEqual({
+      sky: 'day',
+      window: 'window-day',
+      night: 'room-night',
+      moon: '',
+    });
+    await expect(page.locator('.room-note')).toBeHidden();
+  });
+
+  test('just after sunset the window shows dusk', async ({ page }) => {
+    await visit(page, '2026-10-26T17:55:00Z', 'dark');
+    expect(await room(page)).toMatchObject({ sky: 'dusk', window: 'window-dusk' });
+  });
+});
+
+// Catches a key that does nothing, the list missing a key, or the room's keys leaking onto
+// pages without the room.
+test('? lists the keys, and t and the room numbers work', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  const keys = page.getByRole('dialog', { name: 'Keyboard' });
+  await page.keyboard.press('?');
+  await expect(keys).toBeVisible();
+  await expect(keys.getByText(/^Corkboard: shipping$|^Shelf: reading$/)).toHaveCount(2);
+  await page.keyboard.press('Escape');
+  await expect(keys).toBeHidden();
+
+  await page.keyboard.press('t');
+  expect(await background(page)).toBe(ground.day);
+  await page.keyboard.press('t');
+  expect(await background(page)).toBe(ground.night);
+
+  await page.keyboard.press('3');
+  await expect(page).toHaveURL(/\/writing$/);
+  await page.keyboard.press('?');
+  await expect(keys).toBeVisible();
+  await expect(keys.getByText('Corkboard: shipping')).toHaveCount(0);
+});
+
+// Catches art missing from a post that asks for it, or the wrong kind drawn.
+test('each post draws the art its frontmatter asks for', async ({ page }) => {
+  for (const [path, kind] of [
+    ['/writing/token-logs', 'ascii'],
+    ['/writing/ephemeral-runners', 'dither'],
+    ['/writing/cache-reads', 'pattern'],
+  ] as const) {
+    await page.goto(path);
+    await expect(page.locator(`.post-art svg.art-${kind}`)).toBeVisible();
+  }
 });

@@ -23,13 +23,19 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
       <span
         class="room-art night"
         role="img"
-        aria-label="A pixel-art desk at night in Morocco. The lamp is on, the monitor glows, and a crescent moon hangs over a minaret in the arched window."
+        aria-label="A pixel-art desk at night in Morocco. The lamp is on and the monitor glows; an arched window looks out over rooftops and a minaret."
       ></span>
       <span
         class="room-art day"
         role="img"
-        aria-label="A pixel-art desk in Morocco by day. Sunlight comes through the arched window over whitewashed rooftops and a minaret; the lamp is off."
+        aria-label="A pixel-art desk in Morocco by day. Sunlight fills the room and the lamp is off; an arched window looks out over whitewashed rooftops and a minaret."
       ></span>
+      <!-- The room's clock (ADR 0027): src/scripts/room.ts fills these in by Casablanca time. -->
+      <span class="room-window"></span>
+      <svg class="room-moon" viewBox="0 0 480 160" preserveAspectRatio="none" aria-hidden="true">
+        <path fill="#e8e8fa"></path>
+      </svg>
+      <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Casablanca.</p>
       {roomObjects.map((item) => (
         <a class="hotspot" href={item.href} data-room={item.id}>
           <span>
@@ -103,3 +109,7 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
     </div>
   </div>
 </Base>
+
+<script>
+import '../scripts/room.ts';
+</script>

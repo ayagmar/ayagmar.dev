@@ -85,7 +85,12 @@ function utc(iso: string): string {
 </script>
 
 <!-- Announced politely and whole, and only when the text changes: a new track or a first live answer. -->
-<p class="now-playing" aria-live="polite" aria-atomic="true">
+<p
+  class="now-playing"
+  aria-live="polite"
+  aria-atomic="true"
+  data-playing={current.live && current.track !== null ? '' : undefined}
+>
   {#if current.asOf === null}
     Listening data is not available.
   {:else if current.track === null}

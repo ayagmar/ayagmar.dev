@@ -25,6 +25,9 @@ export default defineConfig({
     processor: satteri({ hastPlugins: [diagrams, scrollable] }),
   },
   integrations: [svelte(), sitemap()],
+  // Never inline a script or asset into the page: the CSP has no `data:` and allows no inline
+  // script except Astro's own (ADR 0019), so the home page's room script stays a file (ADR 0027).
+  vite: { build: { assetsInlineLimit: 0 } },
   env: {
     schema: {
       COMMIT_SHA: envField.string({ context: 'server', access: 'public', default: 'dev' }),

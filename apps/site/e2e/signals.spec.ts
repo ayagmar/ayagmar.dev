@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
@@ -98,3 +100,80 @@ test('now playing links only to Last.fm', async ({ page }) => {
   await expect(page.locator('.now-playing')).toHaveText('Now playing Bad by Link.');
   await expect(page.locator('.now-playing a')).toHaveCount(0);
 });
+
+// The shared listening fixtures (packages/contracts/fixtures/listening/snapshot).
+const snapshot = (name: 'ok' | 'empty') =>
+  JSON.parse(
+    readFileSync(
+      join(
+        import.meta.dirname,
+        '../../../packages/contracts/fixtures/listening/snapshot',
+        `${name}.json`
+      ),
+      'utf8'
+    )
+  ) as unknown;
+
+const envelope = (stale: boolean, data: unknown) => ({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({
+    source: 'listening',
+    version: 1,
+    fetchedAt: '2026-10-26T10:30:00Z',
+    stale,
+    data,
+  }),
+});
+
+const disc = (page: Page) =>
+  page.locator('.disc').evaluate((element) => getComputedStyle(element).animationName);
+
+// Catches a record that turns for a build-time, stale or empty answer, or for people who asked
+// for less motion (ADR 0027).
+test('the record rests on the build-time value', async ({ page }) => {
+  await page.goto('/');
+  expect(await disc(page)).toBe('none');
+});
+
+for (const { name, stale, data, text, turns, motion } of [
+  {
+    name: 'turns while a track is playing now',
+    stale: false,
+    data: 'ok',
+    text: /^Now playing/,
+    turns: true,
+    motion: 'no-preference',
+  },
+  {
+    name: 'rests on a stale answer',
+    stale: true,
+    data: 'ok',
+    text: /as of 26 Oct, 10:30 UTC\.$/,
+    turns: false,
+    motion: 'no-preference',
+  },
+  {
+    name: 'rests when nothing is playing',
+    stale: false,
+    data: 'empty',
+    text: 'Nothing playing right now.',
+    turns: false,
+    motion: 'no-preference',
+  },
+  {
+    name: 'rests with reduced motion',
+    stale: false,
+    data: 'ok',
+    text: /^Now playing/,
+    turns: false,
+    motion: 'reduce',
+  },
+] as const) {
+  test(`the record ${name}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: motion });
+    await goLive(page, (route) => route.fulfill(envelope(stale, snapshot(data))));
+    await expect(page.locator('.now-playing')).toHaveText(text);
+    expect(await disc(page)).toBe(turns ? 'spin' : 'none');
+  });
+}

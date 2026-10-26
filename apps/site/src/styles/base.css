@@ -921,6 +921,18 @@ dialog li p {
   font-size: 0.95rem;
 }
 
+/* The list of keys (ADR 0027). */
+.keys dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 1rem 0;
+}
+
+.keys dd {
+  margin: 0;
+}
+
 dialog mark {
   background: color-mix(in srgb, var(--lamp) 35%, transparent);
   color: inherit;
