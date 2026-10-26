@@ -1,0 +1,32 @@
+# Link check of the built site (`just links`). The justfile passes --root-dir and maps
+# https://ayagmar.dev/* onto apps/site/dist, so absolute links to the site (feeds, sitemap,
+# canonical URLs) are checked as local files, offline.
+
+# Pages are built as /about -> about.html (Astro build.format "file").
+fallback_extensions = ["html"]
+include_fragments = "anchor-only"
+include_verbatim = false
+
+# External links: retried, cached for a day across CI runs (.lycheecache is restored by CI).
+cache = true
+max_cache_age = "1d"
+cache_exclude_status = "429, 500.."
+max_retries = 3
+retry_wait_time = 2
+timeout = 20
+max_concurrency = 16
+# 429: rate limited, not broken.
+accept = ["200..=299", "429"]
+no_progress = true
+
+exclude = [
+  # Inline images in Pagefind's stylesheet.
+  '^data:',
+  # The colophon links the commit the site was built from. A pull request's merge commit is
+  # not a stable URL, and the link is right by construction.
+  '^https://github\.com/ayagmar/ayagmar\.dev/commit/',
+  # X answers 403 to requests from CI runners whether or not the profile exists.
+  '^https://(x|twitter)\.com/',
+  # The signals API is a separate Worker, checked by its own tests; it may not be deployed yet.
+  '^https://api\.ayagmar\.dev/',
+]

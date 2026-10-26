@@ -1,0 +1,129 @@
+// Keeps Cloudflare out of GitHub Actions (ADR 0018): CI never deploys and holds no Cloudflare
+// credential. Fails when a workflow or action under .github/ calls Wrangler itself or names a
+// Cloudflare credential, or when a just recipe a workflow runs (with its dependencies) calls
+// any Wrangler command other than the offline ones: `wrangler types` and
+// `wrangler deploy --dry-run`.
+// Usage: node scripts/ci-policy.ts
+import { execFileSync } from 'node:child_process';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { isScalar, LineCounter, parseDocument, visit } from 'yaml';
+
+type Fragment = string | [string, ...unknown[]][];
+interface Recipe {
+  body: Fragment[][];
+  dependencies: { recipe: string }[];
+}
+interface Dump {
+  recipes: Record<string, Recipe>;
+  assignments: Record<string, { value: unknown }>;
+}
+
+const wrangler = /\bwrangler\b/g;
+const offline = /\bwrangler (?:types\b|deploy --dry-run\b)/g;
+// The only form of `just` a workflow may run: one recipe, alone on its line.
+const invocation = /^\s*just ([a-z][a-z0-9-]*)\s*$/;
+const count = (text: string, pattern: RegExp) => text.match(pattern)?.length ?? 0;
+
+/**
+ * The shell lines of every `run:` in a workflow or action, as YAML parses them: a folded (`>`)
+ * or multi-line plain scalar joins its lines into one command, so they are checked joined.
+ * Each line carries the line number where its `run:` value starts.
+ */
+function runLines(source: string): [number, string][] {
+  const counter = new LineCounter();
+  const doc = parseDocument(source, { lineCounter: counter });
+  if (doc.errors.length > 0) throw new Error(doc.errors.map((e) => e.message).join('; '));
+  const out: [number, string][] = [];
+  visit(doc, {
+    Pair(_, pair) {
+      if (!isScalar(pair.key) || pair.key.value !== 'run' || !isScalar(pair.value)) return;
+      const line = counter.linePos(pair.value.range?.[0] ?? 0).line;
+      for (const text of String(pair.value.value).split('\n')) out.push([line, text]);
+    },
+  });
+  return out;
+}
+const credential = /CLOUDFLARE_|CF_API_|CF_ACCOUNT|wrangler-action/i;
+
+/** Recipe lines as text, with `{{ variable }}` replaced by the variable's value. */
+function lines(recipe: Recipe, dump: Dump): string[] {
+  return recipe.body.map((line) =>
+    line
+      .map((fragment) => {
+        if (typeof fragment === 'string') return fragment;
+        const [[kind, name]] = fragment as [[string, string]];
+        const value = kind === 'variable' ? dump.assignments[name]?.value : undefined;
+        return typeof value === 'string' ? value : '{{…}}';
+      })
+      .join('')
+  );
+}
+
+export function check(root: string): string[] {
+  const problems: string[] = [];
+  const dump = JSON.parse(
+    execFileSync(
+      'just',
+      ['--justfile', join(root, 'justfile'), '--dump', '--dump-format', 'json'],
+      {
+        encoding: 'utf8',
+      }
+    )
+  ) as Dump;
+  const github = join(root, '.github');
+  const called = new Set<string>();
+  for (const entry of readdirSync(github, { recursive: true, encoding: 'utf8' })) {
+    if (!/\.ya?ml$/.test(entry)) continue;
+    const file = relative(root, join(github, entry));
+    readFileSync(join(github, entry), 'utf8')
+      .split('\n')
+      .forEach((text, index) => {
+        if (/\bwrangler\b/.test(text))
+          problems.push(`${file}:${index + 1}: calls Wrangler directly`);
+        if (credential.test(text)) {
+          problems.push(`${file}:${index + 1}: names a Cloudflare credential or action`);
+        }
+      });
+    // Fail closed: `just` anywhere in a command except as one recipe alone on its line (no
+    // `&&`, no second recipe, no wrapper) is a call this check cannot follow.
+    for (const [line, text] of runLines(readFileSync(join(github, entry), 'utf8'))) {
+      if (!/\bjust\b/.test(text)) continue;
+      const command = invocation.exec(text);
+      if (command) called.add(command[1] as string);
+      else problems.push(`${file}:${line}: run one recipe per line as \`just <recipe>\``);
+    }
+  }
+  const seen = new Set<string>();
+  const visit = (name: string, via: string) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    const recipe = dump.recipes[name];
+    if (!recipe) {
+      problems.push(`just ${name} (run by ${via}): not defined in the justfile`);
+      return;
+    }
+    for (const line of lines(recipe, dump)) {
+      // Every Wrangler command on the line must be an offline one.
+      if (count(line, wrangler) > count(line, offline)) {
+        problems.push(`just ${name} (run by ${via}) calls Wrangler online: ${line.trim()}`);
+      }
+      if (credential.test(line))
+        problems.push(`just ${name} (run by ${via}) names a Cloudflare credential`);
+      // A nested `just <recipe>` is not followed; use a recipe dependency instead.
+      if (/\bjust\s+[a-z]/.test(line)) {
+        problems.push(`just ${name} (run by ${via}) calls just itself: ${line.trim()}`);
+      }
+    }
+    for (const dependency of recipe.dependencies) visit(dependency.recipe, via);
+  };
+  for (const name of called) visit(name, `just ${name} in .github`);
+  return problems;
+}
+
+if (import.meta.main) {
+  const problems = check(join(import.meta.dirname, '..'));
+  for (const problem of problems) console.error(problem);
+  if (problems.length > 0) process.exit(1);
+  console.log('ci-policy: no Wrangler or Cloudflare credential in GitHub Actions');
+}

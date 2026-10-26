@@ -1,6 +1,6 @@
 // Writes resume/build/resume.pdf from content/about.json with Typst (`just resume`). The data is
 // validated first, so a bad field fails with a message naming it instead of a Typst error.
-// Usage: TYPST=<path to typst> node scripts/resume.ts
+// Usage: node scripts/resume.ts (typst on PATH: .tools/bin through the justfile, else mise)
 import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -10,7 +10,7 @@ import { generatedResume, readAbout, repoRoot } from './ship-resume.ts';
 export function compileResume(root: string, output: string): void {
   mkdirSync(dirname(output), { recursive: true });
   const result = spawnSync(
-    process.env.TYPST ?? 'typst',
+    'typst',
     [
       'compile',
       '--root',
