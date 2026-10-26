@@ -182,6 +182,15 @@ for (const [name, answer] of [
   ['not JSON', { status: 200, contentType: 'application/json', body: '{"source":' }],
   ['from the future', envelope('listening', { fetchedAt: '2026-10-26T14:00:00Z' })],
   ['on 31 September', envelope('listening', { fetchedAt: '2026-09-31T11:59:00Z' })],
+  // Newer than the build's, but not current: only a fresh answer replaces what is shown.
+  [
+    'flagged stale by signals',
+    envelope('listening', {
+      stale: true,
+      data: { ...snapshotFixtures.listening.ok, nowPlaying: null, recent: [] },
+    }),
+  ],
+  ['older than the threshold', envelope('listening', { fetchedAt: '2026-10-26T11:30:00Z' })],
 ] as const) {
   test(`keeps the build's snapshot on an answer: ${name}`, async ({ page }) => {
     const asked = await visit(page, noon, { listening: answer });
@@ -222,16 +231,18 @@ test('a good answer stays through failures and ages honestly', async ({ page }) 
   await expect(panel(page, 'listening').locator('dd').first()).toHaveText('124');
 });
 
-test('an answer signals calls stale replaces the build but is labelled out of date', async ({
-  page,
-}) => {
-  await visit(page, noon, {
+// Catches a stale answer wiping out what the build showed: a day later, signals still serves
+// yesterday's snapshot, flagged stale and empty. The build's list stays, labelled with its age.
+test('a stale answer keeps what is shown, ageing', async ({ page }) => {
+  await visit(page, '2026-10-27T12:00:00Z', {
     shipping: envelope('shipping', { stale: true, data: { events: [], starHistory: [] } }),
   });
-  await expect(panel(page, 'shipping').locator('.shipping-body')).toHaveText(
-    'No public activity to show yet.'
+  await expect(freshness(page, 'shipping')).toHaveText('May be out of date: updated yesterday');
+  await expect(freshness(page, 'shipping').locator('time')).toHaveAttribute(
+    'datetime',
+    '2026-10-26T09:00:00Z'
   );
-  await expect(freshness(page, 'shipping')).toHaveText('May be out of date: updated 1 minute ago');
+  await expect(panel(page, 'shipping').locator('.shipping li')).toHaveCount(15);
 });
 
 // Catches polling a hidden tab, and a tab restored from the back/forward cache showing what it

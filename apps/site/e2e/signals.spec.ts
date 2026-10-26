@@ -109,7 +109,10 @@ test('now playing keeps the build-time value when the API fails', async ({ page 
 
 test('now playing does not claim a stale answer is live', async ({ page }) => {
   await goLive(page, (route) => route.fulfill(listening(true, null)));
-  await expect(page.locator('.now-playing')).toHaveText('Nothing played lately');
+  // Not current, so it does not replace the build's track.
+  await expect(page.locator('.now-playing')).toHaveText(
+    'Last played Friendships and Love by Rocketship, 1 hour ago'
+  );
 });
 
 // Catches a link to anywhere but Last.fm: the contract allows only Last.fm pages, so an answer
@@ -153,7 +156,7 @@ for (const { name, stale, data, text, turns, motion } of [
     name: 'rests on a stale answer',
     stale: true,
     data: 'ok',
-    text: 'Last played Friendships and Love by Rocketship, 1 minute ago',
+    text: 'Last played Friendships and Love by Rocketship, 1 hour ago',
     turns: false,
     motion: 'no-preference',
   },

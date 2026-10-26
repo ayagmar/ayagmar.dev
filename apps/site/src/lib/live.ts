@@ -172,11 +172,12 @@ export function readAnswer<Data>(
  * Keeps the panel `[data-live=<source>]` current. Its HTML is the build's snapshot, taken at
  * `data-fetched-at` (absent when the build had none), and `data-stale-after` gives the
  * source's threshold in seconds. In api mode `data-live-src` names the endpoint, asked every
- * `everyMs` while the page is visible. A valid answer at least as new as what is shown
- * replaces it through `render`; anything else keeps it. Whatever is shown is labelled with its
- * age, and called out of date once older than the threshold or when signals said so. `render`
- * is told whether the answer still describes now: fresh, and the latest request brought it or
- * an older one, not a failure or an answer the page cannot use.
+ * `everyMs` while the page is visible. Only a current answer replaces what is shown, through
+ * `render`: valid, not flagged stale by signals, within the threshold, and at least as new.
+ * Anything else keeps it. Whatever is shown is labelled with its age, and called out of date
+ * once older than the threshold. `render` is told whether the answer still describes now:
+ * fresh, and the latest request brought it or an older one, not a failure or an answer the
+ * page cannot use.
  */
 export function live<Data>(
   source: string,
@@ -188,6 +189,7 @@ export function live<Data>(
   if (!panel) return;
   const { liveSrc, fetchedAt, staleAfter } = panel.dataset;
   const freshness = panel.querySelector<HTMLElement>('.freshness');
+  const limit = Number(staleAfter) * 1000;
   // The build's snapshot until an answer replaces it.
   let shown: Omit<Answer<Data>, 'data'> & { data?: Data } = {
     fetchedAt: fetchedAt ?? '',
@@ -197,8 +199,10 @@ export function live<Data>(
   let drawn = '';
   poll(liveSrc, everyMs, (body, time, failed) => {
     const answer = readAnswer(body, source, read, time);
-    if (answer && !(answer.at < shown.at)) shown = answer;
-    const fresh = !shown.stale && time - shown.at <= Number(staleAfter) * 1000;
+    if (answer && !answer.stale && time - answer.at <= limit && !(answer.at < shown.at)) {
+      shown = answer;
+    }
+    const fresh = time - shown.at <= limit;
     const now = fresh && !failed && answer !== undefined;
     const key = `${shown.at} ${fresh} ${now}`;
     if (key !== drawn && shown.fetchedAt) {
