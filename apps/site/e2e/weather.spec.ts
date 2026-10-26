@@ -249,7 +249,9 @@ test('the room asks for weather on load, then every 15 minutes', async ({ page }
   await expect.poll(() => requests).toBe(1);
   await page.clock.runFor(14 * minute);
   expect(requests).toBe(1);
-  await page.clock.runFor(2 * minute);
+  // The 15-minute tick asks again. Stop the clock right after it: the fake clock also runs the
+  // request's 5 s deadline, which would abort it before the route sees it.
+  await page.clock.runFor(minute);
   await expect.poll(() => requests).toBe(2);
 });
 
@@ -317,9 +319,10 @@ test('a hanging refresh drops the weather at its deadline, and a later answer br
   await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'rain');
   await page.clock.runFor(15 * minute);
   await expect.poll(() => requests).toBe(2);
-  // The request's deadline runs on the real clock: 5 seconds.
+  // The page clock flows at real speed between steps, so the 5 s deadline takes 5 s.
   await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'none', { timeout: 8_000 });
-  await page.clock.runFor(15 * minute);
+  // Jump rather than run: running would also play out the next request's deadline.
+  await page.clock.fastForward(15 * minute);
   await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'snow');
 });
 
