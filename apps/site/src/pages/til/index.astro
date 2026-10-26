@@ -21,15 +21,18 @@ const feeds = feedPaths({ til: true });
   feed={{ til: true }}
 >
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
-  <div class="paper">
+  <div class="reader">
     <h1>Today I learned</h1>
     {notes.length === 0 ? (
       <p>Nothing published yet.</p>
     ) : (
-      notes.map(({ note, Content }) => (
-        <TilNote id={note.id} data={note.data}>
-          <Content />
-        </TilNote>
+      notes.map(({ note, Content }, index) => (
+        <>
+          {index > 0 && <hr>}
+          <TilNote id={note.id} data={note.data}>
+            <Content />
+          </TilNote>
+        </>
       ))
     )}
     <p class="caption">

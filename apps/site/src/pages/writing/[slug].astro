@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import PostHeader from '../../components/PostHeader.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
+import Toc from '../../components/Toc.astro';
 import Base from '../../layouts/Base.astro';
 import { renderArt } from '../../lib/art.ts';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
@@ -29,17 +30,18 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { post, envelope, cards } = Astro.props;
-const { Content, remarkPluginFrontmatter } = await render(post);
+const { Content, headings, remarkPluginFrontmatter } = await render(post);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
 const { title, summary, art } = post.data;
 ---
 
 <Base title={title} description={summary}>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
-  <article class="paper post" data-pagefind-body>
+  <article class="reader" data-pagefind-body>
     <PostHeader post={post}>
       {art !== undefined && <Fragment slot="art" set:html={renderArt(post.id, art)} />}
     </PostHeader>
+    <Toc headings={headings} />
     <div class="prose">
       <Content />
     </div>

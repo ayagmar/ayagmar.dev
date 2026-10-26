@@ -1,0 +1,24 @@
+---
+import type { MarkdownHeading } from 'astro';
+import { contents } from '../lib/toc.ts';
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+// A disclosure on phones, always open beside the text from 64rem (base.css); no script.
+const items = contents(Astro.props.headings);
+---
+
+{items.length > 0 && (
+  <details class="toc" data-pagefind-ignore>
+    <summary>On this page</summary>
+    <ol>
+      {items.map((item) => (
+        <li data-depth={item.depth}>
+          <a href={`#${item.slug}`}>{item.text}</a>
+        </li>
+      ))}
+    </ol>
+  </details>
+)}
