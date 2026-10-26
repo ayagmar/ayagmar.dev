@@ -68,6 +68,23 @@ const cases = (name: string, kind: Kind) => {
 const compile = (path: string) =>
   new Ajv2020({ strict: true, validateFormats: false }).compile(readJson(path) as object);
 
+// Optional fields added to a schema within v1 (ADR 0008). A Worker or consumer from before one
+// strips it from what it reads; what is left must stay valid, and parse without the field.
+const addedWithinV1: Record<string, string> = {
+  'push-llm-usage': 'activeMs',
+  'llm-usage': 'activeMs',
+};
+const without = (value: unknown, key: string): unknown =>
+  Array.isArray(value)
+    ? value.map((item) => without(item, key))
+    : value !== null && typeof value === 'object'
+      ? Object.fromEntries(
+          Object.entries(value)
+            .filter(([k]) => k !== key)
+            .map(([k, item]) => [k, without(item, key)])
+        )
+      : value;
+
 for (const [name, schema] of Object.entries(jsonSchemas)) {
   describe(`${name} contract`, () => {
     const producer = compile(join(root, 'schema', `${name}.input.json`));
@@ -106,6 +123,21 @@ for (const [name, schema] of Object.entries(jsonSchemas)) {
         expect(v1(payload), JSON.stringify(v1.errors)).toBe(true);
       }
     );
+
+    const field = addedWithinV1[name];
+    if (field !== undefined) {
+      it.each(accepted)(
+        'accepts %s as a v1 reader from before its added field leaves it, without a default',
+        (_file, payload) => {
+          const old = without(payload, field);
+          const parsed = schema.safeParse(old);
+          expect(parsed.error).toBeUndefined();
+          expect(JSON.stringify(parsed.data)).not.toContain(`"${field}"`);
+          expect(producer(old), JSON.stringify(producer.errors)).toBe(true);
+          expect(consumer(old), JSON.stringify(consumer.errors)).toBe(true);
+        }
+      );
+    }
 
     it('has a frozen v1 consumer schema', () => {
       expect(existsSync(frozen)).toBe(true);
