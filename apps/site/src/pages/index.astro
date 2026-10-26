@@ -4,28 +4,102 @@ import PostList from '../components/PostList.astro';
 import ShippingList from '../components/ShippingList.astro';
 import { signals } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
-import { getPosts } from '../lib/posts.ts';
+import { getPosts, getProjects } from '../lib/posts.ts';
+import { projectPath } from '../lib/projects.ts';
+import { roomObjects } from '../lib/room.ts';
 import { site } from '../lib/site.ts';
+import '../styles/room.css';
 
-const posts = (await getPosts()).slice(0, 5);
+const posts = (await getPosts()).slice(0, 4);
+const projects = (await getProjects()).projects.slice(0, 5);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
-const recentlyShipped = shipping.data?.events.slice(0, 5) ?? [];
+const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 ---
 
 <Base>
-  <h1>{site.name}</h1>
-  <p>{site.author}, {site.role.toLowerCase()} in {site.location}.</p>
-  <h2>Recent writing</h2>
-  <PostList posts={posts} />
-  <p><a href="/writing">All writing</a></p>
-  <h2>Listening</h2>
-  <NowPlayingPanel listening={listening} />
-  <h2>Recently shipped</h2>
-  {recentlyShipped.length === 0 ? (
-    <p>Nothing to show yet.</p>
-  ) : (
-    <ShippingList events={recentlyShipped} />
-  )}
-  <p><a href="/stats">More stats</a></p>
+  <section slot="room" class="room" aria-label="The room">
+    <div class="scene">
+      <span
+        class="room-art night"
+        role="img"
+        aria-label="A pixel-art desk at night in Morocco. The lamp is on, the monitor glows, and a crescent moon hangs over a minaret in the arched window."
+      ></span>
+      <span
+        class="room-art day"
+        role="img"
+        aria-label="A pixel-art desk in Morocco by day. Sunlight comes through the arched window over whitewashed rooftops and a minaret; the lamp is off."
+      ></span>
+      {roomObjects.map((item) => (
+        <a class="hotspot" href={item.href} data-room={item.id}>
+          <span>
+            {item.object}: {item.section}
+          </span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <h1 class="intro">{site.author}. <span>{site.role}, {site.location}.</span></h1>
+  <nav aria-label="The room as a list">
+    <ul class="room-list">
+      {roomObjects.map((item) => (
+        <li>
+          <a href={item.href} data-room-list={item.id}>
+            {item.object} <span>{item.section}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <div class="home-panels">
+    <section class="paper" aria-labelledby="writing">
+      <div class="panel-head">
+        <h2 id="writing">Writing</h2>
+        <a href="/writing">All writing</a>
+      </div>
+      <PostList posts={posts} />
+    </section>
+
+    <section class="panel m-screen" aria-labelledby="projects">
+      <div class="panel-head">
+        <h2 id="projects">Projects</h2>
+        <a href="/projects">All projects</a>
+      </div>
+      <ul class="home-projects">
+        {projects.map((project) => (
+          <li>
+            <a href={projectPath(project.slug)}>{project.slug}</a>
+            {project.summary !== null && <p>{project.summary}</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <div>
+      <section class="panel m-vinyl" aria-labelledby="listening">
+        <div class="panel-head">
+          <h2 id="listening">Listening</h2>
+          <a href="/stats#listening">More</a>
+        </div>
+        <div class="record">
+          <div class="disc" aria-hidden="true"></div>
+          <NowPlayingPanel listening={listening} />
+        </div>
+      </section>
+
+      <section class="panel m-cork" aria-labelledby="shipping">
+        <div class="panel-head">
+          <h2 id="shipping">Shipping</h2>
+          <a href="/stats#shipping">More</a>
+        </div>
+        {recentlyShipped.length === 0 ? (
+          <p>Nothing to show yet.</p>
+        ) : (
+          <ShippingList events={recentlyShipped} />
+        )}
+      </section>
+    </div>
+  </div>
 </Base>

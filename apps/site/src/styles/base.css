@@ -1,12 +1,101 @@
-/* Base layer only: readable and responsive until the visual design lands. */
+/* The late-night room (ADR 0026): one token layer for day and night, mobile first.
+   Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
+   It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
+
+@font-face {
+  font-family: "min7 Serif";
+  src: url("../fonts/serif-roman.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "min7 Serif";
+  src: url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../fonts/mono.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light dark;
-  --measure: 70ch;
-  --space: clamp(1rem, 0.6rem + 2vw, 2rem);
-  font-family: system-ui, sans-serif;
-  line-height: 1.6;
+
+  /* The room: wall, the lamp (links, time), the screen glow (projects), text. */
+  --ground: light-dark(#ece2cf, #0c0b14);
+  --surface: light-dark(#e3d7bf, #16192f);
+  --line: light-dark(#b9a98c, #3a3f6e);
+  --text: light-dark(#221c2c, #efe6d0);
+  --muted: light-dark(#5b5163, #aeabc4);
+  --lamp: light-dark(#7f4100, #f2b457);
+  --glow: light-dark(#155a46, #7fe0b4);
+  --rose: light-dark(#9c3328, #f0958a);
+
+  /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
+  --paper: light-dark(#fbf6ea, #efe3c6);
+  --paper-2: light-dark(#f0e7d3, #e3d4b2);
+  --ink: #1f1b2e;
+  --ink-2: #574f66;
+  --ink-link: #8a2c26;
+  --code-bg: #1f1b2e;
+  --code-fg: #efe6d0;
+
+  /* Panel materials: each panel wears its object's surface. */
+  --screen: light-dark(#dcebe4, #0a1a1c);
+  --vinyl: light-dark(#e6dfe6, #13111c);
+  --cork: light-dark(#e6d2b3, #4a3426);
+  --wood: light-dark(#ead9c0, #2c1d16);
+  --tea: light-dark(#d9e8dd, #10241f);
+  --frame: light-dark(#e2dfec, #14172b);
+
+  --serif: "min7 Serif", Charter, "Iowan Old Style", Georgia, serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --gutter: clamp(1rem, 0.5rem + 2.5vw, 2rem);
+  --measure: 66ch;
+  --notch: 6px;
+  /* Stepped pixel corners for panels. */
+  --step: polygon(
+    0 var(--notch),
+    var(--notch) var(--notch),
+    var(--notch) 0,
+    calc(100% - var(--notch)) 0,
+    calc(100% - var(--notch)) var(--notch),
+    100% var(--notch),
+    100% calc(100% - var(--notch)),
+    calc(100% - var(--notch)) calc(100% - var(--notch)),
+    calc(100% - var(--notch)) 100%,
+    var(--notch) 100%,
+    var(--notch) calc(100% - var(--notch)),
+    0 calc(100% - var(--notch))
+  );
+
+  /* What the current surface draws with; panels and paper override these four. */
+  --bg: var(--ground);
+  --fg: var(--text);
+  --fg-2: var(--muted);
+  --accent: var(--lamp);
+
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 1.0625rem / 1.6 var(--serif);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+:root[data-theme="day"] {
+  color-scheme: light;
+}
+
+:root[data-theme="night"] {
+  color-scheme: dark;
 }
 
 *,
@@ -16,10 +105,14 @@
 }
 
 body {
-  margin: 0 auto;
-  padding: var(--space);
-  max-width: calc(var(--measure) + 2 * var(--space));
+  margin: 0;
+  min-height: 100vh;
   overflow-wrap: break-word;
+}
+
+::selection {
+  background: var(--lamp);
+  color: var(--ground);
 }
 
 img,
@@ -29,15 +122,88 @@ video {
   height: auto;
 }
 
-pre {
-  overflow-x: auto;
-  padding: 0.75rem;
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  margin: 1.6em 0 0.5em;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+h1 {
+  margin-top: 0.5em;
+  font-size: clamp(2rem, 1.5rem + 2.5vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+h3 {
+  font-size: 1.15rem;
+}
+
+p,
+ul,
+ol,
+dl,
+blockquote,
+pre,
+table,
+figure {
+  margin: 0 0 1em;
+}
+
+time,
+code,
+kbd,
+pre,
+dd,
+.mono {
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
 code,
+kbd,
 pre {
-  font-family: ui-monospace, monospace;
-  font-size: 0.9em;
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+pre {
+  overflow-x: auto;
+  padding: 1rem 1.1rem;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  line-height: 1.5;
+}
+
+pre code {
+  font-size: inherit;
+}
+
+:not(pre) > code {
+  padding: 0.1em 0.3em;
+  background: color-mix(in srgb, var(--fg) 9%, transparent);
 }
 
 table {
@@ -45,28 +211,32 @@ table {
   max-width: 100%;
   overflow-x: auto;
   border-collapse: collapse;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
-header,
-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  align-items: center;
-  justify-content: space-between;
+th,
+td {
+  padding: 0.4rem 0.9rem 0.4rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+  text-align: start;
+  vertical-align: top;
 }
 
-nav,
-nav ul,
-footer ul,
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 1rem;
-  align-items: center;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+th {
+  border-bottom: 2px solid var(--fg);
+  font-weight: 650;
+}
+
+blockquote {
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid var(--accent);
+  font-style: italic;
+}
+
+hr {
+  margin: 2rem 0;
+  border: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--fg) 35%, transparent);
 }
 
 /* Targets of at least 24 by 24 CSS pixels (WCAG 2.2 target size). */
@@ -82,45 +252,477 @@ input {
   padding-block: 0.25rem;
 }
 
+button {
+  border: 1px solid var(--line);
+  padding-inline: 0.6rem;
+  background: transparent;
+  color: var(--fg);
+  font: 500 0.8125rem / 1.2 var(--mono);
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: var(--accent);
+}
+
+button[aria-disabled="true"] {
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
 input {
   max-width: 100%;
+  border: 1px solid var(--line);
+  padding-inline: 0.5rem;
+  background: var(--ground);
+  color: var(--text);
   font: inherit;
 }
 
-/* Mermaid diagrams (ADR 0024). Colors come only from Pele's variables; the design retunes them. */
+kbd {
+  padding: 0 0.25em;
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+}
+
+.wrap {
+  width: min(70rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+}
+
+.skip {
+  position: absolute;
+  left: -100vw;
+}
+
+.skip:focus {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 10;
+  padding: 0.5rem 0.9rem;
+  background: var(--lamp);
+  color: var(--ground);
+  font: 600 0.85rem var(--mono);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- header and footer ---------- */
+
+.site-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: center;
+  padding-block: 1rem 0.75rem;
+}
+
+.wordmark {
+  font: 700 1.6rem / 1 var(--mono);
+  letter-spacing: -0.03em;
+  text-decoration: none;
+}
+
+.wordmark span:first-child {
+  color: var(--glow);
+}
+
+.wordmark span:last-child {
+  color: var(--lamp);
+}
+
+.site-header nav {
+  order: 3;
+  flex-basis: 100%;
+}
+
+.site-header ul,
+.site-footer ul,
+.tags,
+.project-links,
+.inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-header nav a {
+  color: var(--fg);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.site-header nav a:hover,
+.site-header nav a[aria-current="page"] {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.site-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/* The search island's link before it hydrates. */
+.site-tools > a {
+  font: 500 0.8125rem var(--mono);
+}
+
+.theme-switch {
+  display: none;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+:root[data-theme-switch] .theme-switch {
+  display: flex;
+}
+
+.theme-switch button + button {
+  border-inline-start: 0;
+}
+
+.theme-switch [aria-pressed="true"] {
+  background: var(--lamp);
+  border-color: var(--lamp);
+  color: var(--ground);
+}
+
+@media (min-width: 52rem) {
+  .site-header nav {
+    order: 0;
+    flex-basis: auto;
+  }
+}
+
+.site-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 3rem;
+  padding-block: 1.5rem 2.5rem;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font: 500 0.8125rem / 1.5 var(--mono);
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  color: var(--fg);
+}
+
+/* ---------- surfaces ---------- */
+
+.panel,
+.paper {
+  margin-block: 1.25rem;
+  background: var(--bg);
+  color: var(--fg);
+  clip-path: var(--step);
+}
+
+.panel {
+  --bg: var(--surface);
+  padding: 1.25rem 1.1rem 1.4rem;
+}
+
+.panel > :first-child,
+.paper > :first-child {
+  margin-top: 0;
+}
+
+.panel > :last-child,
+.paper > :last-child {
+  margin-bottom: 0;
+}
+
+.panel h2 {
+  margin-top: 0;
+}
+
+.m-screen {
+  --bg: var(--screen);
+  --accent: var(--glow);
+}
+
+.m-vinyl {
+  --bg: var(--vinyl);
+}
+
+.m-cork {
+  --bg: var(--cork);
+}
+
+.m-wood {
+  --bg: var(--wood);
+}
+
+.m-tea {
+  --bg: var(--tea);
+  --accent: var(--glow);
+}
+
+.m-frame {
+  --bg: var(--frame);
+}
+
+/* The notebook: a sheet of paper with a perforated left edge, holding the writing. */
+.paper {
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --fg-2: var(--ink-2);
+  --accent: var(--ink-link);
+  position: relative;
+  padding: 1.5rem 1.1rem 1.5rem 2rem;
+}
+
+.paper::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 10px;
+  background:
+    radial-gradient(circle at 0 5px, var(--ground) 0 5px, transparent 5.5px) 0 16px / 10px 40px
+    repeat-y;
+}
+
+.caption,
+.freshness,
+.project-post-count,
+.project-status,
+.search-projects {
+  color: var(--fg-2);
+  font: 500 0.8125rem / 1.5 var(--mono);
+}
+
+@media (min-width: 40rem) {
+  .panel {
+    padding: 1.75rem 1.9rem 1.9rem;
+  }
+
+  .paper {
+    padding: 2.25rem 2.5rem 2.25rem 3.5rem;
+  }
+
+  .paper::before {
+    width: 12px;
+    background:
+      radial-gradient(circle at 0 7px, var(--ground) 0 6px, transparent 6.5px) 0 22px / 12px 48px
+      repeat-y;
+  }
+}
+
+/* ---------- post lists, tags, shipping ---------- */
+
+.posts {
+  padding: 0;
+  list-style: none;
+}
+
+.posts li {
+  padding-block: 1rem;
+  border-bottom: 1px dashed color-mix(in srgb, var(--fg) 25%, transparent);
+}
+
+.posts li:first-child {
+  padding-top: 0;
+}
+
+.posts li:last-child {
+  border-bottom: 0;
+}
+
+.posts a {
+  display: block;
+  color: var(--fg);
+  font-size: 1.3rem;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  text-wrap: balance;
+}
+
+.posts a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.posts time {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--fg-2);
+  font: 500 0.8125rem var(--mono);
+}
+
+.posts strong {
+  font: 600 0.75rem var(--mono);
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.posts p {
+  margin: 0.35rem 0 0;
+  max-width: var(--measure);
+  color: var(--fg-2);
+}
+
+.tags a,
+.post-projects a {
+  font: 500 0.8125rem var(--mono);
+}
+
+.tags a::before {
+  content: "#";
+}
+
+.shipping {
+  padding: 0;
+  list-style: none;
+}
+
+.shipping li {
+  padding-block: 0.35rem;
+}
+
+.shipping time {
+  margin-inline-end: 0.5rem;
+  color: var(--fg-2);
+  font: 500 0.8125rem var(--mono);
+}
+
+/* ---------- a post: the notebook's best-set page ---------- */
+
+.post,
+.post ~ .project-card {
+  max-width: calc(var(--measure) + 8rem);
+  margin-inline: auto;
+}
+
+.post-header h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 1.3rem + 3.2vw, 3.25rem);
+}
+
+.post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  align-items: center;
+  margin-bottom: 2rem;
+  color: var(--fg-2);
+  font: 500 0.8125rem / 1.5 var(--mono);
+}
+
+.post-meta p,
+.post-meta ul {
+  margin: 0;
+}
+
+.post-projects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.post-art {
+  margin: 0 0 1.5rem;
+}
+
+.prose {
+  max-width: var(--measure);
+  font-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
+  line-height: 1.65;
+}
+
+.prose h2 {
+  font-size: 1.55em;
+}
+
+.prose h3 {
+  font-size: 1.2em;
+}
+
+.prose li + li {
+  margin-top: 0.3em;
+}
+
+.prose img {
+  display: block;
+}
+
+.prose [data-footnotes],
+.prose .footnotes {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+  font-size: 0.85em;
+}
+
+.prose sup a,
+.prose [data-footnote-backref] {
+  font-family: var(--mono);
+  font-size: 0.8em;
+  text-decoration: none;
+}
+
+/* Mermaid diagrams (ADR 0024). Colors and font come only from Pele's variables. They sit on the
+   paper, so they take its ink, tinted for the time of day. */
 .diagram {
-  margin: 1.5rem 0;
+  margin: 1.75rem 0;
   overflow-x: auto;
 }
 
 .diagram figcaption {
-  font-size: 0.9em;
+  margin-top: 0.4rem;
+  color: var(--fg-2);
+  font: 500 0.8125rem var(--mono);
 }
 
 .pele {
   --pele-font: system-ui, sans-serif;
-  --pele-bg: #fff;
-  --pele-fg: #1f1f1f;
-  --pele-muted: #5c5c5c;
-  --pele-line: #1f1f1f;
-  --pele-surface: #f3f3f3;
-  --pele-surface-alt: #e6e6e6;
-  --pele-border: #767676;
-  --pele-accent: #3a5bb8;
+  --pele-bg: var(--paper);
+  --pele-fg: var(--ink);
+  --pele-muted: var(--ink-2);
+  --pele-line: var(--ink);
+  --pele-surface: var(--paper-2);
+  --pele-surface-alt: light-dark(#e4d8bd, #d6c39b);
+  --pele-border: light-dark(#7c7083, #6b6074);
+  --pele-accent: light-dark(#2f6d5a, #8a2c26);
+  /* Chart series, all at least 3:1 on the paper. Past six, Pele's own palette shows. */
+  --pele-series-1: var(--pele-accent);
+  --pele-series-2: var(--ink);
+  --pele-series-3: light-dark(#8a2c26, #2f6d5a);
+  --pele-series-4: var(--ink-2);
+  --pele-series-5: #7f4100;
+  --pele-series-6: var(--pele-border);
 }
 
-@media (prefers-color-scheme: dark) {
-  .pele {
-    --pele-bg: #121212;
-    --pele-fg: #e6e6e6;
-    --pele-muted: #a6a6a6;
-    --pele-line: #e6e6e6;
-    --pele-surface: #1f1f1f;
-    --pele-surface-alt: #2a2a2a;
-    --pele-border: #8a8a8a;
-    --pele-accent: #8fa8f0;
-  }
-}
+/* ---------- projects ---------- */
 
 /* Project names, descriptions and release tags come from GitHub and may hold long unbroken
    tokens: let them break anywhere, and let flex children of the page header shrink. */
@@ -134,32 +736,181 @@ input {
   min-inline-size: 0;
 }
 
-.posts {
+.projects {
+  display: grid;
+  gap: 1.25rem;
   padding: 0;
   list-style: none;
 }
 
-.posts p {
-  margin-top: 0;
+.projects h2,
+.project h1,
+.project-card h2 {
+  font-family: var(--mono);
+  letter-spacing: -0.02em;
 }
 
-.posts time {
-  margin-inline-end: 0.5rem;
-  font-variant-numeric: tabular-nums;
+.projects h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
 }
 
-:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
+.projects p {
+  margin: 0;
 }
 
-.skip {
-  position: absolute;
-  left: -100vw;
+.project h1 {
+  color: var(--glow);
+  font-size: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
 }
 
-.skip:focus {
-  position: static;
+/* Label above value on phones, side by side from 30rem. */
+.project-stats {
+  display: grid;
+  gap: 0 1.25rem;
+}
+
+@media (min-width: 30rem) {
+  .project-stats {
+    grid-template-columns: max-content 1fr;
+    row-gap: 0.25rem;
+  }
+}
+
+.project-stats dt {
+  color: var(--fg-2);
+  font: 500 0.8125rem / 1.9 var(--mono);
+}
+
+.project-stats dd {
+  margin: 0 0 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+}
+
+/* ---------- about, stats ---------- */
+
+.timeline {
+  padding: 0;
+  list-style: none;
+}
+
+.timeline > li + li {
+  margin-top: 1.5rem;
+}
+
+.timeline h3 {
+  margin: 0 0 0.15rem;
+}
+
+.timeline p {
+  margin-bottom: 0.4rem;
+  color: var(--fg-2);
+}
+
+.timeline time {
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+.timeline ul {
+  padding-inline-start: 1.1rem;
+}
+
+.lede {
+  max-width: 38ch;
+  font-size: clamp(1.2rem, 1.05rem + 0.8vw, 1.5rem);
+  line-height: 1.35;
+}
+
+.stats-grid {
+  display: grid;
+  gap: 0 1.25rem;
+}
+
+.stats-grid dl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.2rem 1rem;
+}
+
+.stats-grid dd {
+  margin: 0;
+  font-family: var(--mono);
+}
+
+@media (min-width: 60rem) {
+  .stats-grid {
+    grid-template-columns: repeat(12, 1fr);
+    align-items: start;
+  }
+
+  .stats-grid > * {
+    grid-column: span 6;
+  }
+
+  /* Listening and shipping side by side, the three smaller sources in a row under them. */
+  .stats-grid > :nth-child(n + 3) {
+    grid-column: span 4;
+  }
+}
+
+/* ---------- search dialog ---------- */
+
+dialog {
+  width: min(40rem, 100% - 2rem);
+  max-height: min(36rem, 100% - 4rem);
+  border: 1px solid var(--line);
+  padding: 1.25rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+dialog::backdrop {
+  background: color-mix(in srgb, #0c0b14 60%, transparent);
+}
+
+dialog search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+dialog h2 {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+dialog label {
+  flex-basis: 100%;
+  color: var(--muted);
+  font: 500 0.8125rem var(--mono);
+}
+
+dialog input {
+  flex: 1 1 12rem;
+}
+
+dialog ul {
+  padding: 0;
+  list-style: none;
+}
+
+dialog li {
+  padding-block: 0.6rem;
+  border-bottom: 1px dashed var(--line);
+}
+
+dialog li p {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+}
+
+dialog mark {
+  background: color-mix(in srgb, var(--lamp) 35%, transparent);
+  color: inherit;
 }
 
 /* biome-ignore-start lint/complexity/noImportantStyles: reduced motion must beat any component style. */
@@ -167,8 +918,7 @@ input {
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
+    animation: none !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }

@@ -7,20 +7,26 @@ const isCommit = /^[0-9a-f]{40}$/.test(COMMIT_SHA);
 ---
 
 <Base title="Colophon">
-  <h1>Colophon</h1>
-  <p>
-    Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No tracking, no
-    cookies, no third-party scripts.
-  </p>
-  <p>
-    This build:
-    {isCommit ? (
-      <a href={`${repo}/commit/${COMMIT_SHA}`}>
-        <code>{COMMIT_SHA.slice(0, 12)}</code>
-      </a>
-    ) : (
-      <code>{COMMIT_SHA}</code>
-    )}
-  </p>
-  <p><a href={repo}>Source</a> (code MIT, writing all rights reserved).</p>
+  <div class="paper">
+    <h1>Colophon</h1>
+    <p>
+      Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No tracking, no
+      cookies, no third-party scripts.
+    </p>
+    <p>
+      This build:
+      {isCommit ? (
+        <a href={`${repo}/commit/${COMMIT_SHA}`}>
+          <code>{COMMIT_SHA.slice(0, 12)}</code>
+        </a>
+      ) : (
+        <code>{COMMIT_SHA}</code>
+      )}
+    </p>
+    <p>
+      Set in Source Serif 4 and JetBrains Mono, both self-hosted. The room on the home page is drawn
+      by a script, pixel by pixel; no photos.
+    </p>
+    <p><a href={repo}>Source</a> (code MIT, writing all rights reserved).</p>
+  </div>
 </Base>

@@ -1,12 +1,12 @@
 ---
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
+import PostHeader from '../../components/PostHeader.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import Base from '../../layouts/Base.astro';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { getPosts, getProjects } from '../../lib/posts.ts';
-import { morePostsAbout, projectPath } from '../../lib/projects.ts';
-import { isoDay, tagPath } from '../../lib/writing.ts';
+import { morePostsAbout } from '../../lib/projects.ts';
 
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
@@ -30,49 +30,16 @@ export const getStaticPaths = (async () => {
 const { post, envelope, cards } = Astro.props;
 const { Content, remarkPluginFrontmatter } = await render(post);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
-const { title, summary, date, updated, tags, draft, projects } = post.data;
+const { title, summary } = post.data;
 ---
 
 <Base title={title} description={summary}>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
-  <article data-pagefind-body>
-    <header>
-      <h1>{title}</h1>
-      {draft && (
-        <p>
-          <strong>Draft:</strong> not published yet.
-        </p>
-      )}
-      <p>
-        Published <time datetime={isoDay(date)}>{isoDay(date)}</time>
-        {updated && (
-          <>
-            , last updated <time datetime={isoDay(updated)}>{isoDay(updated)}</time>
-          </>
-        )}
-      </p>
-      {tags.length > 0 && (
-        <ul class="tags" aria-label="Tags">
-          {tags.map((tag) => (
-            <li>
-              <a href={tagPath(tag)}>{tag}</a>
-            </li>
-          ))}
-        </ul>
-      )}
-      {projects.length > 0 && (
-        <ul class="post-projects" aria-label="Projects">
-          {projects.map((slug) => (
-            <li>
-              <a href={projectPath(slug)} data-pagefind-filter="project">
-                {slug}
-              </a>
-            </li>
-          ))}
-        </ul>
-      )}
-    </header>
-    <Content />
+  <article class="paper post" data-pagefind-body>
+    <PostHeader post={post} />
+    <div class="prose">
+      <Content />
+    </div>
   </article>
   {cards.map(({ project, more }) => (
     <ProjectCard project={project} envelope={envelope} more={more} />

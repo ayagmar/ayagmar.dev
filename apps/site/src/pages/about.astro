@@ -22,92 +22,96 @@ const span = (start: string, end: string | null) => ({
 ---
 
 <Base title="About">
-  <h1>{identity.name}</h1>
-  <p>{about.summary}</p>
-  <ResumeDownload published={about.resume.published} />
+  <header class="panel m-tea">
+    <h1>{identity.name}</h1>
+    <p class="lede">{about.summary}</p>
+    <ResumeDownload published={about.resume.published} />
+  </header>
 
-  <section aria-labelledby="experience">
-    <h2 id="experience">Experience</h2>
-    <ol>
-      {about.experience.map((role) => {
-        const dates = span(role.start, role.end);
-        return (
+  <div class="paper">
+    <section aria-labelledby="experience">
+      <h2 id="experience">Experience</h2>
+      <ol class="timeline">
+        {about.experience.map((role) => {
+          const dates = span(role.start, role.end);
+          return (
+            <li>
+              <h3>
+                {role.role}, {role.company}
+              </h3>
+              <p>
+                {role.place}, <time datetime={role.start}>{dates.start}</time> to{' '}
+                {role.end === null ? dates.end : <time datetime={role.end}>{dates.end}</time>}
+              </p>
+              {role.outcomes.length > 0 && (
+                <ul>
+                  {role.outcomes.map((outcome) => (
+                    <li>{outcome}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+
+    <section aria-labelledby="certifications">
+      <h2 id="certifications">Certifications</h2>
+      <ul class="timeline">
+        {about.certifications.map((cert) => (
           <li>
-            <h3>
-              {role.role}, {role.company}
-            </h3>
+            <h3>{cert.name}</h3>
             <p>
-              {role.place}, <time datetime={role.start}>{dates.start}</time> to{' '}
-              {role.end === null ? dates.end : <time datetime={role.end}>{dates.end}</time>}
-            </p>
-            {role.outcomes.length > 0 && (
-              <ul>
-                {role.outcomes.map((outcome) => (
-                  <li>{outcome}</li>
-                ))}
-              </ul>
-            )}
-          </li>
-        );
-      })}
-    </ol>
-  </section>
-
-  <section aria-labelledby="certifications">
-    <h2 id="certifications">Certifications</h2>
-    <ul>
-      {about.certifications.map((cert) => (
-        <li>
-          <h3>{cert.name}</h3>
-          <p>
-            {cert.issuer}, issued <time datetime={cert.issued}>{formatMonth(cert.issued)}</time>
-            {cert.expires !== undefined && (
-              <>
-                , expires <time datetime={cert.expires}>{formatMonth(cert.expires)}</time>
-              </>
-            )}
-            {cert.credentialId !== undefined && <>. Credential ID {cert.credentialId}</>}.{' '}
-            <a href={cert.verifyUrl} aria-label={`Verify ${cert.name}`}>
-              Verify
-            </a>
-          </p>
-        </li>
-      ))}
-    </ul>
-  </section>
-
-  <section aria-labelledby="education">
-    <h2 id="education">Education</h2>
-    <ul>
-      {about.education.map((school) => {
-        const dates = span(school.start, school.end);
-        return (
-          <li>
-            <h3>{school.school}</h3>
-            <p>
-              {school.field === undefined ? school.degree : `${school.degree}, ${school.field}`},{' '}
-              <time datetime={school.start}>{dates.start}</time> to{' '}
-              <time datetime={school.end}>{dates.end}</time>
+              {cert.issuer}, issued <time datetime={cert.issued}>{formatMonth(cert.issued)}</time>
+              {cert.expires !== undefined && (
+                <>
+                  , expires <time datetime={cert.expires}>{formatMonth(cert.expires)}</time>
+                </>
+              )}
+              {cert.credentialId !== undefined && <>. Credential ID {cert.credentialId}</>}.{' '}
+              <a href={cert.verifyUrl} aria-label={`Verify ${cert.name}`}>
+                Verify
+              </a>
             </p>
           </li>
-        );
-      })}
-    </ul>
-  </section>
+        ))}
+      </ul>
+    </section>
 
-  <section aria-labelledby="skills">
-    <h2 id="skills">Skills</h2>
-    <p>{about.skills.join(', ')}</p>
-  </section>
+    <section aria-labelledby="education">
+      <h2 id="education">Education</h2>
+      <ul class="timeline">
+        {about.education.map((school) => {
+          const dates = span(school.start, school.end);
+          return (
+            <li>
+              <h3>{school.school}</h3>
+              <p>
+                {school.field === undefined ? school.degree : `${school.degree}, ${school.field}`},{' '}
+                <time datetime={school.start}>{dates.start}</time> to{' '}
+                <time datetime={school.end}>{dates.end}</time>
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
 
-  <section aria-labelledby="elsewhere">
-    <h2 id="elsewhere">Elsewhere</h2>
-    <ul>
-      {links.map((link) => (
-        <li>
-          <a href={link.href}>{link.label}</a>
-        </li>
-      ))}
-    </ul>
-  </section>
+    <section aria-labelledby="skills">
+      <h2 id="skills">Skills</h2>
+      <p>{about.skills.join(', ')}</p>
+    </section>
+
+    <section aria-labelledby="elsewhere">
+      <h2 id="elsewhere">Elsewhere</h2>
+      <ul class="inline-list">
+        {links.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </div>
 </Base>

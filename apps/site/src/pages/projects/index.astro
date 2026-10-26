@@ -9,7 +9,8 @@ const { projects } = await getProjects();
 
 <Base title="Projects">
   <h1>Projects</h1>
-  <ul class="projects">
+  <p class="caption">What is on the monitor: tools I build and keep running.</p>
+  <ul class="projects panel m-screen">
     {projects.map((project) => (
       <li id={project.slug}>
         <h2>

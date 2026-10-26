@@ -1,0 +1,57 @@
+---
+import { projectPath } from '../lib/projects.ts';
+import { isoDay, type Post, tagPath } from '../lib/writing.ts';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { title, date, updated, tags, draft, projects } = post.data;
+// The `art` slot is where per-post art goes (ADR 0026); without it the header has no figure.
+const hasArt = Astro.slots.has('art');
+---
+
+<header class="post-header">
+  {hasArt && (
+    <figure class="post-art">
+      <slot name="art" />
+    </figure>
+  )}
+  <h1>{title}</h1>
+  {draft && (
+    <p>
+      <strong>Draft:</strong> not published yet.
+    </p>
+  )}
+  <div class="post-meta">
+    <p>
+      Published <time datetime={isoDay(date)}>{isoDay(date)}</time>
+      {updated && (
+        <>
+          , last updated <time datetime={isoDay(updated)}>{isoDay(updated)}</time>
+        </>
+      )}
+    </p>
+    {tags.length > 0 && (
+      <ul class="tags" aria-label="Tags">
+        {tags.map((tag) => (
+          <li>
+            <a href={tagPath(tag)}>{tag}</a>
+          </li>
+        ))}
+      </ul>
+    )}
+    {projects.length > 0 && (
+      <ul class="post-projects" aria-label="Projects">
+        {projects.map((slug) => (
+          <li>
+            <a href={projectPath(slug)} data-pagefind-filter="project">
+              {slug}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</header>

@@ -1,0 +1,372 @@
+/* The home page room (ADR 0026): the scene, its hotspots, the list and the panels. */
+
+.room {
+  margin-bottom: 0.5rem;
+}
+
+.scene {
+  position: relative;
+  max-width: 1440px;
+  aspect-ratio: 3 / 1;
+  margin-inline: auto;
+  /* Hotspot labels may stick out above or below, never sideways. */
+  overflow-x: clip;
+}
+
+.room-art {
+  position: absolute;
+  inset: 0;
+  background: center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+
+.room-art.night {
+  background-image: url("../assets/room-night.png");
+  /* The lamp coming on: the only motion besides the record. */
+  animation: lamp-on 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+}
+
+.room-art.day {
+  display: none;
+  background-image: url("../assets/room-day.png");
+}
+
+@keyframes lamp-on {
+  from {
+    filter: brightness(0.45);
+  }
+
+  to {
+    filter: none;
+  }
+}
+
+/* One scene per theme; only the shown one is downloaded. */
+:root[data-theme="day"] .room-art.day {
+  display: block;
+}
+
+:root[data-theme="day"] .room-art.night {
+  display: none;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="night"]) .room-art.day {
+    display: block;
+  }
+
+  :root:not([data-theme="night"]) .room-art.night {
+    display: none;
+  }
+}
+
+/* Hotspots: real links over the scene's objects, as percentages of its 480x160 pixels
+   (scripts/scene.py). Below 360px wide the smallest would be under 24px, so they give way to
+   the list under the scene. */
+.hotspot {
+  display: none;
+  position: absolute;
+  border: 2px dashed transparent;
+  text-decoration: none;
+}
+
+@media (min-width: 22.5em) {
+  .hotspot {
+    display: block;
+  }
+}
+
+.hotspot:hover,
+.hotspot:focus-visible {
+  border-color: var(--lamp);
+  background: color-mix(in srgb, var(--lamp) 12%, transparent);
+  outline: 2px solid var(--ground);
+  outline-offset: 0;
+}
+
+.hotspot span {
+  position: absolute;
+  bottom: 100%;
+  left: -2px;
+  padding: 0.3rem 0.5rem;
+  background: var(--ground);
+  color: var(--text);
+  font: 600 0.8125rem / 1 var(--mono);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hotspot:hover span,
+.hotspot:focus-visible span {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .hotspot {
+    border-color: color-mix(in srgb, var(--lamp) 55%, transparent);
+  }
+}
+
+[data-room="corkboard"] {
+  top: 6.25%;
+  left: 1.25%;
+  width: 11.25%;
+  height: 27.5%;
+}
+
+[data-room="frame"] {
+  top: 35%;
+  left: 1.25%;
+  width: 11.25%;
+  height: 30%;
+}
+
+[data-room="notebook"] {
+  top: 65%;
+  left: 5.833%;
+  width: 22.083%;
+  height: 21.25%;
+}
+
+[data-room="monitor"] {
+  top: 23.75%;
+  left: 35.417%;
+  width: 20.833%;
+  height: 46.25%;
+}
+
+[data-room="tea"] {
+  top: 57.5%;
+  left: 56.667%;
+  width: 10.833%;
+  height: 25%;
+}
+
+[data-room="record-player"] {
+  top: 63.75%;
+  left: 75%;
+  width: 20%;
+  height: 22.5%;
+}
+
+[data-room="shelf"] {
+  top: 2.5%;
+  left: 75.833%;
+  width: 22.5%;
+  height: 57.5%;
+}
+
+/* Objects at the top of the scene show their label below; those on the right, right-aligned. */
+[data-room="corkboard"] span,
+[data-room="shelf"] span {
+  top: 100%;
+  bottom: auto;
+}
+
+[data-room="record-player"] span,
+[data-room="shelf"] span {
+  right: -2px;
+  left: auto;
+}
+
+.intro {
+  margin: 1.25rem 0 0.25rem;
+  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.9rem);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.intro span {
+  color: var(--muted);
+}
+
+.room-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0 1rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.room-list a {
+  display: flex;
+  flex-direction: column;
+  padding-block: 0.4rem;
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+/* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
+.room-list a span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.room-list a:hover,
+.room-list a:hover span {
+  color: var(--lamp);
+}
+
+/* ---------- panels ---------- */
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+
+.panel-head h2 {
+  margin: 0;
+}
+
+.panel-head a {
+  margin-inline-start: auto;
+  font-weight: 600;
+}
+
+.home-panels {
+  display: grid;
+  gap: 0 1.25rem;
+  /* A long unbroken title or summary would set the grid track's minimum width. */
+  overflow-wrap: anywhere;
+}
+
+.home-panels .paper h2 {
+  font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+}
+
+.home-panels .posts li:first-child a {
+  font-size: clamp(1.6rem, 1.2rem + 2vw, 2.4rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 60rem) {
+  .home-panels {
+    grid-template-columns: 7fr 5fr;
+    align-items: start;
+  }
+
+  .home-panels > .paper {
+    grid-column: 1 / -1;
+  }
+}
+
+.home-projects {
+  display: grid;
+  gap: 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.home-projects a {
+  font: 600 1rem var(--mono);
+  text-decoration: none;
+}
+
+.home-projects a:hover {
+  text-decoration: underline;
+}
+
+.home-projects p {
+  margin: 0.15rem 0 0;
+  max-width: 60ch;
+}
+
+/* The record player: a turning record next to what is playing. */
+.record {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.record .now-playing {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.record .now-playing cite {
+  font-style: normal;
+  font-weight: 600;
+}
+
+.disc {
+  flex: none;
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      #efe6d0 0 2px,
+      #bf433b 2.5px 13px,
+      #0b0a10 13.5px 15px,
+      transparent 15.5px
+    ),
+    repeating-radial-gradient(circle, #15131d 0 2px, #2a2638 2px 3px);
+  animation: spin 9s linear infinite;
+}
+
+.disc::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: #efe6d0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The corkboard: shipping events pinned as paper slips. */
+.m-cork .shipping {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.m-cork .shipping li {
+  position: relative;
+  padding: 0.7rem 0.9rem 0.8rem;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.35;
+
+  --accent: var(--ink-link);
+}
+
+.m-cork .shipping li::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  background: #bf433b;
+}
+
+.m-cork .shipping time {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--ink-2);
+}
+
+@media (min-width: 30rem) {
+  .m-cork .shipping {
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  }
+}
