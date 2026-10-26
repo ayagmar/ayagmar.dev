@@ -94,6 +94,8 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Design tokens, type, panels, both themes (ADR 0026)                       | `apps/site/src/styles/base.css`, fonts in `src/fonts/` (built by `scripts/fonts.py`)                          |
 | Theme switch (blocking script in `<head>`)                                | `apps/site/src/scripts/theme.js`, `src/components/ThemeSwitch.astro`                                          |
 | Home page room: scene, hotspots, list                                     | `apps/site/src/lib/room.ts`, `src/styles/room.css`, `src/assets/room-*.png` (drawn by `scripts/scene.py`)     |
+| Room clock: sun, moon, Casablanca time (ADR 0027)                         | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/window-*.png`                                  |
+| Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                    |
 | Commands                                                                  | `justfile`                                                                                                    |
 | Decisions                                                                 | `docs/adr/`                                                                                                   |
 
@@ -106,4 +108,4 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 4. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 5. `scripts/ship-resume.ts` copies the PDF (or `resume/override.pdf`) to `dist/resume.pdf` only when `resume.published` is `true`.
 
-In production, Workers static assets serve `dist/`. The site Worker runs only for `/`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt`, anything else gets `index.html`. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.
+In production, Workers static assets serve `dist/`. The site Worker runs only for `/`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt`, anything else gets `index.html`. `index.txt` starts with the room in ASCII. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.
