@@ -329,6 +329,22 @@ describe('replay and idempotency', () => {
     expect(await deliveryRows()).toHaveLength(2);
   });
 
+  it('answers retries of a known delivery even while the rate limiter refuses', async () => {
+    const body = delivery(llmUsageOk);
+    await push('llm-usage', body);
+    const limit = vi.spyOn(env.PUSH_RATE_LIMIT, 'limit').mockResolvedValue({ success: false });
+
+    const retry = await push('llm-usage', body);
+    const reused = await push(
+      'llm-usage',
+      delivery(llmUsageMinimal, { deliveryId: JSON.parse(body).deliveryId })
+    );
+    const fresh = await push('llm-usage', delivery(llmUsageMinimal));
+    limit.mockRestore();
+
+    expect([retry.status, reused.status, fresh.status]).toEqual([200, 409, 429]);
+  });
+
   it('stores concurrent copies of one delivery once', async () => {
     const body = delivery(llmUsageOk);
     const statuses = (

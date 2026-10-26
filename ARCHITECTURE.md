@@ -52,7 +52,7 @@ Every read API response is an envelope from `contracts`:
 
 The read routes, `/v1/health`, both push routes and the cron are in place ([ADR 0010](docs/adr/0010-storage-d1.md), [ADR 0011](docs/adr/0011-push-intake-security.md)). The pull adapter registry is still empty.
 
-A push goes through, in order: content type, a 64 KiB streamed body cap, token (and for trellis an HMAC over timestamp and body), the rate limiter, the wire schema, a delivery-id lookup, a freshness window, the allowlist projection, and one D1 batch that stores the snapshot and the delivery together or neither.
+A push goes through, in order: content type, a 64 KiB streamed body cap, token (and for trellis an HMAC over timestamp and body), the wire schema, a delivery-id lookup, the rate limiter, a freshness window, the allowlist projection, and one D1 batch that stores the snapshot and the delivery together or neither.
 
 ## Where things live
 

@@ -102,10 +102,6 @@ export async function handlePush<Push extends { deliveryId: string; sentAt: stri
   if (!(await authenticate(producer, c, body, Date.now()))) {
     return reject({ status: 401, error: 'unauthorized' });
   }
-  // Best effort and per Cloudflare location; the D1 interval below is the hard ceiling.
-  const { success } = await c.env.PUSH_RATE_LIMIT.limit({ key: producer.id });
-  if (!success) return reject({ status: 429, error: 'rate_limited' }, {}, { 'Retry-After': '60' });
-
   let input: unknown;
   try {
     input = JSON.parse(decoder.decode(body));
@@ -126,10 +122,16 @@ export async function handlePush<Push extends { deliveryId: string; sentAt: stri
   const push = parsed.data;
   const bodySha256 = hex(await crypto.subtle.digest('SHA-256', body));
 
-  // A retry of a delivery already accepted is answered before any freshness or interval check.
+  // A retry of a delivery already accepted is answered before throttling, freshness or interval.
   const seen = await findDelivery(c.env.DB, producer.id, push.deliveryId, bodySha256);
   if (seen?.outcome === 'duplicate') return json(200, { accepted: true });
   if (seen?.outcome === 'conflict') return reject({ status: 409, error: 'delivery_id_reused' });
+
+  // Only unseen deliveries count against the limiter, so a retry of an accepted delivery
+  // always gets its 200. Best effort and per Cloudflare location; the D1 interval below is
+  // the hard ceiling.
+  const { success } = await c.env.PUSH_RATE_LIMIT.limit({ key: producer.id });
+  if (!success) return reject({ status: 429, error: 'rate_limited' }, {}, { 'Retry-After': '60' });
 
   // Freshness and the minimum interval use the time of admission, read just before it.
   const receivedAt = Date.now();
