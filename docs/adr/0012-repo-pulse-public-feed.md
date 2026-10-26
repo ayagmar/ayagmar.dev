@@ -1,6 +1,6 @@
 # 0012. repo-pulse public feed contract
 
-Status: proposed, 2026-10-26. repo-pulse does not serve this yet; tracked in an issue on `ayagmar/repo-pulse`.
+Status: accepted, 2026-10-26. repo-pulse serves it since ayagmar/repo-pulse#28; the `503` rule below is not served yet.
 
 ## Context
 
@@ -148,12 +148,12 @@ Acceptance cases repo-pulse must test:
 - Missed lifecycle delivery: a repository is made private on GitHub and no `repository` event is ever received. Once the cached visibility result is older than 60 seconds, the gate's lookup returns 404 and the feed omits the repository.
 - Warmed cache after privatization: the material cache and the visibility cache are warm with the repository public, then it is made private. Within 60 seconds every response omits it, including responses built from the cached material.
 - Gate failure: the visibility lookup times out, is rate limited or answers 5xx. The repository is omitted, not shown from an earlier answer older than 60 seconds.
+- Gate outage: every candidate repository's lookup fails as above. The feed answers `503`, not an empty `200`.
 
-Errors never include stack traces or D1 messages: `400`/`405` as above, `500 {"error":"internal_error"}`.
+Errors never include stack traces or D1 messages, and every one is sent with `Cache-Control: no-store`: `400`/`405` as above, `429 {"error":"rate_limited"}` past 10 requests a minute per client IP, `500 {"error":"internal_error"}`, and `503 {"error":"visibility_unavailable"}` when there is at least one candidate repository and none of them got a definitive answer from GitHub (a `200` with a readable `private` flag, or a `404`). A cached failure counts as no answer. When at least one repository got a definitive answer, the feed is a `200` with the admitted repositories, which may be none: an empty `200` means nothing is public, never that the gate failed. signals treats `429` and `503` like any other failed pull and keeps its last snapshot.
 
 ## Consequences
 
 - A repository made private leaves the feed within 60 seconds, signals' snapshot within 15 minutes after that, and the site at its next production build. Making a repository private is therefore not instant on ayagmar.dev; rebuild the site to speed it up.
-- Until the route exists, signals gets a 404 every 15 minutes, records `upstream_not_found`, and the site renders the shipping empty state.
 - The producer schema is closed. A new event type or field is added to this contract first (a pull request here), then repo-pulse serves it; repo-pulse's tests validate against `repo-pulse-feed.input.json` and would reject it otherwise. Separately, signals reads leniently: it checks each event and each `starHistory` entry on its own and skips one it cannot read, so one bad item, or a type the deployed signals does not know yet, does not blank the shipping section.
-- The shared fixtures under `packages/contracts/fixtures/repo-pulse/` are sample data in this shape; replace the `ok` case with a real response once the route is live.
+- The `ok` fixture under `packages/contracts/fixtures/repo-pulse/` is a real response from 2026-10-26; the other cases are sample data in this shape.
