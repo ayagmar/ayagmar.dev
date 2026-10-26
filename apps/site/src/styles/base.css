@@ -29,6 +29,20 @@
   font-display: swap;
 }
 
+/* While the display face loads, headings show the serif roman (already loaded, so no second
+   download) scaled to Fraunces' width and set to its vertical metrics, so the swap moves nothing:
+   the page stays inside ADR 0017's CLS budget without a preload. */
+@font-face {
+  font-family: "min7 Display Fallback";
+  src: url("../fonts/serif-roman.woff2") format("woff2");
+  font-weight: 750;
+  font-style: normal;
+  size-adjust: 101.4%;
+  ascent-override: 97.8%;
+  descent-override: 25.5%;
+  line-gap-override: 0%;
+}
+
 @font-face {
   font-family: "JetBrains Mono";
   src: url("../fonts/mono.woff2") format("woff2");
@@ -89,7 +103,7 @@
   --surface-lo: light-dark(#e0cfae, #0f0c1f);
 
   --serif: "min7 Serif", Charter, "Iowan Old Style", Georgia, serif;
-  --display: "min7 Display", var(--serif);
+  --display: "min7 Display", "min7 Display Fallback", var(--serif);
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --gutter: clamp(1rem, 0.5rem + 2.5vw, 2rem);
   --measure: 66ch;

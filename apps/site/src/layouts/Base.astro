@@ -1,7 +1,6 @@
 ---
 import Search from '../components/Search.svelte';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
-import display from '../fonts/display.woff2?url';
 import mono from '../fonts/mono.woff2?url';
 import serifRoman from '../fonts/serif-roman.woff2?url';
 import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
@@ -39,14 +38,11 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <link rel="preload" href={serifRoman} as="font" type="font/woff2" crossorigin>
-    {/* Not on home: its text is under the room scene, the LCP, which two more preloads would slow
-        by a round trip on mobile (ADR 0034). Elsewhere the swap to these two shifts the first
-        screen: a wrapped line of mono, or a heading, changes height. */}
-    {current !== '/' && (
-      <>
-        <link rel="preload" href={display} as="font" type="font/woff2" crossorigin>
-        <link rel="preload" href={mono} as="font" type="font/woff2" crossorigin>
-      </>
+    {/* Only /stats: its sample banner is a wrapped line of mono, which rewraps when the font
+        swaps in (CLS 0.16 against ADR 0017's 0.01). Anywhere else a preload costs mobile LCP a
+        round trip (ADR 0034). */}
+    {current === '/stats' && (
+      <link rel="preload" href={mono} as="font" type="font/woff2" crossorigin>
     )}
     <title>{pageTitle}</title>
     <meta name="description" content={description}>
