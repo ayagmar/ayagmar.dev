@@ -1,0 +1,229 @@
+{
+  "recentTracks": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Heatmiser"
+            },
+            "streamable": "0",
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": ""
+            },
+            "name": "Half Right",
+            "url": "https://www.last.fm/music/Heatmiser/_/Half+Right",
+            "date": {
+              "uts": "1793004780",
+              "#text": "26 Oct 2026, 08:53"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Starflyer 59"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "Old"
+            },
+            "name": "We're The Ordinary",
+            "date": {
+              "uts": "1793004480",
+              "#text": "26 Oct 2026, 08:48"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Heatmiser"
+            },
+            "album": {
+              "mbid": "",
+              "#text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+            },
+            "name": "Album name too long",
+            "url": "https://www.last.fm/music/Heatmiser/_/Long",
+            "date": {
+              "uts": "1792918000",
+              "#text": "26 Oct 2026, 08:46"
+            }
+          },
+          {
+            "album": {
+              "mbid": "",
+              "#text": "Pink Moon"
+            },
+            "name": "No artist object",
+            "url": "https://www.last.fm/music/x",
+            "date": {
+              "uts": "1792917900",
+              "#text": "26 Oct 2026, 08:45"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Nobody"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": ""
+            },
+            "name": "Undated",
+            "url": "https://www.last.fm/music/Nobody/_/Undated"
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Nick Drake"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "Pink Moon"
+            },
+            "name": "Which Will",
+            "url": "http://example.com/not-last-fm",
+            "date": {
+              "uts": "1793004300",
+              "#text": "26 Oct 2026, 08:45"
+            }
+          },
+          {
+            "artist": {
+              "mbid": "",
+              "#text": "Elliott Smith"
+            },
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "album": {
+              "mbid": "",
+              "#text": "Elliott Smith (Expanded 25th Anniversary Edition)"
+            },
+            "name": "St. Ides Heaven - 25th Anniversary Mix",
+            "url": "https://www.last.fm/music/Elliott+Smith/_/St.+Ides+Heaven+-+25th+Anniversary+Mix",
+            "date": {
+              "uts": "1793004120",
+              "#text": "26 Oct 2026, 08:42"
+            },
+            "@attr": {
+              "nowplaying": "false"
+            }
+          }
+        ],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "8356",
+          "page": "1",
+          "perPage": "10",
+          "total": "83558"
+        }
+      }
+    }
+  },
+  "topArtists": null,
+  "thisWeek": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "13",
+          "page": "1",
+          "perPage": "10",
+          "total": "124"
+        }
+      }
+    }
+  },
+  "lastWeek": {
+    "status": 200,
+    "body": {
+      "error": 8,
+      "message": "Operation failed - Most likely the backend service failed. Please try again."
+    }
+  }
+}

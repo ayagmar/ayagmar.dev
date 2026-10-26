@@ -13,7 +13,7 @@ Both projects:
 - **Node.js:** read from `.node-version`. Do not set `NODE_VERSION`.
 - **pnpm:** read from `packageManager` in `package.json`. Do not set `PNPM_VERSION`.
 - **Dependencies:** installed by Workers Builds from `pnpm-lock.yaml`. Leave `SKIP_DEPENDENCY_INSTALL` unset.
-- **Build variables:** none. The commit SHA comes from `WORKERS_CI_COMMIT_SHA`, which Workers Builds sets.
+- **Build variables:** none. The commit SHA comes from `WORKERS_CI_COMMIT_SHA`, which Workers Builds sets. The site build reads the signals API when `WORKERS_CI_BRANCH` is `main` and the shared fixtures for every other branch (ADR 0015).
 
 ### Site (`min7-site`, ayagmar.dev)
 
@@ -59,14 +59,17 @@ Put the first id in `d1_databases` and the second in `previews.d1_databases` of 
 
 ## Secrets (signals)
 
-The six push secrets are listed in [docs/operations.md](operations.md), with rotation. Once, before the first signals deploy:
+`LASTFM_API_KEY` (from https://www.last.fm/api/account/create) and the six push secrets are required; the push secrets and their rotation are in [docs/operations.md](operations.md). `GITHUB_TOKEN` is optional: a fine-grained token with no permissions (public data). Once, before the first signals deploy:
 
 ```sh
-just signals-secrets           # production: prompts for each value
-just signals-preview-secrets   # Preview base config: random fake values
+just signals-secrets                 # production: prompts for each required value
+just signals-secret GITHUB_TOKEN     # production, optional
+just signals-preview-secrets         # Preview base config: random fake values
 ```
 
-`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a secret is missing. Wrangler rejects `secrets` under `previews`, so Previews are not checked the same way; a Preview without its base config secrets answers every push with 401.
+`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a required secret is missing; `GITHUB_TOKEN` is not in that list. Without it GitHub allows 60 requests an hour per IP, shared with other Workers, so the daily projects pull may be refused. Locally, without `LASTFM_API_KEY` in `.dev.vars`, the listening pull fails with `not_configured`.
+
+Wrangler rejects `secrets` under `previews`, so Previews are not checked the same way; a Preview without its base config secrets answers every push with 401. The fake `LASTFM_API_KEY` in Previews is never used, because the cron never runs there.
 
 ## Resolved bindings (signals)
 
@@ -78,7 +81,7 @@ Read from the configs with Wrangler 4.152's `unstable_readConfig` and `wrangler 
 | Migrations applied to | `min7-signals` (`wrangler.jsonc`)  | `min7-signals-preview` (`wrangler.preview-migrations.jsonc`) |
 | `PUSH_RATE_LIMIT`     | namespace `1001`, 10 per 60 s      | namespace `1002`, 10 per 60 s                                |
 | `COMMIT_SHA`          | commit SHA (`--var`)               | commit SHA (`--var`); `preview` without it                   |
-| Push secrets          | Worker secrets, required on deploy | Preview base config, random fakes                            |
+| Required secrets      | Worker secrets, required on deploy | Preview base config, random fakes                            |
 | Cron `* * * * *`      | runs                               | never runs                                                   |
 
 ## Previews

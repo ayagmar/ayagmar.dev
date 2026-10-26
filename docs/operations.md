@@ -2,7 +2,7 @@
 
 ## Push secrets
 
-signals has six push secrets, all listed in `secrets.required` in `apps/signals/wrangler.jsonc`, so a deploy fails while one is missing:
+signals has six push secrets, listed in `secrets.required` in `apps/signals/wrangler.jsonc` with `LASTFM_API_KEY`, so a deploy fails while one is missing (the pull secrets are in [docs/deploy.md](deploy.md)):
 
 | Secret                      | Used for                               |
 | --------------------------- | -------------------------------------- |
@@ -20,7 +20,7 @@ Generate every value with `openssl rand -hex 32`. Wrangler reads it from the pro
 ### First setup
 
 ```sh
-just signals-secrets           # prompts for each of the six values
+just signals-secrets           # prompts for LASTFM_API_KEY and each of the six values
 just signals-preview-secrets   # random fakes for Previews, shown to no one
 ```
 

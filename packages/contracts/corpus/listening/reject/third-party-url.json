@@ -1,0 +1,11 @@
+{
+  "nowPlaying": {
+    "track": "Friendships and Love",
+    "artist": "Rocketship",
+    "album": null,
+    "url": "https://lastfm.example.com/track"
+  },
+  "recent": [],
+  "topArtists": null,
+  "scrobbles": { "thisWeek": null, "lastWeek": null }
+}

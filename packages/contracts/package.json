@@ -4,7 +4,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./fixtures/*": "./fixtures/*"
+    "./fixtures": "./src/fixtures.ts",
+    "./testing": "./src/testing.ts"
   },
   "dependencies": {
     "zod": "4.6.7"
@@ -12,6 +13,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "ajv": "8.20.0",
+    "msw": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

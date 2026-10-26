@@ -1,0 +1,122 @@
+{
+  "ayagmar/llm-usage-metrics": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/ccdesk": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/pi-mobile": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/pi-extmgr": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/runnerd": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/kipple": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/niri-computer-use": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/headroom": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  }
+}

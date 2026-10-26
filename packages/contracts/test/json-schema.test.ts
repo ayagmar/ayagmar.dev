@@ -2,27 +2,53 @@
 // and consumers in other languages get the same answers as the TypeScript code.
 //   corpus/<schema>/accept/*.json   every validator must accept
 //   corpus/<schema>/reject/*.json   every validator must reject
-// Push bodies are also the Worker's intake fixtures, so their corpus lives in
-// fixtures/<producer>/push/ instead.
+// Shared fixtures that are valid payloads join the corpus where they are (see `fixtureCases`).
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
 import { jsonSchemas } from '../src/json-schemas.ts';
 
 const root = join(import.meta.dirname, '..');
-const corpusDirs: Readonly<Record<string, string>> = {
-  'push-llm-usage': join('fixtures', 'llm-usage', 'push'),
-  'push-trellis': join('fixtures', 'trellis', 'push'),
-};
 const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'));
-const cases = (name: string, kind: 'accept' | 'reject') => {
-  const dir = join(root, corpusDirs[name] ?? join('corpus', name), kind);
-  return existsSync(dir)
-    ? readdirSync(dir)
-        .filter((file) => file.endsWith('.json'))
-        .map((file) => [file, readJson(join(dir, file))] as const)
-    : [];
+const jsonFiles = (dir: string) =>
+  existsSync(dir) ? readdirSync(dir).filter((file) => file.endsWith('.json')) : [];
+
+type Kind = 'accept' | 'reject';
+
+// Fixtures read in place rather than copied into corpus/. A raw upstream fixture records
+// `{ status, body }`; its body is the payload.
+const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
+  listening: { accept: ['listening/snapshot'] },
+  shipping: { accept: ['shipping/snapshot'] },
+  projects: { accept: ['projects/snapshot'] },
+  'repo-pulse-feed': {
+    accept: ['repo-pulse/raw/ok.json', 'repo-pulse/raw/empty.json'],
+    reject: ['repo-pulse/raw/malformed.json'],
+  },
+  // Push bodies are also the Worker's intake fixtures.
+  'push-llm-usage': { accept: ['llm-usage/push/accept'], reject: ['llm-usage/push/reject'] },
+  'push-trellis': { accept: ['trellis/push/accept'], reject: ['trellis/push/reject'] },
+};
+
+const fixturePayloads = (path: string) => {
+  const full = join(root, 'fixtures', path);
+  const files = path.endsWith('.json') ? [full] : jsonFiles(full).map((file) => join(full, file));
+  return files.map((file) => {
+    const json = readJson(file) as { body?: unknown };
+    return [
+      `fixtures/${relative(join(root, 'fixtures'), file)}`,
+      file.includes('/raw/') ? json.body : json,
+    ] as const;
+  });
+};
+
+const cases = (name: string, kind: Kind) => {
+  const dir = join(root, 'corpus', name, kind);
+  return [
+    ...jsonFiles(dir).map((file) => [file, readJson(join(dir, file))] as const),
+    ...(fixtureCases[name]?.[kind] ?? []).flatMap(fixturePayloads),
+  ];
 };
 
 // Formats are not asserted: the schemas carry a pattern for every timestamp, and validators

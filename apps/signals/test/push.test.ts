@@ -1,27 +1,6 @@
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
-import llmUsageMinimal from '@min7/contracts/fixtures/llm-usage/push/accept/minimal.json' with {
-  type: 'json',
-};
-import llmUsageOk from '@min7/contracts/fixtures/llm-usage/push/accept/ok.json' with {
-  type: 'json',
-};
-import llmUsageSensitive from '@min7/contracts/fixtures/llm-usage/push/accept/sensitive-fields.json' with {
-  type: 'json',
-};
-import llmUsageSnapshotOk from '@min7/contracts/fixtures/llm-usage/snapshot/ok.json' with {
-  type: 'json',
-};
-import llmUsageSnapshotSensitive from '@min7/contracts/fixtures/llm-usage/snapshot/sensitive-fields.json' with {
-  type: 'json',
-};
-import shelfSnapshotSensitive from '@min7/contracts/fixtures/shelf/snapshot/sensitive-fields.json' with {
-  type: 'json',
-};
-import trellisOk from '@min7/contracts/fixtures/trellis/push/accept/ok.json' with { type: 'json' };
-import trellisSensitive from '@min7/contracts/fixtures/trellis/push/accept/sensitive-fields.json' with {
-  type: 'json',
-};
+import { pushFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../src/app.ts';
 import { runScheduled } from '../src/cron/run.ts';
@@ -36,6 +15,16 @@ import {
   sign,
   snapshotRow,
 } from './helpers.ts';
+
+const {
+  minimal: llmUsageMinimal,
+  ok: llmUsageOk,
+  'sensitive-fields': llmUsageSensitive,
+} = pushFixtures['llm-usage'];
+const { ok: trellisOk, 'sensitive-fields': trellisSensitive } = pushFixtures.trellis;
+const { ok: llmUsageSnapshotOk, 'sensitive-fields': llmUsageSnapshotSensitive } =
+  snapshotFixtures['llm-usage'];
+const shelfSnapshotSensitive = snapshotFixtures.shelf['sensitive-fields'];
 
 beforeEach(clearState);
 

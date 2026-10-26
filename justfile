@@ -4,11 +4,16 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # The version of every build: Workers Builds' commit, else the local checkout, else "dev".
 commit_sha := env("WORKERS_CI_COMMIT_SHA", `git rev-parse HEAD 2>/dev/null || echo dev`)
+
+# Where the site build reads source data (ADR 0015): the read API when Workers Builds builds
+# main, the shared fixtures everywhere else (local, CI, Previews). SIGNALS_MODE overrides it.
+signals_mode := env("SIGNALS_MODE", if env("WORKERS_CI_BRANCH", "") == "main" { "api" } else { "fixtures" })
 site := "pnpm --filter @min7/site exec"
 signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
-# Every push secret, matching secrets.required in apps/signals/wrangler.jsonc.
-push_secrets := "PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT"
+# Every required signals secret, matching secrets.required in apps/signals/wrangler.jsonc.
+# GITHUB_TOKEN is optional and set on its own: `just signals-secret GITHUB_TOKEN`.
+required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT"
 
 [private]
 default:
@@ -105,7 +110,7 @@ site-dev:
 
 # Site: static build, search index, headers
 site-build:
-    COMMIT_SHA={{ commit_sha }} {{ site }} astro build
+    COMMIT_SHA={{ commit_sha }} SIGNALS_MODE={{ signals_mode }} {{ site }} astro build
     {{ site }} pagefind --site dist --quiet
     {{ site }} node scripts/postbuild.ts
 
@@ -158,13 +163,13 @@ signals-migrate-preview:
 signals-secret name:
     {{ signals }} wrangler secret put {{ quote(name) }}
 
-# Signals: set each production push secret in turn
+# Signals: set each required production secret in turn
 signals-secrets:
-    for name in {{ push_secrets }}; do just signals-secret "$name"; done
+    for name in {{ required_secrets }}; do just signals-secret "$name"; done
 
-# Signals: give the Preview base config random fake push secrets, shown to no one
+# Signals: give the Preview base config random fake required secrets, shown to no one
 signals-preview-secrets:
-    for name in {{ push_secrets }}; do openssl rand -hex 32 | {{ signals }} wrangler preview base-config secret put "$name"; done
+    for name in {{ required_secrets }}; do openssl rand -hex 32 | {{ signals }} wrangler preview base-config secret put "$name"; done
 
 # List the 10 most recent deployments of a Worker (site or signals)
 deployments worker:

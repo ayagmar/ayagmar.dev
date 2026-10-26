@@ -9,6 +9,8 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.4.7",
+    "@msw/cloudflare": "0.2.0",
+    "msw": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"

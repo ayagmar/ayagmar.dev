@@ -3,15 +3,13 @@
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import type { ProducerId } from '@min7/contracts';
-import llmUsageMinimal from '@min7/contracts/fixtures/llm-usage/push/accept/minimal.json' with {
-  type: 'json',
-};
-import trellisMinimal from '@min7/contracts/fixtures/trellis/push/accept/minimal.json' with {
-  type: 'json',
-};
+import { pushFixtures } from '@min7/contracts/fixtures';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { app } from '../src/app.ts';
 import { clearState, delivery, deliveryRows, sign } from './helpers.ts';
+
+const { minimal: llmUsageMinimal } = pushFixtures['llm-usage'];
+const { minimal: trellisMinimal } = pushFixtures.trellis;
 
 let clock = 0;
 beforeEach(async () => {

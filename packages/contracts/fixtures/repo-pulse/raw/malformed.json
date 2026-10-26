@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "body": {
+    "version": 1,
+    "generatedAt": "2026-10-26T08:45:00Z",
+    "events": {
+      "0": "not a list"
+    }
+  }
+}

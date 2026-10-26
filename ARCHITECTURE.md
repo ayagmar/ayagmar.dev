@@ -50,41 +50,46 @@ Every read API response is an envelope from `contracts`:
 
 `data` is `null` until a source succeeds once. `stale` is computed when the response is served, by `isStale(fetchedAt, threshold, now)` with the per-source threshold in `packages/contracts/src/sources.ts`. `fetchedAt` is the fetch time for pulled sources and the producer's `sentAt` for pushed ones. If signals is down or a response fails validation, the site build still succeeds and renders an empty state.
 
-The read routes, `/v1/health`, both push routes and the cron are in place ([ADR 0010](docs/adr/0010-storage-d1.md), [ADR 0011](docs/adr/0011-push-intake-security.md)). The pull adapter registry is still empty.
+The read routes, `/v1/health`, both push routes and the cron are in place ([ADR 0010](docs/adr/0010-storage-d1.md), [ADR 0011](docs/adr/0011-push-intake-security.md)). The cron runs the pull adapters for listening (Last.fm), shipping (repo-pulse) and projects (GitHub and npm), one per invocation ([ADR 0009](docs/adr/0009-pull-adapters.md)). Locally and in Previews the site renders the shared fixtures (ADR 0015).
 
 A push goes through, in order: content type, a 64 KiB streamed body cap, token (and for trellis an HMAC over timestamp and body), the wire schema, a delivery-id lookup, the rate limiter, a freshness window, the allowlist projection, and one D1 batch that stores the snapshot and the delivery together or neither.
 
 ## Where things live
 
-| Concern                                                                   | Place                                                                                         |
-| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Source ids, stale thresholds, envelope, `isStale`                         | `packages/contracts/src/{sources,envelope}.ts`                                                |
-| Snapshot and push schemas (one file per source)                           | `packages/contracts/src/snapshots/`, `src/push/`                                              |
-| JSON Schema for producers and consumers                                   | `packages/contracts/schema/*.{input,output}.json`, written by `just contracts-schema`         |
-| Payload corpus checked by zod and JSON Schema; frozen v1 consumer schemas | `packages/contracts/corpus/<schema>/{accept,reject}/`, `packages/contracts/test/frozen/v1/`   |
-| Push bodies (corpus and Worker test fixtures in one)                      | `packages/contracts/fixtures/<producer>/push/{accept,reject}/`                                |
-| Test fixtures                                                             | `packages/contracts/fixtures/<source>/{raw,snapshot}/<case>.json`                             |
-| Producer guides, push secrets and rotation                                | `docs/producers/`, `docs/operations.md`                                                       |
-| Pull adapter interface and registry                                       | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                            |
-| Snapshot storage interface and its D1 implementation                      | `apps/signals/src/storage/{types,d1}.ts`, schema in `apps/signals/migrations/`                |
-| Push admission (replay, interval, ordering in one D1 batch)               | `apps/signals/src/storage/admission.ts`                                                       |
-| Push intake: body cap, auth order, projection per producer                | `apps/signals/src/intake/`                                                                    |
-| Public labels for habit and agent ids                                     | `apps/signals/src/intake/public-labels.ts`                                                    |
-| Token and HMAC checks, CORS, structured logs                              | `apps/signals/src/security/`                                                                  |
-| Cron runner (due adapters, delivery cleanup)                              | `apps/signals/src/cron/run.ts`                                                                |
-| Read API routes (one file per route), edge cache                          | `apps/signals/src/routes/v1/`, `routes/v1/snapshot.ts`                                        |
-| Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                  |
-| Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                         |
-| Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                            |
-| RSS and Atom (one model, two renderers)                                   | `apps/site/src/lib/feed.ts`                                                                   |
-| Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                              |
-| Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts` |
-| Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)           |
-| Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                   |
-| Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                   |
-| Base stylesheet                                                           | `apps/site/src/styles/base.css`                                                               |
-| Commands                                                                  | `justfile`                                                                                    |
-| Decisions                                                                 | `docs/adr/`                                                                                   |
+| Concern                                                                   | Place                                                                                                         |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Source ids, stale thresholds, envelope, `isStale`                         | `packages/contracts/src/{sources,envelope}.ts`                                                                |
+| Snapshot and push schemas (one file per source)                           | `packages/contracts/src/snapshots/`, `src/push/`                                                              |
+| JSON Schema for producers and consumers                                   | `packages/contracts/schema/*.{input,output}.json`, written by `just contracts-schema`                         |
+| Payload corpus checked by zod and JSON Schema; frozen v1 consumer schemas | `packages/contracts/corpus/<schema>/{accept,reject}/`, `packages/contracts/test/frozen/v1/`                   |
+| Featured projects (slug, repo, npm package), shared by site and signals   | `packages/contracts/src/projects.ts`                                                                          |
+| Test fixtures                                                             | `packages/contracts/fixtures/<upstream>/raw/`, `fixtures/<source>/snapshot/`, registered in `src/fixtures.ts` |
+| Push bodies (corpus and Worker test fixtures in one)                      | `packages/contracts/fixtures/<producer>/push/{accept,reject}/`                                                |
+| MSW handlers built from the fixtures (tests only)                         | `packages/contracts/src/testing.ts` (`@min7/contracts/testing`)                                               |
+| Producer guides, push secrets and rotation                                | `docs/producers/`, `docs/operations.md`                                                                       |
+| Pull adapter interface and registry                                       | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                                            |
+| Pull adapters, bounded upstream reads, `PullError`                        | `apps/signals/src/adapters/pull/`                                                                             |
+| Snapshot storage interface and its D1 implementation                      | `apps/signals/src/storage/{types,d1}.ts`, schema in `apps/signals/migrations/`                                |
+| Push admission (replay, interval, ordering in one D1 batch)               | `apps/signals/src/storage/admission.ts`                                                                       |
+| Push intake: body cap, auth order, projection per producer                | `apps/signals/src/intake/`                                                                                    |
+| Public labels for habit and agent ids                                     | `apps/signals/src/intake/public-labels.ts`                                                                    |
+| Token and HMAC checks, CORS, structured logs                              | `apps/signals/src/security/`                                                                                  |
+| Cron runner (one due adapter per run, delivery cleanup)                   | `apps/signals/src/cron/run.ts`                                                                                |
+| Read API routes (one file per route), edge cache                          | `apps/signals/src/routes/v1/`, `routes/v1/snapshot.ts`                                                        |
+| Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                                  |
+| Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                                         |
+| Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                                            |
+| RSS and Atom (one model, two renderers)                                   | `apps/site/src/lib/feed.ts`                                                                                   |
+| Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                              |
+| Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                 |
+| Build-time snapshot reader (`fixtures` or `api` mode), freshness          | `apps/site/src/data/`                                                                                         |
+| Now-playing island                                                        | `apps/site/src/components/NowPlaying.svelte`                                                                  |
+| Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                           |
+| Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                   |
+| Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                   |
+| Base stylesheet                                                           | `apps/site/src/styles/base.css`                                                                               |
+| Commands                                                                  | `justfile`                                                                                                    |
+| Decisions                                                                 | `docs/adr/`                                                                                                   |
 
 ## Site build
 

@@ -1,0 +1,20 @@
+{
+  "llm-usage-metrics": {
+    "status": 404,
+    "body": {
+      "error": "package llm-usage-metrics not found"
+    }
+  },
+  "ccdesk": {
+    "status": 404,
+    "body": {
+      "error": "package ccdesk not found"
+    }
+  },
+  "pi-extmgr": {
+    "status": 404,
+    "body": {
+      "error": "package pi-extmgr not found"
+    }
+  }
+}

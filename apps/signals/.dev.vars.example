@@ -1,5 +1,12 @@
-# Copy to .dev.vars for `just signals-dev` and fill in local-only values (at least 32
-# characters each, e.g. `openssl rand -hex 32`). Names only here; never commit values.
+# Copy to .dev.vars for `just signals-dev` and fill in local-only values. Names only here;
+# never commit values.
+
+# Last.fm API key (https://www.last.fm/api/account/create). Without it, listening is not pulled.
+LASTFM_API_KEY=
+# Optional GitHub token with no scopes (public data only); raises the API rate limit.
+GITHUB_TOKEN=
+
+# Push secrets, at least 32 characters each, e.g. `openssl rand -hex 32` (docs/operations.md).
 PUSH_TOKEN_LLM_USAGE=
 PUSH_TOKEN_LLM_USAGE_NEXT=
 PUSH_TOKEN_TRELLIS=

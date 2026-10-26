@@ -1,0 +1,18 @@
+---
+import type { Envelope } from '@min7/contracts';
+import { freshness } from '../data/freshness.ts';
+import { builtAt, signalsMode } from '../data/signals.ts';
+
+interface Props {
+  envelope: Envelope<unknown>;
+}
+
+const { envelope } = Astro.props;
+const line = freshness(envelope, builtAt, signalsMode);
+---
+
+{line !== null && envelope.fetchedAt !== null && (
+  <p class="freshness">
+    <time datetime={envelope.fetchedAt}>{line}</time>
+  </p>
+)}
