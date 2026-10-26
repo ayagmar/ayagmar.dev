@@ -23,8 +23,8 @@ export interface Budgets {
     /** Page name to path; a path ending in `/*` means the largest page directly under it. */
     pages: Record<string, string>;
     assert: Record<'mobile' | 'desktop', Record<string, number>>;
-    /** A head value fails when it is over base × ratio and over base + delta. */
-    regression: Record<string, { ratio: number; delta: number }>;
+    /** Per profile, a head value fails when it is over base × ratio and over base + delta. */
+    regression: Record<'mobile' | 'desktop', Record<string, { ratio: number; delta: number }>>;
   };
 }
 

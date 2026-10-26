@@ -110,16 +110,16 @@ CI never deploys and has no Cloudflare credential. Do not add a workflow step th
 
 Every page has a budget, checked on the built site and failing CI when exceeded. [ADR 0017](docs/adr/0017-testing-and-budgets.md) gives each number its reason; the numbers live in `scripts/budgets.json`.
 
-| Check                                             | Budget                                                                               |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| JavaScript a page loads, gzip                     | 0 B without islands, 20 KB with islands                                              |
-| Page weight: HTML, CSS, JS, images, gzip for text | 150 KB, fonts excluded                                                               |
-| Fonts, the whole build                            | 200 KB, woff2 only                                                                   |
-| Requests to other origins from HTML or CSS        | none: self-host fonts, images and scripts                                            |
-| `<img>`                                           | `width` and `height` on every one                                                    |
-| Lighthouse, mobile and desktop (median of 3)      | performance ≥ 0.95, accessibility 1, best practices ≥ 0.95, CLS ≤ 0.01, TBT ≤ 100 ms |
-| Lighthouse LCP                                    | ≤ 2.0 s mobile, ≤ 1.0 s desktop                                                      |
-| Against the base branch                           | LCP no worse than +10 % and +100 ms; TBT +10 % and +50 ms                            |
+| Check                                             | Budget                                                                                  |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| JavaScript a page loads, gzip                     | 0 B without islands, 20 KB with islands                                                 |
+| Page weight: HTML, CSS, JS, images, gzip for text | 150 KB, fonts excluded                                                                  |
+| Fonts, the whole build                            | 200 KB, woff2 only                                                                      |
+| Requests to other origins from HTML or CSS        | none: self-host fonts, images and scripts                                               |
+| `<img>`                                           | `width` and `height` on every one                                                       |
+| Lighthouse, mobile and desktop (median of 3)      | performance ≥ 0.95, accessibility 1, best practices ≥ 0.95, CLS ≤ 0.01, TBT ≤ 100 ms    |
+| Lighthouse LCP                                    | ≤ 2.0 s mobile, ≤ 1.0 s desktop                                                         |
+| Against the base branch                           | LCP no worse than +10 % and +200 ms on mobile, +100 ms on desktop; TBT +10 % and +50 ms |
 
 `just site-build` then `just budgets` prints a table per page. `just lighthouse --profile desktop` runs Lighthouse locally on the build (Chromium from `just e2e-install`; about three minutes). To change a budget, edit `scripts/budgets.json` and the reason in ADR 0017 in the same pull request.
 

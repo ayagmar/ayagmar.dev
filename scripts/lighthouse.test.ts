@@ -30,12 +30,18 @@ describe('budgets', () => {
 
   it('counts a regression only past both the ratio and the delta', () => {
     const base = values({ lcp: 1000, tbt: 40 });
-    assert.deepEqual(regressions(values({ lcp: 1101, tbt: 40 }), base), ['lcp']);
+    assert.deepEqual(regressions(values({ lcp: 1101, tbt: 40 }), base, 'desktop'), ['lcp']);
     // +10 % but only +60 ms; +200 ms but only +5 %.
-    assert.deepEqual(regressions(values({ lcp: 660 }), values({ lcp: 600 })), []);
-    assert.deepEqual(regressions(values({ lcp: 4200 }), values({ lcp: 4000 })), []);
-    assert.deepEqual(regressions(values({ tbt: 100 }), base), ['tbt']);
-    assert.deepEqual(regressions(values({ lcp: 9000 }), null), []);
+    assert.deepEqual(regressions(values({ lcp: 660 }), values({ lcp: 600 }), 'desktop'), []);
+    assert.deepEqual(regressions(values({ lcp: 4200 }), values({ lcp: 4000 }), 'mobile'), []);
+    assert.deepEqual(regressions(values({ tbt: 100 }), base, 'mobile'), ['tbt']);
+    assert.deepEqual(regressions(values({ lcp: 9000 }), null, 'mobile'), []);
+  });
+
+  it('absorbs one simulated mobile round trip, the jump seen between identical builds', () => {
+    // CI, same site output: 762 ms and 912 ms medians, one 150 ms RTT apart.
+    assert.deepEqual(regressions(values({ lcp: 912 }), values({ lcp: 762 }), 'mobile'), []);
+    assert.deepEqual(regressions(values({ lcp: 1063 }), values({ lcp: 762 }), 'mobile'), ['lcp']);
   });
 });
 

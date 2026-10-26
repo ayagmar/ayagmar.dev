@@ -76,10 +76,10 @@ export function overBudget(head: Values, profile: Profile): Metric[] {
 }
 
 /** Metrics worse than the base by more than both the ratio and the delta allow. */
-export function regressions(head: Values, base: Values | null): Metric[] {
+export function regressions(head: Values, base: Values | null, profile: Profile): Metric[] {
   if (!base) return [];
   return metricKeys.filter((key) => {
-    const rule = budgets.lighthouse.regression[key];
+    const rule = budgets.lighthouse.regression[profile][key];
     return !!rule && head[key] > base[key] * rule.ratio && head[key] - base[key] > rule.delta;
   });
 }
@@ -231,7 +231,7 @@ async function main() {
         }
         const b = baseRuns[page] ?? null;
         const over = overBudget(h, profile);
-        const regressed = regressions(h, b);
+        const regressed = regressions(h, b, profile);
         for (const key of over) problems.push(`${page} (${profile}): ${key} ${h[key]} over budget`);
         for (const key of regressed) {
           problems.push(`${page} (${profile}): ${key} regressed from ${b?.[key]} to ${h[key]}`);

@@ -35,8 +35,26 @@
       }
     },
     "regression": {
-      "lcp": { "ratio": 1.1, "delta": 100 },
-      "tbt": { "ratio": 1.1, "delta": 50 }
+      "mobile": {
+        "lcp": {
+          "ratio": 1.1,
+          "delta": 200
+        },
+        "tbt": {
+          "ratio": 1.1,
+          "delta": 50
+        }
+      },
+      "desktop": {
+        "lcp": {
+          "ratio": 1.1,
+          "delta": 100
+        },
+        "tbt": {
+          "ratio": 1.1,
+          "delta": 50
+        }
+      }
     }
   }
 }
