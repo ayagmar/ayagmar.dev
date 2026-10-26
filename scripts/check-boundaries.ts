@@ -2,8 +2,8 @@
 //   @min7/site -> @min7/contracts <- @min7/signals, and contracts depends on neither app.
 // Checks package manifests, tsconfig references and paths, and every import, re-export and
 // dynamic import in source (including .astro and .svelte frontmatter, scripts, script sources
-// and template expressions), resolved the way TypeScript resolves them so aliases and
-// relative paths are caught too.
+// and template expressions) and every import.meta.glob pattern, resolved the way TypeScript
+// resolves them so aliases and relative paths are caught too.
 // Usage: node scripts/check-boundaries.ts [repo-root]
 import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -129,7 +129,7 @@ export function checkBoundaries(rootDir: string): string[] {
     // Imports in source.
     for (const file of files.filter((f) => sourceFile.test(f) && !f.endsWith('.d.ts'))) {
       const text = readFileSync(file, 'utf8');
-      for (const specifier of specifiersOf(file, text)) {
+      for (const specifier of specifiersOf(file, text, unit.path)) {
         const where = rel(file);
         const resolved = ts.resolveModuleName(
           specifier,
@@ -181,13 +181,39 @@ const componentImports = [
 // Root-relative and absolute URLs are public paths, not modules.
 const scriptSource = /<script\b[^>]*\bsrc\s*=\s*(['"])(?!\/|[a-z]+:)([^'"]+)\1/gi;
 
+// Vite's import.meta.glob('pattern' | ['pattern', ...]) imports every match.
+const globCall = /\bimport\.meta\.glob\s*(?:<[^>]*>)?\s*\(\s*(\[[^\]]*\]|(['"`])[^'"`]*\2)/g;
+const stringLiteral = /(['"`])([^'"`]*)\1/g;
+
+/**
+ * The directory a glob pattern can reach, as a specifier relative to `file`: its text before the
+ * first glob character. `/` patterns are relative to the unit (Vite's root); negations only
+ * narrow a match, and alias patterns are left to the alias checks.
+ */
+function globBase(pattern: string, file: string, unitDir: string): string | undefined {
+  if (pattern.startsWith('!')) return undefined;
+  const prefix = pattern.slice(0, pattern.search(/[*?[\]{}()!]|$/));
+  const base = prefix.slice(0, prefix.lastIndexOf('/') + 1);
+  if (base.startsWith('/')) {
+    const path = relative(dirname(file), join(unitDir, base)) || '.';
+    return `${path.startsWith('.') ? path : `./${path}`}/`;
+  }
+  return /^\.{1,2}\//.test(base) ? base : undefined;
+}
+
 /** Every module specifier a file references. */
-function specifiersOf(file: string, text: string): Set<string> {
+function specifiersOf(file: string, text: string, unitDir: string): Set<string> {
   const info = ts.preProcessFile(scriptOf(file, text), true, true);
   const found = new Set([...info.importedFiles, ...info.referencedFiles].map((f) => f.fileName));
   if (isComponent(file)) {
     for (const pattern of [...componentImports, scriptSource]) {
       for (const [, , specifier] of text.matchAll(pattern)) if (specifier) found.add(specifier);
+    }
+  }
+  for (const [, argument = ''] of text.matchAll(globCall)) {
+    for (const [, , pattern = ''] of argument.matchAll(stringLiteral)) {
+      const base = globBase(pattern, file, unitDir);
+      if (base !== undefined) found.add(base);
     }
   }
   return found;

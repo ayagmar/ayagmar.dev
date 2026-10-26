@@ -20,6 +20,7 @@ const allowed: Record<string, string> = {
   }),
   'apps/site/tsconfig.json': '{ "references": [{ "path": "../../packages/contracts" }] }',
   'apps/site/src/page.ts': "import { contract } from '@min7/contracts';\nexport { contract };\n",
+  'apps/site/src/globs.ts': "export const own = import.meta.glob(['./*.ts', '/src/*.astro']);\n",
   'apps/site/src/Page.astro':
     "---\nimport { contract } from '@min7/contracts';\n---\n<p>{contract}</p>\n",
   'apps/signals/package.json': JSON.stringify({
@@ -212,6 +213,22 @@ describe('check-boundaries', () => {
         'apps/site/src/Src.astro': '---\n---\n<script src="../../signals/src/local.ts"></script>\n',
       },
       /apps\/site\/src\/Src.astro: imports .* from @min7\/signals/,
+    ],
+    [
+      'import.meta.glob in a .ts file reaching into signals',
+      {
+        'apps/site/src/g.ts':
+          "export const m = import.meta.glob('../../signals/src/*.ts', { eager: true });\n",
+      },
+      /apps\/site\/src\/g.ts: imports \.\.\/\.\.\/signals\/src\/ from @min7\/signals/,
+    ],
+    [
+      'import.meta.glob array in astro frontmatter reaching into signals',
+      {
+        'apps/site/src/G.astro':
+          "---\nconst m = import.meta.glob(['./*.ts', \"../../signals/**/*.ts\", '!**/skip.ts']);\n---\n<p />\n",
+      },
+      /apps\/site\/src\/G.astro: imports \.\.\/\.\.\/signals\/ from @min7\/signals/,
     ],
     [
       'site reaching into contracts by path',
