@@ -1,7 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { creditParts, evalLine, postsMentioning, skillsTagPath } from '../src/lib/skills.ts';
+import {
+  creditParts,
+  evalLine,
+  installPattern,
+  needsNode,
+  postsMentioning,
+  shelvesOf,
+  skillsTagPath,
+} from '../src/lib/skills.ts';
 import { type Skill, skillsSchema } from '../src/lib/skills-schema.ts';
 import type { Post } from '../src/lib/writing.ts';
 
@@ -50,18 +58,70 @@ describe('skills.json schema', () => {
 });
 
 describe('eval summary', () => {
-  // The row of marks must agree with the sentence beside it.
-  it('has one mark per case, the passed ones first, and says how many passed', () => {
+  // The compact mark must agree with the sentence in the detail.
+  it('is a ratio, with the same counts in words and a flag for a clean run', () => {
     const line = evalLine(skill());
-    expect(line?.marks).toEqual([true, true, false]);
+    expect(line?.ratio).toBe('2/3');
+    expect(line?.clean).toBe(false);
     expect(line?.cases).toBe('2 of 3 cases passed');
     expect(line?.passMark).toBe('pass mark 80%');
+    expect(
+      evalLine(
+        skill({
+          eval: {
+            passed: 3,
+            total: 3,
+            threshold: 0.8,
+            date: '2026-10-11',
+            model: 'm',
+            version: '0.1.2',
+          },
+        })
+      )?.clean
+    ).toBe(true);
   });
 
   // Catches a result for an older release being read as a result for the current one.
   it('says when the run was against an older version, and is absent without a result', () => {
     expect(evalLine(skill())?.ran).toBe('2026-10-11, m, skill 0.1.1 (now 0.1.2)');
     expect(evalLine(skill({ eval: null }))).toBeNull();
+  });
+});
+
+describe('shelves', () => {
+  // A new skill from the sync that no shelf names must still show, and this test says to place it.
+  it('place every committed skill on a named shelf, once', () => {
+    const shelves = shelvesOf(committed.skills);
+    expect(shelves.map((shelf) => shelf.title)).not.toContain('More');
+    expect(shelves.flatMap((shelf) => shelf.skills.map((entry) => entry.name)).sort()).toEqual(
+      committed.skills.map((entry: Skill) => entry.name).sort()
+    );
+  });
+
+  it('put a skill no shelf names on a last shelf instead of dropping it', () => {
+    const shelves = shelvesOf([skill(), skill({ name: 'brand-new' })]);
+    expect(shelves.map((shelf) => [shelf.title, shelf.skills.map((entry) => entry.name)])).toEqual([
+      ['Delegate and ship', ['commit']],
+      ['More', ['brand-new']],
+    ]);
+  });
+});
+
+describe('install line', () => {
+  it('leaves the skill and the agent open', () => {
+    const install = 'npx skills add ayagmar/agents-skills --skill commit --agent pi';
+    expect(installPattern([skill({ install })])).toBe(
+      'npx skills add ayagmar/agents-skills --skill <name> --agent <agent>'
+    );
+    expect(installPattern([skill()])).toBeNull();
+  });
+});
+
+describe('runtime', () => {
+  it('needs Node only when the runtime says so', () => {
+    expect(needsNode(skill())).toBe(false);
+    expect(needsNode(skill({ runtime: 'Node.js >= 22.19, rg optional' }))).toBe(true);
+    expect(needsNode(skill({ runtime: null }))).toBe(false);
   });
 });
 

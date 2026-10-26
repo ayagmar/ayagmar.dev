@@ -2,7 +2,16 @@
 import { getEntry } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import { getPosts } from '../lib/posts.ts';
-import { commitUrl, creditParts, evalLine, postsMentioning, skillsTagPath } from '../lib/skills.ts';
+import {
+  commitUrl,
+  creditParts,
+  evalLine,
+  installPattern,
+  needsNode,
+  postsMentioning,
+  shelvesOf,
+  skillsTagPath,
+} from '../lib/skills.ts';
 import { isoDay, postPath } from '../lib/writing.ts';
 
 // content/skills.json, validated by the collection schema in content.config.ts (ADR 0031).
@@ -11,6 +20,8 @@ if (entry === undefined) throw new Error('content/skills.json is missing');
 const { source, skills } = entry.data;
 const posts = await getPosts();
 const tagPath = skillsTagPath(posts);
+const shelves = shelvesOf(skills);
+const pattern = installPattern(skills);
 const repoUrl = `https://github.com/${source.repo}`;
 ---
 
@@ -20,238 +31,286 @@ const repoUrl = `https://github.com/${source.repo}`;
 >
   <div data-pagefind-body>
     <span hidden data-pagefind-meta="title">Skills</span>
-    <header class="shelf-head">
+    <header class="intro">
       <h1>Skills</h1>
-      <p class="intro">
+      <p>
         An Agent Skill is a folder with a <code>SKILL.md</code> that tells a coding agent when to
         use it and how to do one kind of job; the agent reads it only when the task matches.
-        {` These ${skills.length} are mine: `}each is its own npm package, for Pi, Claude Code,
-        Codex and Cursor, kept in <a href={repoUrl}>{source.repo}</a>.
+        {` These ${skills.length} are mine: `}each is its own npm package, kept in{' '}
+        <a href={repoUrl}>{source.repo}</a>.
       </p>
+      {pattern !== null && (
+        <>
+          <code class="install">{pattern}</code>
+          <p class="note">
+            Agents: <code>pi</code>, <code>claude-code</code>, <code>codex</code>,{' '}
+            <code>cursor</code>. Add <code>-g</code> to install for your user instead of the
+            project. A mark like 3/3 is how many eval cases passed.
+          </p>
+        </>
+      )}
       {tagPath !== null && (
-        <p class="caption" data-pagefind-ignore>
+        <p class="note" data-pagefind-ignore>
           Writing about them: <a href={tagPath}>posts tagged {tagPath.split('/').at(-1)}</a>.
         </p>
       )}
     </header>
 
-    <ol class="shelf panel m-wood">
-      {skills.map((skill) => {
-        const result = evalLine(skill);
-        const mentions = postsMentioning(posts, skill);
-        return (
-          <li id={skill.name} class="spine">
-            <div class="head">
-              <h2>
-                <a href={`#${skill.name}`}>{skill.name}</a>
-              </h2>
-              <p class="facts mono">
-                <span>v{skill.version}</span>
-                <span>{skill.license}</span>
-                {skill.runtime !== null && <span>{skill.runtime}</span>}
-              </p>
-            </div>
-            <div class="body">
-              <p class="summary">{skill.summary}</p>
-              {skill.install !== null && <code class="install">{skill.install}</code>}
-              {result !== null && (
-                <p class="evals">
-                  <span class="marks" aria-hidden="true">
-                    {result.marks.map((ok) => (
-                      <span class={ok ? 'mark on' : 'mark'} />
-                    ))}
-                  </span>
-                  <span class="mono">
-                    Evals: {result.cases}, {result.passMark}.
-                    <span class="ran">Run {result.ran}.</span>
-                  </span>
-                </p>
-              )}
-              <p class="links">
-                <a href={skill.readme}>
-                  README<span class="sr-only"> for {skill.name}</span>
-                </a>
-                <a href={skill.npm}>
-                  npm<span class="sr-only"> page for {skill.name}</span>
-                </a>
-                {mentions.map((post) => (
-                  <a href={postPath(post.id)}>
-                    <span class="sr-only">Post: </span>
-                    {post.data.title}
-                    <span class="sr-only"> ({isoDay(post.data.date)})</span>
-                  </a>
-                ))}
-              </p>
-              {skill.credit !== null && (
-                <p class="credit">
-                  {creditParts(skill.credit).map((part) =>
-                    part.href === undefined ? part.text : <a href={part.href}>{part.text}</a>
+    {shelves.map((shelf, index) => (
+      <section class="shelf" aria-labelledby={`shelf-${index}`}>
+        <h2 id={`shelf-${index}`}>{shelf.title}</h2>
+        <p class="blurb">{shelf.blurb}</p>
+        <ul class="jars">
+          {shelf.skills.map((skill) => {
+            const result = evalLine(skill);
+            const mentions = postsMentioning(posts, skill);
+            return (
+              <li id={skill.name} class="jar">
+                <div class="label">
+                  <h3>{skill.name}</h3>
+                  <span class="version">v{skill.version}</span>
+                </div>
+                <div class="contents">
+                  <p class="summary">{skill.summary}</p>
+                  <p class="badges">
+                    <span>{skill.license}</span>
+                    {needsNode(skill) && <span>needs Node</span>}
+                    {result !== null && (
+                      <span class={result.clean ? 'mark' : 'mark short'}>
+                        {result.ratio}
+                        <span class="sr-only"> eval cases passed</span>
+                      </span>
+                    )}
+                  </p>
+                  {skill.credit !== null && (
+                    <p class="credit">
+                      {creditParts(skill.credit).map((part) =>
+                        part.href === undefined ? part.text : <a href={part.href}>{part.text}</a>
+                      )}
+                    </p>
                   )}
-                </p>
-              )}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
+                  <p class="links">
+                    <a href={skill.readme}>
+                      README<span class="sr-only"> for {skill.name}</span>
+                    </a>
+                    <a href={skill.npm}>
+                      npm<span class="sr-only"> page for {skill.name}</span>
+                    </a>
+                    {mentions.map((post) => (
+                      <a href={postPath(post.id)}>
+                        <span class="sr-only">Post: </span>
+                        {post.data.title}
+                        <span class="sr-only"> ({isoDay(post.data.date)})</span>
+                      </a>
+                    ))}
+                  </p>
+                  <details>
+                    <summary>
+                      Install{result !== null && ' and eval run'}
+                      <span class="sr-only"> for {skill.name}</span>
+                    </summary>
+                    {skill.install !== null && <code class="install">{skill.install}</code>}
+                    {result !== null && (
+                      <p class="detail">
+                        {result.cases}, {result.passMark}. Run {result.ran}.
+                      </p>
+                    )}
+                    {skill.runtime !== null && <p class="detail">Runtime: {skill.runtime}.</p>}
+                  </details>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ))}
 
-    <p class="caption" data-pagefind-ignore>
-      Copied from <a href={repoUrl}>{source.repo}</a> at
-      <a href={commitUrl(source)}><code>{source.commit.slice(0, 7)}</code></a>,
+    <p class="note" data-pagefind-ignore>
+      Copied from <a href={repoUrl}>{source.repo}</a> at{' '}
+      <a href={commitUrl(source)}><code>{source.commit.slice(0, 7)}</code></a>,{' '}
       {isoDay(new Date(source.committedAt))}, by <code>just skills-sync</code>. Each skill keeps its
-      own licence and credits, shown above. Eval runs are Claude Code's plugin eval with Claude as
-      the judge, run by me; the repo does not publish them.
+      own licence and credits. Eval runs are Claude Code's plugin eval with Claude as the judge, run
+      by me; the repo does not publish them.
     </p>
   </div>
 </Base>
 
 <style>
-.shelf-head h1 {
-  margin-bottom: 0.25em;
-}
-
-.intro {
+.intro > p {
   max-width: var(--measure);
 }
 
-/* The shelf is one board of wood; each skill is a spine standing on it, set off by a
-     lamp-coloured edge and a dashed line to the next. */
-.shelf {
-  display: grid;
-  gap: 0;
-  padding: 0.5rem 1.1rem;
-  list-style: none;
-  overflow-wrap: anywhere;
+.intro h1 {
+  margin-bottom: 0.25em;
 }
 
-.spine {
-  display: grid;
-  gap: 0.4rem;
-  padding: 1.1rem 0 1.2rem 0.9rem;
-  border-inline-start: 4px solid var(--accent);
-  border-block-end: 1px dashed color-mix(in srgb, var(--fg) 30%, transparent);
-  scroll-margin-top: 1rem;
-}
-
-.body {
-  display: grid;
-  gap: 0.4rem;
-  min-width: 0;
-}
-
-.spine:last-child {
-  border-block-end: 0;
-}
-
-.spine :is(h2, p) {
-  margin: 0;
-}
-
-.spine h2 {
-  font-family: var(--mono);
-  font-size: 1.2rem;
-  letter-spacing: -0.02em;
-}
-
-.links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 1.1rem;
-}
-
-.links a {
-  display: inline-block;
-  min-height: 24px;
-  padding-block: 0.25rem;
-}
-
-.spine h2 a {
-  color: var(--fg);
-  text-decoration: none;
-}
-
-.spine h2 a:hover {
-  text-decoration: underline;
-}
-
-.facts,
-.evals,
+.note,
+.blurb,
+.credit,
+.detail,
+.version,
+.badges,
 .links,
-.credit {
+summary {
   font-size: 0.8125rem;
   line-height: 1.5;
 }
 
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 1rem;
+.note {
   color: var(--fg-2);
 }
 
-.summary {
-  max-width: var(--measure);
+.shelf + .note {
+  margin-block-start: 2.5rem;
 }
 
+/* The install pattern and each skill's own line: the code face on the room's dark screen. */
 .install {
   display: block;
-  margin: 0.2rem 0;
+  margin: 0.5rem 0;
   padding: 0.55rem 0.75rem;
+  width: fit-content;
+  max-width: 100%;
   background: var(--code-bg);
   color: var(--code-fg);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
-.evals {
-  display: flex;
-  gap: 0.6rem;
-  align-items: baseline;
+.shelf {
+  margin-block: 2.5rem 0;
+}
+
+.shelf h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.blurb {
+  margin: 0.15rem 0 1rem;
   color: var(--fg-2);
 }
 
-.marks {
-  display: inline-flex;
+/* Each skill is a jar standing on its own wooden base, labelled with a strip of the notebook's
+   paper, so the shelf holds what the writing desk holds. */
+.jars {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: 1rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.jar {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background: var(--surface);
+  border-block-end: 6px solid var(--wood);
+  clip-path: var(--step);
+  scroll-margin-top: 1rem;
+}
+
+.label {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.label h3 {
+  margin: 0;
+  font: 650 0.9375rem / 1.3 var(--mono);
+  letter-spacing: -0.02em;
+  text-wrap: auto;
+}
+
+.version {
   flex: none;
-  gap: 0.25rem;
-  transform: translateY(0.1rem);
+  color: var(--ink-2);
+  font-family: var(--mono);
 }
 
-.mark {
-  width: 0.7rem;
-  height: 0.7rem;
-  border: 2px dashed var(--fg-2);
-  border-radius: 50%;
+.contents {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+  padding: 0.8rem 0.8rem 0.9rem;
 }
 
-.mark.on {
-  border-style: solid;
-  border-color: var(--accent);
-  background: var(--accent);
+.contents p {
+  margin: 0;
 }
 
-.ran {
-  margin-inline-start: 0.4em;
+.summary {
+  font-size: 0.975rem;
+  line-height: 1.5;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  color: var(--fg-2);
+  font-family: var(--mono);
+}
+
+.badges span {
+  padding: 0 0.4rem;
+  border: 1px solid var(--line);
+}
+
+.badges .mark {
+  border-color: var(--glow);
+  color: var(--glow);
+}
+
+.badges .mark.short {
+  border-color: var(--rose);
+  color: var(--rose);
 }
 
 .credit {
-  max-width: var(--measure);
   color: var(--fg-2);
 }
 
-@media (min-width: 48rem) {
-  .shelf {
-    padding-inline: 1.9rem;
-  }
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
 
-  .spine {
-    grid-template-columns: 14rem 1fr;
-    column-gap: 2rem;
-    padding-inline-start: 1.25rem;
-  }
+.links a,
+summary {
+  display: inline-block;
+  min-height: 24px;
+  padding-block: 0.25rem;
+}
 
-  .facts {
-    flex-direction: column;
-  }
+details {
+  margin-block-start: 0.1rem;
+}
+
+summary {
+  color: var(--fg-2);
+  cursor: pointer;
+}
+
+summary:hover {
+  color: var(--fg);
+}
+
+details[open] summary {
+  color: var(--fg);
+}
+
+.detail {
+  margin-block-start: 0.4rem;
+  color: var(--fg-2);
 }
 </style>
