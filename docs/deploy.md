@@ -13,7 +13,7 @@ Both projects:
 - **Node.js:** read from `.node-version`. Do not set `NODE_VERSION`.
 - **pnpm:** read from `packageManager` in `package.json`. Do not set `PNPM_VERSION`.
 - **Dependencies:** installed by Workers Builds from `pnpm-lock.yaml`. Leave `SKIP_DEPENDENCY_INSTALL` unset.
-- **Build variables:** none. The commit SHA comes from `WORKERS_CI_COMMIT_SHA`, which Workers Builds sets.
+- **Build variables:** none. The commit SHA comes from `WORKERS_CI_COMMIT_SHA`, which Workers Builds sets. The site build reads the signals API when `WORKERS_CI_BRANCH` is `main` and the shared fixtures for every other branch (ADR 0015).
 
 ### Site (`min7-site`, ayagmar.dev)
 
@@ -36,6 +36,17 @@ Both projects:
 | Build watch paths, exclude           | none                                                                                                                                                                         |
 
 Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` route, which `wrangler deploy` creates. The `ayagmar.dev` zone must be on the same Cloudflare account. If the deploy cannot create it, add it under the Worker's **Settings → Domains & Routes** instead.
+
+## Secrets (signals)
+
+Set once, from a checkout with Wrangler logged in; each command prompts for the value and deploys a new version:
+
+```sh
+just signals-secret LASTFM_API_KEY   # from https://www.last.fm/api/account/create
+just signals-secret GITHUB_TOKEN     # optional: a fine-grained token with no permissions (public data)
+```
+
+Without `LASTFM_API_KEY` the listening pull fails with `not_configured`. Without `GITHUB_TOKEN` GitHub allows 60 requests an hour per IP, shared with other Workers, so the daily projects pull may be refused.
 
 ## D1 (signals)
 

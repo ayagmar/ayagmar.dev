@@ -1,0 +1,133 @@
+{
+  "status": 200,
+  "body": {
+    "_note": "Sample data in the shape of the contract (ADR 0012); repo-pulse does not serve this feed yet.",
+    "version": 1,
+    "generatedAt": "2026-10-26T08:45:00Z",
+    "events": [
+      {
+        "type": "issue.opened",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-26T07:00:00Z",
+        "issue": {
+          "title": "from a newer repo-pulse"
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T10:02:00Z",
+        "star": {
+          "count": 35
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/runnerd",
+        "at": "2026-10-25T21:14:00Z",
+        "url": "https://github.com/ayagmar/runnerd/compare/3f2a1c0...9be47d2",
+        "push": {
+          "commits": 12
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "someoneelse/private-thing",
+        "at": "2026-10-26T06:00:00Z",
+        "url": "https://github.com/someoneelse/private-thing/compare/a...b",
+        "push": {
+          "commits": 3
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/ccdesk",
+        "at": "last tuesday",
+        "url": "https://github.com/ayagmar/ccdesk/releases/tag/v1",
+        "release": {
+          "tag": "v1"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T16:40:00Z",
+        "url": "https://github.com/ayagmar/ccdesk/pull/41",
+        "pullRequest": {
+          "number": 41,
+          "title": "Edit hooks from the dashboard"
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/pi-mobile",
+        "at": "2026-10-24T08:12:00Z",
+        "star": {
+          "count": 113
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/pi-mobile",
+        "at": "2026-10-24T19:31:00Z",
+        "star": {
+          "count": 114
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/pi-mobile",
+        "at": "2026-10-24T22:05:00Z",
+        "star": {
+          "count": 115
+        },
+        "sender": {
+          "login": "someone",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/1"
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T13:51:53Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.1",
+        "release": {
+          "tag": "v0.14.1"
+        }
+      }
+    ],
+    "starHistory": [
+      {
+        "repo": "ayagmar/pi-mobile",
+        "points": [
+          {
+            "date": "2026-02-30",
+            "stars": 112
+          }
+        ]
+      },
+      {
+        "repo": "someoneelse/private-thing",
+        "points": [
+          {
+            "date": "2026-10-25",
+            "stars": 9
+          }
+        ]
+      },
+      {
+        "repo": "ayagmar/llm-usage-metrics",
+        "points": [
+          {
+            "date": "2026-10-22",
+            "stars": 34
+          },
+          {
+            "date": "2026-10-23",
+            "stars": 35
+          }
+        ]
+      }
+    ]
+  }
+}

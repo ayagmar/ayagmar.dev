@@ -1,3 +1,7 @@
 # Copy to .dev.vars for `just signals-dev`. Names only; never commit values.
-# No secrets are needed yet. Producer tokens and upstream API keys are added here
-# as their adapters and intake routes land.
+# Producer tokens are added here as their intake routes land.
+
+# Last.fm API key (https://www.last.fm/api/account/create). Without it, listening is not pulled.
+LASTFM_API_KEY=
+# Optional GitHub token with no scopes (public data only); raises the API rate limit.
+GITHUB_TOKEN=

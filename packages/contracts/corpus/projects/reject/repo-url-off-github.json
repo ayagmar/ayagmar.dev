@@ -1,0 +1,16 @@
+{
+  "projects": [
+    {
+      "slug": "pi-mobile",
+      "repo": "ayagmar/pi-mobile",
+      "name": "pi-mobile",
+      "url": "https://evil.example/ayagmar/pi-mobile",
+      "description": null,
+      "language": null,
+      "stars": 115,
+      "archived": false,
+      "latestRelease": null,
+      "npm": null
+    }
+  ]
+}

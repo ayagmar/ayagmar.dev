@@ -30,6 +30,8 @@ Every dependency is code that runs at build time, in a Worker or in a browser, a
 | zod                       | 4.6.7   | contracts                | Schemas for every contract; `z.toJSONSchema` exports JSON Schema with no extra package. Same major as Astro's own zod. |
 | hono                      | 4.13.13 | signals                  | Routing, JSON responses and error handling for the Worker. 4.13.14 was under three days old.                           |
 | wrangler                  | 4.152.0 | signals, site            | Local dev, type generation, bundling, deploy and Previews for both Workers.                                            |
+| msw                       | 3.0.3   | contracts, signals, site | Tests only: mocks upstreams and the read API at the network boundary from the shared fixtures (ADR 0016).              |
+| @msw/cloudflare           | 0.2.0   | signals (test only)      | MSW's `setupNetwork` for workerd, where `msw/node` does not intercept the Worker's `fetch`.                            |
 | @cloudflare/vitest-plugin | 1.4.7   | signals                  | Runs Worker tests inside workerd with the real bindings. `@cloudflare/vitest-pool-workers` only supports vitest 4.     |
 | astro                     | 7.4.2   | site                     | Static site generator, content collections, sitemap integration host.                                                  |
 | @astrojs/svelte           | 9.1.1   | site                     | Svelte islands in Astro.                                                                                               |

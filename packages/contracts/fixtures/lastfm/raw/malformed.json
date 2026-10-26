@@ -1,0 +1,203 @@
+{
+  "recentTracks": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": "not a list of tracks",
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "8356",
+          "page": "1",
+          "perPage": "10",
+          "total": "83558"
+        }
+      }
+    }
+  },
+  "topArtists": {
+    "status": 200,
+    "body": {
+      "topartists": {
+        "artist": [
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/Elliott+Smith",
+            "playcount": "2423",
+            "@attr": {
+              "rank": "1"
+            },
+            "name": "Elliott Smith"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/NTO",
+            "playcount": "1559",
+            "@attr": {
+              "rank": "2"
+            },
+            "name": "NTO"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/surrenderdorothy",
+            "playcount": "1297",
+            "@attr": {
+              "rank": "3"
+            },
+            "name": "surrenderdorothy"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/Daft+Punk",
+            "playcount": "986",
+            "@attr": {
+              "rank": "4"
+            },
+            "name": "Daft Punk"
+          },
+          {
+            "streamable": "0",
+            "image": [
+              {
+                "size": "small",
+                "#text": ""
+              },
+              {
+                "size": "medium",
+                "#text": ""
+              },
+              {
+                "size": "large",
+                "#text": ""
+              },
+              {
+                "size": "extralarge",
+                "#text": ""
+              }
+            ],
+            "mbid": "",
+            "url": "https://www.last.fm/music/Bones",
+            "playcount": "975",
+            "@attr": {
+              "rank": "5"
+            },
+            "name": "Bones"
+          }
+        ],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "393",
+          "page": "1",
+          "perPage": "10",
+          "total": "3922"
+        }
+      }
+    }
+  },
+  "thisWeek": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "13",
+          "page": "1",
+          "perPage": "10",
+          "total": "124"
+        }
+      }
+    }
+  },
+  "lastWeek": {
+    "status": 200,
+    "body": {
+      "recenttracks": {
+        "track": [],
+        "@attr": {
+          "user": "min7_",
+          "totalPages": "65",
+          "page": "1",
+          "perPage": "10",
+          "total": "647"
+        }
+      }
+    }
+  }
+}
