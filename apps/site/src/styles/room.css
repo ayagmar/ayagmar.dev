@@ -233,6 +233,8 @@
 .home-panels {
   display: grid;
   gap: 0 1.25rem;
+  /* A long unbroken title or summary would set the grid track's minimum width. */
+  overflow-wrap: anywhere;
 }
 
 .home-panels .paper h2 {
