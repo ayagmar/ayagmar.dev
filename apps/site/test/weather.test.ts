@@ -129,6 +129,7 @@ describe('which answers the room shows', () => {
     ['another source', answer({}, { source: 'listening' })],
     ['another version', answer({}, { version: 2 })],
     ['a code Open-Meteo does not document', answer({ weatherCode: 18 })],
+    ['a code past two digits', answer({ weatherCode: 100 })],
     ['a fractional code', answer({ weatherCode: 61.5 })],
     ['a code as a string', answer({ weatherCode: '61' })],
     ['a null code', answer({ weatherCode: null })],

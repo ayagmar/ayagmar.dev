@@ -132,4 +132,14 @@ describe('weather (Open-Meteo)', () => {
     raw.body.current.weather_code = null as unknown as number;
     check(() => weather.normalize(raw), { error: 'upstream_error' });
   });
+
+  // Catches a range on the code: a failed pull keeps the last snapshot, so a new code past 99
+  // would keep showing yesterday's rain instead of clearing the window.
+  it('serves any whole code, and fails on a fractional one', () => {
+    const raw = structuredClone(rawFixtures['open-meteo'].ok);
+    raw.body.current.weather_code = 100;
+    expect(weather.normalize(raw)).toMatchObject({ weatherCode: 100 });
+    raw.body.current.weather_code = 3.5;
+    check(() => weather.normalize(raw), { error: 'upstream_malformed' });
+  });
 });

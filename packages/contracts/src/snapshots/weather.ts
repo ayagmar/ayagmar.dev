@@ -8,8 +8,12 @@ import { envelopeSchema, timestampSchema } from '../envelope.ts';
 /** Unix seconds that `Date` can still turn into an RFC 3339 timestamp. */
 const unixSeconds = z.int().min(0).max(253_402_300_799);
 
-/** A WMO weather interpretation code (WW), two digits. Open-Meteo documents which it sends. */
-const wwCode = z.int().min(0).max(99);
+/**
+ * A WMO weather interpretation code (WW). Open-Meteo documents which it sends, but any whole
+ * number is kept: a failed pull keeps the last snapshot, so rejecting a new code would keep
+ * showing the old weather. The site shows none for a code it does not know.
+ */
+const wwCode = z.int();
 
 const percent = z.number().min(0).max(100);
 const millimetres = z.number().min(0).max(1000);
