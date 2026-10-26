@@ -4,6 +4,11 @@ import { expect, test } from './fixtures.ts';
 
 const about = readAbout();
 
+test('the about page names whose history it is', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(about.identity.name);
+});
+
 // The committed about.json decides which state this run checks; the component test covers both.
 if (about.resume.published) {
   test('the about page links a resume PDF that is served', async ({ page, request }) => {
