@@ -89,7 +89,8 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
         <slot />
       </div>
     </main>
-    <!-- Opened with ? by src/scripts/theme.js; the room's keys are in src/scripts/room.ts. -->
+    <!-- Opened with ? or the footer's Keys button by src/scripts/theme.js, which also keeps the
+         switch; the room's keys are in src/scripts/room.ts. -->
     <dialog class="keys" aria-labelledby="keys-title">
       <h2 id="keys-title">Keyboard</h2>
       <dl>
@@ -111,6 +112,11 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
         <dt><kbd>?</kbd></dt>
         <dd>This list</dd>
       </dl>
+      <label>
+        {/* biome-ignore lint/a11y/useAriaPropsForRole: a checkbox has its own checked state; ARIA in HTML says not to add aria-checked to one. */}
+        <input type="checkbox" role="switch" data-shortcuts checked>
+        Single-key shortcuts (all but Ctrl K)
+      </label>
       <form method="dialog">
         <button type="submit">Close</button>
       </form>
@@ -122,6 +128,7 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
         <li><a href={feedPaths().atom}>Atom</a></li>
         <li><a href="/colophon">Colophon</a></li>
         <li><a href={site.links.github}>GitHub</a></li>
+        <li><button type="button" class="keys-open" data-keys-open>Keys</button></li>
       </ul>
     </footer>
   </body>

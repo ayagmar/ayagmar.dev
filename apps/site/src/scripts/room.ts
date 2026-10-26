@@ -1,7 +1,8 @@
 // The room's clock on the home page (ADR 0027): the window shows the sky and the moon over
 // Casablanca now, and between 02:00 and 07:00 there the lamp is turned down with a note. Also
-// the keys 1 to 7, which open the room's objects in reading order. Without this script the room
-// is the static scene of the page's theme, with no moon and no note.
+// the keys 1 to 7, which open the room's objects in reading order, unless the list of keys has
+// turned single-key shortcuts off. Without this script the room is the static scene of the
+// page's theme, with no moon and no note.
 import { casablancaTime, isLate, moonAt, moonPath, skyAt } from '../lib/sky.ts';
 
 const scene = document.querySelector<HTMLElement>('.scene');
@@ -41,7 +42,14 @@ setInterval(tick, 60_000);
 
 document.addEventListener('keydown', (event) => {
   const target = event.target;
-  if (event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]'))
+  // Off with the list's switch (theme.js), as every single-key shortcut.
+  if (
+    event.ctrlKey ||
+    event.metaKey ||
+    event.altKey ||
+    document.documentElement.dataset.shortcuts ||
+    document.querySelector('dialog[open]')
+  )
     return;
   if (
     target instanceof HTMLElement &&

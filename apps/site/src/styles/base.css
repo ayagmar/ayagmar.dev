@@ -933,6 +933,28 @@ dialog li p {
   margin: 0;
 }
 
+.keys label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-block-end: 1rem;
+  color: var(--text);
+}
+
+.keys input {
+  flex: none;
+  accent-color: var(--accent);
+}
+
+/* The footer's button opens the list through theme.js, so it shows only once that has run. */
+.keys-open {
+  display: none;
+}
+
+:root[data-theme-switch] .keys-open {
+  display: inline-block;
+}
+
 dialog mark {
   background: color-mix(in srgb, var(--lamp) 35%, transparent);
   color: inherit;

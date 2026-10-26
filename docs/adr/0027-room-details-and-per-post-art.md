@@ -55,7 +55,10 @@ A live answer stays live only until its `fetchedAt` plus the same 15 minutes (th
 
 `theme.js`, which every page already loads, now also handles two keys: `t` swaps day and night (from Auto it picks the opposite of the system theme), and `?` opens `dialog.keys`, a static list in `Base.astro`. On the home page `room.ts` adds `1` to `7`, which open the room's objects in reading order, and the list shows them. Search keeps `/` and Ctrl+K. Keys are ignored while typing in a field, while a dialog is open, and with Ctrl, Alt or Meta. Without JavaScript the list never opens and no key does anything.
 
-These are single-character shortcuts, which WCAG 2.1.4 (level A) asks to be switchable off or remappable. Search's `/` already was one. An off switch was not added, since it is a feature the owner did not ask for; it is the open question for this ADR.
+These are single-character shortcuts, which WCAG 2.1.4 (level A) allows only if they can be turned off, remapped, or work only while their component has focus. The owner wants the playful keys, so they stay, with a way to turn them off:
+- A **Keys** button at the end of every page's footer opens the same list, so the list and its switch are reachable with no shortcut at all. It shows only once `theme.js` has run, like the theme switch.
+- The list has a switch, "Single-key shortcuts", on by default: a native checkbox with `role="switch"`. Turning it off stores `shortcuts=off` in `localStorage`, so it holds on every page and every visit, and `theme.js` mirrors it as `data-shortcuts="off"` on `<html>` before the first paint. `theme.js` (`?`, `t`), `room.ts` (`1` to `7`) and search (`/`) all check that attribute; Ctrl+K and Cmd+K keep opening search, since they use a modifier. When storage is blocked, the switch holds for the current page only.
+- Escape on a dialog drops focus from the field or switch it held, so a hidden control does not swallow the next key.
 
 `Base.astro` starts every page with an HTML comment for people who read the source: what the site is built from, where the code is, and the `?` and `curl` tricks. It costs about 0.2 KB per page before gzip.
 
@@ -78,27 +81,24 @@ The room script is imported from an Astro `<script>`, emitted as `/_astro/index.
 
 ### Cost
 
-| What                      | Where      | Size (gzip)                          |
-| ------------------------- | ---------- | ------------------------------------ |
-| Room script (`room.ts`)   | home only  | 1,531 B                              |
-| Theme script (`theme.js`) | every page | 969 B (was 685 B), still under 1 KB  |
-| Now-playing island        | home       | +156 B                               |
-| Window layer              | home       | 1.3 to 1.4 KiB, one per visit        |
-| Dim night scene           | home       | 11.5 KiB, only 02:00–07:00 and night |
-| Keys list and comment     | every page | about 0.3 KB                         |
-| Art                       | posts      | 0.5 to 4.3 KB                        |
+| What                       | Where      | Size (gzip)                          |
+| -------------------------- | ---------- | ------------------------------------ |
+| Room script (`room.ts`)    | home only  | 1,531 B                              |
+| Theme script (`theme.js`)  | every page | 1,289 B (was 685 B)                  |
+| Now-playing island         | home       | +156 B                               |
+| Window layer               | home       | 1.3 to 1.4 KiB, one per visit        |
+| Dim night scene            | home       | 11.5 KiB, only 02:00–07:00 and night |
+| Keys list, switch, comment | every page | about 0.4 KB                         |
+| Art                        | posts      | 0.5 to 4.3 KB                        |
 
-**Budget allowance.** The budgets of ADR 0017 (pull request #11, not merged yet) count the islands against 20 KB on pages with islands, and home sits at 19.8 KB, so the room script needs its own allowance like the theme script's. When ADR 0017 lands, `scripts/budgets.json` gets:
+**Budget allowances.** The budgets of ADR 0017 (pull request #11, not merged yet) count the islands against 20 KB on pages with islands, and home sits at 20.0 KB (20,446 B), so the room script needs its own allowance like the theme script's. The theme script also outgrows the 1 KB cap ADR 0017 gives it: the keys and their off switch take it from 685 B to 1,289 B (gzip level 9, as `scripts/budgets.ts` measures). It ships as written, comments included; minifying it would win back about a third, but needs its own build step. Each cap is the measured size plus about 10 %, so the next addition is a decision rather than a surprise. When ADR 0017 lands, `scripts/budgets.json` gets:
 
 ```json
-{
-  "name": "room clock",
-  "file": "/_astro/index.astro_astro_type_script_index_0_lang.*.js",
-  "bytes": 1536
-}
+{ "name": "room clock", "file": "/_astro/index.astro_astro_type_script_index_0_lang.*.js", "bytes": 1536 },
+{ "name": "theme switch", "file": "/_astro/theme.*.js", "bytes": 1420 }
 ```
 
-and its table gets the row: _Room clock, 1.5 KB gzip, home page only: the window, moon and lamp follow Casablanca's clock, which needs the visitor's current time; no island is grown for it._ With that allowance, #11's `scripts/budgets.ts` passes on this build (home: 19.8 KB of islands, 2.4 KB allowed, 68.7 KB page weight, which now counts every image the stylesheet can load).
+and its table gets the row _Room clock, 1.5 KB gzip, home page only: the window, moon and lamp follow Casablanca's clock, which needs the visitor's current time; no island is grown for it_, and the theme script's row becomes _1.4 KB gzip, on its own_, with "It is 1.3 KB: the theme switch, plus the keys of ADR 0027 and their off switch (WCAG 2.1.4)". With those allowances, #11's `scripts/budgets.ts` passes on this build (home: 20,446 B of islands, 34 B under 20 KB; 2.8 KB allowed; 70.9 KB page weight, which now counts every image the stylesheet can load).
 
 Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, the fixtures-mode Worker, three runs): performance 0.99 to 1.00, accessibility 1.00, LCP 1.66 s in every run, TBT 0 ms, CLS 0.0004. That is the LCP ADR 0026 measured before these details; the room script loads as a module and the window layer is smaller than the scene, so neither is in front of it.
 
@@ -118,7 +118,7 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 - Window, moon, lamp and note: open the home page; it shows Casablanca now. For other hours, the e2e tests "the room keeps Casablanca time" in `apps/site/e2e/room.spec.ts` fix the clock at 03:00, noon and dusk; Playwright's `page.clock.setFixedTime` does the same by hand.
 - Record: only with a live `/v1/listening` answer. Locally, `signals.spec.ts` serves one from the shared fixtures.
 - `curl -s http://localhost:8790/` after `just site-build` and `just site-serve`.
-- Keys: press `?` on any page; `t`; `1` to `7` on home.
+- Keys: press `?` on any page, or the footer's Keys button; `t`; `1` to `7` on home. The list's switch turns them all off.
 - View-source note: view the source of any page.
 - Art: `/writing/token-logs` (ascii), `/writing/ephemeral-runners` (dither), `/writing/cache-reads` (pattern).
 
@@ -128,4 +128,4 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 - Moving the window in `scene.py` means moving the moon's centre (122, 25) in `room.ts`.
 - Changing `art.ts` changes every post's art; the golden files make that a deliberate `vitest run -u`.
 - Visitors with tzdata older than 2026c see the lamp go down an hour late until their browser updates.
-- The open question: an off switch for single-key shortcuts (WCAG 2.1.4).
+- Every new single-key shortcut must check `data-shortcuts` on `<html>`, and show in the list.

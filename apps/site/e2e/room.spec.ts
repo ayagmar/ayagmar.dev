@@ -69,6 +69,8 @@ test('without JavaScript the page follows the system theme and hides the switch'
   // The room stays the static night scene: no sky from a clock, no moon, no note.
   await expect(page.locator('.scene')).not.toHaveAttribute('data-sky', /.*/);
   await expect(page.locator('.room-note')).toBeHidden();
+  // The keys button would open nothing.
+  await expect(page.getByRole('button', { name: 'Keys' })).toBeHidden();
   await context.close();
 });
 
@@ -248,6 +250,55 @@ test('? lists the keys, and t and the room numbers work', async ({ page }) => {
   await expect(keys).toBeVisible();
   await expect(keys.getByText('Corkboard: shipping')).toHaveCount(0);
 });
+
+// WCAG 2.1.4: single-character shortcuts can be turned off. Catches a switch that does not
+// persist to the next page, a bare key that ignores it (?, t, 1 to 7, search's /), and Ctrl K
+// switched off with them.
+test('the keys switch turns every single-key shortcut off, on every page', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/writing');
+  const keys = page.getByRole('dialog', { name: 'Keyboard' });
+  const shortcuts = keys.getByRole('switch', { name: /single-key shortcuts/i });
+  await page.getByRole('button', { name: 'Keys' }).click();
+  await expect(shortcuts).toBeChecked();
+  await shortcuts.click();
+  await expect(shortcuts).not.toBeChecked();
+  await page.keyboard.press('Escape');
+
+  await page.goto('/');
+  const search = page.getByRole('dialog', { name: 'Search' });
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  for (const key of ['?', 't', '3', '/']) await page.keyboard.press(key);
+  await page.keyboard.press('Control+k');
+  await expect(search).toBeVisible();
+  await expect(keys).toBeHidden();
+  expect(await background(page)).toBe(ground.night);
+  expect(new URL(page.url()).pathname).toBe('/');
+  await page.keyboard.press('Escape');
+
+  // On again, from the same button, and the keys work again.
+  await page.getByRole('button', { name: 'Keys' }).click();
+  await expect(shortcuts).not.toBeChecked();
+  await shortcuts.click();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('t');
+  expect(await background(page)).toBe(ground.day);
+});
+
+for (const colorScheme of ['light', 'dark'] as const) {
+  // Catches a switch without a name or state, or with too little contrast, in either theme.
+  test(`the keys dialog has no axe violations (${colorScheme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Keys' }).click();
+    await expect(page.getByRole('dialog', { name: 'Keyboard' })).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .include('dialog.keys')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
+      .analyze();
+    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+  });
+}
 
 // Catches art missing from a post that asks for it, or the wrong kind drawn.
 test('each post draws the art its frontmatter asks for', async ({ page }) => {

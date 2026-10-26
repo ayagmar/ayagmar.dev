@@ -1,18 +1,35 @@
 // The day / night / auto switch (ADR 0026). Loaded as a blocking script in <head>, so the stored
 // choice is on <html> before the first paint. "auto" stores nothing and leaves the theme to
 // prefers-color-scheme; CSS shows the switch only once this script has run. Also the keys of
-// ADR 0027 that work on every page: `t` swaps day and night, `?` opens the list of keys.
+// ADR 0027 that work on every page: `t` swaps day and night, `?` opens the list of keys, whose
+// switch turns all single keys off (WCAG 2.1.4) as `data-shortcuts` on <html>.
 (() => {
   const root = document.documentElement;
   const key = 'theme';
 
   // Storage throws when the browser blocks it; the page then follows the system theme.
-  const stored = () => {
+  const stored = (name = key) => {
     try {
-      return localStorage.getItem(key);
+      return localStorage.getItem(name);
     } catch {
       return null;
     }
+  };
+
+  const store = (name, value) => {
+    try {
+      if (value === null) localStorage.removeItem(name);
+      else localStorage.setItem(name, value);
+    } catch {
+      // Not stored: the choice holds for this page only.
+    }
+  };
+
+  const shortcuts = (value) => {
+    if (value === 'off') root.dataset.shortcuts = value;
+    else delete root.dataset.shortcuts;
+    const toggle = document.querySelector('input[data-shortcuts]');
+    if (toggle) toggle.checked = value !== 'off';
   };
 
   const apply = (choice) => {
@@ -26,25 +43,48 @@
 
   root.dataset.themeSwitch = '';
   apply(stored());
-  document.addEventListener('DOMContentLoaded', () => apply(stored()));
+  shortcuts(stored('shortcuts'));
+  document.addEventListener('DOMContentLoaded', () => {
+    apply(stored());
+    shortcuts(stored('shortcuts'));
+  });
   const choose = (choice) => {
-    try {
-      if (choice === 'auto') localStorage.removeItem(key);
-      else localStorage.setItem(key, choice);
-    } catch {
-      // Not stored: the choice holds for this page only.
-    }
+    store(key, choice === 'auto' ? null : choice);
     apply(choice);
   };
 
   document.addEventListener('click', (event) => {
-    const button = event.target instanceof Element && event.target.closest('[data-theme-choice]');
+    const target = event.target instanceof Element ? event.target : null;
+    const button = target?.closest('[data-theme-choice]');
     if (button) choose(button.dataset.themeChoice);
+    if (target?.closest('[data-keys-open]')) document.querySelector('dialog.keys')?.showModal();
   });
+
+  document.addEventListener('change', (event) => {
+    if (!event.target.matches('input[data-shortcuts]')) return;
+    const value = event.target.checked ? null : 'off';
+    store('shortcuts', value);
+    shortcuts(value);
+  });
+
+  // Escape can leave focus on a closed dialog's field or switch, which would swallow the next key.
+  document.addEventListener(
+    'cancel',
+    (event) => {
+      if (event.target.contains(document.activeElement)) document.activeElement.blur();
+    },
+    true
+  );
 
   document.addEventListener('keydown', (event) => {
     const target = event.target;
-    if (event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]'))
+    if (
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      root.dataset.shortcuts ||
+      document.querySelector('dialog[open]')
+    )
       return;
     if (
       target instanceof HTMLElement &&
