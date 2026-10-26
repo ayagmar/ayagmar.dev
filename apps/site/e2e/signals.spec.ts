@@ -21,6 +21,9 @@ test('pages with source data load nothing from other origins in fixtures mode', 
 
 test('now playing shows the build-time value, labelled with its time', async ({ page }) => {
   await page.goto('/');
+  // A track change rewrites single text nodes; the whole sentence must be announced.
+  await expect(page.locator('.now-playing')).toHaveAttribute('aria-live', 'polite');
+  await expect(page.locator('.now-playing')).toHaveAttribute('aria-atomic', 'true');
   await expect(page.locator('.now-playing')).toHaveText(
     /^Playing Friendships and Love by Rocketship as of \d+ \w{3}, \d\d:\d\d UTC\.$/
   );
