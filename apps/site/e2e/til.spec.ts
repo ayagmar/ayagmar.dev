@@ -16,7 +16,7 @@ test.describe('without published notes', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Today I learned' })).toBeVisible();
     await expect(page.getByText('Nothing published yet.')).toBeVisible();
     await expect(page.locator('.til-note')).toHaveCount(0);
-    await expect(page.locator('.paper').getByRole('link', { name: 'RSS' })).toHaveAttribute(
+    await expect(page.locator('.reader').getByRole('link', { name: 'RSS' })).toHaveAttribute(
       'href',
       '/til/feed.xml'
     );

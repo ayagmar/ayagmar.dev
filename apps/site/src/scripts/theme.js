@@ -67,6 +67,10 @@
     shortcuts(value);
   });
 
+  // An open phone Menu is top-layer, so close it when the desktop layout starts (base.css).
+  matchMedia('(min-width: 52rem)').onchange = (e) =>
+    e.matches && document.getElementById('site-menu').hidePopover();
+
   // Escape can leave focus on a closed dialog's field or switch, which would swallow the next key.
   document.addEventListener(
     'cancel',

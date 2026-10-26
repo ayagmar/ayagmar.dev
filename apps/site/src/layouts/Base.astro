@@ -67,7 +67,14 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
       <a class="wordmark" href="/" aria-current={current === '/' ? 'page' : undefined}>
         <span>min</span><span>7</span>
       </a>
-      <nav aria-label="Site">
+      <div class="site-tools">
+        <Search client:idle />
+      </div>
+      <!-- On phones the nav and the theme switch sit in a popover this button opens, with no
+           script (base.css); from 52rem they are part of the header row. Search comes before them
+           so that when it hydrates and changes width, the right edge of the row holds still. -->
+      <button type="button" class="menu-open" popovertarget="site-menu">Menu</button>
+      <nav id="site-menu" popover aria-label="Site">
         <ul>
           {nav.map((item) => (
             <li>
@@ -77,11 +84,8 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
             </li>
           ))}
         </ul>
-      </nav>
-      <div class="site-tools">
-        <Search client:idle />
         <ThemeSwitch />
-      </div>
+      </nav>
     </header>
     <main id="main">
       <slot name="room" />

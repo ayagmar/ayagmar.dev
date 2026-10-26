@@ -17,7 +17,7 @@ The owner wants a stream of short "today I learned" notes next to the long posts
 ### Pages
 
 - `/til` shows every published note in full, newest first, each as an `article` with its title (the permalink, a link to `/til/<slug>`), its date, its tags and its rendered body. With none, it says "Nothing published yet." and still links its feeds.
-- `/til/<slug>` is one page per note, with the post header (`PostHeader.astro`, now taking anything with a title, date, tags and draft flag) and the post's `paper post` layout and prose.
+- `/til/<slug>` is one page per note, with the post header (`PostHeader.astro`, now taking anything with a title, date, tags and draft flag) and the reader layout of ADR 0026 (`article.reader`) and prose.
 - Tags on a note are plain text. `/writing/tags/<tag>` exists only for tags some post uses, so a link could lead nowhere; a TIL tag page would be a new feature.
 - Notes render during every build, like posts (`deferRender`), so the diagram renderer runs on each. `/diagrams.css` collects the styles of posts and notes. Because `/til` puts many notes on one page, every id a note's Markdown makes carries its file name (`first-note-diagram-1`, `first-note-example`, `first-note-user-content-fn-1`), and so do the `#fragment` links and ARIA references that point at them, so a section link or a footnote mark in one note never lands in another. `markdown/scope-ids.ts` holds the one rule (`idScope`, empty for a post) and the `scopeIds` pass, which runs before `diagrams`; the diagram pass takes its prefix from the same function. A post's ids are unchanged.
 - No client JavaScript is added to any page. The CSP is unchanged.

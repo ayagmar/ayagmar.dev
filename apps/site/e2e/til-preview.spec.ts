@@ -83,7 +83,7 @@ test('a note page shows that note alone', async ({ page }) => {
   if (note === undefined) throw new Error('no notes');
   await page.goto(`/til/${note.slug}`);
   await expect(page.getByRole('heading', { level: 1, name: note.title })).toBeVisible();
-  await expect(page.locator('article.post time')).toHaveAttribute('datetime', note.date);
+  await expect(page.locator('article.reader time')).toHaveAttribute('datetime', note.date);
   await expect(page.locator('.til-note')).toHaveCount(0);
 });
 
