@@ -31,6 +31,31 @@ Any other field fails the build, so a typo such as `sumary:` does not pass silen
 - New dependencies need a line in [docs/adr/0020-dependency-policy.md](docs/adr/0020-dependency-policy.md) and an exact version.
 - Record decisions in `docs/adr/` (copy the shape of an existing one).
 
+## CI checks
+
+One workflow, `.github/workflows/ci.yml`, runs on every pull request and on `main`. It runs only the jobs your change needs and a `gate` job that passes when each of them passed; `gate` is the only required check. [ADR 0018](docs/adr/0018-ci.md) lists which paths run which jobs. `just ci-plan` shows the jobs for your branch against `origin/main`.
+
+Each job runs `just` recipes, so you can run the same thing locally. Recipes that need a pinned tool (gitleaks, lychee, osv-scanner, actionlint, zizmor, shellcheck, shfmt) download it into `.tools/bin` on first use (Linux x86_64).
+
+| Job              | Locally                                                                 |
+| ---------------- | ----------------------------------------------------------------------- |
+| `format`         | `just fmt-check` (`just fmt` fixes it)                                  |
+| `secrets-source` | `just scan-secrets-source`                                              |
+| `checks`         | `just lint typecheck knip boundaries test-scripts`                      |
+| `contracts`      | `just contracts-schema-check test-contracts`                            |
+| `site-test`      | `just test-site`                                                        |
+| `site-build`     | `just site-build site-dist-check scan-site`                             |
+| `e2e`            | `just e2e` (builds first; `just e2e-install` once for Chromium)         |
+| `links`          | `just links` after a build (`just links-internal` skips external links) |
+| `signals-test`   | `just test-signals signals-build scan-signals`                          |
+| `osv`            | `just osv`                                                              |
+| `workflows`      | `just workflows-lint ci-test ci-policy`                                 |
+| `renovate`       | `just renovate-check`                                                   |
+| `shell`          | `just shell-lint`                                                       |
+| `codeql`         | CI only                                                                 |
+
+CI never deploys and has no Cloudflare credential. Do not add a workflow step that calls Wrangler or a recipe that deploys; `just ci-policy` fails if you do.
+
 ## Commits and merges
 
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org): `feat: ...`, `fix: ...`, `docs: ...`, `chore: ...`. Pull request titles use the same form; they are the project history.
