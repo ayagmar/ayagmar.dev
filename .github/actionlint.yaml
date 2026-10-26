@@ -1,0 +1,7 @@
+# actionlint 1.7.12 (the newest release) does not know the ubuntu-26.04 labels yet, although
+# GitHub made them generally available on 2026-09-17 (actions/runner-images#14747). Remove
+# this file once a release lists them (rhysd/actionlint#682).
+self-hosted-runner:
+  labels:
+    - ubuntu-26.04
+    - ubuntu-26.04-arm
