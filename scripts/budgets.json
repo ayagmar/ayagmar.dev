@@ -3,7 +3,8 @@
     "jsWithoutIslands": 0,
     "jsWithIslands": 20480,
     "pageWeight": 153600,
-    "fonts": 204800
+    "fonts": 204800,
+    "onDemand": ["/pagefind/pagefind.js"]
   },
   "lighthouse": {
     "runs": 3,

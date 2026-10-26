@@ -8,7 +8,13 @@ import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { measure } from './budgets.ts';
 
-const limits = { jsWithoutIslands: 0, jsWithIslands: 20_480, pageWeight: 153_600, fonts: 204_800 };
+const limits = {
+  jsWithoutIslands: 0,
+  jsWithIslands: 20_480,
+  pageWeight: 153_600,
+  fonts: 204_800,
+  onDemand: ['/pagefind/pagefind.js'],
+};
 
 /** Bytes gzip cannot shrink, the same on every run. */
 function incompressible(length: number): Buffer {
@@ -66,14 +72,29 @@ describe('JavaScript per page', () => {
     assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* with islands/);
   });
 
-  it('does not count a module the page only loads on demand', () => {
+  it('counts what an inline module imports', () => {
+    write({
+      'index.html': page(
+        `${island('/_astro/Search.js')}<script type="module">import "/big.js";</script>`
+      ),
+      '_astro/Search.js': 'export default 1;',
+      '_astro/r.js': 'export default 1;',
+      'big.js': js(30_000),
+    });
+    assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* with islands/);
+  });
+
+  it('counts a dynamic import, which can run on load, unless budgets.json lists it on demand', () => {
     write({
       'index.html': page(island('/_astro/Search.js')),
-      '_astro/Search.js': 'export const s=()=>import("/pagefind/pagefind.js");',
+      // The real build's form: a template literal behind an input handler.
+      '_astro/Search.js': 'export const s=()=>import(`/pagefind/pagefind.js`);',
       '_astro/r.js': 'export default 1;',
       'pagefind/pagefind.js': js(30_000),
     });
     assert.deepEqual(problems(), []);
+    write({ '_astro/r.js': 'import("/big.js");export default 1;', 'big.js': js(30_000) });
+    assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* with islands/);
   });
 });
 

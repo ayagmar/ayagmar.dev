@@ -17,6 +17,11 @@ export interface Budgets {
     pageWeight: number;
     /** Bytes of every font file in the build together. */
     fonts: number;
+    /**
+     * Modules a page imports dynamically only after a user action, so they are not counted.
+     * Every other dynamic import counts: it can run as soon as the page loads.
+     */
+    onDemand: string[];
   };
   lighthouse: {
     runs: number;
@@ -73,6 +78,8 @@ const tag =
 const attribute = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 const inlineCode = /<(script|style)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
 const staticImport = /\b(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+)["']/g;
+// import() of a literal URL; a computed one (Astro's island loader) cannot be followed.
+const dynamicImport = /\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)?(["'`])([^"'`$]+)\1\s*\)/g;
 // CSS function and at-rule names are case-insensitive. `@import` takes a string or url();
 // url() a quoted or bare URL; image-set() also takes bare strings as URLs.
 const cssImport = /@import\s*(?:url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^"')\s;]+))/gi;
@@ -204,17 +211,25 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     }
   };
 
-  /** A module and its static imports; dynamic import() runs on demand, not on load. */
+  /**
+   * What a module's code imports, statically or with a literal import(), except the modules
+   * budgets.json lists as loaded on demand. `from` is the URL relative imports resolve against.
+   */
+  const imports = (code: string, from: string, where: string, into: Set<string>) => {
+    for (const [, specifier = ''] of code.matchAll(staticImport)) {
+      const target = resolve(specifier, from, where);
+      if (target) jsClosure(target, into);
+    }
+    for (const [, , specifier = ''] of code.matchAll(dynamicImport)) {
+      const target = resolve(specifier, from, where);
+      if (target && !limits.onDemand.includes(`/${target}`)) jsClosure(target, into);
+    }
+  };
   const jsClosure = (file: string, into: Set<string>) => {
     if (into.has(file)) return;
     into.add(file);
-    if (!/\.m?js$/.test(file)) return;
-    for (const [, specifier = ''] of readFileSync(join(dist, file), 'utf8').matchAll(
-      staticImport
-    )) {
-      const target = resolve(specifier, `/${file}`, file);
-      if (target) jsClosure(target, into);
-    }
+    if (/\.m?js$/.test(file))
+      imports(readFileSync(join(dist, file), 'utf8'), `/${file}`, file, into);
   };
 
   const pages: PageReport[] = [];
@@ -230,6 +245,7 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
       if (kind.toLowerCase() === 'style') references(body, url, page, resources);
       else if (!a.has('src') && jsTypes.has((a.get('type') ?? '').toLowerCase())) {
         inlineJs += gz(body);
+        imports(body, url, page, scripts);
       }
     }
     // Inline code is not markup.
