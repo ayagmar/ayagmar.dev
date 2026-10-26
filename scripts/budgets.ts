@@ -175,6 +175,8 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
           .join('[^/]*')}$`
       ).test(`/${file}`)
     );
+  /** The distinct files each allowance matched, across pages: it covers one. */
+  const allowedFiles = new Map(limits.allowances.map((a) => [a, new Set<string>()]));
   const all = files(dist);
   const sizes = new Map<string, number>();
   /** Transfer size of a file in dist: gzip for text, bytes for the rest. */
@@ -321,6 +323,7 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
         continue;
       }
       allowed += size(file);
+      allowedFiles.get(allowance)?.add(file);
       if (size(file) > allowance.bytes) {
         problems.push(
           `${file}: ${size(file)} B (gzip), over the ${allowance.bytes} B allowance for the ${allowance.name}`
@@ -342,6 +345,14 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     }
     if (weight > limits.pageWeight) {
       problems.push(`${page}: weighs ${weight} B (gzip, no fonts), budget ${limits.pageWeight} B`);
+    }
+  }
+
+  for (const [allowance, matched] of allowedFiles) {
+    if (matched.size > 1) {
+      problems.push(
+        `the ${allowance.name} allowance (${allowance.file}) matches ${matched.size} files, and covers one: ${[...matched].sort().join(', ')}`
+      );
     }
   }
 

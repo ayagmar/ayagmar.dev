@@ -93,6 +93,24 @@ describe('JavaScript per page', () => {
     assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* without islands/);
   });
 
+  it('lets an allowance cover one file only, on one page or across pages', () => {
+    const scripts = (...names: string[]) =>
+      names.map((n) => `<script src="/_astro/theme.${n}.js"></script>`).join('');
+    const tiny = 'document.documentElement.dataset.theme="night";';
+    const many = ['h0', 'h1', 'h2'];
+    write({
+      'index.html': page('<p>no island</p>', scripts(...many)),
+      ...Object.fromEntries(many.map((n) => [`_astro/theme.${n}.js`, tiny])),
+    });
+    const expected = `the theme switch allowance (/_astro/theme.*.js) matches 3 files, and covers one: _astro/theme.h0.js, _astro/theme.h1.js, _astro/theme.h2.js`;
+    assert.deepEqual(problems(), [expected]);
+    write({
+      'index.html': page('<p>no island</p>', scripts('h0')),
+      'about.html': page('<p>no island</p>', scripts('h1', 'h2')),
+    });
+    assert.deepEqual(problems(), [expected]);
+  });
+
   it('counts what an inline module imports', () => {
     write({
       'index.html': page(
