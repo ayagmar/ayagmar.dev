@@ -209,6 +209,7 @@ describe('ci.yml', () => {
   };
   interface Step {
     uses?: string;
+    if?: string;
     run?: string;
     with?: Record<string, string>;
     env?: Record<string, string>;
@@ -227,6 +228,25 @@ describe('ci.yml', () => {
     assert.match(actions[0] ?? '', /^actions\/download-artifact@[0-9a-f]{40}$/);
     assert.deepEqual(comment.steps[0]?.with?.pattern, 'lighthouse-metrics-*');
     assert.ok(!comment.steps.some((step) => /\b(?:git|pnpm|npm|npx|just)\b/.test(step.run ?? '')));
+  });
+
+  const lighthouse = workflow.jobs.lighthouse;
+  assert.ok(lighthouse);
+  const cacheSteps = (action: 'restore' | 'save') =>
+    lighthouse.steps.filter((step) => step.uses?.startsWith(`actions/cache/${action}@`));
+
+  it("saves main's numbers at the path pull requests restore, which is part of a cache version", () => {
+    const [restore] = cacheSteps('restore');
+    assert.ok(restore?.with?.path);
+    const saves = cacheSteps('save');
+    assert.ok(saves.length > 0);
+    for (const save of saves) assert.equal(save.with?.path, restore.with.path);
+    // The numbers a push saves are the commit's own, under that commit's key.
+    assert.match(saves.at(-1)?.with?.key ?? '', /-\$\{\{ github\.sha \}\}$/);
+    assert.match(
+      restore.with.key ?? '',
+      /\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}$/
+    );
   });
 
   it('skips the comment job on forks and outside pull requests', () => {

@@ -412,12 +412,16 @@ jobs:
         with:
           path: .lighthouse/cache/base.json
           key: ${{ steps.base-cache.outputs.cache-primary-key }}
-      # What a push to main measured is the next pull request's base.
+      # What a push to main measured is the next pull request's base. Saved from the path the
+      # pull request restores: a cache's version includes its path, so another path never hits.
+      - name: Keep the head's numbers as the next base
+        if: ${{ !cancelled() && github.event_name == 'push' && hashFiles('.lighthouse/cache/head.json') != '' }}
+        run: cp .lighthouse/cache/head.json .lighthouse/cache/base.json
       - name: Save the head's numbers
-        if: ${{ !cancelled() && github.event_name == 'push' }}
+        if: ${{ !cancelled() && github.event_name == 'push' && hashFiles('.lighthouse/cache/head.json') != '' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: .lighthouse/cache/head.json
+          path: .lighthouse/cache/base.json
           key: lighthouse-${{ matrix.profile }}-${{ hashFiles('pnpm-lock.yaml', 'scripts/lighthouse.ts', 'scripts/budgets.json') }}-${{ github.sha }}
       - id: upload
         if: ${{ !cancelled() }}
