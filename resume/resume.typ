@@ -66,3 +66,11 @@
 == Skills
 
 #about.skills.join(", ")
+
+// The resume is one page. Longer content fails the build instead of spilling onto a second.
+#context {
+  let pages = counter(page).final().first()
+  if pages > 1 {
+    panic("the resume exceeds one page (" + str(pages) + " pages): shorten content/about.json")
+  }
+}

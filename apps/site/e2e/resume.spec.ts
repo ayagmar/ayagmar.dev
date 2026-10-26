@@ -1,5 +1,9 @@
 import { execFileSync } from 'node:child_process';
-import { generatedResume, readAbout } from '../scripts/ship-resume.ts';
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { compileResume } from '../scripts/resume.ts';
+import { generatedResume, readAbout, repoRoot } from '../scripts/ship-resume.ts';
 import { expect, test } from './fixtures.ts';
 
 const about = readAbout();
@@ -48,5 +52,21 @@ test('the generated resume names the owner and every role', () => {
     ...about.experience.map((role) => `${role.role}, ${role.company}`),
   ]) {
     expect(flat).toContain(line);
+  }
+});
+
+test('content that does not fit on one page fails the resume build', () => {
+  const root = mkdtempSync(join(tmpdir(), 'min7-resume-'));
+  try {
+    cpSync(join(repoRoot, 'resume', 'resume.typ'), join(root, 'resume', 'resume.typ'));
+    mkdirSync(join(root, 'content'));
+    // Schema-valid, just long: the summary repeated until it fills more than a page.
+    writeFileSync(
+      join(root, 'content', 'about.json'),
+      JSON.stringify({ ...about, summary: Array(100).fill(about.summary).join(' ') })
+    );
+    expect(() => compileResume(root, join(root, 'resume.pdf'))).toThrow(/exceeds one page/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
   }
 });

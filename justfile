@@ -12,8 +12,9 @@ site := "pnpm --filter @min7/site exec"
 signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
 
-# Typst from scripts/bootstrap.sh (Workers Builds, CI), else the one mise installs.
-typst := if path_exists(justfile_directory() / ".tools/bin/typst") == "true" { justfile_directory() / ".tools/bin/typst" } else { "typst" }
+# Typst from scripts/bootstrap.sh (Workers Builds, CI), else the one mise installs. Exported for
+# the resume build and its tests.
+export TYPST := if path_exists(justfile_directory() / ".tools/bin/typst") == "true" { justfile_directory() / ".tools/bin/typst" } else { "typst" }
 
 [private]
 default:
@@ -117,7 +118,7 @@ site-build: resume
 
 # Resume: write resume/build/resume.pdf from content/about.json
 resume:
-    TYPST={{ quote(typst) }} {{ site }} node scripts/resume.ts
+    {{ site }} node scripts/resume.ts
 
 # Site: serve the built site through its Worker on http://localhost:8790
 site-serve:
