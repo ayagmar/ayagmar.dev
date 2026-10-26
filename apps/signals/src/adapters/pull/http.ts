@@ -10,7 +10,13 @@ export type PullErrorCode =
   | 'upstream_rate_limited'
   | 'upstream_http_error'
   | 'upstream_error'
-  | 'upstream_malformed';
+  | 'upstream_malformed'
+  /** More past years than one history snapshot holds (ADR 0030). */
+  | 'over_budget'
+  /** The date in Rabat changed while the pull ran, so its answers would mix two dates. */
+  | 'date_changed'
+  /** A pull spread over several invocations read its part; it is not finished (ADR 0030). */
+  | 'in_progress';
 
 /**
  * A failed pull. The message is the code and nothing else, and no cause is attached: an
