@@ -41,12 +41,13 @@ UNICODES = [
 ]
 
 # (output name, release, file in the zip, axis limits). Weights are cut to the 400 to 700 the
-# CSS uses. The roman keeps Source Serif's optical size axis, so headings get the display cut
-# and body text the text cut; the italic, used only inside text, is pinned to the text size.
+# CSS uses. Both are pinned to the text optical size (opsz 16): the optical size axis more than
+# doubles the roman, the preloaded face, which pushed mobile LCP past 2 s. Headings use the
+# text cut too.
 # The fourth field renames the family inside the file: "Source" is a Reserved Font Name under
 # the OFL, and a subset is a modified version, so the subset may not carry it.
 FONTS = [
-    ("serif-roman.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Roman.ttf", {"wght": (400, 700)}, "min7 Serif"),
+    ("serif-roman.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Roman.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("serif-italic.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Italic.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("mono.woff2", "mono", "fonts/variable/JetBrainsMono[wght].ttf", {"wght": (400, 700)}, None),
 ]

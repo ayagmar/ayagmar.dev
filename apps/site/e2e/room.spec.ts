@@ -68,6 +68,24 @@ test('without JavaScript the page follows the system theme and hides the switch'
   await context.close();
 });
 
+// Catches both scenes downloading when the stored choice differs from the system, and italic
+// text on home, which puts a third font in front of the scene and pushes mobile LCP past 2 s.
+test('home loads one scene and two fonts', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/about');
+  await page.evaluate(() => localStorage.setItem('theme', 'day'));
+  await page.goto('/');
+  await page.waitForLoadState('load');
+  const assets = await page.evaluate(() =>
+    performance
+      .getEntriesByType('resource')
+      .map((entry) => entry.name.match(/\/_astro\/([\w-]+)\.[\w-]+\.(?:png|woff2)$/)?.[1])
+      .filter((name) => name !== undefined)
+      .sort()
+  );
+  expect(assets).toEqual(['mono', 'room-day', 'serif-roman']);
+});
+
 const roomLinks = (page: Page) =>
   page.locator('.scene a').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
 

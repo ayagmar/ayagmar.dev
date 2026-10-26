@@ -37,9 +37,10 @@ Lighthouse budget: the Lighthouse PR (ADR 0017) plans a "0 JS on pages without i
 
 Source Serif 4 for everything read, JetBrains Mono for data (dates, counts, the `min7` wordmark, code). Both are self-hosted WOFF2, built by `apps/site/scripts/fonts.py` (`just fonts`, needs `uv`) from the upstream releases (Source Serif 4.005R, JetBrains Mono 2.304), each checked against a sha256:
 - Subset to Basic Latin, Latin-1, and the typographic punctuation and arrows the site uses.
-- Weights cut to 400 to 700. The roman keeps the optical size axis, so headings get the display cut; the italic is pinned to the text size.
+- Weights cut to 400 to 700. Both serif faces are pinned to the text optical size (`opsz` 16). Keeping the axis gave headings Source Serif's display cut, but it made the roman 101 KiB, and that preloaded file pushed mobile LCP on home past 2 s. The price: no automatic optical sizing, so large headings use the text cut, which is a little heavier and looser than the display cut.
 - `font-display: swap`; only the roman is preloaded.
-- Sizes: roman 101 KiB, italic 42 KiB, mono 28 KiB, 171 KiB in total.
+- Sizes: roman 43 KiB, italic 42 KiB, mono 28 KiB, 113 KiB in total.
+- Home sets no italic text (the room list's section names are muted roman, the playing track is semibold), so it loads only the roman and the mono. An italic on home puts the italic font in front of the scene, which cost about 0.15 to 0.3 s of mobile LCP in Lighthouse. `e2e/room.spec.ts` fails if home loads a third font.
 - "Source" is a Reserved Font Name under the OFL and a subset counts as a modified version, so the serif files and the CSS name the family "min7 Serif". The licenses are next to the files in `src/fonts/`.
 
 Posts get the largest type on the site: 18 to 21 px body at a 66ch measure, 32 to 52 px titles.
@@ -49,6 +50,16 @@ Posts get the largest type on the site: 18 to 21 px body at a 66ch measure, 32 t
 `apps/site/scripts/scene.py` (`just scene`, needs `uv`; Pillow 13.0.0) draws the room as two 480x160 PNGs into `src/assets/`: `room-night.png` (12 KiB, lamp, monitor and fairy lights lit) and `room-day.png` (10 KiB, sun through the window, lamp and fairy lights off, whitewashed rooftops). Both are geometry plus an 8x8 Bayer dither onto a fixed palette; no photos or portraits. Outputs are committed; CI does not run Python.
 
 The scene is drawn as two CSS backgrounds, one per theme, on `role="img"` elements with their own text alternatives. Only the shown one downloads, and switching needs no script. The text alternative describes the room's light and view, not the objects the list already names.
+
+The scene is home's LCP element on phones. Lighthouse 13.5 mobile (simulated throttling, Playwright's Chromium, the fixtures-mode Worker), median of three runs per theme:
+
+| Change                                     | Day LCP | Night LCP |
+| ------------------------------------------ | ------: | --------: |
+| Roman with the optical size axis (one run) |  2.26 s |    2.26 s |
+| Roman pinned to `opsz` 16                  |  1.81 s |    1.96 s |
+| Pinned, and no italic on home              |  1.66 s |    1.66 s |
+
+Performance 0.99 to 1.00, accessibility 1.00, CLS under 0.001 in the last row. A high-priority preload of the shown scene, started by the theme script, was tried and left out: once the italic was gone, runs with and without it differed by less than the run-to-run spread (about 0.15 s).
 
 Seven hotspots are real links in reading order (left to right): corkboard (shipping), framed screen (LLM usage), notebook (writing), monitor (projects), tea set (about), record player (music), shelf (reading). `apps/site/src/lib/room.ts` lists them once, and both the hotspots and the plain list under the scene render from it. Their rectangles are percentages in `room.css`, keyed by `data-room`. Each hotspot is at least 32 scene pixels on both sides, so it is at least 24 CSS px from a 360 px viewport up; below 360 px the hotspots are hidden and the list is the way in. The scene scales to the viewport width at every size.
 

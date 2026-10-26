@@ -200,9 +200,9 @@
   text-decoration: none;
 }
 
+/* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
 .room-list a span {
   color: var(--muted);
-  font-style: italic;
   font-weight: 400;
 }
 
@@ -290,6 +290,11 @@
   margin: 0;
   font-size: 1.1rem;
   line-height: 1.35;
+}
+
+.record .now-playing cite {
+  font-style: normal;
+  font-weight: 600;
 }
 
 .disc {
