@@ -1,82 +1,574 @@
 {
   "status": 200,
   "body": {
-    "_note": "Sample data in the shape of the contract (ADR 0012); repo-pulse does not serve this feed yet.",
     "version": 1,
-    "generatedAt": "2026-10-26T08:45:00Z",
+    "generatedAt": "2026-10-26T11:36:43.084Z",
     "events": [
       {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/repo-pulse",
+        "at": "2026-10-26T11:35:19.534Z",
+        "url": "https://github.com/ayagmar/repo-pulse/pull/28",
+        "pullRequest": {
+          "number": 28,
+          "title": "feat(public): serve a read-only activity feed for ayagmar.dev"
+        }
+      },
+      {
         "type": "push.default_branch",
-        "repo": "ayagmar/runnerd",
-        "at": "2026-10-25T21:14:00Z",
-        "url": "https://github.com/ayagmar/runnerd/compare/3f2a1c0...9be47d2",
+        "repo": "ayagmar/dotfiles",
+        "at": "2026-10-26T02:18:03.674Z",
+        "url": "https://github.com/ayagmar/dotfiles/compare/397dc39d64ee...3facb0cd3152",
         "push": {
-          "commits": 12
+          "commits": 3
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/dotfiles",
+        "at": "2026-10-25T17:26:53.774Z",
+        "url": "https://github.com/ayagmar/dotfiles/compare/7b65246251af...397dc39d64ee",
+        "push": {
+          "commits": 1
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T11:48:52.236Z",
+        "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.13",
+        "release": {
+          "tag": "v0.5.13"
         }
       },
       {
         "type": "pull_request.merged",
         "repo": "ayagmar/ccdesk",
-        "at": "2026-10-25T16:40:00Z",
-        "url": "https://github.com/ayagmar/ccdesk/pull/41",
+        "at": "2026-10-25T11:47:56.261Z",
+        "url": "https://github.com/ayagmar/ccdesk/pull/74",
         "pullRequest": {
-          "number": 41,
-          "title": "Edit hooks from the dashboard"
+          "number": 74,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.310)"
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/pi-extmgr",
+        "at": "2026-10-25T08:15:49.527Z",
+        "star": {
+          "count": 72
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/dotfiles",
+        "at": "2026-10-25T07:02:37.691Z",
+        "url": "https://github.com/ayagmar/dotfiles/compare/35d093200910...7b65246251af",
+        "push": {
+          "commits": 1
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/dotfiles",
+        "at": "2026-10-25T06:15:12.548Z",
+        "url": "https://github.com/ayagmar/dotfiles/compare/0e66d26ac74d...35d093200910",
+        "push": {
+          "commits": 1
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/dotfiles",
+        "at": "2026-10-25T03:35:21.521Z",
+        "url": "https://github.com/ayagmar/dotfiles/compare/ec863b87656d...0e66d26ac74d",
+        "push": {
+          "commits": 1
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/dotfiles",
+        "at": "2026-10-25T03:23:43.169Z",
+        "url": "https://github.com/ayagmar/dotfiles/compare/f54f2d2e09a9...ec863b87656d",
+        "push": {
+          "commits": 1
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T02:35:08.877Z",
+        "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.12",
+        "release": {
+          "tag": "v0.5.12"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T02:34:06.071Z",
+        "url": "https://github.com/ayagmar/ccdesk/pull/73",
+        "pullRequest": {
+          "number": 73,
+          "title": "fix(ui): scroll and layout paper cuts"
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T02:34:05.861Z",
+        "url": "https://github.com/ayagmar/ccdesk/compare/956747fe02eb...2dec05f84b18",
+        "push": {
+          "commits": 6
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T01:43:59.279Z",
+        "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.11",
+        "release": {
+          "tag": "v0.5.11"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T01:42:54.727Z",
+        "url": "https://github.com/ayagmar/ccdesk/pull/72",
+        "pullRequest": {
+          "number": 72,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.310)"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-25T01:38:32.107Z",
+        "url": "https://github.com/ayagmar/ccdesk/pull/71",
+        "pullRequest": {
+          "number": 71,
+          "title": "chore(deps): consolidate dependency upgrades"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/claude-modmgr",
+        "at": "2026-10-24T18:33:07.323Z",
+        "url": "https://github.com/ayagmar/claude-modmgr/pull/8",
+        "pullRequest": {
+          "number": 8,
+          "title": "chore(deps): consolidate dependency upgrades"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/waytrim",
+        "at": "2026-10-24T18:31:43.900Z",
+        "url": "https://github.com/ayagmar/waytrim/pull/4",
+        "pullRequest": {
+          "number": 4,
+          "title": "chore(deps): consolidate dependency upgrades"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/agents-skills",
+        "at": "2026-10-24T18:31:27.443Z",
+        "url": "https://github.com/ayagmar/agents-skills/pull/20",
+        "pullRequest": {
+          "number": 20,
+          "title": "chore(deps): consolidate dependency upgrades"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/kipple",
+        "at": "2026-10-24T18:30:42.158Z",
+        "url": "https://github.com/ayagmar/kipple/pull/11",
+        "pullRequest": {
+          "number": 11,
+          "title": "chore(deps): consolidate dependency upgrades"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/repo-pulse",
+        "at": "2026-10-24T18:30:23.969Z",
+        "url": "https://github.com/ayagmar/repo-pulse/pull/24",
+        "pullRequest": {
+          "number": 24,
+          "title": "chore(deps): consolidate dependency upgrades"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-24T18:28:51.752Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/324",
+        "pullRequest": {
+          "number": 324,
+          "title": "chore(deps): consolidate dependency upgrades"
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "ayagmar/dotfiles",
+        "at": "2026-10-24T17:13:55.057Z",
+        "url": "https://github.com/ayagmar/dotfiles/compare/8a542eade7b8...f54f2d2e09a9",
+        "push": {
+          "commits": 4
         }
       },
       {
         "type": "star.created",
         "repo": "ayagmar/pi-mobile",
-        "at": "2026-10-24T22:05:00Z",
+        "at": "2026-10-24T16:44:19.384Z",
         "star": {
-          "count": 115
-        }
-      },
-      {
-        "type": "star.created",
-        "repo": "ayagmar/pi-mobile",
-        "at": "2026-10-24T19:31:00Z",
-        "star": {
-          "count": 114
-        }
-      },
-      {
-        "type": "star.created",
-        "repo": "ayagmar/pi-mobile",
-        "at": "2026-10-24T08:12:00Z",
-        "star": {
-          "count": 113
+          "count": 116
         }
       },
       {
         "type": "release.published",
         "repo": "ayagmar/llm-usage-metrics",
-        "at": "2026-10-23T13:51:53Z",
+        "at": "2026-10-23T13:51:54.308Z",
         "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.1",
         "release": {
           "tag": "v0.14.1"
         }
       },
       {
-        "type": "star.created",
+        "type": "pull_request.merged",
         "repo": "ayagmar/llm-usage-metrics",
-        "at": "2026-10-23T10:02:00Z",
+        "at": "2026-10-23T13:47:43.548Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/323",
+        "pullRequest": {
+          "number": 323,
+          "title": "chore(deps): upgrade astro, @astrojs/check, esbuild, smol-toml and typescript-eslint"
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/pi-promptsmith",
+        "at": "2026-10-23T13:14:14.225Z",
         "star": {
-          "count": 35
+          "count": 22
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T13:12:32.199Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/322",
+        "pullRequest": {
+          "number": 322,
+          "title": "feat(machines): count another machine's repository under the local clone with the same remote"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T12:44:59.573Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/321",
+        "pullRequest": {
+          "number": 321,
+          "title": "feat(projects): count aliased folders as one project with projectAliases"
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/pi-mobile",
+        "at": "2026-10-23T02:35:31.718Z",
+        "star": {
+          "count": 115
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T02:21:05.366Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.0",
+        "release": {
+          "tag": "v0.14.0"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T02:10:49.348Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/318",
+        "pullRequest": {
+          "number": 318,
+          "title": "build: minify the CLI bundle"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T01:55:48.171Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/320",
+        "pullRequest": {
+          "number": 320,
+          "title": "feat(projects): count git worktree usage under its repository"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T01:45:03.680Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/319",
+        "pullRequest": {
+          "number": 319,
+          "title": "fix(deps): pin ip-address 10.7.4 for GHSA-rxp7-6hxx-x8q5"
+        }
+      },
+      {
+        "type": "star.created",
+        "repo": "ayagmar/niri-computer-use",
+        "at": "2026-10-22T09:17:46.698Z",
+        "star": {
+          "count": 6
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T23:02:09.808Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/317",
+        "pullRequest": {
+          "number": 317,
+          "title": "feat(projects): count usage after a cd under the directory its session started in"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T22:57:48.529Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/314",
+        "pullRequest": {
+          "number": 314,
+          "title": "feat(doctor): color doctor output with the shared color roles"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T22:41:39.587Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/316",
+        "pullRequest": {
+          "number": 316,
+          "title": "feat(cli): accept --last N on session, efficiency and optimize"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T22:37:36.390Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/315",
+        "pullRequest": {
+          "number": 315,
+          "title": "test(render): use the shared marker palette in wrapped and style-policy tests"
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T21:41:45.185Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.13.0",
+        "release": {
+          "tag": "v0.13.0"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T21:27:05.847Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/313",
+        "pullRequest": {
+          "number": 313,
+          "title": "test(core): accept a whole multi-frame zstd read on Node 24.22"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T21:08:46.083Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/312",
+        "pullRequest": {
+          "number": 312,
+          "title": "fix(deps): raise the vite override to 8.1.6 for GHSA-698v-4r3x-3vcv"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T20:57:49.904Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/311",
+        "pullRequest": {
+          "number": 311,
+          "title": "chore(core): release @ayagmar/agent-sessions 0.2.0"
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-21T20:52:11.670Z",
+        "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.10",
+        "release": {
+          "tag": "v0.5.10"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/ccdesk",
+        "at": "2026-10-21T20:50:57.046Z",
+        "url": "https://github.com/ayagmar/ccdesk/pull/65",
+        "pullRequest": {
+          "number": 65,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.306)"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-21T19:52:21.359Z",
+        "url": "https://github.com/ayagmar/llm-usage-metrics/pull/310",
+        "pullRequest": {
+          "number": 310,
+          "title": "docs(screenshots): regenerate after the terminal UX overhaul"
+        }
+      },
+      {
+        "type": "release.published",
+        "repo": "ayagmar/pi-extmgr",
+        "at": "2026-10-21T19:38:02.122Z",
+        "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.4.2",
+        "release": {
+          "tag": "v0.4.2"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/pi-extmgr",
+        "at": "2026-10-21T19:37:11.530Z",
+        "url": "https://github.com/ayagmar/pi-extmgr/pull/36",
+        "pullRequest": {
+          "number": 36,
+          "title": "fix: address linked-root and exact-selection review findings"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/pi-extmgr",
+        "at": "2026-10-21T18:37:02.705Z",
+        "url": "https://github.com/ayagmar/pi-extmgr/pull/35",
+        "pullRequest": {
+          "number": 35,
+          "title": "feat: add footer visibility toggle to the existing manager menu"
+        }
+      },
+      {
+        "type": "pull_request.merged",
+        "repo": "ayagmar/pi-extmgr",
+        "at": "2026-10-21T18:32:32.963Z",
+        "url": "https://github.com/ayagmar/pi-extmgr/pull/34",
+        "pullRequest": {
+          "number": 34,
+          "title": "fix: keep passive status refresh offline when checks are disabled"
         }
       }
     ],
     "starHistory": [
       {
+        "repo": "ayagmar/pi-extension-template",
+        "points": [
+          {
+            "date": "2026-10-04",
+            "stars": 16
+          },
+          {
+            "date": "2026-10-26",
+            "stars": 15
+          }
+        ]
+      },
+      {
+        "repo": "ayagmar/pi-copilot-queue",
+        "points": [
+          {
+            "date": "2026-10-25",
+            "stars": 20
+          }
+        ]
+      },
+      {
+        "repo": "ayagmar/pi-extmgr",
+        "points": [
+          {
+            "date": "2026-10-11",
+            "stars": 69
+          },
+          {
+            "date": "2026-10-14",
+            "stars": 70
+          },
+          {
+            "date": "2026-10-21",
+            "stars": 71
+          },
+          {
+            "date": "2026-10-25",
+            "stars": 72
+          }
+        ]
+      },
+      {
         "repo": "ayagmar/pi-mobile",
         "points": [
           {
-            "date": "2026-10-22",
+            "date": "2026-10-03",
+            "stars": 103
+          },
+          {
+            "date": "2026-10-05",
+            "stars": 104
+          },
+          {
+            "date": "2026-10-06",
+            "stars": 105
+          },
+          {
+            "date": "2026-10-07",
+            "stars": 107
+          },
+          {
+            "date": "2026-10-10",
+            "stars": 108
+          },
+          {
+            "date": "2026-10-11",
+            "stars": 110
+          },
+          {
+            "date": "2026-10-13",
+            "stars": 111
+          },
+          {
+            "date": "2026-10-17",
             "stars": 112
           },
           {
+            "date": "2026-10-20",
+            "stars": 113
+          },
+          {
+            "date": "2026-10-21",
+            "stars": 114
+          },
+          {
             "date": "2026-10-23",
-            "stars": 112
+            "stars": 115
           },
           {
             "date": "2026-10-24",
@@ -85,15 +577,51 @@
         ]
       },
       {
-        "repo": "ayagmar/llm-usage-metrics",
+        "repo": "ayagmar/pi-promptsmith",
         "points": [
           {
-            "date": "2026-10-22",
-            "stars": 34
+            "date": "2026-10-23",
+            "stars": 22
+          }
+        ]
+      },
+      {
+        "repo": "ayagmar/niri-computer-use",
+        "points": [
+          {
+            "date": "2026-10-19",
+            "stars": 5
           },
           {
-            "date": "2026-10-23",
-            "stars": 35
+            "date": "2026-10-22",
+            "stars": 6
+          }
+        ]
+      },
+      {
+        "repo": "ayagmar/ccdesk",
+        "points": [
+          {
+            "date": "2026-10-14",
+            "stars": 4
+          }
+        ]
+      },
+      {
+        "repo": "ayagmar/quarkus-forge",
+        "points": [
+          {
+            "date": "2026-10-11",
+            "stars": 3
+          }
+        ]
+      },
+      {
+        "repo": "ayagmar/repo-pulse",
+        "points": [
+          {
+            "date": "2026-10-11",
+            "stars": 3
           }
         ]
       }
