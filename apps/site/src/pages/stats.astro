@@ -1,0 +1,25 @@
+---
+import { sourceIds } from '@min7/contracts';
+import Base from '../layouts/Base.astro';
+
+const labels: Record<(typeof sourceIds)[number], string> = {
+  listening: 'Listening',
+  shipping: 'Shipping',
+  projects: 'Projects',
+  'llm-usage': 'LLM usage',
+  shelf: 'Shelf',
+};
+---
+
+<Base title="Stats">
+  <h1>Stats</h1>
+  <p>Numbers from my own tools. None are connected yet.</p>
+  <dl>
+    {sourceIds.map((source) => (
+      <>
+        <dt>{labels[source]}</dt>
+        <dd>No data yet.</dd>
+      </>
+    ))}
+  </dl>
+</Base>

@@ -1,0 +1,26 @@
+---
+import PostList from '../../components/PostList.astro';
+import Base from '../../layouts/Base.astro';
+import { getPosts } from '../../lib/posts.ts';
+import { postsByTag, tagPath } from '../../lib/writing.ts';
+
+const posts = await getPosts();
+const tags = [...postsByTag(posts).keys()];
+---
+
+<Base title="Writing">
+  <h1>Writing</h1>
+  <PostList posts={posts} />
+  {tags.length > 0 && (
+    <section aria-labelledby="tags">
+      <h2 id="tags">Tags</h2>
+      <ul class="tags">
+        {tags.map((tag) => (
+          <li>
+            <a href={tagPath(tag)}>{tag}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</Base>

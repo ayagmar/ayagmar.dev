@@ -1,0 +1,82 @@
+---
+import Search from '../components/Search.svelte';
+import { feedPaths } from '../lib/feed.ts';
+import { nav, publicPath, site } from '../lib/site.ts';
+import '../styles/base.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** Adds discovery links for this tag's feeds next to the site-wide ones. */
+  tag?: string;
+}
+
+const { title, description = site.description, tag } = Astro.props;
+const pageTitle = title === undefined ? site.name : `${title} | ${site.name}`;
+const current = publicPath(Astro.url.pathname);
+const canonical = new URL(current, Astro.site);
+const feeds = [
+  { ...feedPaths(), label: `${site.name} writing` },
+  ...(tag === undefined
+    ? []
+    : [{ ...feedPaths(tag), label: `${site.name} writing tagged ${tag}` }]),
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <title>{pageTitle}</title>
+    <meta name="description" content={description}>
+    <link rel="canonical" href={canonical}>
+    {feeds.map((feed) => (
+      <>
+        <link
+          rel="alternate"
+          type="application/rss+xml"
+          title={`${feed.label} (RSS)`}
+          href={feed.rss}
+        />
+        <link
+          rel="alternate"
+          type="application/atom+xml"
+          title={`${feed.label} (Atom)`}
+          href={feed.atom}
+        />
+      </>
+    ))}
+    <link rel="sitemap" href="/sitemap-index.xml">
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header>
+      <nav aria-label="Site">
+        <a href="/" aria-current={current === '/' ? 'page' : undefined}>{site.name}</a>
+        <ul>
+          {nav.map((item) => (
+            <li>
+              <a href={item.href} aria-current={current === item.href ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <Search client:idle />
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer>
+      <ul>
+        <li><a href={feedPaths().rss}>RSS</a></li>
+        <li><a href={feedPaths().atom}>Atom</a></li>
+        <li><a href="/colophon">Colophon</a></li>
+        <li><a href={site.links.github}>GitHub</a></li>
+      </ul>
+    </footer>
+  </body>
+</html>
