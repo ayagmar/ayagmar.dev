@@ -35,6 +35,7 @@ export const groups = {
   // Configs and pins of the CI tools themselves.
   tooling: [
     'renovate.json',
+    'scripts/renovate-policy.test.ts',
     '.github/actionlint.yaml',
     '.github/zizmor.yml',
     'scripts/bootstrap.sh',

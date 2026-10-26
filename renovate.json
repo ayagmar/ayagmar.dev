@@ -28,8 +28,8 @@
   ],
   "packageRules": [
     {
-      "description": "Automerge patch and minor updates once the gate check is green (the main ruleset requires it).",
-      "matchUpdateTypes": ["patch", "minor", "pin", "digest"],
+      "description": "Automerge patch and minor updates once the gate check is green (the main ruleset requires it). Pin and digest updates stay manual: they change the code that runs without a reviewed version change.",
+      "matchUpdateTypes": ["patch", "minor"],
       "automerge": true
     },
     {

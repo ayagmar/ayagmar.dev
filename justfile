@@ -220,8 +220,9 @@ shell-lint: (tools "shellcheck" "shfmt")
 osv: (tools "osv-scanner")
     osv-scanner scan source --lockfile pnpm-lock.yaml
 
-# Validate renovate.json with the pinned Renovate
+# Validate renovate.json with the pinned Renovate, and its automerge policy
 renovate-check:
+    node --test scripts/renovate-policy.test.ts
     npm exec --yes --package renovate@{{ renovate_version }} -- renovate-config-validator --strict --no-global renovate.json
 
 # Apply the main branch ruleset and merge settings on GitHub (owner, needs gh with admin)

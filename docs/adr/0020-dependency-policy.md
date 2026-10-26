@@ -69,11 +69,11 @@ GitHub Actions, pinned by commit SHA in `.github/`: `actions/checkout` 7.0.1, `a
 - `rangeStrategy: pin`, so every update stays an exact version.
 - `minimumReleaseAge: 3 days` with `internalChecksFilter: strict` and `minimumReleaseAgeBehaviour: timestamp-required`: no branch is created for a version younger than three days, or one without a release date. pnpm's own `minimumReleaseAge` refuses the same versions at install time; Renovate's default 30-minute buffer covers packages published shortly after their parent.
 - Groups: astro and `@astrojs/*`; svelte and svelte-check; cloudflare (wrangler, `@cloudflare/*`, miniflare, workerd); vitest and `@vitest/*`; playwright and `@axe-core/*`; biome; typescript; github-actions; toolchain (Node in `.node-version`, pnpm and just in `mise.toml`).
-- Automerge is off by default and on for patch, minor, pin and digest updates, as pull requests (`automergeType: pr`) merged by GitHub's auto-merge (`platformAutomerge`) with a merge commit (`automergeStrategy: merge-commit`). GitHub merges only once the required `gate` check passes (ADR 0018). Majors and lock file maintenance are normal pull requests with release notes (`fetchChangeLogs: pr`).
+- Automerge is off by default and on for patch and minor updates only, as pull requests (`automergeType: pr`) merged by GitHub's auto-merge (`platformAutomerge`) with a merge commit (`automergeStrategy: merge-commit`). GitHub merges only once the required `gate` check passes (ADR 0018). Majors, pin and digest updates (a digest swap changes the code that runs without a reviewed version change) and lock file maintenance are normal pull requests with release notes (`fetchChangeLogs: pr`).
 - TypeScript is held below 7 (`allowedVersions: <7.0.0`) until `@astrojs/check` and `svelte-check` accept it; the rule says to remove it then.
 - A regex manager tracks the tool pins in `scripts/bootstrap.sh` (`# renovate:` comments) and the Renovate pin in the justfile. Renovate cannot update the sha256 next to a bootstrap pin, so those pull requests never automerge and fail CI until someone updates the checksum from the release.
 
-`just renovate-check` validates the config with the pinned Renovate; CI runs it when tool config changes.
+`just renovate-check` validates the config with the pinned Renovate and runs `scripts/renovate-policy.test.ts`, which fails if any rule turns automerge on for anything but patch or minor; CI runs it when tool config changes.
 
 ## Consequences
 
