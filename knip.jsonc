@@ -7,7 +7,8 @@
       // Run by justfile recipes, which knip does not read.
       "ignoreDependencies": ["@biomejs/biome"],
       // From mise or scripts/bootstrap.sh: ci-policy reads just's dump, gitleaks-report runs gitleaks.
-      "ignoreBinaries": ["just", "gitleaks"]
+      // pgrep (procps) finds the bench's workerd for signals-cpu, which runs on Linux only.
+      "ignoreBinaries": ["just", "gitleaks", "pgrep"]
     },
     "packages/contracts": {
       "entry": ["scripts/*.ts", "test/**/*.test.ts"],
@@ -19,9 +20,11 @@
         // Interfaces later adapters and storage implement; nothing imports them yet.
         "src/adapters/types.ts",
         "src/adapters/pull/index.ts",
-        "src/storage/types.ts"
+        "src/storage/types.ts",
+        // The CPU bench Worker, run by scripts/signals-cpu.ts.
+        "bench/worker.ts"
       ],
-      "project": ["src/**/*.ts", "test/**/*.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts", "bench/**/*.ts"],
       // `cloudflare:*` modules are built into workerd. wrangler is run by justfile recipes.
       "ignoreDependencies": ["cloudflare", "wrangler"]
     },

@@ -205,6 +205,10 @@ site-preview:
 signals-dev:
     {{ signals }} wrangler dev --var COMMIT_SHA:{{ commit_sha }}
 
+# Signals: CPU per cron invocation of each pull adapter, in a local workerd (ADR 0030; Linux only)
+signals-cpu *scenarios:
+    nice -n 10 node scripts/signals-cpu.ts {{ scenarios }}
+
 # Signals: bundle without deploying (checks config and bundling)
 signals-build:
     {{ signals }} wrangler deploy --dry-run --outdir dist --var COMMIT_SHA:{{ commit_sha }}
