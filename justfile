@@ -8,6 +8,9 @@ site := "pnpm --filter @min7/site exec"
 signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
 
+# Typst from scripts/bootstrap.sh (Workers Builds, CI), else the one mise installs.
+typst := if path_exists(justfile_directory() / ".tools/bin/typst") == "true" { justfile_directory() / ".tools/bin/typst" } else { "typst" }
+
 [private]
 default:
     @just --list
@@ -101,11 +104,16 @@ scan-secrets:
 site-dev:
     {{ site }} astro dev
 
-# Site: static build, search index, headers
-site-build:
+# Site: static build, search index, headers, and the resume PDF once it is published
+site-build: resume
     COMMIT_SHA={{ commit_sha }} {{ site }} astro build
     {{ site }} pagefind --site dist --quiet
     {{ site }} node scripts/postbuild.ts
+    {{ site }} node scripts/ship-resume.ts
+
+# Resume: write resume/build/resume.pdf from content/about.json
+resume:
+    TYPST={{ quote(typst) }} {{ site }} node scripts/resume.ts
 
 # Site: serve the built site through its Worker on http://localhost:8790
 site-serve:

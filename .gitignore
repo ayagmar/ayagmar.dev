@@ -16,3 +16,4 @@ test-results/
 .pnpm-store/
 worker-configuration.d.ts
 *.tsbuildinfo
+resume/build/
