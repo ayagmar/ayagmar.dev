@@ -35,9 +35,7 @@
         "e2e/**/*.ts"
       ],
       // Run by justfile recipes, which knip does not read; lhci by scripts/lighthouse.ts.
-      "ignoreDependencies": ["@astrojs/check", "pagefind", "svelte-check", "@lhci/cli"],
-      // From mise or scripts/bootstrap.sh: scripts/resume.ts runs typst.
-      "ignoreBinaries": ["typst"]
+      "ignoreDependencies": ["@astrojs/check", "pagefind", "svelte-check", "@lhci/cli"]
     }
   }
 }

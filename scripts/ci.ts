@@ -30,13 +30,11 @@ export const groups = {
   code: ['apps/site/**', 'packages/contracts/**', 'scripts/**', ...toolchain, ...checkConfig],
   signals: ['apps/signals/**', 'packages/contracts/**', ...toolchain, ...checkConfig],
   contracts: ['packages/contracts/**', ...toolchain],
-  // Everything that changes the built site, the resume PDF included (site-build compiles it,
-  // e2e checks its text).
+  // Everything that changes the built site.
   output: [
     'apps/site/**',
     'content/**',
     'content/about.*',
-    'resume/**',
     'packages/contracts/**',
     'lychee.toml',
     ...toolchain,

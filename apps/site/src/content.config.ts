@@ -39,7 +39,7 @@ export const collections = {
     schema: writingSchema,
   }),
   projects: defineCollection({ loader: projects, schema: projectSchema }),
-  // One entry, id "about": the whole file. The resume template reads the same file.
+  // One entry, id "about": the whole file.
   about: defineCollection({
     loader: file('../../content/about.json', { parser: (text) => ({ about: JSON.parse(text) }) }),
     schema: aboutSchema,

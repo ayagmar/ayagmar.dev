@@ -1,6 +1,6 @@
 # 0023. About page and resume PDF from one data file
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. The PDF part is withdrawn, 2026-10-26: see Amendment.
 
 ## Context
 
@@ -20,3 +20,7 @@ Tests: schema errors name the field; `ship-resume` runs as a CLI against a tempo
 ## Consequences
 
 Editing the resume means editing JSON, not a document. The PDF layout is plain until the visual design; restyling it touches only `resume/resume.typ`. In CI, Typst comes from `scripts/bootstrap.sh` and the `e2e` job installs poppler-utils (`pdftotext`, `pdfinfo`) at a pinned Ubuntu version (ADR 0018); without them the PDF tests skip locally and fail under `CI`. The apt pin breaks when Ubuntu supersedes that build and is then bumped by hand.
+
+## Amendment (2026-10-26): no generated PDF
+
+The owner will make the resume PDF by hand in LaTeX and add a download later. The Typst template, `just resume`, `scripts/{resume,ship-resume}.ts`, the `resume.published` flag, the "coming soon" button, the PDF tests and the poppler-utils and Typst installs are removed. `content/about.json` stays the single source for the about page, with the schema, privacy rules and identity test above. A hand-made PDF, when it comes, ships as a static file with its own link and test.

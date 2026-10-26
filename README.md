@@ -13,7 +13,7 @@ Code is MIT. Writing under `content/` is all rights reserved ([content/LICENSE](
 
 ## Run it
 
-You need [mise](https://mise.jdx.dev). It reads Node from `.node-version` and pins pnpm, just and Typst (for the resume) in `mise.toml`.
+You need [mise](https://mise.jdx.dev). It reads Node from `.node-version` and pins pnpm and just in `mise.toml`.
 
 ```sh
 mise install
@@ -49,15 +49,9 @@ just post "Title of the post"
 
 This creates `content/writing/title-of-the-post.md` with `draft: true`. Write it, set `draft: false` when it is ready, and open a pull request. [CONTRIBUTING.md](CONTRIBUTING.md) has the full flow and the frontmatter fields.
 
-## Edit the about page and resume
+## Edit the about page
 
-`content/about.json` holds the facts for the about page and the resume PDF: identity, summary, experience (newest first), certifications, education, skills. Months are written `YYYY-MM`; `"end": null` marks the current role. A wrong or misspelled field fails the build with a message naming it.
-
-```sh
-just resume         # resume/build/resume.pdf from resume/resume.typ and about.json
-```
-
-The PDF is built on every site build but only shipped at `/resume.pdf` once `resume.published` is `true` in `about.json`; until then the about page says it is coming soon. To ship a hand-made PDF instead of the generated one, commit it as `resume/override.pdf`.
+`content/about.json` holds the facts for the about page: identity, summary, experience (newest first), certifications, education, skills. Months are written `YYYY-MM`; `"end": null` marks the current role. A wrong or misspelled field fails the build with a message naming it.
 
 ## Deploy
 
