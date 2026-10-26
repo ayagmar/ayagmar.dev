@@ -198,6 +198,45 @@ describe('answers', () => {
     assert.ok((waits[1] ?? 0) > (waits[0] ?? 0));
   });
 
+  // Catches a connection lost while the acknowledgement is read stopping for the operator: the
+  // push may well be stored, and the same bytes resent get 200 as a duplicate.
+  it('resends the same bytes when a 2xx answer breaks off', async () => {
+    const bodies: string[] = [];
+    const srv = createServer((request, response) => {
+      let body = '';
+      request.on('data', (chunk) => {
+        body += chunk;
+      });
+      request.on('end', () => {
+        bodies.push(body);
+        response.writeHead(bodies.length === 1 ? 202 : 200, {
+          'content-type': 'application/json',
+          'content-length': '17',
+        });
+        if (bodies.length === 1) {
+          response.write('{"accepted"');
+          setImmediate(() => response.destroy());
+        } else {
+          response.end('{"accepted":true}');
+        }
+      });
+    });
+    await new Promise<void>((resolve) => srv.listen(0, '127.0.0.1', resolve));
+    try {
+      const { port } = srv.address() as { port: number };
+      const { producer, state } = standIn();
+      const { rt, logs } = runtime(fetch, { endpoint: `http://127.0.0.1:${port}/v1/push/desktop` });
+      assert.equal(await deliver(rt, producer), exitCodes.ok);
+      assert.equal(bodies.length, 2);
+      assert.equal(bodies[0], bodies[1]);
+      assert.equal(state.built, 1);
+      assert.match(logs.join('\n'), /"status":202,"event":"retrying"/);
+      assert.equal(pending(), undefined);
+    } finally {
+      srv.close();
+    }
+  });
+
   // Catches a hot loop, or a body dropped when signals is down for a while.
   it('gives up after its attempts and keeps the body for the next run', async () => {
     const { producer } = standIn();

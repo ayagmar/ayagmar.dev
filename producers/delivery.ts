@@ -262,9 +262,19 @@ async function post(rt: Runtime, body: string): Promise<Answer> {
     return { kind: 'retry', status: 0, retryAfterMs: 0 };
   }
   const { status } = response;
+  let text: string;
+  try {
+    text = await readBounded(response);
+  } catch {
+    // The connection broke or timed out while the answer was read. After 200 or 202 signals may
+    // have stored the push; the same bytes resent are acknowledged as a duplicate. Any other
+    // status says enough on its own.
+    text = '';
+    if (status === 200 || status === 202) return { kind: 'retry', status, retryAfterMs: 0 };
+  }
   let answer: { accepted?: unknown; error?: unknown } = {};
   try {
-    answer = JSON.parse(await readBounded(response));
+    answer = JSON.parse(text);
   } catch {}
   const code =
     typeof answer?.error === 'string' && errorCode.test(answer.error) ? answer.error : 'none';
