@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+/** The GitHub account whose repositories the site shows. */
+export const githubOwner = 'ayagmar';
+
 /** `owner/name` of a GitHub repository. */
 export const repoFullNameSchema = z
   .string()

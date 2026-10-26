@@ -14,12 +14,29 @@
         }
       },
       {
+        "type": "star.created",
+        "repo": "ayagmar/llm-usage-metrics",
+        "at": "2026-10-23T10:02:00Z",
+        "star": {
+          "count": 35
+        }
+      },
+      {
         "type": "push.default_branch",
         "repo": "ayagmar/runnerd",
         "at": "2026-10-25T21:14:00Z",
         "url": "https://github.com/ayagmar/runnerd/compare/3f2a1c0...9be47d2",
         "push": {
           "commits": 12
+        }
+      },
+      {
+        "type": "push.default_branch",
+        "repo": "someoneelse/private-thing",
+        "at": "2026-10-26T06:00:00Z",
+        "url": "https://github.com/someoneelse/private-thing/compare/a...b",
+        "push": {
+          "commits": 3
         }
       },
       {
@@ -44,13 +61,9 @@
       {
         "type": "star.created",
         "repo": "ayagmar/pi-mobile",
-        "at": "2026-10-24T22:05:00Z",
+        "at": "2026-10-24T08:12:00Z",
         "star": {
-          "count": 115
-        },
-        "sender": {
-          "login": "someone",
-          "avatarUrl": "https://avatars.githubusercontent.com/u/1"
+          "count": 113
         }
       },
       {
@@ -64,9 +77,13 @@
       {
         "type": "star.created",
         "repo": "ayagmar/pi-mobile",
-        "at": "2026-10-24T08:12:00Z",
+        "at": "2026-10-24T22:05:00Z",
         "star": {
-          "count": 113
+          "count": 115
+        },
+        "sender": {
+          "login": "someone",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/1"
         }
       },
       {
@@ -77,16 +94,18 @@
         "release": {
           "tag": "v0.14.1"
         }
-      },
-      {
-        "type": "star.created",
-        "repo": "ayagmar/llm-usage-metrics",
-        "at": "2026-10-23T10:02:00Z",
-        "star": {
-          "count": 35
-        }
       }
     ],
-    "starHistory": []
+    "starHistory": [
+      {
+        "repo": "someoneelse/private-thing",
+        "points": [
+          {
+            "date": "2026-10-25",
+            "stars": 9
+          }
+        ]
+      }
+    ]
   }
 }

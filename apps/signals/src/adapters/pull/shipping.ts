@@ -1,5 +1,6 @@
 // repo-pulse public feed (ADR 0012): recent public events and star history.
 import {
+  githubOwner,
   repoPulseFeedEventSchema,
   repoPulseFeedReaderSchema,
   type ShippingEvent,
@@ -24,23 +25,30 @@ export const shipping: PullAdapter<UpstreamResponse, ShippingSnapshot> = {
     const feed = parseBody(raw, repoPulseFeedReaderSchema);
     return checkSnapshot(shippingSnapshotSchema, {
       events: summarize(feed.events).slice(0, feedLimit),
-      starHistory: feed.starHistory,
+      starHistory: feed.starHistory.filter(({ repo }) => isOwn(repo)),
     });
   },
 };
 
+// The feed promises public repositories only; anything outside the owner's account is
+// dropped as well, in case repo-pulse ever watches another one.
+const isOwn = (repo: string) => repo.startsWith(`${githubOwner}/`);
+
 /**
- * Feed events as the site shows them, newest first. Events of an unknown type or with a bad
- * field are skipped. Stars on one repository on one UTC day become one `stars` entry, placed
- * where the newest of them was.
+ * Feed events as the site shows them, newest first whatever order the feed used. Events of
+ * an unknown type, with a bad field or outside the owner's account are skipped. Stars on one
+ * repository on one UTC day become one `stars` entry, placed where the newest of them was.
  */
-function summarize(events: readonly unknown[]): ShippingEvent[] {
+function summarize(items: readonly unknown[]): ShippingEvent[] {
+  const events = items
+    .flatMap((item) => {
+      const parsed = repoPulseFeedEventSchema.safeParse(item);
+      return parsed.success && isOwn(parsed.data.repo) ? [parsed.data] : [];
+    })
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
   const summary: ShippingEvent[] = [];
   const starDays = new Map<string, Extract<ShippingEvent, { type: 'stars' }>>();
-  for (const item of events) {
-    const parsed = repoPulseFeedEventSchema.safeParse(item);
-    if (!parsed.success) continue;
-    const event = parsed.data;
+  for (const event of events) {
     const { repo, at } = event;
     switch (event.type) {
       case 'release.published':
