@@ -9,19 +9,41 @@
 
 Frontmatter:
 
-| Field     | Required | Rule                                                                 |
-| --------- | -------- | -------------------------------------------------------------------- |
-| `title`   | yes      | Non-empty.                                                           |
-| `date`    | yes      | `YYYY-MM-DD`, the publish date.                                      |
-| `updated` | no       | `YYYY-MM-DD`, not before `date`. Shown as "last updated".            |
-| `summary` | yes      | One sentence. Used in lists, feeds and search.                       |
-| `tags`    | no       | Lowercase slugs like `rust` or `home-lab`, no repeats.               |
-| `series`  | no       | A lowercase slug shared by the posts of a series.                    |
-| `draft`   | no       | `true` keeps the post out of production builds. Defaults to `false`. |
+| Field      | Required | Rule                                                                 |
+| ---------- | -------- | -------------------------------------------------------------------- |
+| `title`    | yes      | Non-empty.                                                           |
+| `date`     | yes      | `YYYY-MM-DD`, the publish date.                                      |
+| `updated`  | no       | `YYYY-MM-DD`, not before `date`. Shown as "last updated".            |
+| `summary`  | yes      | One sentence. Used in lists, feeds and search.                       |
+| `tags`     | no       | Lowercase slugs like `rust` or `home-lab`, no repeats.               |
+| `series`   | no       | A lowercase slug shared by the posts of a series.                    |
+| `draft`    | no       | `true` keeps the post out of production builds. Defaults to `false`. |
+| `projects` | no       | Slugs of the featured projects the post is about, like `[runnerd]`.  |
 
 Any other field fails the build, so a typo such as `sumary:` does not pass silently. The error names the file and the field.
 
 "Last updated" comes from `updated` in the frontmatter. Deriving it from git history is not done yet.
+
+## Projects
+
+The featured projects are listed in `packages/contracts/src/projects.ts`. Each gets a page at `/projects/<slug>` and feeds at `/projects/<slug>/feed.xml` and `atom.xml`. A post with `projects: [<slug>]` shows that project's card and appears on its page.
+
+To describe a project, add `content/projects/<slug>.md`:
+
+```md
+---
+
+slug: runnerd
+status: active # active, maintained, archived or spec
+tagline: 'One line shown under the name.' # optional
+subdomain: runnerd # optional: links https://runnerd.ayagmar.dev
+order: 1 # optional: lower comes first on /projects
+---
+
+The long description, in Markdown.
+```
+
+The build fails when `slug` is not a featured project or differs from the file name, and warns about featured projects that have no file.
 
 ## Code changes
 
