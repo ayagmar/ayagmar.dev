@@ -22,6 +22,11 @@ export interface Budgets {
      * Every other dynamic import counts: it can run as soon as the page loads.
      */
     onDemand: string[];
+    /**
+     * Named scripts left out of the per-page JS budget, each capped on its own (gzip bytes).
+     * `file` is a URL path where `*` stands for any characters but `/`, such as a build hash.
+     */
+    allowances: { name: string; file: string; bytes: number }[];
   };
   lighthouse: {
     runs: number;
@@ -41,8 +46,10 @@ export interface PageReport {
   /** The page's path in dist, such as `writing/a-post.html`. */
   page: string;
   islands: boolean;
-  /** JavaScript the page loads, gzip bytes. */
+  /** JavaScript the page loads, gzip bytes, allowances left out. */
   js: number;
+  /** JavaScript covered by an allowance, gzip bytes. */
+  allowed: number;
   /** HTML, CSS, JS and images, gzip where text, fonts excluded. */
   weight: number;
 }
@@ -159,6 +166,15 @@ function pageUrl(page: string): string {
 
 export function measure(dist: string, limits: Budgets['static'] = budgets.static): Report {
   const problems: string[] = [];
+  const allowanceFor = (file: string) =>
+    limits.allowances.find(({ file: glob }) =>
+      new RegExp(
+        `^${glob
+          .split('*')
+          .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+          .join('[^/]*')}$`
+      ).test(`/${file}`)
+    );
   const all = files(dist);
   const sizes = new Map<string, number>();
   /** Transfer size of a file in dist: gzip for text, bytes for the rest. */
@@ -296,13 +312,27 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
       }
     }
 
-    const js = inlineJs + [...scripts].reduce((sum, file) => sum + size(file), 0);
+    let js = inlineJs;
+    let allowed = 0;
+    for (const file of scripts) {
+      const allowance = allowanceFor(file);
+      if (!allowance) {
+        js += size(file);
+        continue;
+      }
+      allowed += size(file);
+      if (size(file) > allowance.bytes) {
+        problems.push(
+          `${file}: ${size(file)} B (gzip), over the ${allowance.bytes} B allowance for the ${allowance.name}`
+        );
+      }
+    }
     const weight =
       size(page) +
       [...scripts, ...resources]
         .filter((file) => !fontTypes.has(extname(file)))
         .reduce((sum, file) => sum + size(file), 0);
-    pages.push({ page, islands, js, weight });
+    pages.push({ page, islands, js, allowed, weight });
 
     const jsLimit = islands ? limits.jsWithIslands : limits.jsWithoutIslands;
     if (js > jsLimit) {
@@ -334,9 +364,18 @@ export function table(report: Report, limits: Budgets['static'] = budgets.static
   const rows = report.pages.map((p) => {
     const jsLimit = p.islands ? limits.jsWithIslands : limits.jsWithoutIslands;
     const ok = p.js <= jsLimit && p.weight <= limits.pageWeight;
-    return [p.page, kb(p.js), kb(jsLimit), kb(p.weight), kb(limits.pageWeight), ok ? 'ok' : 'OVER'];
+    const allowed = p.allowed > 0 ? kb(p.allowed) : '-';
+    return [
+      p.page,
+      kb(p.js),
+      kb(jsLimit),
+      allowed,
+      kb(p.weight),
+      kb(limits.pageWeight),
+      ok ? 'ok' : 'OVER',
+    ];
   });
-  const header = ['page', 'js (gz)', 'js budget', 'weight (gz)', 'weight budget', ''];
+  const header = ['page', 'js (gz)', 'js budget', 'allowed js', 'weight (gz)', 'weight budget', ''];
   const widths = header.map((h, i) => Math.max(h.length, ...rows.map((r) => (r[i] ?? '').length)));
   const line = (cells: string[]) =>
     cells
@@ -348,6 +387,7 @@ export function table(report: Report, limits: Budgets['static'] = budgets.static
     ...rows.map(line),
     '',
     `fonts: ${kb(report.fonts)} of ${kb(limits.fonts)}`,
+    ...limits.allowances.map((a) => `allowed js: ${a.name} (${a.file}), at most ${kb(a.bytes)}`),
   ].join('\n');
 }
 

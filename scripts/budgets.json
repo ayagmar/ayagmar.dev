@@ -4,7 +4,14 @@
     "jsWithIslands": 20480,
     "pageWeight": 153600,
     "fonts": 204800,
-    "onDemand": ["/pagefind/pagefind.js"]
+    "onDemand": ["/pagefind/pagefind.js"],
+    "allowances": [
+      {
+        "name": "theme switch",
+        "file": "/_astro/theme.*.js",
+        "bytes": 1024
+      }
+    ]
   },
   "lighthouse": {
     "runs": 3,

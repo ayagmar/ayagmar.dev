@@ -121,7 +121,7 @@ Every page has a budget, checked on the built site and failing CI when exceeded.
 
 | Check                                             | Budget                                                                                  |
 | ------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| JavaScript a page loads, gzip                     | 0 B without islands, 20 KB with islands                                                 |
+| JavaScript a page loads, gzip                     | 0 B without islands, 20 KB with islands; the theme script apart, at most 1 KB           |
 | Page weight: HTML, CSS, JS, images, gzip for text | 150 KB, fonts excluded                                                                  |
 | Fonts, the whole build                            | 200 KB, woff2 only                                                                      |
 | Requests to other origins from HTML or CSS        | none: self-host fonts, images and scripts                                               |

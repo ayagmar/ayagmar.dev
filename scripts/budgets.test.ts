@@ -14,6 +14,7 @@ const limits = {
   pageWeight: 153_600,
   fonts: 204_800,
   onDemand: ['/pagefind/pagefind.js'],
+  allowances: [{ name: 'theme switch', file: '/_astro/theme.*.js', bytes: 1024 }],
 };
 
 /** Bytes gzip cannot shrink, the same on every run. */
@@ -70,6 +71,26 @@ describe('JavaScript per page', () => {
     // The same island with a chunk that pushes the page past 20 KB fails.
     write({ '_astro/client.js': `import"./extra.js";${js(12_000)}`, '_astro/extra.js': js(9000) });
     assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* with islands/);
+  });
+
+  it('leaves a named allowance out of the JS budget, on any page, but caps it on its own', () => {
+    const theme = '<script src="/_astro/theme.AbC123.js"></script>';
+    write({
+      'index.html': page('<p>no island</p>', theme),
+      '_astro/theme.AbC123.js': 'document.documentElement.dataset.theme="night";',
+    });
+    assert.deepEqual(problems(), []);
+    // The same script, grown past its cap, fails as itself.
+    write({ '_astro/theme.AbC123.js': js(2000) });
+    assert.deepEqual(problems(), [
+      `_astro/theme.AbC123.js: ${measure(dist, limits).pages[0]?.allowed} B (gzip), over the 1024 B allowance for the theme switch`,
+    ]);
+    // A script that only resembles it gets no allowance.
+    write({
+      'index.html': page('<p>no island</p>', '<script src="/_astro/themes.js"></script>'),
+      '_astro/themes.js': 'x',
+    });
+    assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* without islands/);
   });
 
   it('counts what an inline module imports', () => {

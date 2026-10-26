@@ -31,7 +31,7 @@ Applying a stored choice before the first paint needs code that runs while `<hea
 
 Without JavaScript the switch stays hidden (CSS shows it only once the script set `data-theme-switch`) and the page renders in the system theme.
 
-Lighthouse budget: the Lighthouse PR (ADR 0017) plans a "0 JS on pages without islands" budget. Every page already has the search island, and this script adds one named file, `theme.*.js`, of under 1 KB gzip on every page. When ADR 0017 lands, its budgets config needs an explicit allowance for that file, justified by the flash it prevents.
+Budget: this script adds one named file, `theme.*.js`, of under 1 KB gzip on every page. ADR 0017 leaves it out of the per-page JavaScript budgets as a named allowance in `scripts/budgets.json`, capped at 1 KB on its own, justified by the flash it prevents.
 
 ### Type
 
@@ -93,7 +93,7 @@ Biome's `noDescendingSpecificity` is off for `apps/site/src/styles/**`. It compa
 
 ## Consequences
 
-- One blocking script of under 1 KB on every page; ADR 0017's budget needs a named allowance for it.
+- One blocking script of under 1 KB on every page, with its own 1 KB allowance in ADR 0017's budgets.
 - `light-dark()` needs Chrome 123, Safari 17.5 or Firefox 120. Older browsers get no colors from the tokens.
 - Changing the scene means editing `scene.py` and, if an object moves, its rectangle in `room.css`.
 - The home page weighs about 42 KB gzip without fonts (HTML, CSS, the island runtime, the theme script and one scene).
