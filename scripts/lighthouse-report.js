@@ -24,6 +24,7 @@ export const pages = {
   project: 'A project',
   about: 'About',
   stats: 'Stats',
+  uses: 'Uses',
 };
 export const profiles = /** @type {const} */ (['mobile', 'desktop']);
 

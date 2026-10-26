@@ -1,0 +1,120 @@
+---
+import { getEntry } from 'astro:content';
+import { signalsApiBase, signalsMode } from '../data/signals.ts';
+import Base from '../layouts/Base.astro';
+
+// content/uses.json, validated by the collection schema in content.config.ts.
+const entry = await getEntry('uses', 'uses');
+if (entry === undefined) throw new Error('content/uses.json is missing');
+const uses = entry.data;
+const materials = ['m-screen', 'm-tea', 'm-frame'];
+// The live part is read by the browser (ADR 0015): in fixtures mode it has no endpoint and
+// never shows.
+const api = (source: string) =>
+  signalsMode === 'api' ? `${signalsApiBase}/v1/${source}` : undefined;
+---
+
+<Base title="Uses">
+  <h1>Uses</h1>
+  <p class="caption">{uses.intro}</p>
+
+  <div class="uses-grid">
+    {uses.sections.map((section, i) => (
+      <section class={`panel ${materials[i % materials.length]}`} aria-labelledby={`uses-${i}`}>
+        <h2 id={`uses-${i}`}>{section.title}</h2>
+        <ul>
+          {section.items.map((item) => (
+            <li>
+              {item.name}
+              {item.detail && <span class="uses-detail">, {item.detail}</span>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+
+    {uses.machines.map((machine, i) => (
+      <section
+        class={`panel ${i % 2 === 0 ? 'm-wood' : 'm-cork'}`}
+        aria-labelledby={`machine-${i}`}
+      >
+        <h2 id={`machine-${i}`}>{machine.name}</h2>
+        {machine.model && <p>{machine.model}</p>}
+        <dl>
+          {machine.specs.map((spec) => (
+            <div>
+              <dt>{spec.part}</dt>
+              <dd>{spec.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    ))}
+
+    {/* Filled in, and shown, by src/scripts/uses.ts; hidden without it. */}
+    <section class="panel m-vinyl uses-live" aria-labelledby="uses-live" hidden>
+      <h2 id="uses-live">From my machines</h2>
+      <div class="desktop-facts" data-desktop-src={api('desktop')} hidden>
+        <h3>Desktop</h3>
+        <dl>
+          <div class="desktop-kernel">
+            <dt>Kernel</dt>
+            <dd></dd>
+          </div>
+          <div class="desktop-niri">
+            <dt>niri</dt>
+            <dd></dd>
+          </div>
+          <div class="desktop-uptime">
+            <dt>Uptime</dt>
+            <dd></dd>
+          </div>
+        </dl>
+        <p class="freshness desktop-reported"></p>
+      </div>
+      <div class="agents-month" data-llm-usage-src={api('llm-usage')} hidden>
+        <h3>Agents this month</h3>
+        <p>Most tokens first:</p>
+        <ol></ol>
+        <p class="freshness agents-as-of"></p>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<style>
+.uses-grid {
+  display: grid;
+  gap: 0 1.25rem;
+}
+
+.uses-grid dl > div:not([hidden]) {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: 1rem;
+}
+
+.uses-grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.uses-detail {
+  color: var(--fg-2);
+}
+
+@media (min-width: 60rem) {
+  .uses-grid {
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+  }
+
+  .uses-grid > :nth-child(n + 4) {
+    grid-column: span 3;
+  }
+}
+</style>
+
+<script>
+import '../scripts/uses.ts';
+</script>

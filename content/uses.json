@@ -1,0 +1,55 @@
+{
+  "intro": "The hardware and software I work with. I keep this list by hand. The live part at the end comes from my desktop and my agent logs.",
+  "sections": [
+    {
+      "title": "System",
+      "items": [
+        { "name": "Arch Linux" },
+        { "name": "niri", "detail": "a scrollable-tiling Wayland compositor" },
+        { "name": "Noctalia", "detail": "the desktop shell on top of it" }
+      ]
+    },
+    {
+      "title": "Editor and terminal",
+      "items": [
+        { "name": "VS Code" },
+        { "name": "kitty" },
+        { "name": "zsh" },
+        { "name": "herdr", "detail": "a terminal multiplexer for coding agents" }
+      ]
+    },
+    {
+      "title": "Agents",
+      "items": [{ "name": "Claude Code" }, { "name": "Codex" }, { "name": "pi" }]
+    }
+  ],
+  "machines": [
+    {
+      "name": "Desktop",
+      "specs": [
+        { "part": "CPU", "value": "AMD Ryzen 9 9950X3D (16 cores)" },
+        { "part": "GPU", "value": "NVIDIA GeForce RTX 5090" },
+        { "part": "RAM", "value": "64 GB" },
+        {
+          "part": "Storage",
+          "value": "Samsung SSD 9100 PRO 2 TB, Samsung SSD 9100 PRO 1 TB, 2 × WD_BLACK SN850X 2 TB (all NVMe)"
+        },
+        { "part": "Display", "value": "ASUS XG27ACDNG, 2560 × 1440, 360 Hz" }
+      ]
+    },
+    {
+      "name": "Laptop",
+      "model": "Lenovo ThinkPad P1 Gen 7",
+      "specs": [
+        { "part": "CPU", "value": "Intel Core Ultra 9 185H" },
+        {
+          "part": "GPU",
+          "value": "NVIDIA RTX 2000 Ada Generation Laptop GPU, plus Intel Arc integrated graphics"
+        },
+        { "part": "RAM", "value": "64 GB" },
+        { "part": "Storage", "value": "KIOXIA 1 TB NVMe" },
+        { "part": "Display", "value": "Built-in, 2560 × 1600" }
+      ]
+    }
+  ]
+}

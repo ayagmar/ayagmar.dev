@@ -63,6 +63,7 @@ const pages = {
   'projects/a.html': 'a project',
   'about.html': 'about',
   'stats.html': 'stats',
+  'uses.html': 'uses',
 };
 
 let dir: string;

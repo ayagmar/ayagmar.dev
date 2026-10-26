@@ -11,11 +11,9 @@ import { site } from '../lib/site.ts';
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 const projects = await signals.read('projects');
-// Pushed sources: not wired yet, shown empty until their contracts land.
-const pushed = [
-  { title: 'LLM usage', envelope: emptyEnvelope('llm-usage'), material: 'm-frame' },
-  { title: 'Shelf', envelope: emptyEnvelope('shelf'), material: 'm-wood' },
-];
+// Shelf: not wired yet, shown empty until its contract lands. LLM usage shows only its
+// agent hours so far, read by the browser (ADR 0015).
+const shelf = emptyEnvelope('shelf');
 
 const music = listening.data;
 const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points }) => {
@@ -27,8 +25,8 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
 <Base title="Stats">
   <h1>Stats</h1>
   <p class="caption">
-    Numbers from my own tools, refreshed when the site is built. On this day is fetched by your
-    browser, and shown only on that date in Rabat.
+    Numbers from my own tools, refreshed when the site is built. On this day and agent hours are
+    fetched by your browser, and shown only on the date in Rabat they describe.
   </p>
 
   <div class="stats-grid">
@@ -129,16 +127,51 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
       <Freshness envelope={projects} />
     </section>
 
-    {pushed.map(({ title, envelope, material }) => (
-      <section class={`panel ${material}`} aria-labelledby={envelope.source}>
-        <h2 id={envelope.source}>{title}</h2>
-        <p>No data yet.</p>
-        <Freshness envelope={envelope} />
-      </section>
-    ))}
+    <section class="panel m-frame" aria-labelledby="llm-usage">
+      <h2 id="llm-usage">LLM usage</h2>
+      <p class="llm-usage-empty">No data yet.</p>
+      {/* Filled in, and shown, by src/scripts/agent-hours.ts (ADR 0014); hidden without it. */}
+      <div
+        class="agent-hours"
+        data-llm-usage-src={signalsMode === 'api' ? `${signalsApiBase}/v1/llm-usage` : undefined}
+        hidden
+      >
+        <h3>Estimated agent hours</h3>
+        <dl>
+          <div class="agent-hours-month">
+            <dt>This month so far</dt>
+            <dd></dd>
+          </div>
+          <div class="agent-hours-week">
+            <dt>Last 7 days</dt>
+            <dd></dd>
+          </div>
+        </dl>
+        <p>
+          Estimated from logged agent events with gaps capped at 5 minutes; overlapping sessions and
+          machines count once. Includes overnight agents and laptop usage, not my hours at the
+          keyboard.
+        </p>
+        <p class="freshness agent-hours-as-of"></p>
+      </div>
+    </section>
+
+    <section class="panel m-wood" aria-labelledby="shelf">
+      <h2 id="shelf">Shelf</h2>
+      <p>No data yet.</p>
+      <Freshness envelope={shelf} />
+    </section>
   </div>
 </Base>
 
+<style>
+/* Each row's pair sits in the list's grid; a hidden row (a value not sent) takes no space. */
+.agent-hours dl > div:not([hidden]) {
+  display: contents;
+}
+</style>
+
 <script>
 import '../scripts/history.ts';
+import '../scripts/agent-hours.ts';
 </script>
