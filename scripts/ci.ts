@@ -9,8 +9,10 @@
 import { execFileSync } from 'node:child_process';
 import { matchesGlob } from 'node:path';
 
-// Files every unit is built and tested with.
+// Files every unit is built and tested with. bootstrap.sh installs just (CI, Workers Builds)
+// and the CI tools.
 const toolchain = [
+  'scripts/bootstrap.sh',
   'package.json',
   'pnpm-lock.yaml',
   'pnpm-workspace.yaml',

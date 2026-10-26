@@ -61,6 +61,13 @@ describe('plan', () => {
     }
   });
 
+  it('builds and tests both Workers and the site output when only bootstrap.sh changes', () => {
+    const jobs = runs(['scripts/bootstrap.sh']);
+    for (const job of ['signals-test', 'site-build', 'e2e', 'links', 'checks', 'renovate']) {
+      assert.ok(jobs.includes(job), `${job} should run`);
+    }
+  });
+
   it('runs the union for mixed changes', () => {
     const jobs = runs(['content/writing/a.md', '.github/workflows/ci.yml', 'scripts/bootstrap.sh']);
     for (const job of ['links', 'site-build', 'workflows', 'renovate', 'shell', 'checks']) {
