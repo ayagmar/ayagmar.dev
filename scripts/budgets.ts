@@ -75,10 +75,15 @@ const inlineCode = /<(script|style)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
 const staticImport = /\b(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+)["']/g;
 const cssReference = /@import\s+(?:url\(\s*)?["']?([^"')\s;]+)|url\(\s*["']?([^"')]+?)["']?\s*\)/g;
 
+/** A character reference as a browser reads it; one out of range becomes U+FFFD. */
+const codePoint = (n: number) => String.fromCodePoint(n > 0 && n <= 0x10ffff ? n : 0xfffd);
+
+// Numeric references first and `&amp;` last, so `&amp;#9;` stays the text `&#9;`.
 const decode = (value: string) =>
   value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => codePoint(Number.parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, dec: string) => codePoint(Number.parseInt(dec, 10)))
     .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'")
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
     .replaceAll('&amp;', '&');
@@ -91,9 +96,8 @@ function attributes(source: string): Map<string, string> {
   return out;
 }
 
-/** Whether a reference leaves the site: any scheme but `data:`, or a protocol-relative URL. */
-const isExternal = (url: string) =>
-  /^\/\//.test(url) || (/^[a-z][a-z0-9+.-]*:/i.test(url) && !/^data:/i.test(url));
+// Stands for the site's own origin when resolving references; `.invalid` never resolves.
+const site = 'https://site.invalid';
 
 const gz = (bytes: Buffer | string) => gzipSync(bytes, { level: 9 }).length;
 
@@ -127,12 +131,21 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
   };
   /** The dist file a same-site reference points to, or undefined (reported) when there is none. */
   const resolve = (url: string, from: string, where: string): string | undefined => {
-    if (/^data:/i.test(url)) return undefined;
-    if (isExternal(url)) {
-      problems.push(`${where}: loads ${url} from another origin; self-host it`);
+    // Parsed as a browser does first (whitespace and control characters trimmed, tabs and
+    // newlines removed, backslashes as slashes), so the origin checked is the one requested.
+    let parsed: URL;
+    try {
+      parsed = new URL(url, `${site}${from}`);
+    } catch {
+      problems.push(`${where}: references ${JSON.stringify(url)}, which is not a valid URL`);
       return undefined;
     }
-    const { pathname } = new URL(url, `https://site.invalid${from}`);
+    if (parsed.protocol === 'data:') return undefined;
+    if (parsed.origin !== site) {
+      problems.push(`${where}: loads ${parsed.href} from another origin; self-host it`);
+      return undefined;
+    }
+    const { pathname } = parsed;
     const path = decodeURIComponent(pathname).slice(1);
     const candidates = path === '' || path.endsWith('/') ? [`${path}index.html`] : [path];
     if (!extname(path)) candidates.push(`${path}.html`, `${path}/index.html`);

@@ -132,11 +132,35 @@ describe('external origins', () => {
     });
     const found = problems().flatMap((p) => /loads (\S+) from another origin/.exec(p)?.[1] ?? []);
     assert.deepEqual(found.sort(), [
-      '//cdn.example.com/x.js',
       'https://bg.example.com/a.png',
+      'https://cdn.example.com/x.js',
       'https://fonts.googleapis.com/css2?family=X',
-      'https://fonts.gstatic.com',
+      'https://fonts.gstatic.com/',
       'https://img.example.com/a.png',
+    ]);
+  });
+
+  it('checks the origin of the URL a browser would request, after its normalization', () => {
+    const srcs = [
+      ' https://spaced.example.com/a.png',
+      '\\\\backslashes.example.com/a.png',
+      '/\\slash-backslash.example.com/a.png',
+      'ht&#9;tps://tab.example.com/a.png',
+      '&#x01;https://control.example.com/a.png',
+    ];
+    write({
+      'index.html': page(
+        srcs.map((src) => `<img src="${src}" width="1" height="1" alt="">`).join('')
+      ),
+      'a.png': 'a',
+    });
+    const found = problems().flatMap((p) => /loads (\S+) from another origin/.exec(p)?.[1] ?? []);
+    assert.deepEqual(found, [
+      'https://spaced.example.com/a.png',
+      'https://backslashes.example.com/a.png',
+      'https://slash-backslash.example.com/a.png',
+      'https://tab.example.com/a.png',
+      'https://control.example.com/a.png',
     ]);
   });
 
