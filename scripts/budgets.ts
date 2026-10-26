@@ -84,9 +84,21 @@ const tag =
   /<!--[\s\S]*?(?:-->|$)|<([a-zA-Z][\w:-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*\/?>/g;
 const attribute = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 const inlineCode = /<(script|style)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
-const staticImport = /\b(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+)["']/g;
+// What JavaScript allows between the tokens of an import: whitespace and comments, which
+// bundlers emit there (`/* @vite-ignore */`). Matched in place rather than stripped first, since
+// a `//` inside a string is not a comment. A comment ends at its first `*/`, so no text can be
+// read as a gap in two ways and a failed match does not backtrack through every split.
+const gapUnit = String.raw`\s|\/\*(?:[^*]|\*(?!\/))*\*\/|\/\/[^\n]*\n`;
+const gap = `(?:${gapUnit})*`;
+const staticImport = new RegExp(
+  String.raw`\b(?:import|export)(?:(?:[\w$*{},]|${gapUnit})+?from)?${gap}["']([^"']+)["']`,
+  'g'
+);
 // import() of a literal URL; a computed one (Astro's island loader) cannot be followed.
-const dynamicImport = /\bimport\s*\(\s*(?:\/\*[\s\S]*?\*\/\s*)?(["'`])([^"'`$]+)\1\s*\)/g;
+const dynamicImport = new RegExp(
+  String.raw`\bimport${gap}\(${gap}(["'\x60])([^"'\x60$]+)\1${gap}\)`,
+  'g'
+);
 // CSS function and at-rule names are case-insensitive. `@import` takes a string or url();
 // url() a quoted or bare URL; image-set() also takes bare strings as URLs.
 const cssImport = /@import\s*(?:url\(\s*)?(?:"([^"]*)"|'([^']*)'|([^"')\s;]+))/gi;

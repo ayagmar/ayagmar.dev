@@ -135,6 +135,28 @@ describe('JavaScript per page', () => {
     write({ '_astro/r.js': 'import("/big.js");export default 1;', 'big.js': js(30_000) });
     assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* with islands/);
   });
+
+  it('reads comments in an import as the gaps they are, static or dynamic', () => {
+    write({
+      'index.html': page(island('/_astro/Search.js')),
+      '_astro/Search.js': 'export default 1;',
+      'big.js': js(30_000),
+    });
+    // A `//` inside a string is not a comment: what follows it still counts.
+    for (const code of [
+      'import/* eager */("/big.js");',
+      'import(/* @vite-ignore */ "/big.js" /* x */);',
+      'import/* a */{b}/* c */from/* d */"/big.js";',
+      'import//x\n"/big.js";',
+      'const u="https://x";import("/big.js");',
+      // A run of comments before a computed import: each comment must end at its first `*/`,
+      // or the failed match tries every way to group them and the check never finishes.
+      `import${'/**/'.repeat(40)}(x);import("/big.js");`,
+    ]) {
+      write({ '_astro/r.js': code });
+      assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* with islands/, code);
+    }
+  });
 });
 
 describe('page weight and fonts', () => {
