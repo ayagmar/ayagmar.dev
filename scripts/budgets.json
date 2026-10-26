@@ -28,8 +28,18 @@
       },
       {
         "name": "live reads",
+        "file": "/_astro/live.*.js",
+        "bytes": 1400
+      },
+      {
+        "name": "listening reads",
         "file": "/_astro/listening.*.js",
-        "bytes": 1950
+        "bytes": 780
+      },
+      {
+        "name": "agent reads",
+        "file": "/_astro/llm-usage.*.js",
+        "bytes": 940
       }
     ]
   },
