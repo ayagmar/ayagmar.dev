@@ -11,6 +11,7 @@
   "devDependencies": {
     "@types/node": "catalog:",
     "ajv": "8.20.0",
+    "msw": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }
