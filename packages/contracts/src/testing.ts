@@ -35,8 +35,9 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
   const repoPulse: Recorded = rawFixtures['repo-pulse'][cases.repoPulse ?? 'ok'];
 
   return [
-    http.get('https://ws.audioscrobbler.com/2.0/', ({ request }) => {
-      const query = new URL(request.url).searchParams;
+    // signals POSTs its Last.fm parameters as a form, to keep the API key out of URLs.
+    http.post('https://ws.audioscrobbler.com/2.0/', async ({ request }) => {
+      const query = await request.formData();
       if (query.get('method') === 'user.gettopartists') return reply(lastfm.topArtists);
       if (query.has('to')) return reply(lastfm.lastWeek);
       if (query.has('from')) return reply(lastfm.thisWeek);

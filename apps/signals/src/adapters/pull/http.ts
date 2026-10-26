@@ -40,18 +40,26 @@ const requestTimeoutMs = 5_000;
 const userAgent = 'min7-signals (+https://ayagmar.dev)';
 
 /**
- * GETs `url` and reads at most `maxBytes` of its body as JSON. Throws a `PullError` when the
- * request fails, times out or the body is too large; any HTTP status is returned as is.
+ * GETs `url`, or POSTs `form` to it, and reads at most `maxBytes` of the response body as
+ * JSON. Throws a `PullError` when the request fails, times out or the body is too large; any
+ * HTTP status is returned as is. Workers traces record request URLs, so a secret goes in
+ * `form` or a header, never in `url`.
  */
 export async function getJson(
   url: string,
-  options: { signal: AbortSignal; maxBytes: number; headers?: Record<string, string> }
+  options: {
+    signal: AbortSignal;
+    maxBytes: number;
+    headers?: Record<string, string>;
+    form?: URLSearchParams;
+  }
 ): Promise<UpstreamResponse> {
   const signal = AbortSignal.any([options.signal, AbortSignal.timeout(requestTimeoutMs)]);
   try {
     const response = await fetch(url, {
       headers: { accept: 'application/json', 'user-agent': userAgent, ...options.headers },
       signal,
+      ...(options.form === undefined ? {} : { method: 'POST', body: options.form }),
     });
     const text = await readText(response, options.maxBytes);
     return { status: response.status, body: parseJson(text) };

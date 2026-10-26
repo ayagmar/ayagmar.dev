@@ -64,13 +64,17 @@ describe('pull adapter fetch', () => {
   });
 
   it('sends the GitHub token to api.github.com only, and the Last.fm key to Last.fm only', async () => {
-    const seen: { host: string; authorization: string | null; url: string }[] = [];
+    const seen: { host: string; authorization: string | null; url: string; body: string }[] = [];
     network.use(
-      http.all('*', ({ request }) => {
+      http.all('*', async ({ request }) => {
         seen.push({
           host: new URL(request.url).host,
           authorization: request.headers.get('authorization'),
           url: request.url,
+          body:
+            request.method === 'POST'
+              ? [...(await request.clone().formData()).values()].join('&')
+              : '',
         });
       }),
       ...upstreamHandlers()
@@ -83,7 +87,9 @@ describe('pull adapter fetch', () => {
     for (const request of seen) {
       const isGithub = request.host === 'api.github.com';
       expect(request.authorization, request.host).toBe(isGithub ? `Bearer ${githubToken}` : null);
-      expect(request.url.includes(lastfmKey), request.host).toBe(
+      // Workers traces record request URLs, so no secret may be in one.
+      expect(request.url, request.host).not.toContain(lastfmKey);
+      expect(request.body.includes(lastfmKey), request.host).toBe(
         request.host === 'ws.audioscrobbler.com'
       );
     }

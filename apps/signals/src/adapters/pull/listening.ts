@@ -49,29 +49,33 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
   async fetch(env, signal) {
     const apiKey = readSecret(env, 'LASTFM_API_KEY');
     if (apiKey === undefined) throw new PullError('not_configured');
-    const url = (method: string, params: Record<string, string>) =>
-      `${endpoint}?${new URLSearchParams({ method, user, api_key: apiKey, format: 'json', ...params })}`;
-    const options = { signal, maxBytes };
+    // Last.fm takes its parameters, the API key included, as a POST form too, which keeps
+    // the key out of the request URL that Workers traces record.
+    const call = (method: string, params: Record<string, string>) => ({
+      signal,
+      maxBytes,
+      form: new URLSearchParams({ method, user, api_key: apiKey, format: 'json', ...params }),
+    });
     const thisMonday = weekStart(new Date());
     const lastMonday = thisMonday - 7 * day;
     // Only `@attr.total` of the weekly calls is read, so one item per page is enough.
     const [recentTracks, topArtists, thisWeek, lastWeek] = await Promise.all([
-      getJson(url('user.getrecenttracks', { limit: String(listLimit) }), options),
+      getJson(endpoint, call('user.getrecenttracks', { limit: String(listLimit) })),
       getOptionalJson(
-        url('user.gettopartists', { period: 'overall', limit: String(listLimit) }),
-        options
+        endpoint,
+        call('user.gettopartists', { period: 'overall', limit: String(listLimit) })
       ),
       getOptionalJson(
-        url('user.getrecenttracks', { limit: '1', from: String(thisMonday) }),
-        options
+        endpoint,
+        call('user.getrecenttracks', { limit: '1', from: String(thisMonday) })
       ),
       getOptionalJson(
-        url('user.getrecenttracks', {
+        endpoint,
+        call('user.getrecenttracks', {
           limit: '1',
           from: String(lastMonday),
           to: String(thisMonday),
-        }),
-        options
+        })
       ),
     ]);
     return { recentTracks, topArtists, thisWeek, lastWeek };
