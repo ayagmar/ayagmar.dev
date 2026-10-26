@@ -1,3 +1,4 @@
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import llmUsageMinimal from '@min7/contracts/fixtures/llm-usage/push/accept/minimal.json' with {
   type: 'json',
@@ -22,6 +23,7 @@ import trellisSensitive from '@min7/contracts/fixtures/trellis/push/accept/sensi
   type: 'json',
 };
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { app } from '../src/app.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import {
   clearState,
@@ -100,6 +102,49 @@ describe('authentication', () => {
         })
       ).status
     ).toBe(202);
+  });
+
+  describe('with secret slots unset', () => {
+    // Production requires all six secrets, but a Preview or a half-done setup may lack some.
+    const send = async (producer: 'llm-usage' | 'trellis', token: string, slots: object) => {
+      const body = delivery(producer === 'trellis' ? trellisOk : llmUsageMinimal);
+      const timestamp = nowSeconds();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        'X-Min7-Timestamp': timestamp,
+        'X-Min7-Signature': await sign(body, timestamp),
+      };
+      const ctx = createExecutionContext();
+      const response = await app.fetch(
+        new Request(`https://api.ayagmar.dev/v1/push/${producer}`, {
+          method: 'POST',
+          headers,
+          body,
+        }),
+        { ...env, ...slots },
+        ctx
+      );
+      await waitOnExecutionContext(ctx);
+      return response.status;
+    };
+
+    it('accepts the current token and key without next slots', async () => {
+      const unset = { PUSH_TOKEN_TRELLIS_NEXT: undefined, PUSH_HMAC_TRELLIS_NEXT: undefined };
+      expect(await send('trellis', env.PUSH_TOKEN_TRELLIS, unset)).toBe(202);
+    });
+
+    it('accepts the next token without a current one', async () => {
+      const unset = { PUSH_TOKEN_LLM_USAGE: undefined };
+      expect(await send('llm-usage', env.PUSH_TOKEN_LLM_USAGE_NEXT, unset)).toBe(202);
+    });
+
+    it.each([undefined, '', 42])('answers 401 when no slot is usable (%s)', async (value) => {
+      const tokens = { PUSH_TOKEN_LLM_USAGE: value, PUSH_TOKEN_LLM_USAGE_NEXT: value };
+      const keys = { PUSH_HMAC_TRELLIS: value, PUSH_HMAC_TRELLIS_NEXT: value };
+      expect(await send('llm-usage', String(value), tokens)).toBe(401);
+      expect(await send('trellis', env.PUSH_TOKEN_TRELLIS, keys)).toBe(401);
+    });
   });
 
   describe('trellis signature', () => {

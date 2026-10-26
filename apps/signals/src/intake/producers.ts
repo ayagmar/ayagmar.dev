@@ -11,10 +11,10 @@ export interface Producer<Push extends { deliveryId: string; sentAt: string }> {
   snapshotSchema: z.ZodType;
   /** Allowlist projection from a validated push to the published snapshot. */
   project(push: Push): unknown;
-  /** Current and next bearer token (rotation, see docs/operations.md). */
-  tokens(env: Env): readonly string[];
+  /** Current and next bearer token (rotation, see docs/operations.md); unset slots never match. */
+  tokens(env: Env): readonly unknown[];
   /** Current and next HMAC key for `X-Min7-Signature`, or null when the producer signs nothing. */
-  signingKeys: ((env: Env) => readonly string[]) | null;
+  signingKeys: ((env: Env) => readonly unknown[]) | null;
 }
 
 /** Plain string order. ISO dates sort correctly by it, and unlike localeCompare it needs no ICU. */

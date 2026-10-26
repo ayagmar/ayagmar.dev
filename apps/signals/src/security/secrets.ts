@@ -3,7 +3,9 @@ const encoder = new TextEncoder();
 /** A secret slot holding fewer characters than this never matches (unset or placeholder). */
 const minSecretLength = 32;
 
-const usable = (secret: string) => secret.length >= minSecretLength;
+/** Slots come from bindings, so one can be missing or not a string even where types say otherwise. */
+const usable = (secret: unknown): secret is string =>
+  typeof secret === 'string' && secret.length >= minSecretLength;
 
 const sha256 = (value: string) => crypto.subtle.digest('SHA-256', encoder.encode(value));
 
@@ -14,12 +16,14 @@ const sha256 = (value: string) => crypto.subtle.digest('SHA-256', encoder.encode
  */
 export async function matchesSecret(
   provided: string,
-  accepted: readonly string[]
+  accepted: readonly unknown[]
 ): Promise<boolean> {
   const providedDigest = await sha256(provided);
   let matched = false;
   for (const secret of accepted) {
-    const equal = crypto.subtle.timingSafeEqual(providedDigest, await sha256(secret));
+    // An unusable slot is still compared, against the empty string, so it costs the same.
+    const expected = await sha256(usable(secret) ? secret : '');
+    const equal = crypto.subtle.timingSafeEqual(providedDigest, expected);
     matched = (equal && usable(secret)) || matched;
   }
   return matched;
@@ -32,7 +36,7 @@ const hexSignature = /^[0-9a-f]{64}$/i;
  * `crypto.subtle.verify`, which compares in constant time.
  */
 export async function verifyHmacSha256(
-  keys: readonly string[],
+  keys: readonly unknown[],
   signatureHex: string,
   message: Uint8Array<ArrayBuffer>
 ): Promise<boolean> {

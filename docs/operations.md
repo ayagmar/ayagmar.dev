@@ -13,7 +13,7 @@ signals has six push secrets, all listed in `secrets.required` in `apps/signals/
 | `PUSH_HMAC_TRELLIS`         | Key trellis signs requests with        |
 | `PUSH_HMAC_TRELLIS_NEXT`    | Next signing key during a rotation     |
 
-signals accepts a request that matches either slot. A value shorter than 32 characters never matches. Outside a rotation, each `_NEXT` slot holds a random value nobody has.
+signals accepts a request that matches either slot. A missing value, or one shorter than 32 characters, never matches, so the current slot alone works. Outside a rotation, each `_NEXT` slot holds a random value nobody has.
 
 Generate every value with `openssl rand -hex 32`. Wrangler reads it from the prompt; never put a value on a command line, in a file in the repo, or in chat.
 
