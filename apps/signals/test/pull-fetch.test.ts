@@ -12,6 +12,7 @@ import { PullError } from '../src/adapters/pull/index.ts';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { projects } from '../src/adapters/pull/projects.ts';
 import { shipping } from '../src/adapters/pull/shipping.ts';
+import { weather } from '../src/adapters/pull/weather.ts';
 
 const network = setupNetwork();
 network.configure({ onUnhandledFrame: 'error' });
@@ -52,6 +53,7 @@ describe('pull adapter fetch', () => {
       github: rawFixtures.github.ok,
       npm: rawFixtures.npm.ok,
     });
+    expect(await weather.fetch(env, signal())).toEqual(rawFixtures['open-meteo'].ok);
   });
 
   it('turns a failed part into null and keeps the rest', async () => {
@@ -84,6 +86,7 @@ describe('pull adapter fetch', () => {
     await listening.fetch(withSecrets, signal());
     await shipping.fetch(withSecrets, signal());
     await projects.fetch(withSecrets, signal());
+    await weather.fetch(withSecrets, signal());
 
     for (const request of seen) {
       const isGithub = request.host === 'api.github.com';
@@ -100,6 +103,7 @@ describe('pull adapter fetch', () => {
         'repo-pulse.ayagmar.workers.dev',
         'api.github.com',
         'api.npmjs.org',
+        'api.open-meteo.com',
       ])
     );
   });
@@ -122,6 +126,7 @@ describe('pull adapter fetch', () => {
 
     expect(await counted(() => listening.fetch(withSecrets, signal()))).toBe(4);
     expect(await counted(() => shipping.fetch(env, signal()))).toBe(1);
+    expect(await counted(() => weather.fetch(env, signal()))).toBe(1);
     expect((await counted(() => projects.fetch(env, signal()))) * 2).toBeLessThanOrEqual(50);
   });
 
@@ -156,6 +161,40 @@ describe('pull adapter fetch', () => {
     await projects.fetch(env, signal());
     expect(authorizations.length).toBeGreaterThan(0);
     expect(authorizations.every((value) => value === null)).toBe(true);
+  });
+
+  // Catches a request that asks for more than the room needs (hourly or daily arrays), in
+  // other units than the contract checks, or without saying who is asking (ADR 0029).
+  it('asks Open-Meteo for current values over Rabat only, in fixed units', async () => {
+    const asked: { url: string; userAgent: string | null }[] = [];
+    network.use(
+      http.get('https://api.open-meteo.com/*', ({ request }) => {
+        asked.push({ url: request.url, userAgent: request.headers.get('user-agent') });
+      }),
+      ...upstreamHandlers()
+    );
+
+    await weather.fetch(env, signal());
+    const [request] = asked;
+    const query = Object.fromEntries(new URL(request?.url ?? '').searchParams);
+    expect(asked).toHaveLength(1);
+    expect(query).toEqual({
+      latitude: '34.0240',
+      longitude: '-6.8228',
+      current: 'weather_code,cloud_cover,precipitation,wind_speed_10m,is_day,temperature_2m',
+      temperature_unit: 'celsius',
+      wind_speed_unit: 'kmh',
+      precipitation_unit: 'mm',
+      timezone: 'GMT',
+      timeformat: 'unixtime',
+    });
+    expect(request?.userAgent).toBe('min7-signals (+https://ayagmar.dev)');
+  });
+
+  it('stops reading an Open-Meteo body over 16 KiB', async () => {
+    const big = JSON.stringify({ padding: 'x'.repeat(16 * 1024) });
+    network.use(http.get('https://api.open-meteo.com/v1/forecast', () => new HttpResponse(big)));
+    expect((await pullError(weather.fetch(env, signal()))).code).toBe('upstream_too_large');
   });
 
   it('refuses to call Last.fm without an API key', async () => {

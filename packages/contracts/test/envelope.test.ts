@@ -33,7 +33,7 @@ describe('envelope', () => {
     expect(anyEnvelopeSchema.safeParse({ ...base, fetchedAt: '2026-10-26 12:00' }).success).toBe(
       false
     );
-    expect(anyEnvelopeSchema.safeParse({ ...base, source: 'weather' }).success).toBe(false);
+    expect(anyEnvelopeSchema.safeParse({ ...base, source: 'rainfall' }).success).toBe(false);
   });
 
   it('ignores fields added later within v1', () => {

@@ -41,6 +41,19 @@ import npmRawMalformed from '../fixtures/npm/raw/malformed.json' with { type: 'j
 import npmRawMissing from '../fixtures/npm/raw/missing.json' with { type: 'json' };
 import npmRawOk from '../fixtures/npm/raw/ok.json' with { type: 'json' };
 import npmRawPartial from '../fixtures/npm/raw/partial.json' with { type: 'json' };
+import openMeteoRawClear from '../fixtures/open-meteo/raw/clear.json' with { type: 'json' };
+import openMeteoRawEmpty from '../fixtures/open-meteo/raw/empty.json' with { type: 'json' };
+import openMeteoRawFog from '../fixtures/open-meteo/raw/fog.json' with { type: 'json' };
+import openMeteoRawMalformed from '../fixtures/open-meteo/raw/malformed.json' with { type: 'json' };
+import openMeteoRawMissing from '../fixtures/open-meteo/raw/missing.json' with { type: 'json' };
+import openMeteoRawOk from '../fixtures/open-meteo/raw/ok.json' with { type: 'json' };
+import openMeteoRawPartial from '../fixtures/open-meteo/raw/partial.json' with { type: 'json' };
+import openMeteoRawRain from '../fixtures/open-meteo/raw/rain.json' with { type: 'json' };
+import openMeteoRawSnow from '../fixtures/open-meteo/raw/snow.json' with { type: 'json' };
+import openMeteoRawStorm from '../fixtures/open-meteo/raw/storm.json' with { type: 'json' };
+import openMeteoRawUnknownCode from '../fixtures/open-meteo/raw/unknown-code.json' with {
+  type: 'json',
+};
 import projectsSnapshotEmpty from '../fixtures/projects/snapshot/empty.json' with { type: 'json' };
 import projectsSnapshotOk from '../fixtures/projects/snapshot/ok.json' with { type: 'json' };
 import projectsSnapshotPartial from '../fixtures/projects/snapshot/partial.json' with {
@@ -64,6 +77,19 @@ import shippingSnapshotPartial from '../fixtures/shipping/snapshot/partial.json'
 import trellisPushMinimal from '../fixtures/trellis/push/accept/minimal.json' with { type: 'json' };
 import trellisPushOk from '../fixtures/trellis/push/accept/ok.json' with { type: 'json' };
 import trellisPushSensitiveFields from '../fixtures/trellis/push/accept/sensitive-fields.json' with {
+  type: 'json',
+};
+
+import weatherSnapshotClear from '../fixtures/weather/snapshot/clear.json' with { type: 'json' };
+import weatherSnapshotFog from '../fixtures/weather/snapshot/fog.json' with { type: 'json' };
+import weatherSnapshotOk from '../fixtures/weather/snapshot/ok.json' with { type: 'json' };
+import weatherSnapshotPartial from '../fixtures/weather/snapshot/partial.json' with {
+  type: 'json',
+};
+import weatherSnapshotRain from '../fixtures/weather/snapshot/rain.json' with { type: 'json' };
+import weatherSnapshotSnow from '../fixtures/weather/snapshot/snow.json' with { type: 'json' };
+import weatherSnapshotStorm from '../fixtures/weather/snapshot/storm.json' with { type: 'json' };
+import weatherSnapshotUnknownCode from '../fixtures/weather/snapshot/unknown-code.json' with {
   type: 'json',
 };
 
@@ -94,6 +120,19 @@ export const rawFixtures = {
     missing: npmRawMissing,
     ok: npmRawOk,
     partial: npmRawPartial,
+  },
+  'open-meteo': {
+    clear: openMeteoRawClear,
+    empty: openMeteoRawEmpty,
+    fog: openMeteoRawFog,
+    malformed: openMeteoRawMalformed,
+    missing: openMeteoRawMissing,
+    ok: openMeteoRawOk,
+    partial: openMeteoRawPartial,
+    rain: openMeteoRawRain,
+    snow: openMeteoRawSnow,
+    storm: openMeteoRawStorm,
+    'unknown-code': openMeteoRawUnknownCode,
   },
   'repo-pulse': {
     empty: repoPulseRawEmpty,
@@ -131,6 +170,16 @@ export const snapshotFixtures = {
     empty: shippingSnapshotEmpty,
     ok: shippingSnapshotOk,
     partial: shippingSnapshotPartial,
+  },
+  weather: {
+    clear: weatherSnapshotClear,
+    fog: weatherSnapshotFog,
+    ok: weatherSnapshotOk,
+    partial: weatherSnapshotPartial,
+    rain: weatherSnapshotRain,
+    snow: weatherSnapshotSnow,
+    storm: weatherSnapshotStorm,
+    'unknown-code': weatherSnapshotUnknownCode,
   },
 } as const;
 

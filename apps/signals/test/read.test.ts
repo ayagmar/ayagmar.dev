@@ -103,15 +103,33 @@ describe('CORS and the edge cache', () => {
     expect(fromOther.headers.get('access-control-allow-origin')).toBeNull();
   });
 
-  it('never serves a cached copy past the moment it turns stale', async () => {
-    const threshold = staleAfterSeconds.listening * 1000;
-    await seed('listening', { track: 'x' }, threshold - 1500);
-    const fresh = await get('/v1/listening');
-    expect(await fresh.json()).toMatchObject({ stale: false });
-    expect(fresh.headers.get('cache-control')).toBe('public, max-age=1');
+  it.each(['listening', 'weather'] as const)(
+    'never serves a cached %s copy past the moment it turns stale',
+    async (source) => {
+      const threshold = staleAfterSeconds[source] * 1000;
+      await seed(source, { n: 1 }, threshold - 1500);
+      const fresh = await get(`/v1/${source}`);
+      expect(await fresh.json()).toMatchObject({ stale: false });
+      expect(fresh.headers.get('cache-control')).toBe('public, max-age=1');
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    expect(await get('/v1/listening').then((r) => r.json())).toMatchObject({ stale: true });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      expect(await get(`/v1/${source}`).then((r) => r.json())).toMatchObject({ stale: true });
+    }
+  );
+
+  // Weather is pulled every 15 minutes, but a new snapshot must still reach the browser within
+  // a minute (ADR 0010), and the room's own expiry needs a fresh `stale` (ADR 0029).
+  it('caches weather for a minute at most, like every source', async () => {
+    await seed('weather', { n: 1 }, 1000);
+    const response = await get('/v1/weather', site);
+
+    expect(response.headers.get('cache-control')).toBe('public, max-age=60');
+    expect(response.headers.get('access-control-allow-origin')).toBe(site);
+    expect(await response.json()).toMatchObject({
+      source: 'weather',
+      stale: false,
+      data: { n: 1 },
+    });
   });
 
   it('does not cache an error', async () => {
@@ -150,6 +168,7 @@ describe('health', () => {
       { source: 'projects', lastSuccessAt: null, stale: true, lastErrorCode: 'upstream_5xx' },
       { source: 'llm-usage', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'shelf', lastSuccessAt: null, stale: true, lastErrorCode: null },
+      { source: 'weather', lastSuccessAt: null, stale: true, lastErrorCode: null },
     ]);
   });
 });
