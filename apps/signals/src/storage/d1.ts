@@ -46,6 +46,11 @@ export class D1SnapshotStore implements SnapshotStore {
     return results.map(toStatus).filter((status) => status !== null);
   }
 
+  /**
+   * Stores a successful pull. A snapshot that names the date it describes (`describedDate`,
+   * ADR 0030) never replaces one for a later date: a slow write from before midnight cannot
+   * undo the new date's.
+   */
   async put(source: SourceId, snapshot: unknown, fetchedAt: string): Promise<void> {
     const at = utc(fetchedAt);
     await this.db
@@ -55,7 +60,9 @@ export class D1SnapshotStore implements SnapshotStore {
          ON CONFLICT (source) DO UPDATE SET
            json = excluded.json, fetched_at = excluded.fetched_at,
            last_success_at = excluded.last_success_at, last_error_code = NULL,
-           last_attempt_at = excluded.last_attempt_at`
+           last_attempt_at = excluded.last_attempt_at
+         WHERE coalesce(json_extract(snapshots.json, '$.describedDate')
+           > json_extract(excluded.json, '$.describedDate'), 0) = 0`
       )
       .bind(source, JSON.stringify(snapshot), at, Date.parse(at))
       .run();

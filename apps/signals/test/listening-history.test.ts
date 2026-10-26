@@ -296,6 +296,35 @@ describe('a pull spread over cron invocations', () => {
     expect((await served()).data).toBeNull();
   });
 
+  // Catches a snapshot written just after midnight for the day before, which the scheduler
+  // would take for the new date's.
+  it('drops a pull that would finish in the last seconds before midnight', async () => {
+    network.use(...upstreamHandlers({ lastfmHistory: 'new-account' }));
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(at('2026-10-26T23:59:56Z'));
+    await runScheduled(withKey, [listeningHistory], at('2026-10-26T23:59:00Z'));
+    expect(await health()).toMatchObject({ lastErrorCode: 'date_changed' });
+  });
+
+  // Catches a slow write from before midnight replacing the new date's history.
+  it("never replaces a date's history with an earlier date's", async () => {
+    const store = new D1SnapshotStore(env.DB);
+    const ok = snapshotFixtures['listening-history'].ok;
+    await store.put(
+      'listening-history',
+      { ...ok, describedDate: '2026-10-27' },
+      '2026-10-27T00:00:09Z'
+    );
+    await store.put('listening-history', ok, '2026-10-27T00:00:10Z');
+    expect(await served()).toMatchObject({ data: { describedDate: '2026-10-27' } });
+    await store.put(
+      'listening-history',
+      { ...ok, describedDate: '2026-10-28' },
+      '2026-10-28T00:01:00Z'
+    );
+    expect(await served()).toMatchObject({ data: { describedDate: '2026-10-28' } });
+  });
+
   it('lets only one of two overlapping invocations save the same year', async () => {
     const ok = rawFixtures['lastfm-history'].ok;
     // Answers every request, repeats included: two invocations ask the same things.

@@ -27,9 +27,11 @@ const refreshMs = 7 * 60 * minute;
 /** The next year of a pull in progress is due this long after the last. */
 const continueMs = 30_000;
 /** After a failure on a date with no snapshot yet, the first retry; later ones back off to
- * half the time since midnight, at most an hour apart: about 25 tries on a day that fails. */
+ * half the time since midnight, at most an hour apart: 31 tries on a day that fails. */
 const retryMs = 5 * minute;
 const maxRetryMs = 60 * minute;
+/** A pull must end this long before midnight in Rabat, so its write lands on its own date. */
+const finishMarginMs = 5_000;
 
 /** The past years whose `describedDate` exists, newest first: 29 February only in leap years. */
 function pastYears(describedDate: string, firstYear: number): number[] {
@@ -280,8 +282,12 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
       };
     }
 
-    // A pull that crossed midnight in Rabat would label yesterday's answers as today's.
-    if (rabatDate(Date.now()) !== describedDate) throw new PullError('date_changed');
+    // A pull that crossed midnight in Rabat would label yesterday's answers as today's. One
+    // that ends in the last seconds before it is dropped too: its snapshot, written after
+    // midnight, would make the new date look done.
+    if (rabatDate(Date.now() + finishMarginMs) !== describedDate) {
+      throw new PullError('date_changed');
+    }
     if (state.read < days.length) {
       // False when an overlapping invocation saved first: its part stands, this one is dropped.
       await progress.save(describedDate, step, state);
