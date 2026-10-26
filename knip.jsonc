@@ -2,13 +2,15 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "entry": ["scripts/*.ts"],
-      "project": ["scripts/**/*.ts"],
+      // Producers run on the owner's machine from systemd units (docs/producers/).
+      "entry": ["scripts/*.ts", "producers/*.ts"],
+      "project": ["scripts/**/*.ts", "producers/**/*.ts"],
       // Run by justfile recipes, which knip does not read.
       "ignoreDependencies": ["@biomejs/biome"],
       // From mise or scripts/bootstrap.sh: ci-policy reads just's dump, gitleaks-report runs gitleaks.
       // pgrep (procps) finds the bench's workerd for signals-cpu, which runs on Linux only.
-      "ignoreBinaries": ["just", "gitleaks", "pgrep"]
+      // The producers run flock, niri and llm-usage from the owner's PATH (docs/producers/).
+      "ignoreBinaries": ["just", "gitleaks", "pgrep", "flock", "niri", "llm-usage"]
     },
     "packages/contracts": {
       "entry": ["scripts/*.ts", "test/**/*.test.ts"],

@@ -1,0 +1,14 @@
+# Pushes the desktop facts (ADR 0032). Installed and enabled as in docs/producers/desktop.md.
+[Unit]
+Description=Push desktop facts to api.ayagmar.dev
+
+[Service]
+Type=oneshot
+UMask=0077
+WorkingDirectory=%h
+# Node 24 through mise's shim; niri from /usr/bin. The session's environment is not needed.
+Environment=PATH=%h/.local/share/mise/shims:/usr/local/bin:/usr/bin
+ExecStart=%h/.local/share/mise/shims/node %h/.local/lib/min7-producers/desktop.ts
+# 75: signals or the network failed; the delivery is on disk and is sent again in 15 minutes.
+RestartForceExitStatus=75
+RestartSec=15min

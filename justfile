@@ -69,7 +69,7 @@ typecheck: typegen
     {{ site }} svelte-check --fail-on-warnings
 
 # Unit and Worker tests
-test: test-contracts test-signals test-site test-scripts
+test: test-contracts test-signals test-site test-scripts test-producers
 
 # Contracts: zod and JSON Schema agree on the corpus, frozen v1 consumers still parse
 test-contracts:
@@ -86,6 +86,20 @@ test-site:
 # Repo scripts: boundaries, Wrangler configs, CI plan and gate, secret scanner
 test-scripts:
     node --test scripts/*.test.ts
+
+# Producers on the owner's machine: delivery, desktop facts, llm-usage mapping (ADR 0014, 0032)
+test-producers:
+    node --test producers/*.test.ts
+
+# Producers: print both push bodies built from sample readings dated now. Reads no host
+# state, credentials or session logs, and sends nothing.
+producers-dry-run:
+    dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; node producers/samples.ts "$dir"; node producers/desktop.ts --dry-run --fixtures "$dir/desktop"; node producers/llm-usage.ts --dry-run --fixtures "$dir/llm-usage"
+
+# Producers: push sample bodies to the local Worker (just signals-dev) with the fake tokens in
+# apps/signals/.dev.vars, from a temporary state directory
+producers-local origin="http://127.0.0.1:8787":
+    dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; node producers/samples.ts "$dir"; for producer in desktop llm-usage; do name="PUSH_TOKEN_$(echo "$producer" | tr a-z- A-Z_)"; MIN7_TEST_ENDPOINT={{ quote(origin) }} MIN7_STATE_DIR="$dir/state-$producer" MIN7_TEST_TOKEN="$(sed -n "s/^$name=//p" apps/signals/.dev.vars)" node "producers/$producer.ts" --fixtures "$dir/$producer"; done
 
 # Browser tests against the built site served by its real Worker (wrangler dev)
 e2e: site-build e2e-test

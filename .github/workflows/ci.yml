@@ -97,6 +97,7 @@ jobs:
       - run: just knip
       - run: just boundaries
       - run: just test-scripts
+      - run: just test-producers
 
   contracts:
     needs: changes

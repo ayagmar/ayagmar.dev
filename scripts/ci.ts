@@ -26,8 +26,16 @@ const toolchain = [
 const checkConfig = ['biome.json', 'knip.jsonc', 'tsconfig.json'];
 
 export const groups = {
-  // Site source and config, the contracts both apps use, the repo's own scripts.
-  code: ['apps/site/**', 'packages/contracts/**', 'scripts/**', ...toolchain, ...checkConfig],
+  // Site source and config, the contracts both apps use, the repo's own scripts, and the
+  // producers that run on the owner's machine (their tests are in `just check`).
+  code: [
+    'apps/site/**',
+    'packages/contracts/**',
+    'scripts/**',
+    'producers/**',
+    ...toolchain,
+    ...checkConfig,
+  ],
   signals: ['apps/signals/**', 'packages/contracts/**', ...toolchain, ...checkConfig],
   contracts: ['packages/contracts/**', ...toolchain],
   // Everything that changes the built site.
