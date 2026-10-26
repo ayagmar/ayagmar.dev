@@ -70,8 +70,11 @@ describe('scheduled', () => {
   // Both clocks move: the trigger's scheduledTime, and Date, which stamps each stored attempt.
   // Fetches take time, and weather fails for six hours, every third failure hanging until the
   // runner's 20 s timeout. Catches a source starved by the others, a failing one hogging the
-  // slot, or two adapters sharing an invocation.
-  it('serves every source near its interval for two days, with one adapter per run', async () => {
+  // slot, or two adapters sharing an invocation. 2,880 runs against D1 take about 4 s here and
+  // 12 s on a CI runner, so the default 5 s timeout is too short.
+  it('serves every source near its interval for two days, with one adapter per run', {
+    timeout: 60_000,
+  }, async () => {
     const hour = 60 * minute;
     const start = Date.UTC(2026, 9, 26);
     const failing = { from: start + 6 * hour, to: start + 12 * hour };
