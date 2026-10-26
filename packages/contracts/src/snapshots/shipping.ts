@@ -46,33 +46,33 @@ export const repoPulseFeedEventSchema = z.discriminatedUnion('type', [
   }),
 ]);
 
-export const repoPulseFeedSchema = z.object({
-  version: z.literal(1),
-  generatedAt: timestampSchema,
-  /**
-   * Public events, newest first. The signals adapter skips an event it cannot read instead
-   * of failing the feed, so a newer repo-pulse can add a type before this contract lists it.
-   */
-  events: z.array(repoPulseFeedEventSchema).max(100),
-  /** Daily star totals per public repository, oldest day first. */
-  starHistory: z
-    .array(
-      z.object({
-        repo: repoFullNameSchema,
-        points: z
-          .array(z.object({ date: dateSchema, stars: z.number().int().nonnegative() }))
-          .max(90),
-      })
-    )
-    .max(50),
+/** One repository's daily star totals, oldest day first. */
+export const repoPulseStarHistorySchema = z.object({
+  repo: repoFullNameSchema,
+  points: z.array(z.object({ date: dateSchema, stars: z.number().int().nonnegative() })).max(90),
 });
 
 /**
- * The feed as the signals adapter reads it: the same, except that each event is checked on
- * its own with `repoPulseFeedEventSchema` and skipped when it does not match.
+ * The feed as repo-pulse must produce it. The contract is closed: a new event type or field
+ * is added here first, then served (ADR 0012).
+ */
+export const repoPulseFeedSchema = z.object({
+  version: z.literal(1),
+  generatedAt: timestampSchema,
+  /** Public events, newest first. */
+  events: z.array(repoPulseFeedEventSchema).max(100),
+  /** Per public repository. */
+  starHistory: z.array(repoPulseStarHistorySchema).max(50),
+});
+
+/**
+ * The feed as the signals adapter reads it: the same, except that each event and each
+ * star history entry is checked on its own and skipped when it does not match, so one bad
+ * item does not blank the whole section.
  */
 export const repoPulseFeedReaderSchema = repoPulseFeedSchema.extend({
   events: z.array(z.unknown()).max(100),
+  starHistory: z.array(z.unknown()).max(50),
 });
 
 // Normalized output: what `/v1/shipping` serves.

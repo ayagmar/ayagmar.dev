@@ -3,6 +3,7 @@ import {
   githubOwner,
   repoPulseFeedEventSchema,
   repoPulseFeedReaderSchema,
+  repoPulseStarHistorySchema,
   type ShippingEvent,
   type ShippingSnapshot,
   shippingSnapshotSchema,
@@ -25,7 +26,10 @@ export const shipping: PullAdapter<UpstreamResponse, ShippingSnapshot> = {
     const feed = parseBody(raw, repoPulseFeedReaderSchema);
     return checkSnapshot(shippingSnapshotSchema, {
       events: summarize(feed.events).slice(0, feedLimit),
-      starHistory: feed.starHistory.filter(({ repo }) => isOwn(repo)),
+      starHistory: feed.starHistory.flatMap((item) => {
+        const parsed = repoPulseStarHistorySchema.safeParse(item);
+        return parsed.success && isOwn(parsed.data.repo) ? [parsed.data] : [];
+      }),
     });
   },
 };

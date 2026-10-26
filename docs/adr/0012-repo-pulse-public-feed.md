@@ -149,5 +149,5 @@ Errors never include stack traces or D1 messages: `400`/`405` as above, `500 {"e
 
 - A repository made private leaves the feed at once, signals' snapshot within 15 minutes, and the site at its next production build. Making a repository private is therefore not instant on ayagmar.dev; rebuild the site to speed it up.
 - Until the route exists, signals gets a 404 every 15 minutes, records `upstream_not_found`, and the site renders the shipping empty state.
-- Additions within v1 are new optional fields or new event types. signals checks events one by one and skips types it does not know, so repo-pulse can ship a new type before signals reads it.
+- The producer schema is closed. A new event type or field is added to this contract first (a pull request here), then repo-pulse serves it; repo-pulse's tests validate against `repo-pulse-feed.input.json` and would reject it otherwise. Separately, signals reads leniently: it checks each event and each `starHistory` entry on its own and skips one it cannot read, so one bad item, or a type the deployed signals does not know yet, does not blank the shipping section.
 - The shared fixtures under `packages/contracts/fixtures/repo-pulse/` are sample data in this shape; replace the `ok` case with a real response once the route is live.
