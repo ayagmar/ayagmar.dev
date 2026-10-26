@@ -1,0 +1,17 @@
+// Only for applying D1 migrations to the shared preview database:
+//   wrangler d1 migrations apply DB --remote --config wrangler.preview-migrations.jsonc
+// database_name and database_id must match previews.d1_databases in wrangler.jsonc.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "min7-signals",
+  "compatibility_date": "2026-10-26",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "min7-signals-preview",
+      // PLACEHOLDER: same id as previews.d1_databases in wrangler.jsonc.
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

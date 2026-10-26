@@ -1,0 +1,3 @@
+# Copy to .dev.vars for `just signals-dev`. Names only; never commit values.
+# No secrets are needed yet. Producer tokens and upstream API keys are added here
+# as their adapters and intake routes land.
