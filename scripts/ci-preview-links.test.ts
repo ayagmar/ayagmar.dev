@@ -76,18 +76,21 @@ beforeEach(() => {
       'jq -r "$filter" "api/$(tr / _ <<<"$path").json"',
     ].join('\n')
   );
-  // Every Preview answers.
-  writeFileSync(join(dir, 'curl'), '#!/usr/bin/env bash\nexit 0\n');
+  // Every Preview answers. The first probe runs on-curl.sh, if a test wrote one, to stand in
+  // for what happens elsewhere while this run waits on the Preview.
+  writeFileSync(
+    join(dir, 'curl'),
+    '#!/usr/bin/env bash\nif [[ -f on-curl.sh ]]; then mv on-curl.sh probing.sh; bash probing.sh; fi\n'
+  );
   chmodSync(join(dir, 'gh'), 0o755);
   chmodSync(join(dir, 'curl'), 0o755);
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
+const apiFile = (path: string) =>
+  join('api', `repos_${repo.replace('/', '_')}_${path.replaceAll('/', '_')}.json`);
 const api = (path: string, body: unknown) =>
-  writeFileSync(
-    join(dir, 'api', `repos_${repo.replace('/', '_')}_${path.replaceAll('/', '_')}.json`),
-    JSON.stringify(body)
-  );
+  writeFileSync(join(dir, apiFile(path)), JSON.stringify(body));
 
 const run = (event: {
   prs: { number: number }[];
@@ -97,24 +100,21 @@ const run = (event: {
 }) => {
   api(`commits/${sha}/check-runs`, { check_runs: event.checks ?? built });
   api('issues/7/comments', event.comments ?? []);
-  const log = execFileSync(
-    'bash',
-    ['--noprofile', '--norc', '-eo', 'pipefail', '-c', job.steps[0]?.run ?? ''],
-    {
-      cwd: dir,
-      encoding: 'utf8',
-      env: {
-        PATH: `${dir}:${process.env.PATH}`,
-        HOME: dir,
-        GH_TOKEN: 'fake',
-        REPO: repo,
-        SHA: sha,
-        EVENT_PRS: JSON.stringify(event.prs),
-        BRANCH: event.branch ?? 'feat/x',
-        SUBDOMAIN: job.env.SUBDOMAIN,
-      },
-    }
-  );
+  writeFileSync(join(dir, 'step.sh'), job.steps[0]?.run ?? '');
+  const log = execFileSync('bash', ['--noprofile', '--norc', '-eo', 'pipefail', 'step.sh'], {
+    cwd: dir,
+    encoding: 'utf8',
+    env: {
+      PATH: `${dir}:${process.env.PATH}`,
+      HOME: dir,
+      GH_TOKEN: 'fake',
+      REPO: repo,
+      SHA: sha,
+      EVENT_PRS: JSON.stringify(event.prs),
+      BRANCH: event.branch ?? 'feat/x',
+      SUBDOMAIN: job.env.SUBDOMAIN,
+    },
+  });
   const read = (file: string) =>
     existsSync(join(dir, file)) ? readFileSync(join(dir, file), 'utf8') : '';
   return { log, writes: read('writes.log').trim(), body: read('body.md') };
@@ -144,6 +144,21 @@ describe('preview-links', () => {
     const { writes, log } = run({ prs: [{ number: 7 }], comments: [ownComment] });
     assert.equal(writes, '');
     assert.match(log, /head of 0 open pull requests/);
+  });
+
+  it("leaves the newer commit's comment alone when a push lands while this run probes", () => {
+    api('pulls/7', pull(7));
+    // While this run probes, the pull request moves to the newer commit, whose run posts its
+    // own links.
+    api(`commits/${newer}/check-runs`, { check_runs: built });
+    writeFileSync(join(dir, 'pull-7-newer.json'), JSON.stringify(pull(7, { sha: newer })));
+    writeFileSync(
+      join(dir, 'on-curl.sh'),
+      `mv pull-7-newer.json ${apiFile('pulls/7')}\nSHA=${newer} bash --noprofile --norc -eo pipefail step.sh\n`
+    );
+    const { writes, body } = run({ prs: [{ number: 7 }], comments: [ownComment] });
+    assert.equal(writes, `PATCH repos/${repo}/issues/comments/42`);
+    assert.match(body, /Previews for bbbbbbb/);
   });
 
   it('keeps the logs link of a Worker that is still building', () => {

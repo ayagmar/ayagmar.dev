@@ -46,6 +46,13 @@ jobs:
           set -euo pipefail
           marker='<!-- min7-preview-links -->'
 
+          # Whether pull request $1 is open, from this repository, and at this commit.
+          at_head() {
+            gh api "repos/$REPO/pulls/$1" |
+              jq -e --arg repo "$REPO" --arg sha "$SHA" \
+                '.state == "open" and .head.repo.full_name == $repo and .head.sha == $sha' > /dev/null
+          }
+
           # The one open pull request from this repository whose head is still this commit. The
           # event's list can be empty (or name pull requests that moved on); the commit's own
           # pull requests are the fallback. A fork's pull request, or an older commit's check
@@ -56,9 +63,7 @@ jobs:
           fi
           prs=()
           for number in $numbers; do
-            if gh api "repos/$REPO/pulls/$number" |
-              jq -e --arg repo "$REPO" --arg sha "$SHA" \
-                '.state == "open" and .head.repo.full_name == $repo and .head.sha == $sha' > /dev/null; then
+            if at_head "$number"; then
               prs+=("$number")
             fi
           done
@@ -100,6 +105,12 @@ jobs:
 
           existing=$(gh api --paginate "repos/$REPO/issues/$pr/comments?per_page=100" \
             --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n 1)
+          # The probes can take minutes, and runs for different commits do not wait on each other:
+          # after a push, the comment belongs to the newer commit's run.
+          if ! at_head "$pr"; then
+            echo "#$pr moved past $SHA while this run probed; leaving the comment to the newer commit"
+            exit 0
+          fi
           if [[ -n $existing ]]; then
             gh api --method PATCH "repos/$REPO/issues/comments/$existing" -f body="$body" > /dev/null
           else
