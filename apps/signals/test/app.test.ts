@@ -25,7 +25,7 @@ describe('signals', () => {
 });
 
 describe('error handling', () => {
-  it('hides thrown errors behind a generic 500 and logs them', async () => {
+  it('hides thrown errors behind a generic 500 and keeps their text out of the logs', async () => {
     const app = new Hono().onError(onError).get('/v1/__throws', () => {
       throw new Error('upstream said: token=abc123');
     });
@@ -38,5 +38,9 @@ describe('error handling', () => {
     expect(JSON.parse(body)).toEqual({ error: 'internal_error' });
     expect(body).not.toContain('abc123');
     expect(logged).toHaveBeenCalledOnce();
+    const log = JSON.stringify(logged.mock.calls);
+    expect(log).toContain('internal_error');
+    expect(log).not.toContain('abc123');
+    expect(log).not.toContain('upstream said');
   });
 });
