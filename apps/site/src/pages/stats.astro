@@ -2,7 +2,7 @@
 import Freshness from '../components/Freshness.astro';
 import NowPlayingPanel from '../components/NowPlayingPanel.astro';
 import ShippingList from '../components/ShippingList.astro';
-import { count, repoName } from '../data/format.ts';
+import { count, projectsSummary, repoName } from '../data/format.ts';
 import { emptyEnvelope } from '../data/reader.ts';
 import { signals } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
@@ -22,10 +22,6 @@ const starTotals = (shipping.data?.starHistory ?? []).flatMap(({ repo, points })
   const last = points.at(-1);
   return last === undefined ? [] : [{ repo, stars: last.stars, date: last.date }];
 });
-const totalStars = (projects.data?.projects ?? []).reduce(
-  (sum, project) => sum + (project.stars ?? 0),
-  0
-);
 ---
 
 <Base title="Stats">
@@ -106,7 +102,7 @@ const totalStars = (projects.data?.projects ?? []).reduce(
       <p>No project data yet.</p>
     ) : (
       <p>
-        {projects.data.projects.length} featured projects, {count(totalStars)} stars in total.
+        {projectsSummary(projects.data.projects)}
         <a href="/projects">See them</a>.
       </p>
     )}

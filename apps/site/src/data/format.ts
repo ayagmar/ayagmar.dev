@@ -1,4 +1,4 @@
-import type { ShippingEvent } from '@min7/contracts';
+import type { Project, ShippingEvent } from '@min7/contracts';
 
 const plural = (count: number, one: string, many: string) =>
   `${count.toLocaleString('en')} ${count === 1 ? one : many}`;
@@ -24,3 +24,14 @@ export function describeEvent(event: ShippingEvent): string {
 export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
 
 export const count = (value: number) => value.toLocaleString('en');
+
+/** The /stats line about projects. Unknown star counts are never added as zero. */
+export function projectsSummary(projects: readonly Pick<Project, 'stars'>[]): string {
+  const known = projects.flatMap((project) => (project.stars === null ? [] : [project.stars]));
+  const total = count(known.reduce((sum, stars) => sum + stars, 0));
+  const missing = projects.length - known.length;
+  const head = plural(projects.length, 'featured project', 'featured projects');
+  return missing === 0
+    ? `${head}, ${total} stars in total.`
+    : `${head}, at least ${total} stars; GitHub did not answer for ${missing}.`;
+}
