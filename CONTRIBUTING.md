@@ -19,8 +19,17 @@ Frontmatter:
 | `series`   | no       | A lowercase slug shared by the posts of a series.                    |
 | `draft`    | no       | `true` keeps the post out of production builds. Defaults to `false`. |
 | `projects` | no       | Slugs of the featured projects the post is about, like `[runnerd]`.  |
+| `art`      | no       | Art above the title; see below. Posts without it get none.           |
 
 Any other field fails the build, so a typo such as `sumary:` does not pass silently. The error names the file and the field.
+
+`art` draws a small picture above the title at build time, in the room's colours ([ADR 0027](docs/adr/0027-room-details-and-per-post-art.md)):
+
+```yaml
+art: { kind: dither, palette: night, seed: 2 }
+```
+
+`kind` is `ascii`, `dither` or `pattern`. `palette` is `night` (the default), `lamp`, `screen`, `zellige` or `wood`. `seed` is a whole number, 0 by default; change it until you like the picture. The same post and seed always give the same picture.
 
 "Last updated" comes from `updated` in the frontmatter. Deriving it from git history is not done yet.
 
@@ -76,6 +85,7 @@ The design is the late-night room ([ADR 0026](docs/adr/0026-visual-design-late-n
 - A surface (`.paper`, `.panel` with a material class such as `.m-screen`) sets `--bg`, `--fg`, `--fg-2` and `--accent`; draw with those inside it.
 - No `style=""` attributes or inline `<style>`/`<script>`: the CSP blocks them (ADR 0019).
 - The home page room is drawn by `apps/site/scripts/scene.py`. Change it, run `just scene`, and move the object's hotspot rectangle in `src/styles/room.css` if the object moved. Hotspots and the list under the scene come from `src/lib/room.ts`.
+- The room's details (the window's sky and moon, the lamp after 02:00, the turning record, the `?` keys, the ASCII room for `curl`) are in [ADR 0027](docs/adr/0027-room-details-and-per-post-art.md), with how to see each one. If you move the window in `scene.py`, move the moon in `src/scripts/room.ts` too.
 - Fonts are subsets built by `just fonts`. Add characters to `UNICODES` in `scripts/fonts.py` if a post needs glyphs outside Latin-1 and common punctuation. Both recipes need `uv` (`mise install` provides it).
 
 ## Code changes

@@ -42,7 +42,8 @@ function isTyping(target: EventTarget | null) {
 function onKeydown(event: KeyboardEvent) {
   const shortcut =
     ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') ||
-    (event.key === '/' && !isTyping(event.target));
+    // `/` is a single-key shortcut: off with the list of keys' switch (theme.js, ADR 0027).
+    (event.key === '/' && !isTyping(event.target) && !document.documentElement.dataset.shortcuts);
   if (!shortcut || dialog?.open) return;
   event.preventDefault();
   open();
@@ -74,7 +75,7 @@ const href = (url: string) => url.replace(/\.html$/, '');
 <svelte:window onkeydown={onKeydown} />
 
 {#if hydrated}
-  <button type="button" onclick={open} aria-keyshortcuts="Control+K /">
+  <button type="button" onclick={open} aria-keyshortcuts="Control+K">
     Search <kbd>Ctrl K</kbd>
   </button>
 {:else}

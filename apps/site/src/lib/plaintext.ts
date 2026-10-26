@@ -6,6 +6,24 @@ import { isoDay, type Post, postPath } from './writing.ts';
 
 const width = 72;
 
+/**
+ * The home page room (ADR 0026) in ASCII, left to right as on the scene: corkboard and framed
+ * screen, the window with the lamp in front, the monitor, the tea glass, the shelf and the
+ * record player. ADR 0027.
+ */
+const asciiRoom = String.raw`
+  .--------.     .-'"""'-.     *  *  *  *  *  *  *   .-------------.
+  | -- - - |   .'  *    (  '.                        | ||| |||| || |
+  | - -- - |  /     *   _    \     .--------------.  |-------------|
+  '--------'  |  *    _/ \    |    | $ curl       |  | |||| || ||| |
+  .--------.  |   _  |   |  _ |    |   ayagmar.dev|  |-------------|
+  | #.##.# |  |__| |_|   |_| ||    | _            |  | || ||| |||| |
+  | .#.#.# |  |==============|     '------..------'  |-------------|
+  '--------'      __                ____||____  c[_] .-----------.
+ ____________ ___/__\_____________ [__________] ____ | (@)  ==   |___
+|____________________________________________________|___________|___|
+`.slice(1, -1);
+
 /** The page `curl ayagmar.dev` prints: who, recent writing, projects, where to go next. */
 export function renderPlainText(posts: readonly Post[], projects: readonly ProjectSlug[]): string {
   const rule = '-'.repeat(width);
@@ -24,6 +42,8 @@ export function renderPlainText(posts: readonly Post[], projects: readonly Proje
       `  ${slug.padEnd(slugWidth)}${postCount(postsAbout(posts, slug).length).padEnd(10)}${siteUrl}${projectPath(slug)}`
   );
   return [
+    asciiRoom,
+    '',
     `${site.name} | ${site.author}`,
     `${site.role} in ${site.location}`,
     rule,

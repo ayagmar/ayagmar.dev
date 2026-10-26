@@ -653,6 +653,19 @@ kbd {
   margin: 0 0 1.5rem;
 }
 
+/* Per-post art (ADR 0027): build-time SVG in the room's colours, its own background in both
+   themes. */
+.post-art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.post-art text {
+  font: 10px var(--mono);
+  white-space: pre;
+}
+
 .prose {
   max-width: var(--measure);
   font-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
@@ -913,6 +926,40 @@ dialog li {
 dialog li p {
   margin: 0.2rem 0 0;
   font-size: 0.95rem;
+}
+
+/* The list of keys (ADR 0027). */
+.keys dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.4rem 1rem;
+  margin: 1rem 0;
+}
+
+.keys dd {
+  margin: 0;
+}
+
+.keys label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-block-end: 1rem;
+  color: var(--text);
+}
+
+.keys input {
+  flex: none;
+  accent-color: var(--accent);
+}
+
+/* The footer's button opens the list through theme.js, so it shows only once that has run. */
+.keys-open {
+  display: none;
+}
+
+:root[data-theme-switch] .keys-open {
+  display: inline-block;
 }
 
 dialog mark {

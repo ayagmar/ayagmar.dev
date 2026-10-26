@@ -78,7 +78,7 @@ Pele diagrams keep the class rewrite of ADR 0024; only the `--pele-*` variables 
 - Scene objects carry `data-room="<id>"`, and the list's links `data-room-list="<id>"`.
 - `PostHeader.astro` has an `art` slot, rendered as `figure.post-art` above the title only when given.
 
-No easter eggs and no per-post art yet.
+No easter eggs and no per-post art yet. Both came later, in [ADR 0027](0027-room-details-and-per-post-art.md), which also takes the fixed crescent moon out of the night scene.
 
 ### Lint
 

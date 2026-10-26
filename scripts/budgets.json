@@ -9,7 +9,12 @@
       {
         "name": "theme switch",
         "file": "/_astro/theme.*.js",
-        "bytes": 1024
+        "bytes": 1420
+      },
+      {
+        "name": "room clock",
+        "file": "/_astro/index.astro_astro_type_script_index_0_lang.*.js",
+        "bytes": 1700
       }
     ]
   },

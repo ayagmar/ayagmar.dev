@@ -57,8 +57,33 @@ describe('writing frontmatter', () => {
       { updated: new Date('2026-10-01') },
       'updated: must not be before date',
     ],
+    [
+      'unknown art kind',
+      { art: { kind: 'mosaic' } },
+      'art.kind: must be one of ascii, dither, pattern',
+    ],
+    [
+      'unknown art palette',
+      { art: { kind: 'dither', palette: 'neon' } },
+      'art.palette: must be one of night, lamp, screen, zellige, wood',
+    ],
+    [
+      'fractional art seed',
+      { art: { kind: 'dither', seed: 1.5 } },
+      expect.stringMatching(/^art\.seed: /),
+    ],
   ])('rejects %s', (_case, change, expected) => {
     expect(problems({ ...valid, ...change })).toEqual([expected]);
+  });
+
+  // Catches art appearing on posts that did not ask for it, or a kind without its defaults.
+  it('leaves art off unless asked, and defaults its seed and palette', () => {
+    expect(writingSchema.parse(valid).art).toBeUndefined();
+    expect(writingSchema.parse({ ...valid, art: { kind: 'pattern' } }).art).toEqual({
+      kind: 'pattern',
+      seed: 0,
+      palette: 'night',
+    });
   });
 
   it('reads unquoted YAML dates and quoted ISO dates as the same day', () => {

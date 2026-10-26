@@ -1,5 +1,5 @@
 ---
-import type { Envelope, ListeningSnapshot } from '@min7/contracts';
+import { type Envelope, type ListeningSnapshot, staleAfterSeconds } from '@min7/contracts';
 import { signalsApiBase, signalsMode } from '../data/signals.ts';
 import NowPlaying from './NowPlaying.svelte';
 
@@ -18,4 +18,5 @@ const nowPlaying = listening.data?.nowPlaying ?? null;
     : { track: nowPlaying.track, artist: nowPlaying.artist, url: nowPlaying.url }}
   asOf={listening.data === null ? null : listening.fetchedAt}
   endpoint={signalsMode === 'api' ? `${signalsApiBase}/v1/listening` : null}
+  liveForMs={staleAfterSeconds.listening * 1000}
 />

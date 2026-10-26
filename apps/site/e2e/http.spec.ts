@@ -19,6 +19,12 @@ const expectSecurityHeaders = (headers: Record<string, string>) => {
   expect(headers['x-frame-options']).toBe('DENY');
 };
 
+/** Cacheable by browsers and revalidated, never stored blind: a validator and no `no-store`. */
+const expectCacheable = (headers: Record<string, string>) => {
+  expect(headers.etag).toBeTruthy();
+  expect(headers['cache-control'] ?? '').not.toMatch(/no-store|private/);
+};
+
 test.describe('responses', () => {
   for (const [path, status, type] of [
     ['/', 200, 'text/html'],
@@ -41,7 +47,12 @@ test.describe('responses', () => {
       expect(response.headers()['content-type']).toContain('text/plain');
       expect(response.headers().vary).toMatch(/user-agent/i);
       expectSecurityHeaders(response.headers());
-      expect(await response.text()).toContain('min7 | Abdeslam Yassine Agmar');
+      const text = await response.text();
+      // The room in ASCII, then the index (ADR 0027).
+      const [room, index] = text.split('\n\nmin7 | Abdeslam Yassine Agmar\n');
+      expect(room).toContain('| $ curl       |');
+      expect(index).toContain('Writing');
+      expectCacheable(response.headers());
     });
   }
 
@@ -49,7 +60,24 @@ test.describe('responses', () => {
     const response = await request.get('/', { headers: { 'User-Agent': browser } });
     expect(response.headers()['content-type']).toContain('text/html');
     expect(response.headers().vary).toMatch(/user-agent/i);
-    expect(await response.text()).toContain('<!DOCTYPE html>');
+    expectCacheable(response.headers());
+    const html = await response.text();
+    expect(html).toContain('<!DOCTYPE html>');
+    // The note for view-source readers (ADR 0027): a comment a build setting could strip.
+    expect(html).toContain('Hello, view-source reader.');
+  });
+
+  // Catches a cache that hands the HTML to curl or the text to a browser: each answer carries
+  // its own validator, and a revalidation with the other one's ETag gets a full response.
+  test('the two home pages revalidate separately', async ({ request }) => {
+    const html = await request.get('/', { headers: { 'User-Agent': browser } });
+    const text = await request.get('/', { headers: { 'User-Agent': 'curl/8.11.1' } });
+    expect(html.headers().etag).not.toBe(text.headers().etag);
+    const again = await request.get('/', {
+      headers: { 'User-Agent': 'curl/8.11.1', 'If-None-Match': html.headers().etag ?? '' },
+    });
+    expect(again.status()).toBe(200);
+    expect(again.headers()['content-type']).toContain('text/plain');
   });
 
   test("every _headers line fits Cloudflare's limit", () => {

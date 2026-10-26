@@ -5,6 +5,7 @@ date: 2026-10-24
 summary: 'Placeholder post for layout and tests. Estimating cached tokens when the log leaves them out.'
 tags: [llm]
 projects: [llm-usage-metrics]
+art: { kind: pattern, palette: zellige, seed: 3 }
 ---
 
 **This is a placeholder post.** It exists so a project has more than one post to cross-link. It will be replaced by real writing.

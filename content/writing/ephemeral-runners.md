@@ -6,6 +6,7 @@ updated: 2026-10-12
 summary: 'Placeholder post for layout and tests. Fresh containers for every GitHub Actions job.'
 tags: [rust, ci]
 projects: [runnerd]
+art: { kind: dither, palette: night }
 ---
 
 **This is a placeholder post.** It will be replaced by real writing.
