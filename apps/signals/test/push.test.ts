@@ -142,8 +142,8 @@ describe('authentication', () => {
       ['no signature', { signature: '' }],
       ['a signature by another key', { hmacKey: 'k'.repeat(40) }],
       ['a signature of another body', { signature: 'pending' }],
-      ['a timestamp 301 s in the past', { timestamp: String(Number(nowSeconds()) - 301) }],
-      ['a timestamp 301 s ahead', { timestamp: String(Number(nowSeconds()) + 301) }],
+      ['a timestamp 301 s in the past', { skewSeconds: -301 }],
+      ['a timestamp 301 s ahead', { skewSeconds: 301 }],
       ['a timestamp that is not a number', { timestamp: '1e9' }],
     ] as const;
 
@@ -152,9 +152,13 @@ describe('authentication', () => {
         'signature' in options && options.signature === 'pending'
           ? await sign(delivery(trellisOk), nowSeconds())
           : undefined;
+      // Skewed from the clock when the test runs, not when the cases were collected.
+      const timestamp =
+        'skewSeconds' in options ? String(Number(nowSeconds()) + options.skewSeconds) : undefined;
       const response = await push('trellis', signed, {
         ...options,
         ...(signature ? { signature } : {}),
+        ...(timestamp ? { timestamp } : {}),
       });
 
       expect(response.status).toBe(401);
