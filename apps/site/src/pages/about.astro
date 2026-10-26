@@ -1,6 +1,5 @@
 ---
 import { getEntry } from 'astro:content';
-import ResumeDownload from '../components/ResumeDownload.astro';
 import { formatMonth } from '../data/about.ts';
 import Base from '../layouts/Base.astro';
 
@@ -25,7 +24,6 @@ const span = (start: string, end: string | null) => ({
   <header class="panel m-tea">
     <h1>{identity.name}</h1>
     <p class="lede">{about.summary}</p>
-    <ResumeDownload published={about.resume.published} />
   </header>
 
   <div class="paper">

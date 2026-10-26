@@ -77,8 +77,8 @@ describe('plan', () => {
     assert.ok(!jobs.includes('lighthouse') && !jobs.includes('budgets'));
   });
 
-  it('builds the site and checks the resume for a resume-only change', () => {
-    for (const file of ['resume/resume.typ', 'content/about.json']) {
+  it('builds and checks the site for an about-data-only change', () => {
+    for (const file of ['content/about.json']) {
       assert.deepEqual(runs([file]), [
         'budgets',
         'e2e',

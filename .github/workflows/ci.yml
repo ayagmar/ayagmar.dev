@@ -180,9 +180,6 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - run: just e2e-install
-      # The resume tests read the generated PDF, which the artifact holds only once published.
-      - run: just resume
-      - run: just poppler-install
       - run: just e2e-test
 
   links:
@@ -375,6 +372,11 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - run: just e2e-install
+      # The base's own pinned tools (its justfile puts its .tools/bin first), so a base that
+      # still needs a tool head has dropped, such as Typst before #22, still builds.
+      - name: Bootstrap the base
+        working-directory: .lighthouse/base
+        run: ./scripts/bootstrap.sh
       - name: Install the base
         working-directory: .lighthouse/base
         run: just install

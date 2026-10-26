@@ -2,7 +2,7 @@ import { z } from 'astro/zod';
 
 const text = z.string({ error: 'is required' }).trim().min(1, 'must not be empty');
 const url = z.url({ protocol: /^https$/, error: 'must be an https:// URL' });
-// Month precision is all a resume shows; the Typst template parses the same format.
+// Month precision is all the about page shows.
 const month = z
   .string({ error: 'must be a month like 2025-05' })
   .regex(/^\d{4}-(?:0[1-9]|1[0-2])$/, 'must be a month like 2025-05');
@@ -13,7 +13,7 @@ const endAfterStart = <T extends { start: string; end?: string | null }>(entry: 
 const valid = { when: (payload: { issues: readonly unknown[] }) => payload.issues.length === 0 };
 const endMessage = { ...valid, path: ['end'], message: 'must not be before start' };
 
-/** content/about.json: the about page and the resume PDF. Unknown fields are rejected to catch typos. */
+/** content/about.json: the about page. Unknown fields are rejected to catch typos. */
 export const aboutSchema = z.strictObject({
   identity: z.strictObject({
     name: text,
@@ -69,10 +69,6 @@ export const aboutSchema = z.strictObject({
       .refine(endAfterStart, endMessage)
   ),
   skills: z.array(text).min(1, 'must list at least one skill'),
-  resume: z.strictObject({
-    /** false: the page says the PDF is coming soon and the build does not ship it. */
-    published: z.boolean({ error: 'must be true or false' }),
-  }),
 });
 
 export type About = z.output<typeof aboutSchema>;
@@ -86,12 +82,9 @@ export function parseAbout(data: unknown, source = 'content/about.json'): About 
   return result.data;
 }
 
-/** The public path of the resume PDF when it is published. */
-export const resumePath = '/resume.pdf';
-
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** "2025-05" as "May 2025". resume/resume.typ formats months the same way. */
+/** "2025-05" as "May 2025". */
 export function formatMonth(value: string): string {
   const [year, monthNumber] = value.split('-');
   return `${months[Number(monthNumber) - 1]} ${year}`;

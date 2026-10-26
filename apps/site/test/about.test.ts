@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { aboutFile } from '../scripts/ship-resume.ts';
 import { parseAbout } from '../src/data/about.ts';
 import { site, siteUrl } from '../src/lib/site.ts';
 
-const committed = JSON.parse(readFileSync(aboutFile, 'utf8'));
+const committed = JSON.parse(
+  readFileSync(new URL('../../../content/about.json', import.meta.url), 'utf8')
+);
 const edit = (change: (data: typeof committed) => void) => {
   const data = structuredClone(committed);
   change(data);
@@ -41,9 +42,9 @@ describe('content/about.json', () => {
   it('rejects a misspelled field instead of dropping it', () => {
     expect(
       edit((data) => {
-        data.resume.publish = true;
+        data.education[0].feild = 'Computer science';
       })
-    ).toThrow(/Unrecognized key: "publish"\n {2}→ at resume/);
+    ).toThrow(/Unrecognized key: "feild"\n {2}→ at education\[0\]/);
   });
 
   it('rejects a certification that expires before it was issued', () => {
