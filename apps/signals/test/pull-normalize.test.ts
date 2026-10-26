@@ -63,7 +63,7 @@ describe('shipping (repo-pulse)', () => {
     // An unknown event type, an unreadable timestamp and a stargazer's login are dropped.
     partial: { snapshot: snapshotFixtures.shipping.partial },
     malformed: { error: 'upstream_malformed' },
-    // repo-pulse does not serve the feed yet: no snapshot, so the site shows its empty state.
+    // The feed is gone (404): no snapshot, so the site shows its empty state.
     missing: { error: 'upstream_not_found' },
   };
 

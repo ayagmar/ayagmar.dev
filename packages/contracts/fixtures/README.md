@@ -35,6 +35,6 @@ A raw fixture records each upstream answer as `{ "status": <HTTP status>, "body"
 
 Every file must be imported in `src/fixtures.ts`; a test fails otherwise. `src/testing.ts` builds MSW handlers from the raw fixtures for tests (`@min7/contracts/testing`, never imported by production code).
 
-The Last.fm and GitHub `ok` cases are real public data from 2026-10-26. The repo-pulse cases are **sample data**: repo-pulse does not serve its feed yet (ADR 0012).
+The Last.fm and GitHub `ok` cases are real public data from 2026-10-26. So is the repo-pulse `ok` case, from its public feed; the other repo-pulse cases are sample data (ADR 0012).
 
 Fixtures hold public data or invented values only, never tokens or private fields.
