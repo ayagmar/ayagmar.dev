@@ -43,7 +43,7 @@ jobs:
         with:
           install: "false"
       - id: plan
-        run: just ci-plan >> "${GITHUB_OUTPUT}"
+        run: just ci-plan
 
   format:
     needs: changes

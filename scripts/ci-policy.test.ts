@@ -15,6 +15,12 @@ build: typegen
 deploy: build
     {{ w }} deploy
 release: deploy
+safe:
+    echo safe
+wrapped:
+    just deploy
+mixed:
+    {{ w }} types && {{ w }} deploy
 `;
 
 let root: string;
@@ -55,6 +61,21 @@ describe('ci-policy', () => {
       '.github/workflows/ci.yml:6: names a Cloudflare credential or action',
     ]);
   });
+
+  for (const [what, steps] of [
+    ['two commands on one line', '      - run: just safe && just deploy\n'],
+    ['two recipes in one call', '      - run: just safe deploy\n'],
+    ['a recipe that calls just itself', '      - run: just wrapped\n'],
+    ['a line with an offline and an online command', '      - run: just mixed\n'],
+    [
+      'a deploy in a multi-line run block',
+      '      - run: |\n          just safe\n          just deploy\n',
+    ],
+  ]) {
+    it(`fails closed on ${what}`, () => {
+      assert.notDeepEqual(workflow(steps as string), []);
+    });
+  }
 
   it('fails on a recipe the justfile does not define', () => {
     assert.equal(workflow('      - run: just missing\n').length, 1);

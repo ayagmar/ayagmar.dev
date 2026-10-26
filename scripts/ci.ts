@@ -4,9 +4,11 @@
 // Usage:
 //   node scripts/ci.ts plan   On a pull request, the files the merge commit changes; on any
 //                             other GitHub event, everything; locally, HEAD against origin/main.
-//                             Writes `plan=<json>`, a boolean per job, for $GITHUB_OUTPUT.
+//                             Writes `plan=<json>`, a boolean per job, to $GITHUB_OUTPUT
+//                             (stdout when it is not set).
 //   node scripts/ci.ts gate   Reads the `needs` context as JSON from $NEEDS; exits 1 on failure.
 import { execFileSync } from 'node:child_process';
+import { appendFileSync } from 'node:fs';
 import { matchesGlob } from 'node:path';
 
 // Files every unit is built and tested with. bootstrap.sh installs just (CI, Workers Builds)
@@ -152,7 +154,10 @@ if (import.meta.main) {
         .map(([name, on]) => `${name}=${on}`)
         .join(' ')}`
     );
-    console.log(`plan=${JSON.stringify(plan(g))}`);
+    const line = `plan=${JSON.stringify(plan(g))}\n`;
+    // In Actions the plan becomes the step's output; locally it is printed.
+    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, line);
+    else process.stdout.write(line);
   } else if (command === 'gate') {
     const needs = JSON.parse(process.env.NEEDS ?? '{}') as Record<string, Need>;
     console.log(`plan: ${needs.changes?.outputs?.plan ?? '-'}`);
