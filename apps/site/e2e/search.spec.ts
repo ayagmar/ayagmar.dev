@@ -21,7 +21,7 @@ test('/ opens search; drafts are not in the index', async ({ page }) => {
 
   await page.keyboard.press('/');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('niri');
+  await dialog.getByLabel('Search posts').fill('ricing');
   await expect(dialog.getByRole('status')).toHaveText('No results.');
 });
 
