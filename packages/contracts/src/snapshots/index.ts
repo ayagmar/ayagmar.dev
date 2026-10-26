@@ -1,2 +1,3 @@
 // Normalized snapshot schemas, one file per source, re-exported here.
-export {};
+export * from './llm-usage.ts';
+export * from './shelf.ts';

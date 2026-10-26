@@ -2,6 +2,8 @@
 // and consumers in other languages get the same answers as the TypeScript code.
 //   corpus/<schema>/accept/*.json   every validator must accept
 //   corpus/<schema>/reject/*.json   every validator must reject
+// Push bodies are also the Worker's intake fixtures, so their corpus lives in
+// fixtures/<producer>/push/ instead.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
@@ -9,9 +11,13 @@ import { describe, expect, it } from 'vitest';
 import { jsonSchemas } from '../src/json-schemas.ts';
 
 const root = join(import.meta.dirname, '..');
+const corpusDirs: Readonly<Record<string, string>> = {
+  'push-llm-usage': join('fixtures', 'llm-usage', 'push'),
+  'push-trellis': join('fixtures', 'trellis', 'push'),
+};
 const readJson = (path: string): unknown => JSON.parse(readFileSync(path, 'utf8'));
 const cases = (name: string, kind: 'accept' | 'reject') => {
-  const dir = join(root, 'corpus', name, kind);
+  const dir = join(root, corpusDirs[name] ?? join('corpus', name), kind);
   return existsSync(dir)
     ? readdirSync(dir)
         .filter((file) => file.endsWith('.json'))
