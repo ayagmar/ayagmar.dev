@@ -7,6 +7,7 @@ import { PullError, type PullErrorCode } from '../src/adapters/pull/index.ts';
 import { listening, weekStart } from '../src/adapters/pull/listening.ts';
 import { type ProjectsRaw, projects } from '../src/adapters/pull/projects.ts';
 import { shipping } from '../src/adapters/pull/shipping.ts';
+import { weather } from '../src/adapters/pull/weather.ts';
 
 type Expected = { snapshot: unknown } | { error: PullErrorCode };
 
@@ -91,5 +92,54 @@ describe('projects (GitHub and npm)', () => {
   it.each(Object.keys(rawFixtures.github))('normalizes the %s case', (name) => {
     const key = name as keyof typeof expected;
     check(() => projects.normalize(raw(key)), expected[key]);
+  });
+});
+
+describe('weather (Open-Meteo)', () => {
+  const expected: Record<keyof (typeof rawFixtures)['open-meteo'], Expected> = {
+    // Real, Rabat on 2026-10-26: overcast.
+    ok: { snapshot: snapshotFixtures.weather.ok },
+    clear: { snapshot: snapshotFixtures.weather.clear },
+    fog: { snapshot: snapshotFixtures.weather.fog },
+    rain: { snapshot: snapshotFixtures.weather.rain },
+    snow: { snapshot: snapshotFixtures.weather.snow },
+    storm: { snapshot: snapshotFixtures.weather.storm },
+    // A code Open-Meteo does not document is still served; the site shows no weather for it.
+    'unknown-code': { snapshot: snapshotFixtures.weather['unknown-code'] },
+    // Values the model had none for, null or left out, stay null rather than becoming 0.
+    partial: { snapshot: snapshotFixtures.weather.partial },
+    // No weather code: no current conditions, so the last snapshot stays.
+    empty: { error: 'upstream_error' },
+    // Fahrenheit, and the code as a string.
+    malformed: { error: 'upstream_malformed' },
+    // 429: over the free API's limits.
+    missing: { error: 'upstream_rate_limited' },
+  };
+
+  it.each(Object.entries(rawFixtures['open-meteo']))('normalizes the %s case', (name, raw) => {
+    check(() => weather.normalize(raw), expected[name as keyof typeof expected]);
+  });
+
+  // Catches a falsy check that takes code 0 (clear sky) or is_day 0 for a missing value.
+  it('keeps code 0 and is_day 0, and fails only on a null code', () => {
+    const raw = structuredClone(rawFixtures['open-meteo'].ok);
+    Object.assign(raw.body.current, { temperature_2m: null, is_day: 0, weather_code: 0 });
+    expect(weather.normalize(raw)).toMatchObject({
+      temperatureC: null,
+      isDay: false,
+      weatherCode: 0,
+    });
+    raw.body.current.weather_code = null as unknown as number;
+    check(() => weather.normalize(raw), { error: 'upstream_error' });
+  });
+
+  // Catches a range on the code: a failed pull keeps the last snapshot, so a new code past 99
+  // would keep showing yesterday's rain instead of clearing the window.
+  it('serves any whole code, and fails on a fractional one', () => {
+    const raw = structuredClone(rawFixtures['open-meteo'].ok);
+    raw.body.current.weather_code = 100;
+    expect(weather.normalize(raw)).toMatchObject({ weatherCode: 100 });
+    raw.body.current.weather_code = 3.5;
+    check(() => weather.normalize(raw), { error: 'upstream_malformed' });
   });
 });

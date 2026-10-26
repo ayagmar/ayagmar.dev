@@ -8,6 +8,7 @@ import { projects } from './routes/v1/projects.ts';
 import { push } from './routes/v1/push.ts';
 import { shelf } from './routes/v1/shelf.ts';
 import { shipping } from './routes/v1/shipping.ts';
+import { weather } from './routes/v1/weather.ts';
 
 export const app = new Hono<AppEnv>()
   .route('/v1/health', health)
@@ -16,6 +17,7 @@ export const app = new Hono<AppEnv>()
   .route('/v1/projects', projects)
   .route('/v1/llm-usage', llmUsage)
   .route('/v1/shelf', shelf)
+  .route('/v1/weather', weather)
   .route('/v1/push', push)
   .notFound(notFound)
   .onError(onError);

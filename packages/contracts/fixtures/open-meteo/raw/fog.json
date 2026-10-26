@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "body": {
+    "latitude": 34.004356,
+    "longitude": -6.820946,
+    "generationtime_ms": 0.08022785186767578,
+    "utc_offset_seconds": 0,
+    "timezone": "GMT",
+    "timezone_abbreviation": "GMT",
+    "elevation": 28.0,
+    "current_units": {
+      "time": "unixtime",
+      "interval": "seconds",
+      "weather_code": "wmo code",
+      "cloud_cover": "%",
+      "precipitation": "mm",
+      "wind_speed_10m": "km/h",
+      "is_day": "",
+      "temperature_2m": "°C"
+    },
+    "current": {
+      "time": 1793021400,
+      "interval": 900,
+      "weather_code": 45,
+      "cloud_cover": 100,
+      "precipitation": 0.0,
+      "wind_speed_10m": 3.1,
+      "is_day": 0,
+      "temperature_2m": 14.2
+    }
+  }
+}

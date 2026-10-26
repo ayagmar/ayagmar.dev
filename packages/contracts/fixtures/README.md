@@ -8,7 +8,7 @@ fixtures/<source>/snapshot/<case>.json               normalized snapshot the ada
 fixtures/<producer>/push/{accept,reject}/<case>.json push bodies (llm-usage, trellis)
 ```
 
-Raw fixtures are per upstream (`lastfm`, `repo-pulse`, `github`, `npm`); snapshots are per source id from `src/sources.ts` (`listening`, `shipping`, `projects`, `llm-usage`, `shelf`). The `projects` source is built from `github` and `npm` together: case `<case>` of the snapshot comes from case `<case>` of both. Every raw, snapshot and push file is imported in `src/fixtures.ts`, which `test/fixtures.test.ts` checks.
+Raw fixtures are per upstream (`lastfm`, `repo-pulse`, `github`, `npm`, `open-meteo`); snapshots are per source id from `src/sources.ts` (`listening`, `shipping`, `projects`, `llm-usage`, `shelf`, `weather`). The `projects` source is built from `github` and `npm` together: case `<case>` of the snapshot comes from case `<case>` of both. Every raw, snapshot and push file is imported in `src/fixtures.ts`, which `test/fixtures.test.ts` checks.
 
 Push bodies are the payload corpus of `push-<producer>` (checked by zod and the exported JSON Schema in `test/json-schema.test.ts`) and the inputs of the Worker's intake tests. `fixtures/llm-usage/snapshot/` and `fixtures/shelf/snapshot/` hold what signals publishes for the accepted push cases of the same name.
 
@@ -33,8 +33,20 @@ A raw fixture records each upstream answer as `{ "status": <HTTP status>, "body"
 | `single-item`  | Last.fm only: a list of one returned as a bare object.                              |
 | `error-in-200` | Last.fm only: an error body sent with HTTP 200.                                     |
 
+Open-Meteo answers one request with scalar values, not a list, so its cases read differently (ADR 0029):
+
+| Case                                    | Meaning                                                                                                |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `ok`                                    | Real: Rabat, 2026-10-26 13:30 UTC, overcast.                                                           |
+| `clear`, `fog`, `rain`, `snow`, `storm` | One weather code of each picture the home page draws.                                                  |
+| `unknown-code`                          | A whole-number code Open-Meteo does not document: served, and the site shows no weather for it.        |
+| `partial`                               | Values the model has none for, null or left out: null in the snapshot, never 0.                        |
+| `empty`                                 | No current conditions (a null weather code): the pull fails with `upstream_error`; only `raw/` exists. |
+| `malformed`                             | A changed unit and the code as a string: `upstream_malformed`.                                         |
+| `missing`                               | Refused with HTTP 429: `upstream_rate_limited`.                                                        |
+
 Every file must be imported in `src/fixtures.ts`; a test fails otherwise. `src/testing.ts` builds MSW handlers from the raw fixtures for tests (`@min7/contracts/testing`, never imported by production code).
 
-The Last.fm and GitHub `ok` cases are real public data from 2026-10-26. So is the repo-pulse `ok` case, from its public feed; the other repo-pulse cases are sample data (ADR 0012).
+The Last.fm and GitHub `ok` cases are real public data from 2026-10-26. So is the repo-pulse `ok` case, from its public feed; the other repo-pulse cases are sample data (ADR 0012). The Open-Meteo `ok` case is one real answer for Rabat, fetched 2026-10-26 at 13:44 UTC; the other Open-Meteo cases are sample data built from it. Open-Meteo's data is CC BY 4.0, not MIT (ADR 0022): the weather fixtures keep its values, renamed, unit-checked and with Unix time turned into RFC 3339 in `weather/snapshot/`.
 
 Fixtures hold public data or invented values only, never tokens or private fields.

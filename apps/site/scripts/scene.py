@@ -23,10 +23,12 @@ from PIL import Image, ImageDraw
 OUT_DIR = Path(__file__).resolve().parent.parent / "src" / "assets"
 
 
-def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0) -> tuple[Image.Image, Image.Image]:
+def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
+         weather: str | None = None) -> tuple[Image.Image, Image.Image]:
     """The room in daylight or at night, and the mask of the view through the window that
     nothing in the room covers. `sky` is that view (day, dusk or night, the theme's own by
-    default) and `lamp` scales the desk lamp's light."""
+    default) and `lamp` scales the desk lamp's light. With `weather` (cloudy, fog, rain, snow
+    or storm) the mask is only the part of the view that weather covers (ADR 0029)."""
     sky = sky or ("day" if DAY else "night")
     W, H = 480, 160
     rnd = random.Random(7)
@@ -169,6 +171,92 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0) -> tuple[Image.Im
     R(70, 66, 72, 82, (110, 80, 50) if sky == "day" else SIL, True)
     for ex, ey in ((60, 64), (66, 60), (78, 60), (84, 64), (64, 70), (80, 70)):
         LINE([(71, 66), (ex, ey)], PALM, 1, True)
+    # weather over the view (ADR 0029): a colour per pixel and how much of it the weather
+    # covers, which the ordered dither below turns into opaque or transparent pixels
+    CV = Image.new("L", (W, H), 0)
+    if weather:
+        night = sky != "day"
+        skyline = {SIL, SIL_D}
+
+
+        def paint(x, y, col, cover):
+            if 0 <= x < W and 0 <= y < H and cover > 0 and in_arch(x, y, RAD):
+                A.putpixel((x, y), tuple(int(c) for c in col))
+                E.putpixel((x, y), 255)
+                CV.putpixel((x, y), max(CV.getpixel((x, y)), int(min(1, cover) * 255)))
+
+
+        def mix(a, b, t):
+            return tuple(a[k] + (b[k] - a[k]) * max(0, min(1, t)) for k in range(3))
+
+
+        def haze(top, bottom, col_top, col_bottom):
+            """A veil over the whole view, `top` covered at the top and `bottom` at the sill."""
+            for y in range(0, 90):
+                t = y / 89
+                for x in range(CX - RAD, CX + RAD + 1):
+                    paint(x, y, mix(col_top, col_bottom, t), top + (bottom - top) * t)
+
+
+        def deck(base, wave, lit, shade):
+            """A cloud deck from the top of the arch down to a wavy edge near y = `base`."""
+            for x in range(CX - RAD, CX + RAD + 1):
+                edge = base + wave * math.sin(x / 6.0) + wave * 0.6 * math.sin(x / 2.7 + 1)
+                for y in range(0, int(edge) + 3):
+                    cover = 1 if y <= edge else 1 - (y - edge) / 3
+                    paint(x, y, mix(lit, shade, y / max(1, edge)), cover)
+
+
+        def cloud(cx, cy, rx, ry, lit, mid, shade):
+            """A puff, lit from above, with a dithered rim."""
+            for y in range(cy - ry - 1, cy + ry + 2):
+                for x in range(cx - rx - 1, cx + rx + 2):
+                    d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
+                    t = (y - (cy - ry)) / (2 * ry)
+                    paint(x, y, mix(lit, mid, t * 2) if t < 0.5 else mix(mid, shade, t * 2 - 1), (1 - d) * 3)
+
+
+        if weather == "cloudy":
+            lit, mid, shade = (((90, 98, 150), (52, 58, 104), (30, 34, 68)) if night
+                               else ((246, 246, 252), (214, 218, 232), (150, 158, 186)))
+            for cx0, cy0, rx, ry in ((76, 22, 16, 7), (92, 16, 14, 7), (128, 30, 17, 6),
+                                     (114, 26, 10, 5), (84, 42, 12, 4), (136, 47, 9, 3)):
+                cloud(cx0, cy0, rx, ry, lit, mid, shade)
+        elif weather == "fog":
+            if night:
+                haze(0.45, 0.85, (44, 50, 92), (100, 112, 170))
+            else:
+                haze(0.45, 0.85, (214, 218, 232), (232, 232, 240))
+        elif weather in ("rain", "storm"):
+            # a low deck; the falling rain is its own layer. At night the city lights the
+            # deck from below.
+            storm = weather == "storm"
+            if night:
+                deck(36 if storm else 26, 3, (13, 15, 30) if storm else (20, 23, 46),
+                     (30, 34, 68) if storm else (44, 50, 92))
+            else:
+                deck(36 if storm else 26, 3, (100, 112, 170) if storm else (150, 158, 186),
+                     (44, 50, 92) if storm else (100, 112, 170))
+        elif weather == "snow":
+            if night:
+                deck(24, 2, (30, 34, 68), (66, 74, 128))
+            else:
+                deck(24, 2, (214, 218, 232), (150, 158, 186))
+            flake = (232, 232, 250) if night else (250, 250, 255)
+            # snow on the rooftops: the top pixel of every skyline shape
+            tops = [(x, y) for y in range(41, 90) for x in range(CX - RAD, CX + RAD + 1)
+                    if A.getpixel((x, y)) in skyline and A.getpixel((x, y - 1)) not in skyline]
+            for x, y in tops:
+                paint(x, y, flake, 1)
+            fr = random.Random(29)
+            for _ in range(70):
+                fx, fy = fr.randint(CX - RAD, CX + RAD), fr.randint(26, 89)
+                paint(fx, fy, flake, 1)
+                if not night:
+                    # a white flake on a pale sky needs a shade under it to show
+                    paint(fx, fy + 1, (140, 150, 180), 1)
+        else:
+            raise ValueError(weather)
     view[0] = False
     # mullions + sill
     R(CX - 1, 8, CX + 1, 90, (178, 164, 170))
@@ -433,6 +521,9 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0) -> tuple[Image.Im
         (150, 110, 40), (214, 170, 70), (122, 82, 140), (60, 40, 80),
         (232, 232, 250), (26, 28, 72), (104, 62, 98), (168, 92, 90),
     ]
+    # Weather layers keep to these 41 colours (ADR 0029); the day view adds its own on top.
+    ROOM_PALETTE.update(PAL)
+    room_palette = list(PAL)
     if DAY or sky == "day":
         PAL += [
             (110, 168, 222), (150, 196, 234), (196, 222, 238), (240, 226, 200),
@@ -440,6 +531,8 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0) -> tuple[Image.Im
             (226, 206, 214), (52, 96, 62), (236, 196, 140), (250, 222, 170), (176, 160, 176),
             (206, 176, 146), (186, 154, 124), (226, 198, 166), (166, 134, 108), (244, 220, 186),
         ]
+    if weather:
+        PAL = room_palette
 
     BAYER = [[0, 32, 8, 40, 2, 34, 10, 42], [48, 16, 56, 24, 50, 18, 58, 26],
              [12, 44, 4, 36, 14, 46, 6, 38], [60, 28, 52, 20, 62, 30, 54, 22],
@@ -469,8 +562,22 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0) -> tuple[Image.Im
             off = (BAYER[y % 8][x % 8] / 64 - 0.5) * SPREAD
             OUT.putpixel((x, y), nearest(max(0, min(255, r + off)), max(0, min(255, g + off)), max(0, min(255, b + off))))
 
-    room = OUT.quantize(colors=len(PAL) + 4, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
-    return room, V
+    if not weather:
+        room = OUT.quantize(colors=len(PAL) + 4, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+        return room, V
+    # Onto the palette itself: the octree can average two dark colours into one off it.
+    exact = Image.new("P", (1, 1))
+    exact.putpalette([c for colour in PAL for c in colour])
+    room = OUT.quantize(palette=exact, dither=Image.Dither.NONE)
+    # The weather's own pixels: the view, where its cover beats the dither threshold. The
+    # threshold is the Bayer matrix shifted by half a tile, so it does not line up with the
+    # colour dither above.
+    mask = Image.new("L", (W, H), 0)
+    for y in range(H):
+        for x in range(W):
+            if V.getpixel((x, y)) and CV.getpixel((x, y)) / 255 > (BAYER[(y + 4) % 8][(x + 4) % 8] + 0.5) / 64:
+                mask.putpixel((x, y), 255)
+    return room, mask
 
 
 def window_only(room: Image.Image, view: Image.Image) -> Image.Image:
@@ -485,12 +592,46 @@ def window_only(room: Image.Image, view: Image.Image) -> Image.Image:
     return out
 
 
+# Every colour the room may use; draw() fills it in.
+ROOM_PALETTE: set[tuple[int, int, int]] = set()
+
+
+def drops(sky: str) -> Image.Image:
+    """A 16x16 tile of rain streaks, transparent between them: the falling rain the home page
+    moves over the window, one art pixel at a time, for rain and storms (ADR 0029)."""
+    head, tail = ((100, 112, 170), (66, 74, 128)) if sky != "day" else ((100, 112, 170), (140, 150, 180))
+    tile = Image.new("P", (16, 16), 0)
+    tile.putpalette([0, 0, 0, *head, *tail])
+    # a streak falls three pixels and drifts one to the left on the way, as in a light wind
+    for x0, y0 in ((2, 1), (9, 5), (14, 10), (6, 12)):
+        for k in range(3):
+            tile.putpixel(((x0 - (k + 1) // 2) % 16, (y0 + k) % 16), 1 if k == 2 else 2)
+    tile.info["transparency"] = 0
+    return tile
+
+
+def colours(image: Image.Image) -> set[tuple[int, int, int]]:
+    """The colours an image shows, transparency left out."""
+    rgba = image.convert("RGBA")
+    return {(r, g, b) for _, (r, g, b, a) in rgba.getcolors(rgba.width * rgba.height) if a}
+
+
 outputs = {
     "room-night.png": draw(False)[0],
     "room-day.png": draw(True)[0],
     "room-night-dim.png": draw(False, lamp=0.35)[0],
     **{f"window-{sky}.png": window_only(*draw(False, sky)) for sky in ("day", "dusk", "night")},
 }
+# The weather over the window (ADR 0029): one layer per kind for the day sky and one for the
+# night, which dusk shows too, plus the falling rain. Clear weather is the sky as it is.
+weather_outputs = {
+    **{f"weather-{kind}-{sky}.png": window_only(*draw(False, sky, weather=kind))
+       for kind in ("cloudy", "fog", "rain", "snow", "storm") for sky in ("day", "night")},
+    **{f"weather-drops-{sky}.png": drops(sky) for sky in ("day", "night")},
+}
+for name, image in weather_outputs.items():
+    assert colours(image) <= ROOM_PALETTE, f"{name} leaves the room's 41 colours: {colours(image) - ROOM_PALETTE}"
+outputs.update(weather_outputs)
 for name, image in outputs.items():
     target = OUT_DIR / name
     image.save(target, optimize=True)

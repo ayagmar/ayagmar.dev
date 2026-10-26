@@ -21,6 +21,7 @@ export interface UpstreamCases {
   github?: Cases<'github'>;
   npm?: Cases<'npm'>;
   repoPulse?: Cases<'repo-pulse'>;
+  openMeteo?: Cases<'open-meteo'>;
 }
 
 /**
@@ -33,6 +34,7 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
     rawFixtures.github[cases.github ?? 'ok'];
   const npm: Record<string, Recorded> = rawFixtures.npm[cases.npm ?? 'ok'];
   const repoPulse: Recorded = rawFixtures['repo-pulse'][cases.repoPulse ?? 'ok'];
+  const openMeteo: Recorded = rawFixtures['open-meteo'][cases.openMeteo ?? 'ok'];
 
   return [
     // signals POSTs its Last.fm parameters as a form, to keep the API key out of URLs.
@@ -54,6 +56,7 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
       return reply(npm[decodeURIComponent(new URL(request.url).pathname.slice(prefix.length))]);
     }),
     http.get('https://repo-pulse.ayagmar.workers.dev/public/feed', () => reply(repoPulse)),
+    http.get('https://api.open-meteo.com/v1/forecast', () => reply(openMeteo)),
   ];
 }
 

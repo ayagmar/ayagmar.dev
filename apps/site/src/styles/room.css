@@ -91,6 +91,120 @@
   background-image: url("../assets/room-night-dim.png");
 }
 
+/* The weather over the window (ADR 0029), set by src/scripts/room.ts from signals: above the
+   sky and the moon, below the hotspots. Each layer is the full scene, like the window's,
+   transparent but for the weather; dusk shows the night one. Clear weather is the sky as it
+   is. Only the layer in use is downloaded. */
+.room-weather {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.scene[data-weather="cloudy"] .room-weather {
+  background-image: url("../assets/weather-cloudy-night.png");
+}
+
+.scene[data-sky="day"][data-weather="cloudy"] .room-weather {
+  background-image: url("../assets/weather-cloudy-day.png");
+}
+
+.scene[data-weather="fog"] .room-weather {
+  background-image: url("../assets/weather-fog-night.png");
+}
+
+.scene[data-sky="day"][data-weather="fog"] .room-weather {
+  background-image: url("../assets/weather-fog-day.png");
+}
+
+.scene[data-weather="rain"] .room-weather {
+  background-image: url("../assets/weather-rain-night.png");
+}
+
+.scene[data-sky="day"][data-weather="rain"] .room-weather {
+  background-image: url("../assets/weather-rain-day.png");
+}
+
+.scene[data-weather="snow"] .room-weather {
+  background-image: url("../assets/weather-snow-night.png");
+}
+
+.scene[data-sky="day"][data-weather="snow"] .room-weather {
+  background-image: url("../assets/weather-snow-day.png");
+}
+
+.scene[data-weather="storm"] .room-weather {
+  background-image: url("../assets/weather-storm-night.png");
+}
+
+.scene[data-sky="day"][data-weather="storm"] .room-weather {
+  background-image: url("../assets/weather-storm-day.png");
+}
+
+/* Falling rain: a 16-pixel tile of streaks over the whole scene, cut to the view by the window
+   layer in use (the same file, so nothing more downloads). One sheet for rain, a second half a
+   tile over for storms. Without motion the streaks hang still. */
+.scene:is([data-weather="rain"], [data-weather="storm"]) .room-weather {
+  mask: url("../assets/window-night.png") center / 100% 100% no-repeat;
+}
+
+.scene[data-sky="day"]:is([data-weather="rain"], [data-weather="storm"]) .room-weather {
+  mask-image: url("../assets/window-day.png");
+}
+
+.scene[data-sky="dusk"]:is([data-weather="rain"], [data-weather="storm"]) .room-weather {
+  mask-image: url("../assets/window-dusk.png");
+}
+
+/* One tile above the scene, so moving down by a tile (16 of the scene's 160 pixels) loops. */
+.room-weather::before,
+.room-weather::after {
+  content: "";
+  display: none;
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 100%;
+  height: 110%;
+  background: url("../assets/weather-drops-night.png") 0 0 / calc(100% / 30) calc(100% / 11);
+  image-rendering: pixelated;
+}
+
+.scene[data-sky="day"] .room-weather::before,
+.scene[data-sky="day"] .room-weather::after {
+  background-image: url("../assets/weather-drops-day.png");
+}
+
+/* Half a tile right and down: (480 - 16) / 58 = 8 pixels across, 5 % of 160 down. */
+.room-weather::after {
+  background-position: calc(100% / 58) 5%;
+}
+
+.scene:is([data-weather="rain"], [data-weather="storm"]) .room-weather::before,
+.scene[data-weather="storm"] .room-weather::after {
+  display: block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .room-weather::before,
+  .room-weather::after {
+    animation: rain 0.5s steps(16) infinite;
+  }
+
+  .room-weather::after {
+    animation-duration: 0.35s;
+  }
+}
+
+@keyframes rain {
+  to {
+    translate: 0 calc(100% / 11);
+  }
+}
+
 /* Over the desk's front, below every hotspot, so showing it moves nothing. */
 .room-note {
   position: absolute;
@@ -104,6 +218,18 @@
   font: 600 clamp(0.6875rem, 0.45rem + 0.75vw, 0.9375rem) / 1.2 var(--mono);
   white-space: nowrap;
   pointer-events: none;
+}
+
+/* Open-Meteo's credit, under the scene. */
+.room-credit {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font: 0.75rem / 1.4 var(--mono);
+  text-align: end;
+}
+
+.room-credit a {
+  color: inherit;
 }
 
 /* Hotspots: real links over the scene's objects, as percentages of its 480x160 pixels

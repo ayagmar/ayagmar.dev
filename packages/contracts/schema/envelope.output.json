@@ -9,7 +9,8 @@
         "shipping",
         "projects",
         "llm-usage",
-        "shelf"
+        "shelf",
+        "weather"
       ]
     },
     "version": {

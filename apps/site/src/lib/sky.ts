@@ -133,12 +133,8 @@ export function moonPath(moon: Moon, x: number, y: number, r: number): string {
   return path;
 }
 
-const clock = new Intl.DateTimeFormat('en-GB', {
-  timeZone: rabat.timeZone,
-  hour: '2-digit',
-  minute: '2-digit',
-  hourCycle: 'h23',
-});
+// en-GB's short time is `HH:mm` on a 24-hour clock.
+const clock = new Intl.DateTimeFormat('en-GB', { timeZone: rabat.timeZone, timeStyle: 'short' });
 
 /** The time in Rabat, `03:12`. */
 export const rabatTime = (time: number) => clock.format(time);

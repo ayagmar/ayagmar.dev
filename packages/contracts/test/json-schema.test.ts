@@ -7,6 +7,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import { describe, expect, it } from 'vitest';
+import { fixturesCapturedAt } from '../src/fixtures.ts';
 import { jsonSchemas } from '../src/json-schemas.ts';
 
 const root = join(import.meta.dirname, '..');
@@ -22,6 +23,8 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
   listening: { accept: ['listening/snapshot'] },
   shipping: { accept: ['shipping/snapshot'] },
   projects: { accept: ['projects/snapshot'] },
+  // weather's exported schema is its whole envelope; its snapshots join as fresh responses.
+  weather: { accept: ['weather/snapshot'] },
   'repo-pulse-feed': {
     accept: ['repo-pulse/raw/ok.json', 'repo-pulse/raw/empty.json'],
     reject: ['repo-pulse/raw/malformed.json'],
@@ -31,14 +34,20 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
   'push-trellis': { accept: ['trellis/push/accept'], reject: ['trellis/push/reject'] },
 };
 
-const fixturePayloads = (path: string) => {
+// Sources whose exported schema is the whole read API envelope rather than its `data`.
+const envelopes = new Set(['weather']);
+
+const fixturePayloads = (name: string, path: string) => {
   const full = join(root, 'fixtures', path);
   const files = path.endsWith('.json') ? [full] : jsonFiles(full).map((file) => join(full, file));
   return files.map((file) => {
     const json = readJson(file) as { body?: unknown };
+    const payload = file.includes('/raw/') ? json.body : json;
     return [
       `fixtures/${relative(join(root, 'fixtures'), file)}`,
-      file.includes('/raw/') ? json.body : json,
+      envelopes.has(name)
+        ? { source: name, version: 1, fetchedAt: fixturesCapturedAt, stale: false, data: payload }
+        : payload,
     ] as const;
   });
 };
@@ -47,7 +56,7 @@ const cases = (name: string, kind: Kind) => {
   const dir = join(root, 'corpus', name, kind);
   return [
     ...jsonFiles(dir).map((file) => [file, readJson(join(dir, file))] as const),
-    ...(fixtureCases[name]?.[kind] ?? []).flatMap(fixturePayloads),
+    ...(fixtureCases[name]?.[kind] ?? []).flatMap((path) => fixturePayloads(name, path)),
   ];
 };
 

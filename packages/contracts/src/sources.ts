@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
 /** Every data source the site can show. Adding one starts here. */
-export const sourceIds = ['listening', 'shipping', 'projects', 'llm-usage', 'shelf'] as const;
+export const sourceIds = [
+  'listening',
+  'shipping',
+  'projects',
+  'llm-usage',
+  'shelf',
+  'weather',
+] as const;
 
 export const sourceIdSchema = z.enum(sourceIds);
 
@@ -22,4 +29,6 @@ export const staleAfterSeconds: Readonly<Record<SourceId, number>> = {
   'llm-usage': 2 * 24 * 60 * 60,
   // trellis pushes a daily summary.
   shelf: 3 * 24 * 60 * 60,
+  // Open-Meteo pulled every 15 minutes; the room's window drops weather this old (ADR 0029).
+  weather: 45 * 60,
 };

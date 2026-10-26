@@ -1,0 +1,9 @@
+{
+  "observedAt": "2026-10-26T13:30:00Z",
+  "weatherCode": 95,
+  "cloudCoverPercent": 100,
+  "precipitationMm": 4.8,
+  "windSpeedKmh": 38.5,
+  "isDay": false,
+  "temperatureC": 15.9
+}
