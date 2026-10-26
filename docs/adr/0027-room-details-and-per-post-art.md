@@ -43,7 +43,9 @@ Day is when the sun's centre is above −0.833° (NOAA's sunrise and sunset), du
 
 ### The record
 
-The listening panel's record turns only while the now-playing island holds a live answer with a track: `/v1/listening` answered with `stale: false` (signals marks it stale 15 minutes after its last Last.fm fetch, `staleAfterSeconds` in `packages/contracts/src/sources.ts`) and a `nowPlaying` track. The island marks that with `data-playing`, and `room.css` turns the record with `.record:has([data-playing])`. The build-time value is never live, so a static page never claims music is playing; in fixtures mode the island never fetches, so the record rests. The island grows by 26 bytes gzip.
+The listening panel's record turns only while the now-playing island holds a live answer with a track: `/v1/listening` answered with `stale: false` (signals marks it stale 15 minutes after its last Last.fm fetch, `staleAfterSeconds` in `packages/contracts/src/sources.ts`) and a `nowPlaying` track. The island marks that with `data-playing`, and `room.css` turns the record with `.record:has([data-playing])`. The build-time value is never live, so a static page never claims music is playing; in fixtures mode the island never fetches, so the record rests.
+
+A live answer stays live only until its `fetchedAt` plus the same 15 minutes (the panel passes `staleAfterSeconds.listening` to the island). The island's minute timer checks that before it asks again, whether or not the last request came back, so the record stops within a minute of the limit while requests hang or fail; a tab that comes back visible checks it first too. An answer whose `fetchedAt` does not parse or lies more than 2 minutes in the future is ignored. A failed, ignored or unreadable refresh ends the live state but keeps the last track and its time ("Playing … as of …").
 
 ### `curl ayagmar.dev`
 
@@ -80,7 +82,7 @@ The room script is imported from an Astro `<script>`, emitted as `/_astro/index.
 | ------------------------- | ---------- | ------------------------------------ |
 | Room script (`room.ts`)   | home only  | 1,531 B                              |
 | Theme script (`theme.js`) | every page | 969 B (was 685 B), still under 1 KB  |
-| Now-playing island        | home       | +26 B                                |
+| Now-playing island        | home       | +156 B                               |
 | Window layer              | home       | 1.3 to 1.4 KiB, one per visit        |
 | Dim night scene           | home       | 11.5 KiB, only 02:00–07:00 and night |
 | Keys list and comment     | every page | about 0.3 KB                         |
@@ -102,14 +104,14 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 
 ## What each detail falls back to
 
-| Detail          | No JavaScript                                                                                                          | Reduced motion           | Failed or stale data                            | Other time zone                          |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------- | ---------------------------------------- |
-| Window and moon | The theme's own window, no moon (the static night scene no longer draws a fixed crescent, which was wrong most nights) | No change: nothing moves | None needed: no data                            | Uses Casablanca's sun, not the visitor's |
-| Lamp and note   | Lamp as the theme draws it, no note                                                                                    | No change                | None needed                                     | Uses Casablanca's clock via tzdata       |
-| Record          | Rests                                                                                                                  | Rests                    | Rests: only a live answer with a track turns it | Not time-based                           |
-| `curl`          | Not JavaScript                                                                                                         | n/a                      | n/a                                             | n/a                                      |
-| Keys            | Nothing opens; the switch and links work as before                                                                     | n/a                      | n/a                                             | n/a                                      |
-| Art             | Drawn at build time                                                                                                    | Static                   | n/a                                             | n/a                                      |
+| Detail          | No JavaScript                                                                                                          | Reduced motion           | Failed or stale data                                                                           | Other time zone                          |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Window and moon | The theme's own window, no moon (the static night scene no longer draws a fixed crescent, which was wrong most nights) | No change: nothing moves | None needed: no data                                                                           | Uses Casablanca's sun, not the visitor's |
+| Lamp and note   | Lamp as the theme draws it, no note                                                                                    | No change                | None needed                                                                                    | Uses Casablanca's clock via tzdata       |
+| Record          | Rests                                                                                                                  | Rests                    | Rests: only a live answer with a track turns it, and only for 15 minutes after its `fetchedAt` | Not time-based                           |
+| `curl`          | Not JavaScript                                                                                                         | n/a                      | n/a                                                                                            | n/a                                      |
+| Keys            | Nothing opens; the switch and links work as before                                                                     | n/a                      | n/a                                                                                            | n/a                                      |
+| Art             | Drawn at build time                                                                                                    | Static                   | n/a                                                                                            | n/a                                      |
 
 ## How to see each one
 

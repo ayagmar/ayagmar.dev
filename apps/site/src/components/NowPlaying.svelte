@@ -14,11 +14,15 @@ interface Props {
   asOf: string | null;
   /** `${SIGNALS_API_BASE}/v1/listening`, or null to stay on the build-time value (fixtures mode). */
   endpoint: string | null;
+  /** How long after its `fetchedAt` an answer counts as now: listening's `staleAfterSeconds`. */
+  liveForMs: number;
 }
 
-const { initial, asOf, endpoint }: Props = $props();
+const { initial, asOf, endpoint, liveForMs }: Props = $props();
 
 const refreshMs = 60_000;
+// A server clock up to this far ahead of the visitor's is still believable.
+const skewMs = 2 * 60_000;
 
 // Svelte keeps the first prop values; later props never change on a static page.
 // svelte-ignore state_referenced_locally
@@ -27,6 +31,13 @@ let current = $state<{ track: Track | null; asOf: string | null; live: boolean }
   asOf,
   live: false,
 });
+// When the live answer stops being now. The refresh timer checks it before it asks again, so
+// the record stops within a minute of it even while requests hang or fail.
+let liveUntil = 0;
+
+function expire() {
+  if (current.live && Date.now() >= liveUntil) current.live = false;
+}
 
 /** A track from the API, or undefined when the response is not one the island understands. */
 function readTrack(value: unknown): Track | null | undefined {
@@ -39,22 +50,42 @@ function readTrack(value: unknown): Track | null | undefined {
   return { track, artist, url: href };
 }
 
-async function refresh(url: string) {
+/** The answer at `url`, or undefined when it failed or is not one the island understands. */
+async function read(url: string) {
   try {
     const response = await fetch(url, { headers: { accept: 'application/json' } });
-    if (!response.ok) return;
+    if (!response.ok) return undefined;
     const body: unknown = await response.json();
-    if (typeof body !== 'object' || body === null) return;
+    if (typeof body !== 'object' || body === null) return undefined;
     const { source, stale, fetchedAt, data } = body as Record<string, unknown>;
     if (source !== 'listening' || typeof stale !== 'boolean' || typeof fetchedAt !== 'string')
-      return;
-    if (typeof data !== 'object' || data === null) return;
+      return undefined;
+    // A time that does not parse, or one from the future, says nothing about now.
+    const at = Date.parse(fetchedAt);
+    if (!Number.isFinite(at) || at > Date.now() + skewMs) return undefined;
+    if (typeof data !== 'object' || data === null) return undefined;
     const track = readTrack((data as Record<string, unknown>).nowPlaying);
-    if (track === undefined) return;
-    current = { track, asOf: fetchedAt, live: !stale };
+    if (track === undefined) return undefined;
+    return { track, fetchedAt, at, stale };
   } catch {
-    // Offline or blocked: keep what is shown.
+    // Offline or blocked.
+    return undefined;
   }
+}
+
+async function refresh(url: string) {
+  const answer = await read(url);
+  if (answer === undefined) {
+    // Keep the last track and its time, but no longer as now.
+    current.live = false;
+    return;
+  }
+  liveUntil = answer.at + liveForMs;
+  current = {
+    track: answer.track,
+    asOf: answer.fetchedAt,
+    live: !answer.stale && Date.now() < liveUntil,
+  };
 }
 
 onMount(() => {
@@ -62,10 +93,14 @@ onMount(() => {
   const url = endpoint;
   void refresh(url);
   const timer = setInterval(() => {
+    expire();
     if (document.visibilityState === 'visible') void refresh(url);
   }, refreshMs);
   const onVisible = () => {
-    if (document.visibilityState === 'visible') void refresh(url);
+    if (document.visibilityState !== 'visible') return;
+    // A sleeping tab may not have run the expiry timer.
+    expire();
+    void refresh(url);
   };
   document.addEventListener('visibilitychange', onVisible);
   return () => {
