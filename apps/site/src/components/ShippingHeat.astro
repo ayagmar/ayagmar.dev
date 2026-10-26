@@ -1,7 +1,6 @@
 ---
 import type { ShippingEvent } from '@min7/contracts';
 import { heatLevels } from '../data/format.ts';
-import { builtAt } from '../data/signals.ts';
 
 interface Props {
   /** Every event in the snapshot, not only the ones listed next to it. */
@@ -9,7 +8,8 @@ interface Props {
 }
 
 const { events } = Astro.props;
-const levels = heatLevels(events, builtAt);
+// "Today" is the day of the build: the strip is drawn once, with the page.
+const levels = heatLevels(events, new Date());
 const busy = levels.filter((level) => level > 0).length;
 ---
 
