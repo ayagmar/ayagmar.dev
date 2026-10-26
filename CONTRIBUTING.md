@@ -116,7 +116,7 @@ Every page has a budget, checked on the built site and failing CI when exceeded.
 | Page weight: HTML, CSS, JS, images, gzip for text | 150 KB, fonts excluded                                                                  |
 | Fonts, the whole build                            | 200 KB, woff2 only                                                                      |
 | Requests to other origins from HTML or CSS        | none: self-host fonts, images and scripts                                               |
-| `<img>`                                           | `width` and `height` on every one                                                       |
+| `<img>`                                           | `width` and `height` on every one, as positive whole numbers                            |
 | Lighthouse, mobile and desktop (median of 3)      | performance ≥ 0.95, accessibility 1, best practices ≥ 0.95, CLS ≤ 0.01, TBT ≤ 100 ms    |
 | Lighthouse LCP                                    | ≤ 2.0 s mobile, ≤ 1.0 s desktop                                                         |
 | Against the base branch                           | LCP no worse than +10 % and +200 ms on mobile, +100 ms on desktop; TBT +10 % and +50 ms |

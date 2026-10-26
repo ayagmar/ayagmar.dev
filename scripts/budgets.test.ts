@@ -168,9 +168,27 @@ describe('images and references', () => {
       'c.png': 'c',
     });
     assert.deepEqual(problems(), [
-      'index.html: <img src="/b.png"> has no width and height (layout shift)',
-      'index.html: <img src="/c.png"> has no width and height (layout shift)',
+      'index.html: <img src="/b.png"> has no width and height as positive whole numbers (layout shift)',
+      'index.html: <img src="/c.png"> has no width and height as positive whole numbers (layout shift)',
     ]);
+  });
+
+  it('accepts only positive whole numbers as width and height', () => {
+    const imgs = [
+      ['auto', 'auto'],
+      ['0', '10'],
+      ['10px', '10'],
+      ['', '10'],
+      ['-5', '10'],
+      ['1.5', '10'],
+    ]
+      .map(([w, h], i) => `<img src="/a.png?${i}" width="${w}" height="${h}" alt="">`)
+      .join('');
+    write({
+      'index.html': page(`${imgs}<img src="/a.png" width="640" height="480" alt="">`),
+      'a.png': 'a',
+    });
+    assert.equal(problems().length, 6);
   });
 
   it('fails a reference to a file the build does not contain, relative ones included', () => {

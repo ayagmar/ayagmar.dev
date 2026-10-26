@@ -223,9 +223,12 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
       }
       const style = a.get('style');
       if (style) references(style, url, page, resources);
-      if (element === 'img' && !(a.get('width') && a.get('height'))) {
+      // `auto`, 0 or a negative value reserves no space; units and fractions are not the
+      // build's own output, so they fail too.
+      const dimension = (name: string) => /^[1-9][0-9]*$/.test(a.get(name) ?? '');
+      if (element === 'img' && !(dimension('width') && dimension('height'))) {
         problems.push(
-          `${page}: <img src="${a.get('src') ?? ''}"> has no width and height (layout shift)`
+          `${page}: <img src="${a.get('src') ?? ''}"> has no width and height as positive whole numbers (layout shift)`
         );
       }
     }
