@@ -258,6 +258,37 @@ test('the record has stopped when a tab hidden past the limit comes back', async
   await expectRested(page);
 });
 
+test('a late answer to an older refresh does not restart the record', async ({ page }) => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let asked = () => {};
+  const firstAsked = new Promise<void>((resolve) => {
+    asked = resolve;
+  });
+  let requests = 0;
+  await goLive(page, async (route) => {
+    if (++requests === 1) {
+      // The first answer says a track is playing, but arrives last.
+      asked();
+      await held;
+      await route.fulfill(playing());
+      return;
+    }
+    const nothing = JSON.parse(playing('2026-10-26T10:31:00Z').body);
+    nothing.data.nowPlaying = null;
+    await route.fulfill({ ...playing(), body: JSON.stringify(nothing) });
+  });
+  await firstAsked;
+  await page.clock.runFor(60_000);
+  await expect(page.locator('.now-playing')).toHaveText('Nothing playing right now.');
+  release();
+  await page.waitForTimeout(500);
+  await expect(page.locator('.now-playing')).toHaveText('Nothing playing right now.');
+  expect(await disc(page)).toBe('none');
+});
+
 declare global {
   interface Window {
     setHidden(hidden: boolean): void;

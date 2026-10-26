@@ -73,8 +73,14 @@ async function read(url: string) {
   }
 }
 
+// Each refresh's number; only the latest one may change what is shown, so a slow answer to an
+// older request cannot undo a newer one.
+let latest = 0;
+
 async function refresh(url: string) {
+  const mine = ++latest;
   const answer = await read(url);
+  if (mine !== latest) return;
   if (answer === undefined) {
     // Keep the last track and its time, but no longer as now.
     current.live = false;
