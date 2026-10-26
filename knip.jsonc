@@ -1,0 +1,39 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.ts"],
+      "project": ["scripts/**/*.ts"],
+      // Run by justfile recipes, which knip does not read.
+      "ignoreDependencies": ["@biomejs/biome"]
+    },
+    "packages/contracts": {
+      "entry": ["scripts/*.ts", "test/**/*.test.ts"],
+      "project": ["src/**/*.ts", "scripts/**/*.ts", "test/**/*.ts"]
+    },
+    "apps/signals": {
+      "entry": [
+        "test/**/*.test.ts",
+        // Interfaces later adapters and storage implement; nothing imports them yet.
+        "src/adapters/types.ts",
+        "src/adapters/pull/index.ts",
+        "src/storage/types.ts"
+      ],
+      "project": ["src/**/*.ts", "test/**/*.ts"],
+      // `cloudflare:*` modules are built into workerd. wrangler is run by justfile recipes.
+      "ignoreDependencies": ["cloudflare", "wrangler"]
+    },
+    "apps/site": {
+      "entry": ["scripts/*.ts", "test/**/*.test.ts", "e2e/**/*.spec.ts"],
+      "project": [
+        "src/**/*.{ts,astro,svelte}",
+        "worker/**/*.ts",
+        "scripts/**/*.ts",
+        "test/**/*.ts",
+        "e2e/**/*.ts"
+      ],
+      // Run by justfile recipes, which knip does not read.
+      "ignoreDependencies": ["@astrojs/check", "pagefind", "svelte-check"]
+    }
+  }
+}

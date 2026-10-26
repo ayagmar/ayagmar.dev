@@ -1,0 +1,16 @@
+---
+import PostList from '../components/PostList.astro';
+import Base from '../layouts/Base.astro';
+import { getPosts } from '../lib/posts.ts';
+import { site } from '../lib/site.ts';
+
+const posts = (await getPosts()).slice(0, 5);
+---
+
+<Base>
+  <h1>{site.name}</h1>
+  <p>{site.author}, {site.role.toLowerCase()} in {site.location}.</p>
+  <h2>Recent writing</h2>
+  <PostList posts={posts} />
+  <p><a href="/writing">All writing</a></p>
+</Base>

@@ -12,3 +12,7 @@ test-results/
 !.env.example
 *.log
 .DS_Store
+.tools/
+.pnpm-store/
+worker-configuration.d.ts
+*.tsbuildinfo

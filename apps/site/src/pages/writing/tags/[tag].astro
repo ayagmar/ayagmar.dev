@@ -1,0 +1,23 @@
+---
+import type { GetStaticPaths } from 'astro';
+import PostList from '../../../components/PostList.astro';
+import Base from '../../../layouts/Base.astro';
+import { feedPaths } from '../../../lib/feed.ts';
+import { getPosts } from '../../../lib/posts.ts';
+import { postsByTag } from '../../../lib/writing.ts';
+
+export const getStaticPaths = (async () => {
+  const byTag = postsByTag(await getPosts());
+  return [...byTag].map(([tag, posts]) => ({ params: { tag }, props: { posts } }));
+}) satisfies GetStaticPaths;
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+const feeds = feedPaths(tag);
+---
+
+<Base title={`Tagged ${tag}`} tag={tag}>
+  <h1>Tagged {tag}</h1>
+  <PostList posts={posts} />
+  <p>Follow this tag: <a href={feeds.rss}>RSS</a>, <a href={feeds.atom}>Atom</a>.</p>
+</Base>

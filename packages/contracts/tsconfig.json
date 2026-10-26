@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "emitDeclarationOnly": true,
+    "outDir": "../../node_modules/.cache/tsc/contracts",
+    "types": ["node"]
+  },
+  "include": ["src", "scripts", "test"]
+}

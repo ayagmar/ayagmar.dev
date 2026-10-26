@@ -1,0 +1,46 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "min7-signals",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-26",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": true,
+  "upload_source_maps": true,
+  // Previews inherit this block.
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 }
+  },
+  // Created on deploy. The ayagmar.dev zone must be on the same Cloudflare account.
+  "routes": [{ "pattern": "api.ayagmar.dev", "custom_domain": true }],
+  "vars": {
+    // Overridden on every deploy with the commit SHA (see the signals-* recipes in the justfile).
+    "COMMIT_SHA": "dev"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "min7-signals",
+      // PLACEHOLDER: set to the id printed by `wrangler d1 create min7-signals` before the first deploy.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // `wrangler preview` (PR previews) never inherits production vars or bindings.
+  // Every preview shares the min7-signals-preview database; its migrations are applied
+  // with wrangler.preview-migrations.jsonc.
+  "previews": {
+    "vars": { "COMMIT_SHA": "preview" },
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "min7-signals-preview",
+        // PLACEHOLDER: set to the id printed by `wrangler d1 create min7-signals-preview`.
+        "database_id": "00000000-0000-0000-0000-000000000001",
+        "migrations_dir": "migrations"
+      }
+    ]
+  }
+}

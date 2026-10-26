@@ -1,0 +1,15 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../lib/site.ts';
+---
+
+<Base title="About">
+  <h1>About</h1>
+  <p>{site.author}, {site.role.toLowerCase()} in {site.location}.</p>
+  <p>Experience, certificates and a resume will be here soon.</p>
+  <ul>
+    <li><a href={site.links.github}>GitHub</a></li>
+    <li><a href={site.links.x}>X</a></li>
+    <li><a href={site.links.lastfm}>Last.fm</a></li>
+  </ul>
+</Base>

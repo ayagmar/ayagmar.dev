@@ -1,0 +1,129 @@
+/* Base layer only: readable and responsive until the visual design lands. */
+:root {
+  color-scheme: light dark;
+  --measure: 70ch;
+  --space: clamp(1rem, 0.6rem + 2vw, 2rem);
+  font-family: system-ui, sans-serif;
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0 auto;
+  padding: var(--space);
+  max-width: calc(var(--measure) + 2 * var(--space));
+  overflow-wrap: break-word;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+pre {
+  overflow-x: auto;
+  padding: 0.75rem;
+}
+
+code,
+pre {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+header,
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+nav,
+nav ul,
+footer ul,
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Targets of at least 24 by 24 CSS pixels (WCAG 2.2 target size). */
+nav a,
+footer a,
+dialog a,
+.tags a,
+button,
+input {
+  display: inline-block;
+  min-width: 24px;
+  min-height: 24px;
+  padding-block: 0.25rem;
+}
+
+input {
+  max-width: 100%;
+  font: inherit;
+}
+
+.posts {
+  padding: 0;
+  list-style: none;
+}
+
+.posts p {
+  margin-top: 0;
+}
+
+.posts time {
+  margin-inline-end: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.skip {
+  position: absolute;
+  left: -100vw;
+}
+
+.skip:focus {
+  position: static;
+}
+
+/* biome-ignore-start lint/complexity/noImportantStyles: reduced motion must beat any component style. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* biome-ignore-end lint/complexity/noImportantStyles: see above. */
