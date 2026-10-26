@@ -121,10 +121,13 @@ describe('scheduled', () => {
     );
     for (const { id, intervalSeconds } of pullAdapters) {
       const runs = attempts.get(id) ?? [];
-      // Every source is tried in the first minutes, and again within its interval plus 5.
+      // Every source is tried in the first minutes, and again within its interval plus 5,
+      // up to the end of the two days: the daily one too, so each is tried more than once.
       expect(runs[0], id).toBeLessThan(pullAdapters.length);
+      expect(runs.length, id).toBeGreaterThan(1);
       const limit = id === 'listening' ? 5 : intervalSeconds / 60 + 5;
       expect(Math.max(...(gaps.get(id) ?? [])), id).toBeLessThanOrEqual(limit);
+      expect(run - (runs.at(-1) ?? 0), `${id} at the end`).toBeLessThanOrEqual(limit);
     }
     expect(weatherFailures).toBeGreaterThan(0);
     const weather = await fetchApi('/v1/weather').then((r) => r.json());
