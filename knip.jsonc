@@ -6,8 +6,8 @@
       "project": ["scripts/**/*.ts"],
       // Run by justfile recipes, which knip does not read.
       "ignoreDependencies": ["@biomejs/biome"],
-      // The task runner itself, from mise or scripts/bootstrap.sh; ci-policy reads its dump.
-      "ignoreBinaries": ["just"]
+      // From mise or scripts/bootstrap.sh: ci-policy reads just's dump, gitleaks-report runs gitleaks.
+      "ignoreBinaries": ["just", "gitleaks"]
     },
     "packages/contracts": {
       "entry": ["scripts/*.ts", "test/**/*.test.ts"],

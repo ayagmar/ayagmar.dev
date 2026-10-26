@@ -111,9 +111,9 @@ contracts-schema:
 contracts-schema-check:
     node packages/contracts/scripts/export-schema.ts --check
 
-# Scan the git history for secrets (gitleaks)
+# Scan the git history for secrets (gitleaks; prints file, line and rule only)
 scan-secrets-source: (tools "gitleaks")
-    gitleaks git --redact=100 --no-banner --verbose .
+    node scripts/gitleaks-report.ts git .
 
 # Scan the built site and signals bundle for secrets; run site-build and signals-build first
 scan-secrets: scan-site scan-signals
@@ -124,10 +124,9 @@ scan-site: (scan-artifact "apps/site/dist")
 # Scan the signals bundle (apps/signals/dist) for secrets
 scan-signals: (scan-artifact "apps/signals/dist")
 
-# Scan a directory of built output for secrets: the repo's scanner, then gitleaks
+# Scan a directory of built output for secrets with both scanners; either one fails it
 scan-artifact dir: (tools "gitleaks")
-    node scripts/scan-secrets.ts {{ quote(dir) }}
-    gitleaks dir --redact=100 --no-banner --verbose {{ quote(dir) }}
+    ok=true; node scripts/scan-secrets.ts {{ quote(dir) }} || ok=false; node scripts/gitleaks-report.ts dir {{ quote(dir) }} || ok=false; "${ok}"
 
 # Site: fail if the built site has no search index (run after site-build)
 site-dist-check:
