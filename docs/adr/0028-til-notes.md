@@ -19,7 +19,7 @@ The owner wants a stream of short "today I learned" notes next to the long posts
 - `/til` shows every published note in full, newest first, each as an `article` with its title (the permalink, a link to `/til/<slug>`), its date, its tags and its rendered body. With none, it says "Nothing published yet." and still links its feeds.
 - `/til/<slug>` is one page per note, with the post header (`PostHeader.astro`, now taking anything with a title, date, tags and draft flag) and the post's `paper post` layout and prose.
 - Tags on a note are plain text. `/writing/tags/<tag>` exists only for tags some post uses, so a link could lead nowhere; a TIL tag page would be a new feature.
-- Notes render during every build, like posts (`deferRender`), so the diagram renderer runs on each. `/diagrams.css` collects the styles of posts and notes. Because `/til` puts many notes on one page, a note's diagram ids start with its file name (`first-note-diagram-1`), where a post's stay `diagram-1`; two notes cannot share an id.
+- Notes render during every build, like posts (`deferRender`), so the diagram renderer runs on each. `/diagrams.css` collects the styles of posts and notes. Because `/til` puts many notes on one page, every id a note's Markdown makes carries its file name (`first-note-diagram-1`, `first-note-example`, `first-note-user-content-fn-1`), and so do the `#fragment` links and ARIA references that point at them, so a section link or a footnote mark in one note never lands in another. `markdown/scope-ids.ts` holds the one rule (`idScope`, empty for a post) and the `scopeIds` pass, which runs before `diagrams`; the diagram pass takes its prefix from the same function. A post's ids are unchanged.
 - No client JavaScript is added to any page. The CSP is unchanged.
 
 ### Feeds
@@ -40,7 +40,7 @@ A note page carries `data-pagefind-body` and a hidden element with `data-pagefin
 
 ### Tests
 
-- Unit: feed ids, drafts and empty feeds for notes; the golden files for the writing feeds; `noteSummary`; the frontmatter schema; diagram ids; Astro failing a build on a bad note.
+- Unit: feed ids, drafts and empty feeds for notes; the golden files for the writing feeds; `noteSummary`; the frontmatter schema; diagram ids; ids, fragment links and aria references of two stacked notes through a real Astro build; Astro failing a build on a bad note.
 - e2e on the production build (`e2e/til.spec.ts`): the empty state, the feeds against the validator rules, TIL feed links only on TIL pages, and that no draft note reaches `/til`, its permalink, either feed, the writing feeds, search, `index.txt` or the sitemap. The generic page tests (axe at 360 and 1280 px, 320 px overflow) run on `/til` as it is in the sitemap, and on every published note.
 - e2e on a build that shows drafts (`e2e/til-preview.spec.ts`): while every note is a draft, the production build has no note page to test. `just site-build-preview` builds the site with `PUBLIC_SHOW_DRAFTS=1` into `apps/site/node_modules/.cache/preview`, and a second Playwright `webServer` serves it through the same Worker on port 8791. That project runs axe on `/til` and each note in both themes at both sizes, the 320 px check, the long code line (a block that scrolls inside itself, keyboard-focusable, without widening the page), the stacked page (full bodies, newest first, date and permalink), feeds with entries (validator rules, ids, and no note in the writing feeds), search with the TIL title, and `index.txt`. It depends on the seed note `brace-group-pipe-to-sh` for the long line.
 
@@ -48,6 +48,6 @@ A note page carries `data-pagefind-body` and a hidden element with `data-pagefin
 
 - Adding a note is adding a file. Publishing is removing `draft: true`.
 - `/til` grows with every note and has no pagination. At a few lines each that is fine for a long while; a note count in the hundreds would need a split by year.
-- Footnotes (`[^1]`) in two notes would repeat their ids on `/til`. The seed notes use none; avoid them in notes or add a scope as for diagrams.
+- Heading and footnote ids on `/til` are `<slug>-<id>`, so a link to a heading in a note must still be written as the bare heading slug (`#example`); the pass rewrites it. An id typed in raw HTML in a note is prefixed too.
 - `just e2e` builds the site a second time (about a second of Astro plus Pagefind).
 - A feed reader sees a note's first paragraph, not its full text; the link goes to the note.

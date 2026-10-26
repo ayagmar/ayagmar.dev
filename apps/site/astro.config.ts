@@ -3,6 +3,7 @@ import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 import { defineConfig, envField } from 'astro/config';
 import { diagrams } from './src/lib/markdown/diagrams.ts';
+import { scopeIds } from './src/lib/markdown/scope-ids.ts';
 import { scrollable } from './src/lib/markdown/scrollable.ts';
 import { siteUrl } from './src/lib/site.ts';
 
@@ -22,7 +23,7 @@ export default defineConfig({
   // left get tabindex so their sideways scroll works from the keyboard.
   markdown: {
     syntaxHighlight: false,
-    processor: satteri({ hastPlugins: [diagrams, scrollable] }),
+    processor: satteri({ hastPlugins: [scopeIds, diagrams, scrollable] }),
   },
   integrations: [svelte(), sitemap()],
   // Never inline a script or asset into the page: the CSP has no `data:` and allows no inline
