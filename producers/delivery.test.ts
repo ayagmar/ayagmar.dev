@@ -303,6 +303,36 @@ describe('Retry-After across runs', () => {
     assert.equal(restart.requests.length, 0);
   });
 
+  // Catches a new body taken as leave to send: Retry-After holds for the endpoint, not the body.
+  it('keeps the deadline when a reboot supersedes the pending body', async () => {
+    let rebooted = false;
+    const { producer, state } = standIn({ supersedes: () => rebooted });
+    const first = signals({ status: 429, headers: { 'retry-after': '3600' } });
+    assert.equal(await deliver(at(0, first.fetch).rt, producer), exitCodes.retryLater);
+
+    rebooted = true;
+    const restart = signals(accepted());
+    assert.equal(await deliver(at(15 * minute, restart.fetch).rt, producer), exitCodes.retryLater);
+    assert.equal(restart.requests.length, 0);
+    assert.equal(state.built, 2);
+  });
+
+  it('keeps the deadline when the pending body expires', async () => {
+    const { producer, state } = standIn();
+    const first = signals({ status: 429, headers: { 'retry-after': '3600' } });
+    // The body was collected at `now`; signals asks for an hour when it is 22.5 hours old.
+    const old = 22.5 * 60 * minute;
+    assert.equal(await deliver(at(old, first.fetch).rt, producer), exitCodes.retryLater);
+
+    const restart = signals(accepted());
+    assert.equal(
+      await deliver(at(old + 31 * minute, restart.fetch).rt, producer),
+      exitCodes.retryLater
+    );
+    assert.equal(restart.requests.length, 0);
+    assert.equal(state.built, 2);
+  });
+
   // Catches a corrupt deadline read as "no deadline" and the body sent anyway.
   it('fails closed on a deadline file it cannot read', async () => {
     const { producer } = standIn();

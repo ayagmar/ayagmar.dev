@@ -356,12 +356,10 @@ export async function deliver(rt: Runtime, producer: Producer): Promise<ExitCode
       if (rt.now() - Date.parse(pending.sentAt) > maxPendingAgeMs) {
         rt.log({ ...fields, event: 'retired', code: 'expired' });
         rmSync(pendingFile(rt.stateDir));
-        saveDeadline(rt.stateDir, undefined);
         body = undefined;
       } else if (producer.supersedes?.(pending)) {
         rt.log({ ...fields, event: 'retired', code: 'superseded' });
         rmSync(pendingFile(rt.stateDir));
-        saveDeadline(rt.stateDir, undefined);
         body = undefined;
       } else {
         rt.log({ ...fields, event: 'resending' });
