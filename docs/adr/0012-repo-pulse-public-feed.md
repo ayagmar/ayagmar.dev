@@ -135,7 +135,8 @@ Example:
 ```
 
 Privacy rules. The feed is public, so it carries only what GitHub already shows publicly, and less:
-- Only repositories that are public now and were public when the event was recorded. repo-pulse marks events recorded before it stored visibility as private (migration 0004); those never appear.
+- Only repositories whose latest recorded visibility is public. repo-pulse today stores `repository.private` once per event and never re-checks it, so it must also subscribe to GitHub's `repository` webhook events and record `privatized`, `publicized`, `deleted` and `renamed`. A repository's visibility is the one in its newest recorded event of any type. When that is private or deleted, every earlier event of the repository and its `starHistory` drop out of the feed, even events recorded while it was public; a later `publicized` brings them back.
+- Within a public repository, only events that were themselves recorded as public. repo-pulse marks events recorded before it stored visibility as private (migration 0004); those never appear.
 - Only the four types above. Issues, forks, star removals, other pull request actions and anything added later stay out until this contract lists them.
 - Never the sender or any login, avatar, or follower count; never issue or pull request bodies, labels, commit messages, branch names other than through the compare URL, delivery ids, notable stargazers, referrers or traffic, digests, or delivery and provider state.
 - Built from an explicit field list, not by removing fields from the stored event JSON, so a field repo-pulse starts storing later is not published by accident.
@@ -146,6 +147,7 @@ Errors never include stack traces or D1 messages: `400`/`405` as above, `500 {"e
 
 ## Consequences
 
+- A repository made private leaves the feed at once, signals' snapshot within 15 minutes, and the site at its next production build. Making a repository private is therefore not instant on ayagmar.dev; rebuild the site to speed it up.
 - Until the route exists, signals gets a 404 every 15 minutes, records `upstream_not_found`, and the site renders the shipping empty state.
 - Additions within v1 are new optional fields or new event types. signals checks events one by one and skips types it does not know, so repo-pulse can ship a new type before signals reads it.
 - The shared fixtures under `packages/contracts/fixtures/repo-pulse/` are sample data in this shape; replace the `ok` case with a real response once the route is live.
