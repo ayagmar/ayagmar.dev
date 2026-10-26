@@ -79,7 +79,6 @@ export async function handlePush<Push extends { deliveryId: string; sentAt: stri
   producer: Producer<Push>,
   c: Context<AppEnv>
 ): Promise<Response> {
-  const receivedAt = Date.now();
   const reject = (
     { status, error }: Rejection,
     extra: object = {},
@@ -98,7 +97,9 @@ export async function handlePush<Push extends { deliveryId: string; sentAt: stri
   const body = await readBoundedBody(c.req.raw.body, maxPushBodyBytes);
   if (body === null) return reject({ status: 413, error: 'body_too_large' });
 
-  if (!(await authenticate(producer, c, body, receivedAt))) {
+  // Time is read after the body has arrived: an upload can take as long as the client likes,
+  // and the signature window must not start counting before the request is complete.
+  if (!(await authenticate(producer, c, body, Date.now()))) {
     return reject({ status: 401, error: 'unauthorized' });
   }
   // Best effort and per Cloudflare location; the D1 interval below is the hard ceiling.
@@ -130,6 +131,8 @@ export async function handlePush<Push extends { deliveryId: string; sentAt: stri
   if (seen?.outcome === 'duplicate') return json(200, { accepted: true });
   if (seen?.outcome === 'conflict') return reject({ status: 409, error: 'delivery_id_reused' });
 
+  // Freshness and the minimum interval use the time of admission, read just before it.
+  const receivedAt = Date.now();
   const sentAt = Date.parse(push.sentAt);
   if (sentAt < receivedAt - maxSentAtAgeMs || sentAt > receivedAt + maxSentAtAheadMs) {
     return reject({ status: 422, error: 'sent_at_out_of_window' });

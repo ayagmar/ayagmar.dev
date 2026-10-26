@@ -42,6 +42,8 @@ Two producers push to signals over the public internet: the llm-usage-metrics ti
 9. Allowlist projection into the published snapshot (below), then validation against the snapshot schema.
 10. Atomic admission (ADR 0010): the snapshot is replaced and the delivery recorded together, or neither. Rejections store nothing: **429** `too_soon` with `Retry-After` inside the 60 s minimum interval (the hard ceiling the rate limiter is not), **409** `older_than_current` when the stored snapshot has a later `sentAt`. Success: **202** `{ "accepted": true }`.
 
+The clock is read after the body has arrived, for the signature window, and again just before step 8, for freshness and as the admission time stored for the minimum interval. A client that uploads slowly therefore gains nothing, so there is no separate body-read deadline: a slow upload only holds its own connection, which costs no CPU time.
+
 Every push response has `Cache-Control: no-store` and no CORS headers. A D1 failure is a generic **500** and stores nothing; the producer retries the same delivery.
 
 ### Replay
