@@ -119,14 +119,15 @@ scan-secrets-source: (tools "gitleaks")
 scan-secrets: scan-site scan-signals
 
 # Scan apps/site/dist for secrets
-scan-site: (tools "gitleaks")
-    node scripts/scan-secrets.ts apps/site/dist
-    gitleaks dir --redact=100 --no-banner --verbose apps/site/dist
+scan-site: (scan-artifact "apps/site/dist")
 
 # Scan the signals bundle (apps/signals/dist) for secrets
-scan-signals: (tools "gitleaks")
-    node scripts/scan-secrets.ts apps/signals/dist
-    gitleaks dir --redact=100 --no-banner --verbose apps/signals/dist
+scan-signals: (scan-artifact "apps/signals/dist")
+
+# Scan a directory of built output for secrets: the repo's scanner, then gitleaks
+scan-artifact dir: (tools "gitleaks")
+    node scripts/scan-secrets.ts {{ quote(dir) }}
+    gitleaks dir --redact=100 --no-banner --verbose {{ quote(dir) }}
 
 # Site: fail if the built site has no search index (run after site-build)
 site-dist-check:

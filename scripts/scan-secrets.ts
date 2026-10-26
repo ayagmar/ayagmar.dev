@@ -78,10 +78,10 @@ export function scan(dirs: readonly string[]): Finding[] {
       throw new Error(`${dir} is not a directory; build it first`);
     }
     for (const file of files(dir)) {
-      const bytes = readFileSync(file);
-      // Binary files (fonts, images, wasm) cannot hold an inlined env value.
-      if (bytes.subarray(0, 8000).includes(0)) continue;
-      const lines = bytes.toString('utf8').split('\n');
+      // Every file, binary ones too: a WebAssembly data section, image metadata or a PDF can
+      // carry a token. latin1 maps each byte to one character, so the ASCII patterns match
+      // the same bytes in text and binary files.
+      const lines = readFileSync(file, 'latin1').split('\n');
       lines.forEach((text, index) => {
         for (const rule of rules) {
           // Every pattern has the g flag; matchAll copies it, so no state carries over.
