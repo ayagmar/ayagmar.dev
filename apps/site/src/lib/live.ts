@@ -176,8 +176,8 @@ export function readAnswer<Data>(
  * `render`: valid, not flagged stale by signals, within the threshold, and at least as new.
  * Anything else keeps it. Whatever is shown is labelled with its age, and called out of date
  * once older than the threshold. `render` is told whether the answer still describes now:
- * fresh, and the latest request brought it or an older one, not a failure or an answer the
- * page cannot use.
+ * fresh, and brought by the latest request, not a failure or any answer that did not replace
+ * what is shown.
  */
 export function live<Data>(
   source: string,
@@ -199,11 +199,12 @@ export function live<Data>(
   let drawn = '';
   poll(liveSrc, everyMs, (body, time, failed) => {
     const answer = readAnswer(body, source, read, time);
-    if (answer && !answer.stale && time - answer.at <= limit && !(answer.at < shown.at)) {
-      shown = answer;
-    }
+    const current =
+      answer !== undefined && !answer.stale && time - answer.at <= limit && !(answer.at < shown.at);
+    if (current) shown = answer;
     const fresh = time - shown.at <= limit;
-    const now = fresh && !failed && answer !== undefined;
+    // Now only while the latest request brought a current answer, the one shown.
+    const now = fresh && !failed && current;
     const key = `${shown.at} ${fresh} ${now}`;
     if (key !== drawn && shown.fetchedAt) {
       drawn = key;

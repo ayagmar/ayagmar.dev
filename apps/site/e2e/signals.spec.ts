@@ -235,6 +235,26 @@ test('the record turns again when the API answers after a failure', async ({ pag
   await expectLive(page);
 });
 
+// Catches an ignored answer restarting the record: after a failure ends it, an answer older
+// than the one shown, stale and empty, must not bring back "Now playing".
+test('the record stays stopped on an older answer after a failure', async ({ page }) => {
+  let requests = 0;
+  await goLive(page, (route) => {
+    requests += 1;
+    if (requests === 1) return route.fulfill(playing());
+    if (requests === 2) return route.fulfill({ status: 503, body: '' });
+    return route.fulfill(
+      envelope(true, { ...snapshot('ok'), nowPlaying: null, recent: [] }, '2000-01-01T00:00:00Z')
+    );
+  });
+  await expectLive(page);
+  await page.clock.runFor(60_000);
+  await expectRested(page, '2 minutes ago');
+  await page.clock.runFor(60_000);
+  await expect.poll(() => requests).toBe(3);
+  await expectRested(page, '3 minutes ago');
+});
+
 // One request at a time, given up after 5 s: a refresh that hangs counts as a failure, and the
 // next minute asks again.
 test('the record stops when a refresh hangs past its deadline', async ({ page }) => {
@@ -297,8 +317,9 @@ declare global {
 for (const { fetchedAt, live, shown } of [
   // A server clock a minute ahead of the visitor's is still believable.
   { fetchedAt: '2026-10-26T10:32:00Z', live: true, shown: 'Pink Moon' },
-  // An answer older than the one shown (another cache, say) leaves it as it is.
-  { fetchedAt: '2000-01-01T00:00:00Z', live: true, shown: 'Which Will' },
+  // An answer older than the one shown (another cache, say) keeps the track but says nothing
+  // about now: the latest request did not bring a current answer.
+  { fetchedAt: '2000-01-01T00:00:00Z', live: false, shown: 'Which Will' },
   // An answer from the future, with no readable time, or on a day the calendar does not have
   // is ignored, and no longer says anything about now.
   { fetchedAt: '2099-01-01T00:00:00Z', live: false, shown: 'Which Will' },
