@@ -10,14 +10,14 @@
  * overcast, and where 4677 says "moderate or heavy" (57, 67, 81, 86) Open-Meteo names one.
  */
 
-export type WeatherState = 'clear' | 'cloudy' | 'fog' | 'rain' | 'snow' | 'storm';
+export type WeatherState = 'clear' | 'cloudy' | 'overcast' | 'fog' | 'rain' | 'snow' | 'storm';
 
 /** Every code Open-Meteo documents: the layer the window shows, and the words it says. */
 export const weatherCodes: Readonly<Record<number, readonly [WeatherState, string]>> = {
   0: ['clear', 'clear sky'],
   1: ['clear', 'mainly clear'],
   2: ['cloudy', 'partly cloudy'],
-  3: ['cloudy', 'overcast'],
+  3: ['overcast', 'overcast'],
   45: ['fog', 'fog'],
   48: ['fog', 'depositing rime fog'],
   51: ['rain', 'light drizzle'],

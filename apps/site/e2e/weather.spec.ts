@@ -13,7 +13,7 @@ const minute = 60_000;
 const noon = '2026-10-26T12:00:00Z';
 const night = '2026-10-26T03:00:00Z';
 
-type Case = 'ok' | 'clear' | 'fog' | 'rain' | 'snow' | 'storm' | 'unknown-code';
+type Case = 'ok' | 'partial' | 'clear' | 'fog' | 'rain' | 'snow' | 'storm' | 'unknown-code';
 
 // The shared weather fixtures (packages/contracts/fixtures/weather/snapshot).
 const snapshot = (name: Case) =>
@@ -98,10 +98,17 @@ for (const { name, weather, layer, rain, words } of [
   { name: 'clear', weather: 'clear', layer: null, rain: [null, null], words: ', clear sky, 17 °C' },
   {
     name: 'ok',
+    weather: 'overcast',
+    layer: 'weather-overcast-day',
+    rain: [null, null],
+    words: ', overcast, 24 °C',
+  },
+  {
+    name: 'partial',
     weather: 'cloudy',
     layer: 'weather-cloudy-day',
     rain: [null, null],
-    words: ', overcast, 24 °C',
+    words: ', partly cloudy',
   },
   {
     name: 'fog',
