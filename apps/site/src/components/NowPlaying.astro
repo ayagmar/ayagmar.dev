@@ -1,0 +1,46 @@
+---
+import type { Envelope, ListeningSnapshot } from '@min7/contracts';
+import { nowPlaying } from '../lib/listening.ts';
+import Stamp from './Stamp.astro';
+
+interface Props {
+  listening: Envelope<ListeningSnapshot, 'listening'>;
+}
+
+const { listening } = Astro.props;
+// The build cannot know whether a track still plays, so it never says "Now playing"; the
+// page's script does, while Last.fm says so (src/lib/listening.ts).
+const line =
+  listening.data === null || listening.fetchedAt === null
+    ? null
+    : nowPlaying(listening.data, listening.fetchedAt, false);
+const track = line?.track ?? null;
+---
+
+<!-- The sentence is announced politely and whole when it changes; the time after it ticks. -->
+<p class="now-playing">
+  <span aria-live="polite" aria-atomic="true"
+    >{line === null ? (
+      'No listening data yet'
+    ) : track === null ? (
+      line.lead
+    ) : (
+      <>
+        {line.lead}{' '}
+        {track.url === null ? (
+          <cite>{track.track}</cite>
+        ) : (
+          <a href={track.url}>
+            <cite>{track.track}</cite>
+          </a>
+        )}{' '}
+        by {track.artist}
+      </>
+    )}</span
+  >{line?.at && (
+    <>
+      {line.when}
+      <Stamp iso={line.at} />
+    </>
+  )}
+</p>

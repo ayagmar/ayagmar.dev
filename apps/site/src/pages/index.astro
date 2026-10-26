@@ -1,9 +1,10 @@
 ---
-import NowPlayingPanel from '../components/NowPlayingPanel.astro';
+import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
+import Sample from '../components/Sample.astro';
 import ShippingHeat from '../components/ShippingHeat.astro';
 import ShippingList from '../components/ShippingList.astro';
-import { signals, signalsApiBase, signalsMode } from '../data/signals.ts';
+import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
@@ -96,15 +97,20 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
     </section>
 
     <div>
-      <section class="panel m-vinyl" aria-labelledby="listening">
+      <section
+        class="panel m-vinyl"
+        aria-labelledby="listening"
+        {...liveAttrs('listening', listening)}
+      >
         <div class="panel-head">
           <h2 id="listening">Listening</h2>
           <a href="/stats#listening">More</a>
         </div>
         <div class="record">
           <div class="disc" aria-hidden="true"></div>
-          <NowPlayingPanel listening={listening} />
+          <NowPlaying listening={listening} />
         </div>
+        {listening.data !== null && <Sample />}
       </section>
 
       <section class="panel m-cork" aria-labelledby="shipping">
@@ -120,6 +126,7 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
             <ShippingList events={recentlyShipped} />
           </>
         )}
+        {shipping.data !== null && <Sample />}
       </section>
     </div>
   </div>
@@ -127,4 +134,8 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 
 <script>
 import '../scripts/room.ts';
+</script>
+
+<script>
+import '../scripts/now-playing.ts';
 </script>

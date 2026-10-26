@@ -45,14 +45,3 @@ export function uptime(bootedAt: string, now: number): string {
   if (hours < 1) return 'under an hour';
   return hours < 24 ? plural(hours, 'hour') : plural(Math.floor(hours / 24), 'day');
 }
-
-/** `2 hours ago`: how long before `now` the report was taken, rounded down. */
-export function reportedAgo(fetchedAt: string, now: number): string {
-  const minutes = Math.max(0, Math.floor((now - Date.parse(fetchedAt)) / 60_000));
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${plural(minutes, 'minute')} ago`;
-  const hours = Math.floor(minutes / 60);
-  return hours < 24
-    ? `${plural(hours, 'hour')} ago`
-    : `${plural(Math.floor(hours / 24), 'day')} ago`;
-}

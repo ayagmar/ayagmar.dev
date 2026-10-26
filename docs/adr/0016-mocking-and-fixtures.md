@@ -14,7 +14,7 @@ The same upstream answers are needed by the normalizer tests, the Worker tests, 
 - Worker tests (`apps/signals/test/pull-fetch.test.ts`) use `@msw/cloudflare` `setupNetwork()`, configured with `onUnhandledFrame: 'error'`, so a request no handler answers fails the fetch. A test proves a request to an unexpected host fails.
 - Node tests (`apps/site/test/reader.test.ts`) use `msw/node` `setupServer`, also with `onUnhandledFrame: 'error'`. The one case MSW's Node interceptor cannot simulate, a body that stalls after the headers, uses a real local `node:http` server.
 - Normalizer tests run every raw case through its normalizer: a case with a snapshot fixture must produce exactly that snapshot, one without must throw the listed `PullError` code. The contract test (`packages/contracts/test/json-schema.test.ts`) reads the snapshot fixtures and the repo-pulse raw bodies in place as corpus cases, so they are checked by zod and by Ajv against the exported JSON Schema.
-- e2e tests run on the fixtures build. Playwright's own routing stands in for the read API when testing the now-playing island.
+- e2e tests run on the fixtures build. Playwright's own routing stands in for the read API when testing the parts of pages the browser keeps current (ADR 0015).
 
 ## Consequences
 

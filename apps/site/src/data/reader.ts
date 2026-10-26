@@ -31,7 +31,7 @@ export type PulledSource = keyof Snapshots;
 
 export type SnapshotOf<Source extends PulledSource> = Snapshots[Source];
 
-export type SignalsMode = 'fixtures' | 'api';
+type SignalsMode = 'fixtures' | 'api';
 
 export interface ReaderOptions {
   mode: SignalsMode;

@@ -5,7 +5,8 @@
  * the tests hold them to the contract's corpus.
  */
 import { rabatDate } from '@min7/contracts/rabat';
-import { instantMs, knowsRabatDate } from './live.ts';
+import { instantMs } from './live.ts';
+import { knowsRabatDate } from './rabat-date.ts';
 
 const hourMs = 3_600_000;
 // The contract's bounds (packages/contracts/src/push/delivery.ts): 25-hour local days.

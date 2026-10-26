@@ -758,6 +758,50 @@ kbd {
   font: 500 0.8125rem / 1.5 var(--mono);
 }
 
+/* A time the page's script keeps relative to now (src/lib/live.ts) sits in a box as wide as
+   the longest text it can hold ("59 minutes ago", or "26 Oct, 09:00" before the script
+   runs), so rewriting it never reflows the page (CLS). */
+time[data-ago] {
+  display: inline-block;
+  min-width: 14ch;
+  color: var(--fg-2);
+  font: 500 0.8125rem / 1.5 var(--mono);
+}
+
+/* Fixtures mode (ADR 0015): sample numbers wear a rose tag, so a Preview is never read as
+   live. Rose is the colour of what is not real. */
+.sample {
+  width: fit-content;
+  margin-block: 0.75rem 0;
+  padding: 0.15rem 0.5rem;
+  background: var(--rose);
+  color: var(--ground);
+  font: 700 0.75rem / 1.5 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* On /stats, the whole page's version: a hatched rose banner under the title. */
+.sample-banner {
+  width: auto;
+  margin: 0 0 1.5rem;
+  padding: 0.6rem 0.9rem;
+  border: 3px solid var(--rose);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--rose) 22%, transparent) 0 8px,
+    transparent 8px 16px
+  );
+  color: var(--text);
+  font-size: 0.8125rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.sample-banner a {
+  color: var(--lamp);
+}
+
 @media (min-width: 40rem) {
   .panel,
   .paper {
@@ -871,10 +915,11 @@ kbd {
   animation: blink 1.6s steps(2) infinite;
 }
 
-.shipping time {
+.shipping time,
+.shipping time[data-ago] {
   display: block;
   color: var(--glow);
-  font: 700 0.8125rem var(--mono);
+  font: 700 0.8125rem / 1.5 var(--mono);
 }
 
 /* The last four weeks, a cell a day, in its own inset box above the rail. */
@@ -1538,6 +1583,12 @@ main:has(.toc) .reader ~ .project-card {
 .stats-grid li::marker {
   color: var(--lamp);
   font-family: var(--mono);
+}
+
+/* Agent hours: each row's pair sits in the list's grid; a hidden row (a value not sent)
+   takes no space. Not scoped to /stats, so the live panels' markup matches the build's. */
+.agent-hours dl > div:not([hidden]) {
+  display: contents;
 }
 
 /* Track names as on home: an italic here loads the italic font, whose swap reflows the
