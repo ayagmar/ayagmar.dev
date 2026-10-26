@@ -372,6 +372,11 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - run: just e2e-install
+      # The base's own pinned tools (its justfile puts its .tools/bin first), so a base that
+      # still needs a tool head has dropped, such as Typst before #22, still builds.
+      - name: Bootstrap the base
+        working-directory: .lighthouse/base
+        run: ./scripts/bootstrap.sh
       - name: Install the base
         working-directory: .lighthouse/base
         run: just install
