@@ -10,7 +10,7 @@
       "binding": "DB",
       "database_name": "min7-signals-preview",
       // PLACEHOLDER: same id as previews.d1_databases in wrangler.jsonc.
-      "database_id": "00000000-0000-0000-0000-000000000001",
+      "database_id": "5875597f-8d9c-4f35-a522-79efec2caf58",
       "migrations_dir": "migrations"
     }
   ]

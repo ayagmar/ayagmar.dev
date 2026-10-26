@@ -39,13 +39,7 @@ Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` r
 
 ## D1 (signals)
 
-`apps/signals/wrangler.jsonc` declares the `DB` binding with placeholder ids. Before the first signals deploy:
-
-```sh
-just signals-db-create
-```
-
-Put the first id in `d1_databases` and the second in `previews.d1_databases` of `wrangler.jsonc` and in `wrangler.preview-migrations.jsonc`, then commit. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database (`scripts/workers-config.test.ts` checks this).
+Both databases exist (created 2026-10-26 with `just signals-db-create`), and their ids are in the configs: `min7-signals` in `d1_databases` of `apps/signals/wrangler.jsonc`, `min7-signals-preview` in its `previews.d1_databases` and in `wrangler.preview-migrations.jsonc`. To recreate them on another account, run `just signals-db-create` and replace those ids. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database (`scripts/workers-config.test.ts` checks this).
 
 | Recipe                         | Applies `apps/signals/migrations/` to                           |
 | ------------------------------ | --------------------------------------------------------------- |
