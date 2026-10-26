@@ -73,15 +73,19 @@ As of this scaffold only `/v1/health` exists, the site pages show empty states, 
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)           |
 | Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                   |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                   |
+| About page and resume data, its schema                                    | `content/about.json`, `apps/site/src/data/about.ts`                                           |
+| Resume PDF (Typst template, build and ship scripts)                       | `resume/resume.typ`, `apps/site/scripts/{resume,ship-resume}.ts`                              |
 | Base stylesheet                                                           | `apps/site/src/styles/base.css`                                                               |
 | Commands                                                                  | `justfile`                                                                                    |
 | Decisions                                                                 | `docs/adr/`                                                                                   |
 
 ## Site build
 
-`just site-build` runs three steps:
-1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
-2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post bodies) into `dist/pagefind/`.
-3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
+`just site-build` runs these steps:
+1. `just resume` validates `content/about.json` and compiles `resume/resume.typ` into `resume/build/resume.pdf` with Typst.
+2. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
+3. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post bodies) into `dist/pagefind/`.
+4. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
+5. `scripts/ship-resume.ts` copies the PDF (or `resume/override.pdf`) to `dist/resume.pdf` only when `resume.published` is `true`.
 
 In production, Workers static assets serve `dist/`. The site Worker runs only for `/`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt`, anything else gets `index.html`. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.
