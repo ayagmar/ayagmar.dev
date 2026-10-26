@@ -2,8 +2,9 @@
 type PullSecret = 'LASTFM_API_KEY' | 'GITHUB_TOKEN';
 
 /**
- * A secret's value, or undefined when it is unset or empty. Secrets are not in wrangler.jsonc,
- * so the generated `Env` does not declare them and they are read here, checked at run time.
+ * A secret's value, or undefined when it is unset or empty. `GITHUB_TOKEN` is optional, so the
+ * generated `Env` does not declare it, and a required secret can still be missing locally;
+ * both are read here, checked at run time.
  */
 export function readSecret(env: Env, name: PullSecret): string | undefined {
   const value: unknown = Reflect.get(env, name);

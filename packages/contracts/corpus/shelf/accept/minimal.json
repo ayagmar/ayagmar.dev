@@ -1,0 +1,14 @@
+{
+  "source": "shelf",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:00:00.000Z",
+  "stale": true,
+  "data": {
+    "booksFinished": {
+      "year": 2026,
+      "count": 0
+    },
+    "inProgress": [],
+    "habits": []
+  }
+}

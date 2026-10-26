@@ -1,0 +1,23 @@
+{
+  "source": "llm-usage",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:00:00.000Z",
+  "stale": true,
+  "data": {
+    "last7Days": {
+      "costUsd": null,
+      "totalTokens": 0
+    },
+    "monthToDate": {
+      "costUsd": null,
+      "totalTokens": 0,
+      "cacheSavingsUsd": null,
+      "agents": []
+    },
+    "streak": {
+      "currentDays": 0,
+      "longestDays": 0
+    },
+    "days": []
+  }
+}

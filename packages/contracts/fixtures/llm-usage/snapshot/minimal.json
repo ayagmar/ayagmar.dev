@@ -1,0 +1,17 @@
+{
+  "last7Days": {
+    "costUsd": null,
+    "totalTokens": 0
+  },
+  "monthToDate": {
+    "costUsd": null,
+    "totalTokens": 0,
+    "cacheSavingsUsd": null,
+    "agents": []
+  },
+  "streak": {
+    "currentDays": 0,
+    "longestDays": 0
+  },
+  "days": []
+}

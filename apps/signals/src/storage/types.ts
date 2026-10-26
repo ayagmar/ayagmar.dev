@@ -1,17 +1,27 @@
 import type { SourceId } from '@min7/contracts';
 
-export interface StoredSnapshot {
+/** What signals knows about a source's freshness, without the snapshot itself. */
+export interface SourceStatus {
   source: SourceId;
-  snapshot: unknown;
-  /** RFC 3339 time the snapshot was fetched or pushed. */
-  fetchedAt: string;
+  /** RFC 3339 time the stored snapshot was true: fetched (pull) or `sentAt` (push). */
+  fetchedAt: string | null;
+  /** RFC 3339 time signals last stored a snapshot for the source. */
+  lastSuccessAt: string | null;
   /** Error code of the last failed refresh since the last success, if any. */
   lastErrorCode: string | null;
+  /** Unix milliseconds of the cron's last attempt (pull sources only). */
+  lastAttemptAt: number | null;
 }
 
-/** Latest normalized snapshot per source. */
+export interface StoredSnapshot extends SourceStatus {
+  /** Normalized snapshot, null until the source has succeeded once. */
+  snapshot: unknown;
+}
+
+/** Latest normalized snapshot per source. Pushes are admitted by `storage/admission.ts`. */
 export interface SnapshotStore {
   get(source: SourceId): Promise<StoredSnapshot | null>;
+  list(): Promise<SourceStatus[]>;
   put(source: SourceId, snapshot: unknown, fetchedAt: string): Promise<void>;
-  recordFailure(source: SourceId, code: string): Promise<void>;
+  recordFailure(source: SourceId, code: string, at: string): Promise<void>;
 }

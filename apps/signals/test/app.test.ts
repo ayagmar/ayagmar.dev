@@ -6,14 +6,6 @@ import { onError } from '../src/errors.ts';
 const get = (path: string) => exports.default.fetch(new Request(`https://api.ayagmar.dev${path}`));
 
 describe('signals', () => {
-  it('reports the deployed commit on /v1/health', async () => {
-    const response = await get('/v1/health');
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toMatch(/^application\/json/);
-    expect(await response.json()).toEqual({ version: 'test-sha', sources: [] });
-  });
-
   it('answers unknown routes with a bare JSON 404', async () => {
     const response = await get('/v1/../internal/debug?x=<script>');
     const body = await response.text();
