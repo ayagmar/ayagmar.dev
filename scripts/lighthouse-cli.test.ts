@@ -4,7 +4,15 @@
 // page does not answer 200 and otherwise writes one result per run. Chromium is never started.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, it } from 'node:test';
@@ -79,7 +87,7 @@ const site = (name: string, files: Record<string, string>, bin = false) => {
     chmodSync(join(dir, name, 'node_modules/.bin', binary), 0o755);
   }
 };
-const run = () =>
+const run = (...extra: string[]) =>
   spawnSync(
     process.execPath,
     [
@@ -92,6 +100,7 @@ const run = () =>
       'desktop',
       '--out',
       'out/metrics.json',
+      ...extra,
     ],
     {
       cwd: dir,
@@ -125,4 +134,48 @@ it('still fails when an existing base page cannot be measured', () => {
   const result = run();
   assert.equal(result.status, 1);
   assert.match(result.stderr, /about/);
+});
+
+it('measures the base once: a cache hit needs no base build, a stale entry is not refreshed', () => {
+  site('head', pages, true);
+  const first = run('--base-cache', 'out/base.json', '--head-cache', 'out/head.json');
+  assert.equal(first.status, 0, first.stderr);
+  const cache = JSON.parse(readFileSync(join(dir, 'out/base.json'), 'utf8'));
+  assert.deepEqual(Object.keys(cache.profiles.desktop).sort(), [
+    '/',
+    '/about',
+    '/projects',
+    '/projects/a',
+    '/stats',
+    '/uses',
+    '/writing',
+    '/writing/old-post',
+  ]);
+  // What the head cache holds is what CI keeps for the next pull request's base.
+  const head = JSON.parse(readFileSync(join(dir, 'out/head.json'), 'utf8'));
+  assert.deepEqual(head, cache);
+
+  // The base is gone and the cache says LCP was 380 ms there: the result must use the cache.
+  cache.profiles.desktop['/'].lcp = 380;
+  writeFileSync(join(dir, 'out/base.json'), JSON.stringify(cache));
+  rmSync(join(dir, 'base'), { recursive: true });
+  const second = run('--base-cache', 'out/base.json');
+  assert.equal(second.status, 0, second.stderr);
+  const { results } = JSON.parse(readFileSync(join(dir, 'out/metrics.json'), 'utf8'));
+  assert.equal(results.find((r: { page: string }) => r.page === 'home').base.lcp, 380);
+  assert.ok(results.every((r: { base: unknown }) => r.base !== null));
+});
+
+it('measures only the pages a cache lacks, and treats a cache it cannot read as empty', () => {
+  site('head', pages, true);
+  writeFileSync(join(dir, 'garbage.json'), '{"version":2}');
+  mkdirSync(join(dir, 'out'), { recursive: true });
+  const result = run('--base-cache', 'garbage.json');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /ignoring the cache garbage\.json/);
+  const { results } = JSON.parse(readFileSync(join(dir, 'out/metrics.json'), 'utf8'));
+  assert.ok(results.every((r: { base: unknown }) => r.base !== null));
+  // The cache the run wrote replaces the unreadable file.
+  assert.ok(existsSync(join(dir, 'garbage.json')));
+  assert.equal(JSON.parse(readFileSync(join(dir, 'garbage.json'), 'utf8')).version, 1);
 });
