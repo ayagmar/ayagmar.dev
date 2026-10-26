@@ -71,6 +71,9 @@ describe('ci-policy', () => {
       'a deploy in a multi-line run block',
       '      - run: |\n          just safe\n          just deploy\n',
     ],
+    // YAML folds both of these into the single command `just safe deploy`.
+    ['a folded block scalar', '      - run: >\n          just safe\n          deploy\n'],
+    ['a plain scalar continued on the next line', '      - run: just safe\n          deploy\n'],
   ]) {
     it(`fails closed on ${what}`, () => {
       assert.notDeepEqual(workflow(steps as string), []);

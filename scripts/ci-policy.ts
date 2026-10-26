@@ -7,6 +7,7 @@
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { isScalar, LineCounter, parseDocument, visit } from 'yaml';
 
 type Fragment = string | [string, ...unknown[]][];
 interface Recipe {
@@ -24,22 +25,22 @@ const offline = /\bwrangler (?:types\b|deploy --dry-run\b)/g;
 const invocation = /^\s*just ([a-z][a-z0-9-]*)\s*$/;
 const count = (text: string, pattern: RegExp) => text.match(pattern)?.length ?? 0;
 
-/** The shell lines of every `run:` in a workflow or action, with their line numbers. */
-function runLines(yaml: string): [number, string][] {
+/**
+ * The shell lines of every `run:` in a workflow or action, as YAML parses them: a folded (`>`)
+ * or multi-line plain scalar joins its lines into one command, so they are checked joined.
+ * Each line carries the line number where its `run:` value starts.
+ */
+function runLines(source: string): [number, string][] {
+  const counter = new LineCounter();
+  const doc = parseDocument(source, { lineCounter: counter });
+  if (doc.errors.length > 0) throw new Error(doc.errors.map((e) => e.message).join('; '));
   const out: [number, string][] = [];
-  let block: number | undefined; // indent of the `run:` key while inside its block scalar
-  yaml.split('\n').forEach((text, index) => {
-    const indent = text.search(/\S/);
-    if (block !== undefined && (indent === -1 || indent > block)) {
-      out.push([index + 1, text]);
-      return;
-    }
-    block = undefined;
-    const run = /^(\s*)(?:- )?run:\s*(.*)$/.exec(text);
-    if (!run) return;
-    const value = (run[2] ?? '').replace(/\s+#.*$/, '');
-    if (/^[|>][-+]?$/.test(value)) block = (run[1] ?? '').length;
-    else out.push([index + 1, value]);
+  visit(doc, {
+    Pair(_, pair) {
+      if (!isScalar(pair.key) || pair.key.value !== 'run' || !isScalar(pair.value)) return;
+      const line = counter.linePos(pair.value.range?.[0] ?? 0).line;
+      for (const text of String(pair.value.value).split('\n')) out.push([line, text]);
+    },
   });
   return out;
 }
