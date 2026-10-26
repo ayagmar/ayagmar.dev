@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { parse } from 'yaml';
 import { budgets } from './budgets.ts';
 import { embedded } from './lighthouse-embed.ts';
-import { marker, maxBytes, metrics, pages, render, validate } from './lighthouse-report.js';
+import { marker, maxBytes, merge, metrics, pages, render, validate } from './lighthouse-report.js';
 
 const root = join(import.meta.dirname, '..');
 const report = join(import.meta.dirname, 'lighthouse-report.js');
@@ -157,13 +157,20 @@ describe('the render command', () => {
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  const run = (content: string) => {
-    writeFileSync(join(dir, 'metrics.json'), content);
-    return spawnSync(process.execPath, [report, 'render', 'metrics.json', 'comment.md'], {
+  const run = (...contents: string[]) => {
+    const files = contents.map((content, i) => {
+      writeFileSync(join(dir, `metrics-${i}.json`), content);
+      return `metrics-${i}.json`;
+    });
+    return spawnSync(process.execPath, [report, 'render', ...files, 'comment.md'], {
       cwd: dir,
       encoding: 'utf8',
     });
   };
+  const only = (profile: string) =>
+    text((a) => {
+      a.results = a.results.filter((r) => r.profile === profile);
+    });
 
   it('writes no comment and exits 1 for an oversized or hostile artifact', () => {
     for (const content of [' '.repeat(maxBytes + 1), text((a) => Object.assign(a, { x: 1 }))]) {
@@ -176,6 +183,23 @@ describe('the render command', () => {
   it('writes the comment for a valid artifact', () => {
     assert.equal(run(text()).status, 0);
     assert.equal(readFileSync(join(dir, 'comment.md'), 'utf8'), render(validate(text())));
+  });
+
+  it('merges the profile jobs into one comment, and refuses a profile reported twice', () => {
+    assert.equal(run(only('mobile'), only('desktop')).status, 0);
+    assert.equal(readFileSync(join(dir, 'comment.md'), 'utf8'), render(validate(text())));
+    assert.throws(() => merge([validate(text()), validate(text())]), /repeat a page and profile/);
+    assert.throws(
+      () => merge([validate(only('mobile')), validate(text((a) => Object.assign(a, { runs: 5 })))]),
+      /runs differ/
+    );
+    const third = validate(only('desktop'));
+    assert.throws(() => merge([third, third, third]), /not 1 to 2 files/);
+    const bad = run(
+      only('mobile'),
+      text((a) => Object.assign(a, { x: 1 }))
+    );
+    assert.equal(bad.status, 1);
   });
 });
 
@@ -201,7 +225,7 @@ describe('ci.yml', () => {
     const actions = comment.steps.flatMap((step) => (step.uses ? [step.uses] : []));
     assert.equal(actions.length, 1);
     assert.match(actions[0] ?? '', /^actions\/download-artifact@[0-9a-f]{40}$/);
-    assert.deepEqual(comment.steps[0]?.with?.name, 'lighthouse-metrics');
+    assert.deepEqual(comment.steps[0]?.with?.pattern, 'lighthouse-metrics-*');
     assert.ok(!comment.steps.some((step) => /\b(?:git|pnpm|npm|npx|just)\b/.test(step.run ?? '')));
   });
 

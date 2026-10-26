@@ -7,7 +7,8 @@
 // The artifact came from a job that ran the pull request's code: nothing from it reaches the
 // comment or the log except numbers that passed the checks below. Page and metric names are
 // rendered from the tables here, never from the artifact.
-// Usage: node scripts/lighthouse-report.js render <metrics.json> <comment.md>
+// Usage: node scripts/lighthouse-report.js render <metrics.json>... <comment.md>
+// One artifact per profile job; the comment merges them.
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 
 export const marker = '<!-- min7-lighthouse -->';
@@ -152,6 +153,24 @@ export function validate(text) {
 }
 
 /**
+ * The artifacts of the profile jobs as one. They must agree on the number of runs and not repeat
+ * a page and profile; there is at most one per profile.
+ * @param {Metrics[]} parts
+ * @returns {Metrics}
+ */
+export function merge(parts) {
+  const first = parts[0];
+  if (!first || parts.length > profiles.length) {
+    throw new Error(`artifacts: not 1 to ${profiles.length} files`);
+  }
+  if (parts.some((part) => part.runs !== first.runs)) throw new Error('artifacts: runs differ');
+  const results = parts.flatMap((part) => part.results);
+  const keys = new Set(results.map((r) => `${r.page} ${r.profile}`));
+  if (keys.size !== results.length) throw new Error('artifacts: repeat a page and profile');
+  return { version, runs: first.runs, results };
+}
+
+/**
  * The comment body: one table per profile, base → head for each metric and page.
  * @param {Metrics} m
  * @returns {string}
@@ -194,11 +213,15 @@ export function render(m) {
 }
 
 if (process.argv[2] === 'render') {
-  const [input = '', output = ''] = process.argv.slice(3);
+  const files = process.argv.slice(3);
+  const output = files.pop() ?? '';
   try {
     // Refuse an oversized file before reading it.
-    if (statSync(input).size > maxBytes) throw new Error(`artifact: over ${maxBytes} bytes`);
-    writeFileSync(output, render(validate(readFileSync(input, 'utf8'))));
+    for (const input of files) {
+      if (statSync(input).size > maxBytes) throw new Error(`artifact: over ${maxBytes} bytes`);
+    }
+    const parts = files.map((input) => validate(readFileSync(input, 'utf8')));
+    writeFileSync(output, render(merge(parts)));
     console.log('lighthouse-report: artifact valid, comment rendered');
   } catch (error) {
     console.error(`lighthouse-report: ${error instanceof Error ? error.message : 'failed'}`);
