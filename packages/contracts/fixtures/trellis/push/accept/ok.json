@@ -1,0 +1,55 @@
+{
+  "producer": "trellis",
+  "deliveryId": "3c2b1a09-8f7e-4d6c-b5a4-321f0e9d8c7b",
+  "sentAt": "2026-10-26T06:00:00Z",
+  "payload": {
+    "booksFinished": {
+      "year": 2026,
+      "count": 14
+    },
+    "inProgress": [
+      {
+        "title": "Frieren: Beyond Journey's End",
+        "kind": "anime",
+        "progress": {
+          "current": 18,
+          "total": 28
+        }
+      },
+      {
+        "title": "Vagabond",
+        "kind": "manga",
+        "progress": {
+          "current": 214,
+          "total": 327
+        }
+      },
+      {
+        "title": "Ascendance of a Bookworm",
+        "kind": "light-novel",
+        "progress": {
+          "current": 9,
+          "total": null
+        }
+      },
+      {
+        "title": "The Left Hand of Darkness",
+        "kind": "book",
+        "progress": {
+          "current": 120,
+          "total": 304
+        }
+      }
+    ],
+    "habits": [
+      {
+        "habit": "reading",
+        "streakDays": 12
+      },
+      {
+        "habit": "meditation",
+        "streakDays": 31
+      }
+    ]
+  }
+}

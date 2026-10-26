@@ -1,0 +1,118 @@
+{
+  "source": "llm-usage",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:00:00.000Z",
+  "stale": false,
+  "data": {
+    "last7Days": {
+      "costUsd": 41.37,
+      "totalTokens": 16440000
+    },
+    "monthToDate": {
+      "costUsd": 152.8,
+      "totalTokens": 61250000,
+      "cacheSavingsUsd": 310.45,
+      "agents": [
+        {
+          "agent": "Claude Code",
+          "costUsd": 98.1,
+          "totalTokens": 39800000,
+          "tokenShare": 0.6498
+        },
+        {
+          "agent": "Codex",
+          "costUsd": 41.2,
+          "totalTokens": 15300000,
+          "tokenShare": 0.2498
+        },
+        {
+          "agent": "pi",
+          "costUsd": 13.5,
+          "totalTokens": 6150000,
+          "tokenShare": 0.1004
+        }
+      ]
+    },
+    "streak": {
+      "currentDays": 4,
+      "longestDays": 23
+    },
+    "days": [
+      {
+        "date": "2026-10-12",
+        "costUsd": 0,
+        "totalTokens": 0
+      },
+      {
+        "date": "2026-10-13",
+        "costUsd": 3.12,
+        "totalTokens": "1250000"
+      },
+      {
+        "date": "2026-10-14",
+        "costUsd": 2.05,
+        "totalTokens": 842000
+      },
+      {
+        "date": "2026-10-15",
+        "costUsd": 0,
+        "totalTokens": 0
+      },
+      {
+        "date": "2026-10-16",
+        "costUsd": 6.4,
+        "totalTokens": 2210500
+      },
+      {
+        "date": "2026-10-17",
+        "costUsd": 4.18,
+        "totalTokens": 1570000
+      },
+      {
+        "date": "2026-10-18",
+        "costUsd": 0,
+        "totalTokens": 0
+      },
+      {
+        "date": "2026-10-19",
+        "costUsd": 0.21,
+        "totalTokens": 95000
+      },
+      {
+        "date": "2026-10-20",
+        "costUsd": 8.77,
+        "totalTokens": 3120000
+      },
+      {
+        "date": "2026-10-21",
+        "costUsd": 5.02,
+        "totalTokens": 1880000
+      },
+      {
+        "date": "2026-10-22",
+        "costUsd": 0,
+        "totalTokens": 0
+      },
+      {
+        "date": "2026-10-23",
+        "costUsd": 1.6,
+        "totalTokens": 640000
+      },
+      {
+        "date": "2026-10-24",
+        "costUsd": 5.55,
+        "totalTokens": 2040000
+      },
+      {
+        "date": "2026-10-25",
+        "costUsd": 3.3,
+        "totalTokens": 1310000
+      },
+      {
+        "date": "2026-10-26",
+        "costUsd": 1.95,
+        "totalTokens": 780000
+      }
+    ]
+  }
+}

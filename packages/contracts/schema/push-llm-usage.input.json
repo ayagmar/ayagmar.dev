@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "producer": {
+      "type": "string",
+      "const": "llm-usage"
+    },
+    "deliveryId": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+    },
+    "sentAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "last7Days": {
+          "type": "object",
+          "properties": {
+            "costUsd": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "totalTokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000000000
+            }
+          },
+          "required": [
+            "costUsd",
+            "totalTokens"
+          ]
+        },
+        "monthToDate": {
+          "type": "object",
+          "properties": {
+            "costUsd": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "totalTokens": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1000000000000000
+            },
+            "cacheSavingsUsd": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "agents": {
+              "maxItems": 32,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "agent": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128
+                  },
+                  "costUsd": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "totalTokens": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000000000000000
+                  }
+                },
+                "required": [
+                  "agent",
+                  "costUsd",
+                  "totalTokens"
+                ]
+              }
+            }
+          },
+          "required": [
+            "costUsd",
+            "totalTokens",
+            "cacheSavingsUsd",
+            "agents"
+          ]
+        },
+        "streak": {
+          "type": "object",
+          "properties": {
+            "currentDays": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 36600
+            },
+            "longestDays": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 36600
+            }
+          },
+          "required": [
+            "currentDays",
+            "longestDays"
+          ]
+        },
+        "days": {
+          "maxItems": 371,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+              },
+              "costUsd": {
+                "anyOf": [
+                  {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "totalTokens": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000000000000
+              }
+            },
+            "required": [
+              "date",
+              "costUsd",
+              "totalTokens"
+            ]
+          }
+        }
+      },
+      "required": [
+        "last7Days",
+        "monthToDate",
+        "streak",
+        "days"
+      ]
+    }
+  },
+  "required": [
+    "producer",
+    "deliveryId",
+    "sentAt",
+    "payload"
+  ]
+}

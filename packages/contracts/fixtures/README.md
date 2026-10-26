@@ -3,11 +3,23 @@
 One shared fixture set for every test and for the site's offline `fixtures` data mode.
 
 ```
-fixtures/<upstream>/raw/<case>.json    what a pull adapter's `fetch` returns for that upstream
-fixtures/<source>/snapshot/<case>.json normalized snapshot the adapter must produce
+fixtures/<upstream>/raw/<case>.json                  what a pull adapter's `fetch` returns for that upstream
+fixtures/<source>/snapshot/<case>.json               normalized snapshot the adapter (or the push projection) must produce
+fixtures/<producer>/push/{accept,reject}/<case>.json push bodies (llm-usage, trellis)
 ```
 
-Raw fixtures are per upstream (`lastfm`, `repo-pulse`, `github`, `npm`); snapshots are per source id from `src/sources.ts` (`listening`, `shipping`, `projects`). The `projects` source is built from `github` and `npm` together: case `<case>` of the snapshot comes from case `<case>` of both.
+Raw fixtures are per upstream (`lastfm`, `repo-pulse`, `github`, `npm`); snapshots are per source id from `src/sources.ts` (`listening`, `shipping`, `projects`, `llm-usage`, `shelf`). The `projects` source is built from `github` and `npm` together: case `<case>` of the snapshot comes from case `<case>` of both. Every raw, snapshot and push file is imported in `src/fixtures.ts`, which `test/fixtures.test.ts` checks.
+
+Push bodies are the payload corpus of `push-<producer>` (checked by zod and the exported JSON Schema in `test/json-schema.test.ts`) and the inputs of the Worker's intake tests. `fixtures/llm-usage/snapshot/` and `fixtures/shelf/snapshot/` hold what signals publishes for the accepted push cases of the same name.
+
+| Push case          | Meaning                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `ok`               | A full, typical push.                                                                                  |
+| `minimal`          | Empty lists and null costs.                                                                            |
+| `sensitive-fields` | Valid, with unknown and sensitive extra fields and unlisted ids; none of them may be stored or served. |
+| `reject/*`         | Wrong types, ranges or shape; every validator must reject them.                                        |
+
+The oversized case is built by the intake test (a valid body padded to 64 KiB and one byte more) rather than kept as a 64 KiB file.
 
 A raw fixture records each upstream answer as `{ "status": <HTTP status>, "body": <JSON body or null> }`; `null` in place of an answer is a request that failed (network error, timeout, body over the size limit). Last.fm and GitHub need several requests per snapshot, so their raw fixtures are an object of such answers, keyed by request (`recentTracks`, `topArtists`, `thisWeek`, `lastWeek`) or by repository and package.
 

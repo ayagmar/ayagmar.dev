@@ -22,6 +22,20 @@ import listeningSnapshotPartial from '../fixtures/listening/snapshot/partial.jso
 import listeningSnapshotSingleItem from '../fixtures/listening/snapshot/single-item.json' with {
   type: 'json',
 };
+import llmUsagePushMinimal from '../fixtures/llm-usage/push/accept/minimal.json' with {
+  type: 'json',
+};
+import llmUsagePushOk from '../fixtures/llm-usage/push/accept/ok.json' with { type: 'json' };
+import llmUsagePushSensitiveFields from '../fixtures/llm-usage/push/accept/sensitive-fields.json' with {
+  type: 'json',
+};
+import llmUsageSnapshotMinimal from '../fixtures/llm-usage/snapshot/minimal.json' with {
+  type: 'json',
+};
+import llmUsageSnapshotOk from '../fixtures/llm-usage/snapshot/ok.json' with { type: 'json' };
+import llmUsageSnapshotSensitiveFields from '../fixtures/llm-usage/snapshot/sensitive-fields.json' with {
+  type: 'json',
+};
 import npmRawEmpty from '../fixtures/npm/raw/empty.json' with { type: 'json' };
 import npmRawMalformed from '../fixtures/npm/raw/malformed.json' with { type: 'json' };
 import npmRawMissing from '../fixtures/npm/raw/missing.json' with { type: 'json' };
@@ -37,9 +51,19 @@ import repoPulseRawMalformed from '../fixtures/repo-pulse/raw/malformed.json' wi
 import repoPulseRawMissing from '../fixtures/repo-pulse/raw/missing.json' with { type: 'json' };
 import repoPulseRawOk from '../fixtures/repo-pulse/raw/ok.json' with { type: 'json' };
 import repoPulseRawPartial from '../fixtures/repo-pulse/raw/partial.json' with { type: 'json' };
+import shelfSnapshotMinimal from '../fixtures/shelf/snapshot/minimal.json' with { type: 'json' };
+import shelfSnapshotOk from '../fixtures/shelf/snapshot/ok.json' with { type: 'json' };
+import shelfSnapshotSensitiveFields from '../fixtures/shelf/snapshot/sensitive-fields.json' with {
+  type: 'json',
+};
 import shippingSnapshotEmpty from '../fixtures/shipping/snapshot/empty.json' with { type: 'json' };
 import shippingSnapshotOk from '../fixtures/shipping/snapshot/ok.json' with { type: 'json' };
 import shippingSnapshotPartial from '../fixtures/shipping/snapshot/partial.json' with {
+  type: 'json',
+};
+import trellisPushMinimal from '../fixtures/trellis/push/accept/minimal.json' with { type: 'json' };
+import trellisPushOk from '../fixtures/trellis/push/accept/ok.json' with { type: 'json' };
+import trellisPushSensitiveFields from '../fixtures/trellis/push/accept/sensitive-fields.json' with {
   type: 'json',
 };
 
@@ -88,14 +112,38 @@ export const snapshotFixtures = {
     partial: listeningSnapshotPartial,
     'single-item': listeningSnapshotSingleItem,
   },
+  'llm-usage': {
+    minimal: llmUsageSnapshotMinimal,
+    ok: llmUsageSnapshotOk,
+    'sensitive-fields': llmUsageSnapshotSensitiveFields,
+  },
   projects: {
     empty: projectsSnapshotEmpty,
     ok: projectsSnapshotOk,
     partial: projectsSnapshotPartial,
   },
+  shelf: {
+    minimal: shelfSnapshotMinimal,
+    ok: shelfSnapshotOk,
+    'sensitive-fields': shelfSnapshotSensitiveFields,
+  },
   shipping: {
     empty: shippingSnapshotEmpty,
     ok: shippingSnapshotOk,
     partial: shippingSnapshotPartial,
+  },
+} as const;
+
+/** Push bodies every validator accepts; the Worker's intake tests send them. */
+export const pushFixtures = {
+  'llm-usage': {
+    minimal: llmUsagePushMinimal,
+    ok: llmUsagePushOk,
+    'sensitive-fields': llmUsagePushSensitiveFields,
+  },
+  trellis: {
+    minimal: trellisPushMinimal,
+    ok: trellisPushOk,
+    'sensitive-fields': trellisPushSensitiveFields,
   },
 } as const;

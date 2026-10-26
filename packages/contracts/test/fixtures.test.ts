@@ -3,16 +3,18 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { rawFixtures, snapshotFixtures } from '../src/fixtures.ts';
+import { pushFixtures, rawFixtures, snapshotFixtures } from '../src/fixtures.ts';
 
 const root = join(import.meta.dirname, '..', 'fixtures');
 
 it('registers every fixture file in src/fixtures.ts', () => {
-  const onDisk: Record<string, Record<string, string[]>> = { raw: {}, snapshot: {} };
+  const onDisk: Record<string, Record<string, string[]>> = { raw: {}, snapshot: {}, push: {} };
   for (const source of readdirSync(root, { withFileTypes: true })) {
     if (!source.isDirectory()) continue;
     for (const kind of readdirSync(join(root, source.name))) {
-      const cases = readdirSync(join(root, source.name, kind))
+      // Rejected push bodies are corpus only (test/json-schema.test.ts); accepted ones are fixtures.
+      const dir = kind === 'push' ? join(kind, 'accept') : kind;
+      const cases = readdirSync(join(root, source.name, dir))
         .filter((file) => file.endsWith('.json'))
         .map((file) => file.slice(0, -'.json'.length));
       onDisk[kind] = { ...onDisk[kind], [source.name]: cases.sort() };
@@ -25,4 +27,5 @@ it('registers every fixture file in src/fixtures.ts', () => {
 
   expect(registered(rawFixtures)).toEqual(onDisk.raw);
   expect(registered(snapshotFixtures)).toEqual(onDisk.snapshot);
+  expect(registered(pushFixtures)).toEqual(onDisk.push);
 });
