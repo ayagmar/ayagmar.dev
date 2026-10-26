@@ -1,6 +1,7 @@
 import type { ProjectSlug } from '@min7/contracts';
 import { projectPath } from './projects.ts';
 import { site, siteUrl } from './site.ts';
+import { type Note, notePath, noteSummary } from './til.ts';
 import { isoDay, lastUpdated, type Post, postPath, tagPath } from './writing.ts';
 
 interface FeedEntry {
@@ -32,16 +33,21 @@ const epoch = new Date('2026-10-26T00:00:00Z');
 const absolute = (path: string) => new URL(path, siteUrl).href;
 
 /** Which posts a feed carries: all of them, one tag's, or one project's. */
-export type FeedScope = { tag: string } | { project: ProjectSlug };
+export type WritingScope = { tag: string } | { project: ProjectSlug };
 
-/** The page, title and description of a feed, and which posts belong in it. */
+/** A feed's scope: the writing scopes, or the TIL notes (ADR 0028). */
+export type FeedScope = WritingScope | { til: true };
+
+/** The page, title and description of a feed. */
 export function feedScope(scope?: FeedScope) {
   if (scope === undefined) {
+    return { page: '/writing', title: `${site.name} writing`, description: site.description };
+  }
+  if ('til' in scope) {
     return {
-      page: '/writing',
-      title: `${site.name} writing`,
-      description: site.description,
-      includes: (_post: Post) => true,
+      page: '/til',
+      title: `${site.name} TIL`,
+      description: `Short today-I-learned notes on ${site.name}.`,
     };
   }
   if ('tag' in scope) {
@@ -49,37 +55,31 @@ export function feedScope(scope?: FeedScope) {
       page: tagPath(scope.tag),
       title: `${site.name} writing tagged ${scope.tag}`,
       description: `Posts tagged ${scope.tag} on ${site.name}.`,
-      includes: (post: Post) => post.data.tags.includes(scope.tag),
     };
   }
   return {
     page: projectPath(scope.project),
     title: `${site.name} writing about ${scope.project}`,
     description: `Posts about ${scope.project} on ${site.name}.`,
-    includes: (post: Post) => post.data.projects.includes(scope.project),
   };
 }
 
-/** Paths of the site-wide feeds, or of one tag's or project's feeds. */
+/** Whether a scope's feed carries the post. */
+function includes(scope: WritingScope | undefined, post: Post) {
+  if (scope === undefined) return true;
+  return 'tag' in scope
+    ? post.data.tags.includes(scope.tag)
+    : post.data.projects.includes(scope.project);
+}
+
+/** Paths of the site-wide feeds, or of one tag's, project's or the TIL feeds. */
 export function feedPaths(scope?: FeedScope) {
   const base = scope === undefined ? '' : feedScope(scope).page;
   return { rss: `${base}/feed.xml`, atom: `${base}/atom.xml` };
 }
 
-/** `posts` must already be the published set; a scope narrows it to a tag or a project. */
-export function buildFeed(posts: readonly Post[], scope?: FeedScope): Feed {
-  const { page, title, description, includes } = feedScope(scope);
-  const entries = posts.filter(includes).map(
-    (post): FeedEntry => ({
-      id: `tag:ayagmar.dev,${isoDay(post.data.date)}:${postPath(post.id)}`,
-      url: absolute(postPath(post.id)),
-      title: post.data.title,
-      summary: post.data.summary,
-      published: post.data.date,
-      updated: lastUpdated(post),
-      tags: post.data.tags,
-    })
-  );
+function assemble(scope: FeedScope | undefined, entries: FeedEntry[]): Feed {
+  const { page, title, description } = feedScope(scope);
   const paths = feedPaths(scope);
   const newest =
     entries.length === 0 ? epoch.getTime() : Math.max(...entries.map((e) => e.updated.getTime()));
@@ -93,6 +93,44 @@ export function buildFeed(posts: readonly Post[], scope?: FeedScope): Feed {
     updated: new Date(newest),
     entries,
   };
+}
+
+/** `posts` must already be the published set; a scope narrows it to a tag or a project. */
+export function buildFeed(posts: readonly Post[], scope?: WritingScope): Feed {
+  return assemble(
+    scope,
+    posts
+      .filter((post) => includes(scope, post))
+      .map(
+        (post): FeedEntry => ({
+          id: `tag:ayagmar.dev,${isoDay(post.data.date)}:${postPath(post.id)}`,
+          url: absolute(postPath(post.id)),
+          title: post.data.title,
+          summary: post.data.summary,
+          published: post.data.date,
+          updated: lastUpdated(post),
+          tags: post.data.tags,
+        })
+      )
+  );
+}
+
+/** `notes` must already be the published set. A note has no `updated`, so its id and date are fixed. */
+export function buildTilFeed(notes: readonly Note[]): Feed {
+  return assemble(
+    { til: true },
+    notes.map(
+      (note): FeedEntry => ({
+        id: `tag:ayagmar.dev,${isoDay(note.data.date)}:${notePath(note.id)}`,
+        url: absolute(notePath(note.id)),
+        title: note.data.title,
+        summary: noteSummary(note),
+        published: note.data.date,
+        updated: note.data.date,
+        tags: note.data.tags,
+      })
+    )
+  );
 }
 
 // Characters XML 1.0 forbids even when escaped.

@@ -2,13 +2,18 @@ import { getCollection } from 'astro:content';
 import { PUBLIC_SHOW_DRAFTS } from 'astro:env/server';
 import { signals } from '../data/signals.ts';
 import { siteProjects } from './projects.ts';
-import { publishedPosts } from './writing.ts';
+import { publishedEntries } from './writing.ts';
 
 const showDrafts = PUBLIC_SHOW_DRAFTS === '1';
 
 /** Every post this build publishes, newest first. */
 export async function getPosts() {
-  return publishedPosts(await getCollection('writing'), showDrafts);
+  return publishedEntries(await getCollection('writing'), showDrafts);
+}
+
+/** Every TIL note this build publishes, newest first. */
+export async function getNotes() {
+  return publishedEntries(await getCollection('til'), showDrafts);
 }
 
 /**

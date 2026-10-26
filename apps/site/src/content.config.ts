@@ -3,6 +3,7 @@ import { file, glob, type Loader } from 'astro/loaders';
 import { aboutSchema } from './data/about.ts';
 import { projectSchema } from './lib/project-schema.ts';
 import { checkProjectFiles } from './lib/projects.ts';
+import { tilSchema } from './lib/til-schema.ts';
 import { writingSchema } from './lib/writing-schema.ts';
 
 // Ids are file names, so a file whose `slug` differs from its name is caught below instead of
@@ -37,6 +38,11 @@ export const collections = {
     // does not notice a changed Markdown plugin such as the diagram renderer (ADR 0024).
     loader: glob({ pattern: '*.md', base: '../../content/writing', deferRender: true }),
     schema: writingSchema,
+  }),
+  // Short notes, rendered per build like posts so the diagram renderer runs on each (ADR 0028).
+  til: defineCollection({
+    loader: glob({ pattern: '*.md', base: '../../content/til', deferRender: true }),
+    schema: tilSchema,
   }),
   projects: defineCollection({ loader: projects, schema: projectSchema }),
   // One entry, id "about": the whole file.

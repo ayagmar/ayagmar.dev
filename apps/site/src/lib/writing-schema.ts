@@ -18,9 +18,15 @@ const art = z.strictObject({
   palette: z.enum(palettes, { error: `must be one of ${palettes.join(', ')}` }).default('night'),
 });
 
-const day = z.union([z.date(), z.iso.date().transform((text) => new Date(text))], {
+export const day = z.union([z.date(), z.iso.date().transform((text) => new Date(text))], {
   error: dateMessage,
 });
+
+/** The tag vocabulary posts and TIL notes share: lowercase slugs, none twice. */
+export const tagList = z
+  .array(z.string().regex(slug, slugMessage), { error: 'must be a list of tags' })
+  .refine((tags) => new Set(tags).size === tags.length, 'must not repeat a tag')
+  .default([]);
 
 /** Frontmatter of a post in content/writing. Unknown fields are rejected to catch typos. */
 export const writingSchema = z
@@ -29,10 +35,7 @@ export const writingSchema = z
     date: day,
     updated: day.optional(),
     summary: z.string({ error: 'is required' }).trim().min(1, 'must not be empty'),
-    tags: z
-      .array(z.string().regex(slug, slugMessage), { error: 'must be a list of tags' })
-      .refine((tags) => new Set(tags).size === tags.length, 'must not repeat a tag')
-      .default([]),
+    tags: tagList,
     series: z.string().regex(slug, slugMessage).optional(),
     draft: z.boolean({ error: 'must be true or false' }).default(false),
     /** Slugs of the featured projects the post is about. */

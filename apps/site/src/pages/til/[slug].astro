@@ -1,0 +1,32 @@
+---
+import { render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import PostHeader from '../../components/PostHeader.astro';
+import Base from '../../layouts/Base.astro';
+import { diagramStyles } from '../../lib/markdown/diagrams.ts';
+import { getNotes } from '../../lib/posts.ts';
+import { noteSummary } from '../../lib/til.ts';
+
+export const getStaticPaths = (async () =>
+  (await getNotes()).map((note) => ({
+    params: { slug: note.id },
+    props: { note },
+  }))) satisfies GetStaticPaths;
+
+const { note } = Astro.props;
+const { Content, remarkPluginFrontmatter } = await render(note);
+const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
+---
+
+<Base title={note.data.title} description={noteSummary(note)} feed={{ til: true }}>
+  {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
+  <article class="paper post" data-pagefind-body>
+    <!-- Search shows this as the result's title, so a note reads "TIL: ..." (ADR 0028). -->
+    <span hidden data-pagefind-meta="title">TIL: {note.data.title}</span>
+    <PostHeader post={note} linkTags={false} />
+    <div class="prose">
+      <Content />
+    </div>
+    <p class="caption" data-pagefind-ignore><a href="/til">All notes</a></p>
+  </article>
+</Base>

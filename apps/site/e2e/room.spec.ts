@@ -111,7 +111,7 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
     .getByRole('navigation', { name: 'The room as a list' })
     .getByRole('link')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
-  expect(list).toHaveLength(7);
+  expect(list).toHaveLength(8);
   expect(await roomLinks(page)).toEqual(list);
 
   for (const href of new Set(list)) {

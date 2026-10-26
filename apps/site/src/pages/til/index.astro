@@ -1,0 +1,39 @@
+---
+import { render } from 'astro:content';
+import TilNote from '../../components/TilNote.astro';
+import Base from '../../layouts/Base.astro';
+import { feedPaths } from '../../lib/feed.ts';
+import { diagramStyles } from '../../lib/markdown/diagrams.ts';
+import { getNotes } from '../../lib/posts.ts';
+
+const notes = await Promise.all(
+  (await getNotes()).map(async (note) => ({ note, ...(await render(note)) }))
+);
+const hasDiagrams = notes.some(
+  ({ remarkPluginFrontmatter }) => Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0
+);
+const feeds = feedPaths({ til: true });
+---
+
+<Base
+  title="Today I learned"
+  description="Short notes on things I learned, newest first."
+  feed={{ til: true }}
+>
+  {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
+  <div class="paper">
+    <h1>Today I learned</h1>
+    {notes.length === 0 ? (
+      <p>Nothing published yet.</p>
+    ) : (
+      notes.map(({ note, Content }) => (
+        <TilNote id={note.id} data={note.data}>
+          <Content />
+        </TilNote>
+      ))
+    )}
+    <p class="caption">
+      Follow the notes: <a href={feeds.rss}>RSS</a>, <a href={feeds.atom}>Atom</a>.
+    </p>
+  </div>
+</Base>

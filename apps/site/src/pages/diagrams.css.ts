@@ -2,12 +2,12 @@
 import { render } from 'astro:content';
 import type { APIRoute } from 'astro';
 import { diagramStyles, diagramStylesheet } from '../lib/markdown/diagrams.ts';
-import { getPosts } from '../lib/posts.ts';
+import { getNotes, getPosts } from '../lib/posts.ts';
 
 export const GET: APIRoute = async () => {
-  const posts = await getPosts();
+  const entries = [...(await getPosts()), ...(await getNotes())];
   const styles = await Promise.all(
-    posts.map(async (post) => diagramStyles((await render(post)).remarkPluginFrontmatter))
+    entries.map(async (entry) => diagramStyles((await render(entry)).remarkPluginFrontmatter))
   );
   return new Response(diagramStylesheet(styles), {
     headers: { 'Content-Type': 'text/css; charset=utf-8' },

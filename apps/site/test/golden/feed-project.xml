@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>min7 writing about runnerd</title>
+    <link>https://ayagmar.dev/projects/runnerd</link>
+    <description>Posts about runnerd on min7.</description>
+    <language>en</language>
+    <lastBuildDate>Thu, 22 Oct 2026 00:00:00 GMT</lastBuildDate>
+    <atom:link href="https://ayagmar.dev/projects/runnerd/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Tom &amp; Jerry &lt;script&gt;alert(1)&lt;/script&gt;</title>
+      <link>https://ayagmar.dev/writing/escaping</link>
+      <guid isPermaLink="true">https://ayagmar.dev/writing/escaping</guid>
+      <pubDate>Tue, 20 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Uses &lt;b&gt;HTML&lt;/b&gt; &amp; &quot;quotes&quot; in the summary.</description>
+      <category>rust</category>
+      <category>ci</category>
+    </item>
+  </channel>
+</rss>

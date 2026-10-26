@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { projectSchema } from '../src/lib/project-schema.ts';
 import { checkProjectFiles, morePostsAbout, siteProjects } from '../src/lib/projects.ts';
-import { type Post, publishedPosts } from '../src/lib/writing.ts';
+import { type Post, publishedEntries } from '../src/lib/writing.ts';
 
 const post = (
   id: string,
@@ -59,7 +59,7 @@ describe('site projects', () => {
   });
 
   it('cross-link at most three other published posts on the project, newest first', () => {
-    const posts = publishedPosts(
+    const posts = publishedEntries(
       [
         post('current', 10, ['runnerd']),
         post('oldest', 1, ['runnerd']),

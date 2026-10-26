@@ -5,7 +5,7 @@
 // fails the build with the post's path and line.
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { relative } from 'node:path';
+import { basename, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PeleError, render } from 'pele';
 import { type HastNode, type HastPluginEntry, htmlToHast } from 'satteri';
@@ -72,12 +72,16 @@ function classesForStyles(svg: Element, styles: Record<string, string>) {
 /** The hast plugin for `satteri({ hastPlugins })`. */
 export const diagrams: HastPluginEntry = (factory) => {
   let file = '<markdown>';
+  // The /til page shows every note on one page, so their ids carry the note's name to stay unique
+  // there (ADR 0028). A post's ids are left as they were.
+  let idScope = '';
   // Astro passes the body without its frontmatter; positions count from the body's start.
   let bodyStart = 0;
   if (factory.fileURL) {
     const path = fileURLToPath(factory.fileURL);
     const text = readFileSync(path, 'utf8');
     file = relative(process.cwd(), path);
+    if (basename(dirname(path)) === 'til') idScope = `${basename(path, '.md')}-`;
     bodyStart = text.slice(0, Math.max(0, text.indexOf(factory.source))).split('\n').length - 1;
   }
   let count = 0;
@@ -103,7 +107,7 @@ export const diagrams: HastPluginEntry = (factory) => {
         }
 
         count += 1;
-        const id = `diagram-${count}`;
+        const id = `${idScope}diagram-${count}`;
         const source = ctx.textContent(code).replace(/\n$/, '');
         let svgMarkup = '';
         try {
