@@ -139,6 +139,22 @@ describe('external origins', () => {
       'https://img.example.com/a.png',
     ]);
   });
+
+  it('reads comments as a browser does: closed at the first -->, an unclosed one to the end', () => {
+    write({
+      'index.html': page(
+        [
+          // The comment ends at the first -->, so the image after it is markup.
+          '<!-- a <!-- b --><img src="https://after-nested.example.com/a.png" width="1" height="1" alt=""> -->',
+          '<!-- <img src="https://in-comment.example.com/a.png"> -->',
+          // Unclosed: nothing after it is markup.
+          '<!-- <img src="https://unclosed.example.com/a.png">',
+        ].join('')
+      ),
+    });
+    const found = problems().flatMap((p) => /loads (\S+) from another origin/.exec(p)?.[1] ?? []);
+    assert.deepEqual(found, ['https://after-nested.example.com/a.png']);
+  });
 });
 
 describe('images and references', () => {

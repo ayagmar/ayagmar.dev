@@ -66,8 +66,10 @@ const fetchingRels = new Set([
   'manifest',
 ]);
 
+// A comment (to its end, or to the end of the document as a browser reads an unclosed one), or
+// a start tag with its attributes. Comments match without groups and are skipped.
 const tag =
-  /<([a-zA-Z][\w:-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*\/?>/g;
+  /<!--[\s\S]*?(?:-->|$)|<([a-zA-Z][\w:-]*)((?:\s+[^\s"'>/=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*\/?>/g;
 const attribute = /([^\s"'>/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
 const inlineCode = /<(script|style)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
 const staticImport = /\b(?:import|export)\s*(?:[\w$*{}\s,]+?\s*from\s*)?["']([^"']+)["']/g;
@@ -183,10 +185,11 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
         inlineJs += gz(body);
       }
     }
-    // Inline code and comments are not markup.
-    const markup = html.replace(inlineCode, '<$1$2></$1>').replace(/<!--[\s\S]*?-->/g, '');
+    // Inline code is not markup.
+    const markup = html.replace(inlineCode, '<$1$2></$1>');
     let islands = false;
-    for (const [, name = '', attrs = ''] of markup.matchAll(tag)) {
+    for (const [, name, attrs = ''] of markup.matchAll(tag)) {
+      if (name === undefined) continue;
       const element = name.toLowerCase();
       const a = attributes(attrs);
       const load = (value: string | undefined, into: Set<string>) => {
