@@ -160,6 +160,29 @@ describe('check-boundaries', () => {
       /apps\/site\/src\/Bad.svelte: imports @min7\/signals/,
     ],
     [
+      'astro template expression importing signals',
+      {
+        'apps/site/src/Template.astro':
+          "---\n---\n<p>{(await import('../../signals/src/local.ts')).local}</p>\n",
+      },
+      /apps\/site\/src\/Template.astro: imports .* from @min7\/signals/,
+    ],
+    [
+      'svelte template block importing signals',
+      {
+        'apps/site/src/Template.svelte':
+          "{#await import('../../signals/src/local.ts') then m}\n  <p>{m.local}</p>\n{/await}\n",
+      },
+      /apps\/site\/src\/Template.svelte: imports .* from @min7\/signals/,
+    ],
+    [
+      'astro script tag loading a signals file',
+      {
+        'apps/site/src/Src.astro': '---\n---\n<script src="../../signals/src/local.ts"></script>\n',
+      },
+      /apps\/site\/src\/Src.astro: imports .* from @min7\/signals/,
+    ],
+    [
       'site reaching into contracts by path',
       {
         'apps/site/src/deep.ts':

@@ -1,8 +1,9 @@
 // Fails when a unit depends on one it must not. The allowed graph:
 //   @min7/site -> @min7/contracts <- @min7/signals, and contracts depends on neither app.
 // Checks package manifests, tsconfig references and paths, and every import, re-export and
-// dynamic import in source (including .astro frontmatter and .svelte scripts), resolved the
-// way TypeScript resolves them so aliases and relative paths are caught too.
+// dynamic import in source (including .astro and .svelte frontmatter, scripts, script sources
+// and template expressions), resolved the way TypeScript resolves them so aliases and
+// relative paths are caught too.
 // Usage: node scripts/check-boundaries.ts [repo-root]
 import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -118,9 +119,8 @@ export function checkBoundaries(rootDir: string): string[] {
 
     // Imports in source.
     for (const file of files.filter((f) => sourceFile.test(f) && !f.endsWith('.d.ts'))) {
-      const text = scriptOf(file, readFileSync(file, 'utf8'));
-      const info = ts.preProcessFile(text, true, true);
-      for (const { fileName: specifier } of [...info.importedFiles, ...info.referencedFiles]) {
+      const text = readFileSync(file, 'utf8');
+      for (const specifier of specifiersOf(file, text)) {
         const where = rel(file);
         const named = unitNamed(specifier);
         if (named !== undefined) {
@@ -154,6 +154,31 @@ export function checkBoundaries(rootDir: string): string[] {
     }
   }
   return violations;
+}
+
+const isComponent = (file: string) => file.endsWith('.astro') || file.endsWith('.svelte');
+
+// Template expressions in components can import too ({await import(...)}, {#await import(...)}),
+// and TypeScript's scanner cannot read markup, so components also get a conservative textual
+// scan. A match in plain prose is a false positive the author can reword.
+const componentImports = [
+  /\bimport\s*\(\s*(['"`])([^'"`]+)\1/g,
+  /\b(?:import|export)\b[^'"`;]*?\bfrom\s*(['"])([^'"]+)\1/g,
+  /\bimport\s+(['"])([^'"]+)\1/g,
+];
+// Root-relative and absolute URLs are public paths, not modules.
+const scriptSource = /<script\b[^>]*\bsrc\s*=\s*(['"])(?!\/|[a-z]+:)([^'"]+)\1/gi;
+
+/** Every module specifier a file references. */
+function specifiersOf(file: string, text: string): Set<string> {
+  const info = ts.preProcessFile(scriptOf(file, text), true, true);
+  const found = new Set([...info.importedFiles, ...info.referencedFiles].map((f) => f.fileName));
+  if (isComponent(file)) {
+    for (const pattern of [...componentImports, scriptSource]) {
+      for (const [, , specifier] of text.matchAll(pattern)) if (specifier) found.add(specifier);
+    }
+  }
+  return found;
 }
 
 /** The script parts of a component file; other files are all script. */
