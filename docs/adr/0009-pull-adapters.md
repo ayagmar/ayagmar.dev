@@ -23,7 +23,7 @@ Per source:
 
 Connections: Workers keeps at most six subrequests waiting for response headers per invocation and queues the rest, and each request's 5 s timeout starts when `fetch` is called, queued or not. `projects` therefore runs its requests through `runLimited` with six at a time, so a slow GitHub does not time out the last batch while it waits. The limit is per invocation: the cron runner should run adapters one after another, not all at once.
 
-Bounds: at most 4 + 3 × 8 + 1 = 29 subrequests across the three adapters, each body capped, and lists capped at 10 tracks, 10 artists and 50 events, so parsing stays far below the CPU limit.
+Bounds: listening makes 4 subrequests, shipping 1, projects 2 per featured repository plus 1 per npm package (19 for the current eight). Workers Free allows 50 per invocation and counts each redirect hop, and a renamed repository costs two, so `test/pull-fetch.test.ts` counts each adapter's real requests and fails when twice that number passes 50. That leaves room for three more featured projects without an npm package, or two with one, provided the cron runner runs one adapter per invocation (see CPU below); run together, the three already need 24 (48 with redirect headroom). Every body is capped, and lists are capped at 10 tracks, 10 artists and 50 events, so parsing stays far below the CPU limit.
 
 ## Consequences
 

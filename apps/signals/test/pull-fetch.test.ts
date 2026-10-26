@@ -103,6 +103,27 @@ describe('pull adapter fetch', () => {
     );
   });
 
+  it('keeps each adapter within the Free plan subrequest limit, redirects included', async () => {
+    // Workers Free allows 50 subrequests per invocation and counts each redirect hop; a
+    // renamed repository costs two. The cron runner runs one adapter per invocation.
+    let requests = 0;
+    network.use(
+      http.all('*', () => {
+        requests += 1;
+      }),
+      ...upstreamHandlers()
+    );
+    const counted = async (run: () => Promise<unknown>) => {
+      requests = 0;
+      await run();
+      return requests;
+    };
+
+    expect(await counted(() => listening.fetch(withSecrets, signal()))).toBe(4);
+    expect(await counted(() => shipping.fetch(env, signal()))).toBe(1);
+    expect((await counted(() => projects.fetch(env, signal()))) * 2).toBeLessThanOrEqual(50);
+  });
+
   it('keeps at most six projects requests open, so none waits in the runtime queue', async () => {
     // Workers queues connections past six; a queued request's timeout would already be running.
     let open = 0;
