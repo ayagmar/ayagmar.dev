@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Refuse versions published less than 3 days ago (minutes).
+minimumReleaseAge: 4320
+
+# Install scripts allowed to run: none. Packages listed false are known to have one and
+# are denied explicitly. esbuild and workerd find their platform binary through
+# optionalDependencies at run time; their postinstall only swaps in the binary to start faster.
+allowBuilds:
+  esbuild: false
+  workerd: false
+
+# Versions shared by more than one package, pinned once.
+catalog:
+  "@types/node": 24.19.2
+  typescript: 6.0.3
+  vitest: 5.0.5
+  wrangler: 4.152.0

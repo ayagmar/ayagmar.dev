@@ -1,0 +1,7 @@
+# Node comes from .node-version, the single source shared with Workers Builds.
+[settings]
+idiomatic_version_file_enable_tools = ["node"]
+
+[tools]
+pnpm = "12.15.0"
+just = "1.59.0"
