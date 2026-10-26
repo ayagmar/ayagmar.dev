@@ -18,3 +18,5 @@ llm-usage --json --since 2026-10-01
 | ----------- | ---------------------- |
 | Claude Code | JSON lines per message |
 | Codex       | JSON lines per turn    |
+
+A throwaway line to test CI path planning.
