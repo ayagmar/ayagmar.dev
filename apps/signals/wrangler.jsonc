@@ -15,10 +15,30 @@
   },
   // Created on deploy. The ayagmar.dev zone must be on the same Cloudflare account.
   "routes": [{ "pattern": "api.ayagmar.dev", "custom_domain": true }],
+  // Pull adapters run from this one trigger; each adapter keeps its own interval (ADR 0010).
+  // Cron Triggers never run for Previews.
+  "triggers": { "crons": ["* * * * *"] },
   "vars": {
     // Overridden on every deploy with the commit SHA (see the signals-* recipes in the justfile).
     "COMMIT_SHA": "dev"
   },
+  // Set with `just signals-secrets`. Deploys fail while one is missing. The *_NEXT slots hold
+  // the next value during a rotation and a random unused value otherwise (docs/operations.md).
+  "secrets": {
+    "required": [
+      "PUSH_TOKEN_LLM_USAGE",
+      "PUSH_TOKEN_LLM_USAGE_NEXT",
+      "PUSH_TOKEN_TRELLIS",
+      "PUSH_TOKEN_TRELLIS_NEXT",
+      "PUSH_HMAC_TRELLIS",
+      "PUSH_HMAC_TRELLIS_NEXT"
+    ]
+  },
+  // Best-effort push limit per producer and Cloudflare location (ADR 0011). The hard ceiling
+  // is the minimum interval enforced in D1.
+  "ratelimits": [
+    { "name": "PUSH_RATE_LIMIT", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
@@ -28,11 +48,15 @@
       "migrations_dir": "migrations"
     }
   ],
-  // `wrangler preview` (PR previews) never inherits production vars or bindings.
+  // `wrangler preview` (PR previews) never inherits production vars, secrets or bindings.
   // Every preview shares the min7-signals-preview database; its migrations are applied
-  // with wrangler.preview-migrations.jsonc.
+  // with wrangler.preview-migrations.jsonc. Preview secrets live in the Preview base config:
+  // random fakes set once with `just signals-preview-secrets`, never production values.
   "previews": {
     "vars": { "COMMIT_SHA": "preview" },
+    "ratelimits": [
+      { "name": "PUSH_RATE_LIMIT", "namespace_id": "1002", "simple": { "limit": 10, "period": 60 } }
+    ],
     "d1_databases": [
       {
         "binding": "DB",

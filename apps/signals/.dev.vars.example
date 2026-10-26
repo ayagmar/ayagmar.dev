@@ -1,3 +1,8 @@
-# Copy to .dev.vars for `just signals-dev`. Names only; never commit values.
-# No secrets are needed yet. Producer tokens and upstream API keys are added here
-# as their adapters and intake routes land.
+# Copy to .dev.vars for `just signals-dev` and fill in local-only values (at least 32
+# characters each, e.g. `openssl rand -hex 32`). Names only here; never commit values.
+PUSH_TOKEN_LLM_USAGE=
+PUSH_TOKEN_LLM_USAGE_NEXT=
+PUSH_TOKEN_TRELLIS=
+PUSH_TOKEN_TRELLIS_NEXT=
+PUSH_HMAC_TRELLIS=
+PUSH_HMAC_TRELLIS_NEXT=
