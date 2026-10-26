@@ -47,6 +47,7 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
       </>
     ))}
     <link rel="sitemap" href="/sitemap-index.xml">
+    <slot name="head" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>

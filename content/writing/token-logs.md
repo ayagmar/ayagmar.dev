@@ -19,3 +19,21 @@ llm-usage --json --since 2026-10-01
 | ----------- | ---------------------- |
 | Claude Code | JSON lines per message |
 | Codex       | JSON lines per turn    |
+
+## From log to total
+
+Each log goes through the same three steps before its tokens are added up.
+
+```mermaid
+flowchart TB
+  accTitle: From session log to token totals
+  accDescr: A session log is parsed, its usage records are normalized, and the totals are summed per day.
+  log[Session log] --> parse[Parse] --> normalize[Normalize usage] --> sum[Sum per day]
+```
+
+```mermaid title="Placeholder numbers: cache reads per agent, in millions of tokens"
+xychart-beta
+  x-axis ["Claude Code", Codex, pi]
+  y-axis "Million tokens" 0 --> 40
+  bar [32, 18, 9]
+```

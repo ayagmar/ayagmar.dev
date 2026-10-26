@@ -3,6 +3,8 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # The version of every build: Workers Builds' commit, else the local checkout, else "dev".
+# renovate: datasource=npm depName=renovate
+renovate_version := "44.178.3"
 commit_sha := env("WORKERS_CI_COMMIT_SHA", `git rev-parse HEAD 2>/dev/null || echo dev`)
 
 # Where the site build reads source data (ADR 0015): the read API when Workers Builds builds
@@ -11,6 +13,12 @@ signals_mode := env("SIGNALS_MODE", if env("WORKERS_CI_BRANCH", "") == "main" { 
 site := "pnpm --filter @min7/site exec"
 signals := "pnpm --filter @min7/signals exec"
 contracts := "pnpm --filter @min7/contracts exec"
+# Every required signals secret, matching secrets.required in apps/signals/wrangler.jsonc.
+# GITHUB_TOKEN is optional and set on its own: `just signals-secret GITHUB_TOKEN`.
+required_secrets := "LASTFM_API_KEY PUSH_TOKEN_LLM_USAGE PUSH_TOKEN_LLM_USAGE_NEXT PUSH_TOKEN_TRELLIS PUSH_TOKEN_TRELLIS_NEXT PUSH_HMAC_TRELLIS PUSH_HMAC_TRELLIS_NEXT"
+
+# Pinned tools from scripts/bootstrap.sh come first, so local runs match CI.
+export PATH := justfile_directory() / ".tools/bin" + ":" + env("PATH")
 
 [private]
 default:
@@ -61,14 +69,29 @@ typecheck: typegen
     {{ site }} svelte-check --fail-on-warnings
 
 # Unit and Worker tests
-test:
+test: test-contracts test-signals test-site test-scripts
+
+# Contracts: zod and JSON Schema agree on the corpus, frozen v1 consumers still parse
+test-contracts:
     {{ contracts }} vitest run
+
+# Signals: Worker tests in workerd
+test-signals:
     {{ signals }} vitest run
+
+# Site: unit tests (feeds, headers, frontmatter schema, postbuild)
+test-site:
     {{ site }} vitest run
-    node --test scripts/check-boundaries.test.ts scripts/workers-config.test.ts
+
+# Repo scripts: boundaries, Wrangler configs, CI plan and gate, secret scanner
+test-scripts:
+    node --test scripts/*.test.ts
 
 # Browser tests against the built site served by its real Worker (wrangler dev)
-e2e: site-build
+e2e: site-build e2e-test
+
+# Browser tests against an existing apps/site/dist (CI downloads it from the build job)
+e2e-test:
     {{ site }} playwright test
 
 # Download the Chromium build Playwright uses (once per Playwright version)
@@ -95,11 +118,35 @@ contracts-schema:
 contracts-schema-check:
     node packages/contracts/scripts/export-schema.ts --check
 
-# Scan git history and built output for secrets
-scan-secrets:
-    gitleaks git --redact --no-banner .
-    gitleaks dir --redact --no-banner apps/site/dist
-    if [ -d apps/signals/dist ]; then gitleaks dir --redact --no-banner apps/signals/dist; fi
+# Scan the git history for secrets (gitleaks; prints file, line and rule only)
+scan-secrets-source: (tools "gitleaks")
+    node scripts/gitleaks-report.ts git .
+
+# Scan the built site and signals bundle for secrets; run site-build and signals-build first
+scan-secrets: scan-site scan-signals
+
+# Scan apps/site/dist for secrets
+scan-site: (scan-artifact "apps/site/dist")
+
+# Scan the signals bundle (apps/signals/dist) for secrets
+scan-signals: (scan-artifact "apps/signals/dist")
+
+# Scan a directory of built output for secrets with both scanners; either one fails it
+scan-artifact dir: (tools "gitleaks")
+    ok=true; node scripts/scan-secrets.ts {{ quote(dir) }} || ok=false; node scripts/gitleaks-report.ts dir {{ quote(dir) }} || ok=false; "${ok}"
+
+# Site: fail if the built site has no search index (run after site-build)
+site-dist-check:
+    node -e 'const e = require("./apps/site/dist/pagefind/pagefind-entry.json"); const n = Object.values(e.languages).reduce((s, l) => s + l.page_count, 0); if (n === 0) throw new Error("pagefind indexed no pages"); console.log(`pagefind: ${n} pages indexed`)'
+
+# Links in the built site: internal ones offline first, then external ones (lychee.toml),
+# except the sample links the fixtures-mode build renders (scripts/fixture-urls.ts)
+links: links-internal
+    lychee --config lychee.toml --exclude "$(node scripts/fixture-urls.ts)" --root-dir "{{ justfile_directory() }}/apps/site/dist" --remap '^https://ayagmar\.dev/?(.*)$ file://{{ justfile_directory() }}/apps/site/dist/$1' apps/site/dist
+
+# Links in the built site that stay on ayagmar.dev, without network
+links-internal: (tools "lychee")
+    lychee --config lychee.toml --offline --root-dir "{{ justfile_directory() }}/apps/site/dist" --remap '^https://ayagmar\.dev/?(.*)$ file://{{ justfile_directory() }}/apps/site/dist/$1' apps/site/dist
 
 # Site: dev server (no search index; run site-build for that)
 site-dev:
@@ -123,7 +170,7 @@ site-deploy:
 site-preview:
     {{ site }} wrangler preview --message "{{ commit_sha }}"
 
-# Signals: local Worker on http://localhost:8787
+# Signals: local Worker on http://localhost:8787 (run signals-migrate-local first)
 signals-dev:
     {{ signals }} wrangler dev --var COMMIT_SHA:{{ commit_sha }}
 
@@ -131,17 +178,42 @@ signals-dev:
 signals-build:
     {{ signals }} wrangler deploy --dry-run --outdir dist --var COMMIT_SHA:{{ commit_sha }}
 
-# Signals: deploy to production
-signals-deploy:
+# Signals: apply pending migrations to the production database, then deploy to production
+signals-deploy: signals-migrate-remote
     {{ signals }} wrangler deploy --var COMMIT_SHA:{{ commit_sha }} --message "{{ commit_sha }}"
 
-# Signals: upload a Preview (pull requests)
-signals-preview:
+# Signals: apply pending migrations to the shared preview database, then upload a Preview
+signals-preview: signals-migrate-preview
     {{ signals }} wrangler preview --var COMMIT_SHA:{{ commit_sha }} --message "{{ commit_sha }}"
 
-# Signals: set a Worker secret, prompting for its value (deploys a new version)
+# Signals: create the production and preview D1 databases (once; put the ids in the configs)
+signals-db-create:
+    {{ signals }} wrangler d1 create min7-signals
+    {{ signals }} wrangler d1 create min7-signals-preview
+
+# Signals: apply pending migrations to the local database that signals-dev uses
+signals-migrate-local:
+    {{ signals }} wrangler d1 migrations apply DB --local
+
+# Signals: apply pending migrations to the production database (min7-signals)
+signals-migrate-remote:
+    {{ signals }} wrangler d1 migrations apply DB --remote
+
+# Signals: apply pending migrations to the shared preview database (min7-signals-preview)
+signals-migrate-preview:
+    {{ signals }} wrangler d1 migrations apply DB --remote --config wrangler.preview-migrations.jsonc
+
+# Signals: set one production secret; Wrangler prompts for the value (deploys a new version)
 signals-secret name:
     {{ signals }} wrangler secret put {{ quote(name) }}
+
+# Signals: set each required production secret in turn
+signals-secrets:
+    for name in {{ required_secrets }}; do just signals-secret "$name"; done
+
+# Signals: give the Preview base config random fake required secrets, shown to no one
+signals-preview-secrets:
+    for name in {{ required_secrets }}; do openssl rand -hex 32 | {{ signals }} wrangler preview base-config secret put "$name"; done
 
 # List the 10 most recent deployments of a Worker (site or signals)
 deployments worker:
@@ -150,3 +222,46 @@ deployments worker:
 # Roll a Worker (site or signals) back to a version id, or to the previous one when omitted
 rollback worker version="":
     pnpm --filter @min7/{{ worker }} exec wrangler rollback {{ version }}
+
+# Install pinned CI tools into .tools/bin (sha256-checked): just tools gitleaks lychee
+tools *names:
+    ./scripts/bootstrap.sh {{ names }}
+
+# CI: which jobs this change needs (see scripts/ci.ts)
+ci-plan:
+    node scripts/ci.ts plan
+
+# CI: pass only if every planned job succeeded ($NEEDS is the needs context)
+ci-gate:
+    node scripts/ci.ts gate
+
+# CI: the plan and gate decisions for known changes, and ci.yml matching them
+ci-test:
+    node --test scripts/ci-*.test.ts
+
+# CI: no Wrangler call or Cloudflare credential in GitHub Actions
+ci-policy:
+    node scripts/ci-policy.ts
+
+# Lint GitHub workflows and actions (actionlint with shellcheck, zizmor)
+workflows-lint: (tools "actionlint" "shellcheck" "zizmor")
+    actionlint
+    zizmor --no-progress .
+
+# Lint and format-check shell scripts
+shell-lint: (tools "shellcheck" "shfmt")
+    git ls-files -z '*.sh' .githooks | xargs -0 shellcheck
+    git ls-files -z '*.sh' .githooks | xargs -0 shfmt --diff --indent 2 --case-indent
+
+# Known vulnerabilities in locked dependencies (osv-scanner)
+osv: (tools "osv-scanner")
+    osv-scanner scan source --lockfile pnpm-lock.yaml
+
+# Validate renovate.json with the pinned Renovate, and its automerge policy
+renovate-check:
+    node --test scripts/renovate-policy.test.ts
+    npm exec --yes --package renovate@{{ renovate_version }} -- renovate-config-validator --strict --no-global renovate.json
+
+# Apply the main branch ruleset and merge settings on GitHub (owner, needs gh with admin)
+repo-ruleset:
+    ./scripts/repo-ruleset.sh
