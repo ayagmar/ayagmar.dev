@@ -75,7 +75,7 @@ const href = (url: string) => url.replace(/\.html$/, '');
 <svelte:window onkeydown={onKeydown} />
 
 {#if hydrated}
-  <button type="button" onclick={open} aria-keyshortcuts="Control+K /">
+  <button type="button" onclick={open} aria-keyshortcuts="Control+K">
     Search <kbd>Ctrl K</kbd>
   </button>
 {:else}
