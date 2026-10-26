@@ -1,9 +1,11 @@
 // Last.fm: now playing, recent scrobbles, top artists and weekly scrobble counts for min7_.
 import {
   type ListeningSnapshot,
+  lastfmArtistSchema,
   lastfmErrorSchema,
   lastfmRecentTracksSchema,
   lastfmTopArtistsSchema,
+  lastfmTrackSchema,
   listeningSnapshotSchema,
 } from '@min7/contracts';
 import type { PullAdapter } from '../types.ts';
@@ -83,7 +85,7 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
 
   normalize(raw) {
     const recent = read(raw.recentTracks, lastfmRecentTracksSchema).recenttracks;
-    const tracks = toArray(recent.track);
+    const tracks = items(recent.track, lastfmTrackSchema);
 
     let nowPlaying: ListeningSnapshot['nowPlaying'] = null;
     const played: ListeningSnapshot['recent'] = [];
@@ -101,7 +103,7 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
     const topArtists =
       top === null
         ? null
-        : toArray(top.topartists.artist).flatMap((artist) => {
+        : items(top.topartists.artist, lastfmArtistSchema).flatMap((artist) => {
             const name = artist.name.trim();
             return name === ''
               ? []
@@ -131,12 +133,15 @@ function read<T>(response: UpstreamResponse, schema: Schema<T>): T {
 const readOptional = <T>(response: UpstreamResponse | null, schema: Schema<T>) =>
   response === null ? null : orNull(() => read(response, schema));
 
-const toArray = <Item>(value: Item | Item[]): Item[] => (Array.isArray(value) ? value : [value]);
+/** The items of a Last.fm list that match `schema`; one it cannot read is skipped. */
+function items<T>(list: unknown[] | Record<string, unknown>, schema: Schema<T>): T[] {
+  return (Array.isArray(list) ? list : [list]).flatMap((item) => {
+    const parsed = schema.safeParse(item);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
 
-type LastfmTrack = Exclude<
-  ReturnType<typeof lastfmRecentTracksSchema.parse>['recenttracks']['track'],
-  unknown[]
->;
+type LastfmTrack = ReturnType<typeof lastfmTrackSchema.parse>;
 
 function trackOf(item: LastfmTrack) {
   const track = item.name.trim();

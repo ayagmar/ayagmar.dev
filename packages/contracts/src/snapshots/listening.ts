@@ -9,7 +9,7 @@ const countString = z.string().regex(/^\d{1,12}$/);
 const lastfmText = z.object({ '#text': z.string().max(1024) });
 
 /** One `recenttracks.track` item. The now-playing track has `@attr.nowplaying` and no `date`. */
-const lastfmTrackSchema = z.object({
+export const lastfmTrackSchema = z.object({
   name: z.string().max(1024),
   artist: lastfmText,
   album: lastfmText.optional(),
@@ -21,19 +21,20 @@ const lastfmTrackSchema = z.object({
 const lastfmPageAttr = z.object({ total: countString });
 
 /**
- * Last.fm returns a list of one item as a bare object, and an empty list as `[]`. The
- * normalizer turns both into arrays.
+ * A Last.fm list: an array, or a bare object for a list of one; `[]` when empty. Items are
+ * left unread here and checked one by one by the normalizer, which skips one it cannot read
+ * instead of failing the whole list.
  */
-const oneOrMany = <Item extends z.ZodType>(item: Item) => z.union([z.array(item).max(50), item]);
+const lastfmItems = z.union([z.array(z.unknown()).max(50), z.record(z.string(), z.unknown())]);
 
 export const lastfmRecentTracksSchema = z.object({
   recenttracks: z.object({
-    track: oneOrMany(lastfmTrackSchema),
+    track: lastfmItems,
     '@attr': lastfmPageAttr,
   }),
 });
 
-const lastfmArtistSchema = z.object({
+export const lastfmArtistSchema = z.object({
   name: z.string().max(1024),
   playcount: countString,
   url: z.string().max(2048).optional(),
@@ -41,7 +42,7 @@ const lastfmArtistSchema = z.object({
 
 export const lastfmTopArtistsSchema = z.object({
   topartists: z.object({
-    artist: oneOrMany(lastfmArtistSchema),
+    artist: lastfmItems,
   }),
 });
 
