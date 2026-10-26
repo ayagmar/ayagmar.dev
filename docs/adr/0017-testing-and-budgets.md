@@ -37,6 +37,8 @@ The site is static pages with two small islands (search, now playing). It should
 
 A reference to a file the build does not contain also fails, since its bytes could not be counted.
 
+The budgets catch accidental growth in the site's own build output, which Vite and Astro write. They are not hardened against hand-crafted evasion, such as a CSS escape (`u\72l()`) that a browser decodes and the checker does not read as `url()`.
+
 ### Lighthouse
 
 `scripts/lighthouse.ts` serves a build through its own site Worker with `wrangler dev` (local and offline, as e2e does, so `_headers` and the Worker apply), runs `lhci collect` (`@lhci/cli` 0.15.1, Lighthouse 12.6.1) on seven pages, mobile and desktop, three runs each, and takes the median of each metric. Chromium is Playwright's, already cached for e2e, passed as `CHROME_PATH`, run headless with `--no-sandbox`, as Playwright itself launches it (the pages are this site's own). The pages are `/`, `/writing`, `/projects`, `/about`, `/stats`, the largest post and the largest project page (`/writing/*` and `/projects/*` in `budgets.json`: the largest HTML file directly under that directory, so a heavy page cannot hide behind a light one). The static budgets check every page, each post and project page included.
