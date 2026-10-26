@@ -36,6 +36,8 @@ Day is when the sun's centre is above −0.833° (NOAA's sunrise and sunset), du
 
 **Why tzdata matters here.** Morocco ran at +01 with a change to +00 for Ramadan each year until 2026. The tzdata `africa` file (release 2026c) records Decree 2.26.530: Morocco moved to +00 for good on 2026-09-20 at 02:00, with no further clock changes. So there are no 2027 Ramadan changes to test around; the tests use the three 2026 changes (15 Feb, 22 Mar, 20 Sep). A hand-written +01 would now be an hour wrong every day. A browser whose tzdata predates 2026c still thinks Morocco is at +01, and would dim the lamp and print the note an hour off. So before it uses the hour, `room.ts` asks `knowsCasablanca()` in `sky.ts`, which formats 2026-10-01 12:00 UTC in Casablanca and expects `12:00`. When the browser disagrees, the lamp stays as the theme draws it and the note stays hidden, as without JavaScript; the sky and the moon come from UTC and stay. Nothing writes the offset down: if Morocco changes its clocks again, that check moves with the new rules.
 
+**The visitor's clock is trusted.** The sky, the moon and the lamp all start from the device's `Date.now()`. A device clock that is hours off shows the wrong sky, and one that is an hour off near 02:00 or 07:00 shows the note when it should not, or hides it. This is an accepted limitation, not checked for: the three details are decoration, the page has no trustworthy time without an extra request (a same-origin time anchor would cost a request on every visit and a new route), and a device clock that far off already breaks TLS certificate checks and most of the web for that visitor. The time zone the visitor picks never matters; only the clock does.
+
 **Checks** (`apps/site/test/sky.test.ts`):
 - Moon: the illuminated fraction on 12 dates in 2026 is within 3 points of NASA SVS Dial-A-Moon (https://svs.gsfc.nasa.gov/api/dialamoon/, JPL ephemeris; it measured within 0.25 points). The named phase at 12 instants over 2026 and 2027 from Espenak's catalogue (https://eclipse.gsfc.nasa.gov/phase/phases2001.html) matches, and the elongation is within one day's motion of the phase (it measured within 0.6 hours). The USNO API and timeanddate.com refused connections from the build machine, so these two sources stand in for them.
 - Sun: sunrise and sunset on 8 dates, both sides of each 2026 clock change plus both solstices, are within 2 minutes of NOAA's calculator in Casablanca local time (they measured within 1 minute).
@@ -124,7 +126,8 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 
 ## Consequences
 
-- The home page runs a 1.5 KB module script; every other page is unchanged apart from about 0.3 KB of theme script, the keys list and the comment.
+- The home page runs a 1.5 KB module script; every other page is unchanged apart from 0.6 KB more theme script, the keys list with its switch, the Keys button and the comment.
+- A device clock that is wrong shows a wrong sky, moon and lamp (accepted above).
 - Moving the window in `scene.py` means moving the moon's centre (122, 25) in `room.ts`.
 - Changing `art.ts` changes every post's art; the golden files make that a deliberate `vitest run -u`.
 - Visitors with tzdata older than 2026c see the theme's lamp and no note until their browser updates.
