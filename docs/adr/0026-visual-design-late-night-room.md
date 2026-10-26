@@ -40,7 +40,7 @@ Source Serif 4 for everything read, JetBrains Mono for data (dates, counts, the 
 - Weights cut to 400 to 700. Both serif faces are pinned to the text optical size (`opsz` 16). Keeping the axis gave headings Source Serif's display cut, but it made the roman 101 KiB, and that preloaded file pushed mobile LCP on home past 2 s. The price: no automatic optical sizing, so large headings use the text cut, which is a little heavier and looser than the display cut.
 - `font-display: swap`; only the roman is preloaded.
 - Sizes: roman 43 KiB, italic 42 KiB, mono 28 KiB, 113 KiB in total.
-- Home sets no italic text (the room list's section names are muted roman, the playing track is semibold), so it loads only the roman and the mono. An italic on home puts the italic font in front of the scene, which cost about 0.15 to 0.3 s of mobile LCP in Lighthouse. `e2e/room.spec.ts` fails if home loads a third font.
+- Home sets no italic text (the room list's section names are muted roman, the playing track is semibold), so it loads only the roman and the mono. An italic on home puts the italic font in front of the scene, which cost about 0.15 to 0.3 s of mobile LCP in Lighthouse. `e2e/room.spec.ts` fails if home loads a third font. Stats sets track names the same way: with the italic, its swap reflowed the wrapped list rows, mobile CLS 0.05 in Lighthouse against ADR 0017's 0.01.
 - "Source" is a Reserved Font Name under the OFL and a subset counts as a modified version, so the serif files and the CSS name the family "min7 Serif". The licenses are next to the files in `src/fonts/`.
 
 Posts get the largest type on the site: 18 to 21 px body at a 66ch measure, 32 to 52 px titles.
