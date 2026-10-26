@@ -4,11 +4,24 @@
 // a head page is over budget or regressed against the base beyond the noise allowance. Writes
 // the metrics artifact (scripts/lighthouse-report.js has its schema) either way.
 // Chromium comes from CHROME_PATH (`just lighthouse` sets it to Playwright's).
+// A base cache file holds the base's medians by URL path, so a base measured once (CI keys the
+// file by the base commit) is not measured again; the base is served only for pages the cache
+// lacks. A head cache file receives the head's medians in the same format, for CI to keep under
+// the commit it measured.
 // Usage: node scripts/lighthouse.ts [--base <site dir>] [--head <site dir>]
 //          [--profile mobile|desktop]... [--out <metrics.json>]
+//          [--base-cache <file>] [--head-cache <file>]
 // A site dir is apps/site of a checkout, built: wrangler.jsonc, worker/ and dist/.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { budgets } from './budgets.ts';
@@ -172,6 +185,52 @@ function collect(
   return out;
 }
 
+/** Medians by profile and URL path, the format of the cache files. */
+export type Cache = Partial<Record<Profile, Record<string, Values>>>;
+
+/**
+ * The cache file's content. A file that is missing or not a cache this script wrote counts as
+ * empty, so a bad cache costs a measurement and never a failed run.
+ */
+export function readCache(file: string | undefined): Cache {
+  if (!file || !existsSync(file)) return {};
+  try {
+    const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
+      version?: unknown;
+      profiles?: unknown;
+    };
+    if (parsed.version !== 1 || typeof parsed.profiles !== 'object' || parsed.profiles === null) {
+      throw new Error('not a version 1 cache');
+    }
+    const out: Cache = {};
+    for (const profile of profiles) {
+      const byPath = (parsed.profiles as Record<string, unknown>)[profile] ?? {};
+      if (typeof byPath !== 'object' || byPath === null)
+        throw new Error(`${profile}: not an object`);
+      const entries: Record<string, Values> = {};
+      for (const [path, value] of Object.entries(byPath)) {
+        const v = value as Record<string, unknown>;
+        if (!metricKeys.every((key) => typeof v[key] === 'number' && Number.isFinite(v[key]))) {
+          throw new Error(`${profile} ${path}: not six numbers`);
+        }
+        entries[path] = Object.fromEntries(metricKeys.map((key) => [key, v[key]])) as Values;
+      }
+      out[profile] = entries;
+    }
+    return out;
+  } catch (error) {
+    console.error(
+      `lighthouse: ignoring the cache ${file}: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return {};
+  }
+}
+
+function writeCache(file: string, cache: Cache) {
+  mkdirSync(dirname(resolve(file)), { recursive: true });
+  writeFileSync(file, `${JSON.stringify({ version: 1, profiles: cache })}\n`);
+}
+
 const pct = (n: number) => String(Math.round(n * 100));
 
 /**
@@ -199,6 +258,8 @@ async function main() {
       head: { type: 'string', default: 'apps/site' },
       profile: { type: 'string', multiple: true, default: [...profiles] },
       out: { type: 'string', default: '.lighthouse/metrics.json' },
+      'base-cache': { type: 'string' },
+      'head-cache': { type: 'string' },
     },
   });
   for (const p of args.profile) {
@@ -219,16 +280,12 @@ async function main() {
   const servers: ChildProcess[] = [];
   const results: ReturnType<typeof validate>['results'] = [];
   const problems: string[] = [];
+  const baseCache = readCache(args['base-cache']);
+  const headCache: Cache = {};
+  const baseOrigin = 'http://127.0.0.1:8792';
   try {
     servers.push(await serve(head, 8791, bin('wrangler')));
-    let basePaths: Record<string, string> = {};
-    if (base) {
-      servers.push(await serve(base, 8792, bin('wrangler')));
-      basePaths = await existing('http://127.0.0.1:8792', paths);
-      for (const name of Object.keys(paths).filter((n) => !(n in basePaths))) {
-        console.log(`lighthouse: ${name} (${paths[name]}) is new: not on the base`);
-      }
-    }
+    let baseUp = false;
     for (const profile of args.profile as Profile[]) {
       const headRuns = collect(
         bin('lhci'),
@@ -237,16 +294,35 @@ async function main() {
         profile,
         join(work, `head-${profile}`)
       );
-      const baseRuns =
-        Object.keys(basePaths).length > 0
-          ? collect(
-              bin('lhci'),
-              'http://127.0.0.1:8792',
-              basePaths,
-              profile,
-              join(work, `base-${profile}`)
-            )
-          : {};
+      // The base is measured only for pages its cache lacks, and only if it has them.
+      const known = baseCache[profile] ?? {};
+      baseCache[profile] = known;
+      const headByPath: Record<string, Values> = {};
+      headCache[profile] = headByPath;
+      const uncached = Object.fromEntries(
+        Object.entries(paths).filter(([, path]) => !(path in known))
+      );
+      if (base && Object.keys(uncached).length > 0) {
+        if (!baseUp) servers.push(await serve(base, 8792, bin('wrangler')));
+        baseUp = true;
+        const onBase = await existing(baseOrigin, uncached);
+        for (const name of Object.keys(uncached).filter((n) => !(n in onBase))) {
+          console.log(`lighthouse: ${name} (${paths[name]}) is new: not on the base`);
+        }
+        if (Object.keys(onBase).length > 0) {
+          const measured = collect(
+            bin('lhci'),
+            baseOrigin,
+            onBase,
+            profile,
+            join(work, `base-${profile}`)
+          );
+          for (const [name, values] of Object.entries(measured)) {
+            if (values) known[paths[name] as string] = values;
+          }
+          if (args['base-cache']) writeCache(args['base-cache'], baseCache);
+        }
+      }
       for (const page of Object.keys(paths)) {
         const h = headRuns[page];
         if (!h) {
@@ -255,7 +331,8 @@ async function main() {
           );
           continue;
         }
-        const b = baseRuns[page] ?? null;
+        headByPath[paths[page] as string] = h;
+        const b = known[paths[page] as string] ?? null;
         const over = overBudget(h, profile);
         const regressed = regressions(h, b, profile);
         for (const key of over) problems.push(`${page} (${profile}): ${key} ${h[key]} over budget`);
@@ -271,6 +348,7 @@ async function main() {
   } finally {
     for (const server of servers) server.kill();
   }
+  if (args['head-cache']) writeCache(args['head-cache'], headCache);
 
   if (results.length > 0) {
     const artifact = JSON.stringify({ version: 1, runs: budgets.lighthouse.runs, results });
