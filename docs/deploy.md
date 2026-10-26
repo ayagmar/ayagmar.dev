@@ -37,37 +37,59 @@ Both projects:
 
 Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` route, which `wrangler deploy` creates. The `ayagmar.dev` zone must be on the same Cloudflare account. If the deploy cannot create it, add it under the Worker's **Settings → Domains & Routes** instead.
 
-## Secrets (signals)
-
-Set once, from a checkout with Wrangler logged in; each command prompts for the value and deploys a new version:
-
-```sh
-just signals-secret LASTFM_API_KEY   # from https://www.last.fm/api/account/create
-just signals-secret GITHUB_TOKEN     # optional: a fine-grained token with no permissions (public data)
-```
-
-Without `LASTFM_API_KEY` the listening pull fails with `not_configured`. Without `GITHUB_TOKEN` GitHub allows 60 requests an hour per IP, shared with other Workers, so the daily projects pull may be refused.
-
 ## D1 (signals)
 
 `apps/signals/wrangler.jsonc` declares the `DB` binding with placeholder ids. Before the first signals deploy:
 
 ```sh
-cd apps/signals
-pnpm exec wrangler d1 create min7-signals
-pnpm exec wrangler d1 create min7-signals-preview
+just signals-db-create
 ```
 
-Put the first id in `d1_databases` and the second in `previews.d1_databases` of `wrangler.jsonc` and in `wrangler.preview-migrations.jsonc`, then commit. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database. Migration recipes arrive with the first migration.
+Put the first id in `d1_databases` and the second in `previews.d1_databases` of `wrangler.jsonc` and in `wrangler.preview-migrations.jsonc`, then commit. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database (`scripts/workers-config.test.ts` checks this).
 
-Migrations only add (expand) or remove what no deployed version still reads (contract), so the previous Worker version always runs against the current schema.
+| Recipe                         | Applies `apps/signals/migrations/` to                           |
+| ------------------------------ | --------------------------------------------------------------- |
+| `just signals-migrate-local`   | the local database `just signals-dev` uses                      |
+| `just signals-migrate-remote`  | `min7-signals` (production), via `wrangler.jsonc`               |
+| `just signals-migrate-preview` | `min7-signals-preview`, via `wrangler.preview-migrations.jsonc` |
+
+`just signals-deploy` runs `signals-migrate-remote` first and `just signals-preview` runs `signals-migrate-preview` first, so Workers Builds applies migrations before it uploads code. Migrations only add (expand) or remove what no deployed version still reads (contract), so the previous Worker version always runs against the current schema.
+
+**Workers Builds token.** The API token Workers Builds creates by default has no D1 permission. In the signals project's **Settings → Build → API token**, edit the token (or create one) to add **Account → D1 → Edit**. Without it, the deploy and preview commands fail at the migration step.
+
+## Secrets (signals)
+
+`LASTFM_API_KEY` (from https://www.last.fm/api/account/create) and the six push secrets are required; the push secrets and their rotation are in [docs/operations.md](operations.md). `GITHUB_TOKEN` is optional: a fine-grained token with no permissions (public data). Once, before the first signals deploy:
+
+```sh
+just signals-secrets                 # production: prompts for each required value
+just signals-secret GITHUB_TOKEN     # production, optional
+just signals-preview-secrets         # Preview base config: random fake values
+```
+
+`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a required secret is missing; `GITHUB_TOKEN` is not in that list. Without it GitHub allows 60 requests an hour per IP, shared with other Workers, so the daily projects pull may be refused. Locally, without `LASTFM_API_KEY` in `.dev.vars`, the listening pull fails with `not_configured`.
+
+Wrangler rejects `secrets` under `previews`, so Previews are not checked the same way; a Preview without its base config secrets answers every push with 401. The fake `LASTFM_API_KEY` in Previews is never used, because the cron never runs there.
+
+## Resolved bindings (signals)
+
+Read from the configs with Wrangler 4.152's `unstable_readConfig` and `wrangler deploy --dry-run` on 2026-10-26:
+
+| Binding / target      | Production (`wrangler deploy`)     | Previews (`wrangler preview`)                                |
+| --------------------- | ---------------------------------- | ------------------------------------------------------------ |
+| `DB`                  | `min7-signals`                     | `min7-signals-preview`                                       |
+| Migrations applied to | `min7-signals` (`wrangler.jsonc`)  | `min7-signals-preview` (`wrangler.preview-migrations.jsonc`) |
+| `PUSH_RATE_LIMIT`     | namespace `1001`, 10 per 60 s      | namespace `1002`, 10 per 60 s                                |
+| `COMMIT_SHA`          | commit SHA (`--var`)               | commit SHA (`--var`); `preview` without it                   |
+| Required secrets      | Worker secrets, required on deploy | Preview base config, random fakes                            |
+| Cron `* * * * *`      | runs                               | never runs                                                   |
 
 ## Previews
 
 - Preview URLs are public. Nothing secret is served, so they stay unprotected.
 - Previews get their own `vars` and D1 binding from the `previews` block; they never inherit production bindings.
 - Cron triggers never run for Previews.
-- Secrets for Previews are set with `wrangler preview secret put` or the Preview base config, never copied from production.
+- Secrets for Previews live in the Preview base config (`just signals-preview-secrets`, which runs `wrangler preview base-config secret put`), never copied from production. Base config secrets reach Previews created after they are set.
 
 ## Rollback
 

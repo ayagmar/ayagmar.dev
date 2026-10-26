@@ -23,6 +23,30 @@ Any other field fails the build, so a typo such as `sumary:` does not pass silen
 
 "Last updated" comes from `updated` in the frontmatter. Deriving it from git history is not done yet.
 
+### Diagrams
+
+Write a Mermaid diagram in a `mermaid` code block. It becomes an SVG when the site builds; readers get no JavaScript. Every diagram needs a name for screen readers, given one of two ways:
+
+````md
+```mermaid
+flowchart TB
+  accTitle: How a post is published
+  accDescr: A draft is reviewed in a pull request, then merged and deployed.
+  draft[Draft] --> review[Pull request] --> live[Deployed]
+```
+
+```mermaid title="Posts per month"
+pie
+  "September" : 3
+  "October" : 5
+```
+````
+
+- `accTitle:` names the diagram without showing the name; `accDescr:` adds a longer description.
+- `title="..."` after `mermaid` names the diagram and shows the text as a caption below it. It is the only option the code block accepts.
+
+The build fails, naming the file and line, when a diagram has no name, has a Mermaid error or uses an unknown option. Check how it looks with `just dev`. Prefer `flowchart TB` to `LR` once a flowchart has more than three nodes: a wide diagram shrinks on phones, text included. Any diagram type Mermaid 12.1 supports works ([Pele](https://pele.run) renders them); colors come from the site theme, so leave out `style` and `classDef` unless a color carries meaning.
+
 ## Code changes
 
 - Every command is a `just` recipe. CI calls the same recipes.

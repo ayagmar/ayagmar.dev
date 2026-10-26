@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import Base from '../../layouts/Base.astro';
+import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { getPosts } from '../../lib/posts.ts';
 import { isoDay, tagPath } from '../../lib/writing.ts';
 
@@ -11,11 +12,13 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, remarkPluginFrontmatter } = await render(post);
+const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
 const { title, summary, date, updated, tags, draft } = post.data;
 ---
 
 <Base title={title} description={summary}>
+  {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article data-pagefind-body>
     <header>
       <h1>{title}</h1>

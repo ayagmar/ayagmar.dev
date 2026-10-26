@@ -1,0 +1,46 @@
+{
+  "last7Days": {
+    "costUsd": 41.37,
+    "totalTokens": 16440000
+  },
+  "monthToDate": {
+    "costUsd": 152.8,
+    "totalTokens": 61250000,
+    "cacheSavingsUsd": 310.45,
+    "agents": [
+      {
+        "agent": "Claude Code",
+        "costUsd": 98.1,
+        "totalTokens": 39800000,
+        "tokenShare": 0.6498
+      },
+      {
+        "agent": "Codex",
+        "costUsd": 41.2,
+        "totalTokens": 15300000,
+        "tokenShare": 0.2498
+      }
+    ]
+  },
+  "streak": {
+    "currentDays": 4,
+    "longestDays": 23
+  },
+  "days": [
+    {
+      "date": "2026-10-12",
+      "costUsd": 0,
+      "totalTokens": 0
+    },
+    {
+      "date": "2026-10-13",
+      "costUsd": 3.12,
+      "totalTokens": 1250000
+    },
+    {
+      "date": "2026-10-14",
+      "costUsd": 2.05,
+      "totalTokens": 842000
+    }
+  ]
+}

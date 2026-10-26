@@ -1,0 +1,83 @@
+{
+  "producer": "llm-usage",
+  "deliveryId": "7a6b5c4d-3e2f-4a1b-8c9d-0e1f2a3b4c5d",
+  "sentAt": "2026-10-26T08:00:00Z",
+  "payload": {
+    "last7Days": {
+      "costUsd": 41.37,
+      "totalTokens": 16440000,
+      "sessionIds": ["0b1c2d3e-session"]
+    },
+    "monthToDate": {
+      "costUsd": 152.8,
+      "totalTokens": 61250000,
+      "cacheSavingsUsd": 310.45,
+      "agents": [
+        {
+          "agent": "claude",
+          "costUsd": 98.1,
+          "totalTokens": 39800000,
+          "repoRoot": "/home/x/private-repo",
+          "models": ["claude-opus-5-5"]
+        },
+        {
+          "agent": "/home/x/private-repo",
+          "costUsd": 12.0,
+          "totalTokens": 4000000
+        },
+        {
+          "agent": "constructor",
+          "costUsd": 1.0,
+          "totalTokens": 100
+        },
+        {
+          "agent": "__proto__",
+          "costUsd": 1.0,
+          "totalTokens": 100
+        },
+        {
+          "agent": "codex",
+          "costUsd": 41.2,
+          "totalTokens": 15300000,
+          "prompt": "secret plans"
+        },
+        {
+          "agent": "claude",
+          "costUsd": 5.0,
+          "totalTokens": 1000000
+        }
+      ]
+    },
+    "streak": {
+      "currentDays": 4,
+      "longestDays": 23,
+      "machine": {
+        "name": "workstation",
+        "path": "/home/x"
+      }
+    },
+    "days": [
+      {
+        "date": "2026-10-12",
+        "costUsd": 0,
+        "totalTokens": 0,
+        "project": "private-repo"
+      },
+      {
+        "date": "2026-10-13",
+        "costUsd": 3.12,
+        "totalTokens": 1250000,
+        "project": "private-repo"
+      },
+      {
+        "date": "2026-10-14",
+        "costUsd": 2.05,
+        "totalTokens": 842000,
+        "project": "private-repo"
+      }
+    ],
+    "repoName": "ayagmar/private-repo",
+    "notes": "prompt: fix the auth bug in /home/x/private-repo"
+  },
+  "hostname": "workstation.local"
+}

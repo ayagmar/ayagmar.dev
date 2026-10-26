@@ -26,6 +26,9 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
     accept: ['repo-pulse/raw/ok.json', 'repo-pulse/raw/empty.json'],
     reject: ['repo-pulse/raw/malformed.json'],
   },
+  // Push bodies are also the Worker's intake fixtures.
+  'push-llm-usage': { accept: ['llm-usage/push/accept'], reject: ['llm-usage/push/reject'] },
+  'push-trellis': { accept: ['trellis/push/accept'], reject: ['trellis/push/reject'] },
 };
 
 const fixturePayloads = (path: string) => {

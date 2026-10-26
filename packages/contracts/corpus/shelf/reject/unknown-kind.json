@@ -1,0 +1,56 @@
+{
+  "source": "shelf",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:00:00.000Z",
+  "stale": false,
+  "data": {
+    "booksFinished": {
+      "year": 2026,
+      "count": 14
+    },
+    "inProgress": [
+      {
+        "title": "Frieren: Beyond Journey's End",
+        "kind": "podcast",
+        "progress": {
+          "current": 18,
+          "total": 28
+        }
+      },
+      {
+        "title": "Vagabond",
+        "kind": "manga",
+        "progress": {
+          "current": 214,
+          "total": 327
+        }
+      },
+      {
+        "title": "Ascendance of a Bookworm",
+        "kind": "light-novel",
+        "progress": {
+          "current": 9,
+          "total": null
+        }
+      },
+      {
+        "title": "The Left Hand of Darkness",
+        "kind": "book",
+        "progress": {
+          "current": 120,
+          "total": 304
+        }
+      }
+    ],
+    "habits": [
+      {
+        "habit": "Meditation",
+        "streakDays": 31
+      },
+      {
+        "habit": "Reading",
+        "streakDays": 12
+      }
+    ]
+  }
+}

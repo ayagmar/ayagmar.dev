@@ -1,0 +1,40 @@
+{
+  "producer": "llm-usage",
+  "deliveryId": "0f8e7c52-3c1a-4f7e-9b0a-1d2c3e4f5a6b",
+  "sentAt": "2026-10-26T08:00:00Z",
+  "payload": {
+    "last7Days": {
+      "costUsd": 41.37,
+      "totalTokens": "16440000"
+    },
+    "monthToDate": {
+      "costUsd": 152.8,
+      "totalTokens": 61250000,
+      "cacheSavingsUsd": 310.45,
+      "agents": [
+        {
+          "agent": "claude",
+          "costUsd": 98.1,
+          "totalTokens": 39800000
+        },
+        {
+          "agent": "codex",
+          "costUsd": 41.2,
+          "totalTokens": 15300000
+        },
+        {
+          "agent": "pi",
+          "costUsd": 13.5,
+          "totalTokens": 6150000
+        }
+      ]
+    },
+    "streak": {
+      "currentDays": 4,
+      "longestDays": 23
+    },
+    "days": {
+      "2026-10-12": 1
+    }
+  }
+}

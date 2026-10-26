@@ -1,0 +1,83 @@
+{
+  "producer": "trellis",
+  "deliveryId": "b1a2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+  "sentAt": "2026-10-26T06:00:00Z",
+  "payload": {
+    "booksFinished": {
+      "year": 2026,
+      "count": 14,
+      "titles": ["private journal"]
+    },
+    "inProgress": [
+      {
+        "title": "Frieren: Beyond Journey's End",
+        "kind": "anime",
+        "progress": {
+          "current": 18,
+          "total": 28,
+          "rating": 9
+        },
+        "notes": "watched with a friend"
+      },
+      {
+        "title": "Vagabond",
+        "kind": "manga",
+        "progress": {
+          "current": 214,
+          "total": 327
+        }
+      },
+      {
+        "title": "Ascendance of a Bookworm",
+        "kind": "light-novel",
+        "progress": {
+          "current": 9,
+          "total": null
+        }
+      },
+      {
+        "title": "The Left Hand of Darkness",
+        "kind": "book",
+        "progress": {
+          "current": 120,
+          "total": 304
+        }
+      }
+    ],
+    "habits": [
+      {
+        "habit": "meditation",
+        "streakDays": 31,
+        "notes": "after the panic attack"
+      },
+      {
+        "habit": "antidepressants",
+        "streakDays": 90
+      },
+      {
+        "habit": "constructor",
+        "streakDays": 5
+      },
+      {
+        "habit": "reading",
+        "streakDays": 12,
+        "mood": "low"
+      },
+      {
+        "habit": "meditation",
+        "streakDays": 2
+      }
+    ],
+    "weightKg": 81.4,
+    "notes": "therapy on thursday",
+    "spending": {
+      "monthEur": 1840
+    },
+    "people": [
+      {
+        "name": "A friend",
+        "lastSeen": "2026-10-20"
+      }
+    ]
+  }
+}

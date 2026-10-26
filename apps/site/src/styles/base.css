@@ -87,6 +87,41 @@ input {
   font: inherit;
 }
 
+/* Mermaid diagrams (ADR 0024). Colors come only from Pele's variables; the design retunes them. */
+.diagram {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.diagram figcaption {
+  font-size: 0.9em;
+}
+
+.pele {
+  --pele-font: system-ui, sans-serif;
+  --pele-bg: #fff;
+  --pele-fg: #1f1f1f;
+  --pele-muted: #5c5c5c;
+  --pele-line: #1f1f1f;
+  --pele-surface: #f3f3f3;
+  --pele-surface-alt: #e6e6e6;
+  --pele-border: #767676;
+  --pele-accent: #3a5bb8;
+}
+
+@media (prefers-color-scheme: dark) {
+  .pele {
+    --pele-bg: #121212;
+    --pele-fg: #e6e6e6;
+    --pele-muted: #a6a6a6;
+    --pele-line: #e6e6e6;
+    --pele-surface: #1f1f1f;
+    --pele-surface-alt: #2a2a2a;
+    --pele-border: #8a8a8a;
+    --pele-accent: #8fa8f0;
+  }
+}
+
 .posts {
   padding: 0;
   list-style: none;

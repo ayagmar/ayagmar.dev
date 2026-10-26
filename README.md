@@ -28,6 +28,7 @@ Then:
 just dev            # Astro dev server; search needs a build
 just site-build     # dist/ with the search index and _headers
 just site-serve     # the built site through its Worker, http://localhost:8790
+just signals-migrate-local   # once, and after a new migration
 just signals-dev    # the signals Worker, http://localhost:8787/v1/health
 ```
 
