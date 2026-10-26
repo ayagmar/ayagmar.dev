@@ -1,15 +1,113 @@
 ---
+import { getEntry } from 'astro:content';
+import ResumeDownload from '../components/ResumeDownload.astro';
+import { formatMonth } from '../data/about.ts';
 import Base from '../layouts/Base.astro';
-import { site } from '../lib/site.ts';
+
+// content/about.json, validated by the collection schema in content.config.ts.
+const entry = await getEntry('about', 'about');
+if (entry === undefined) throw new Error('content/about.json is missing');
+const about = entry.data;
+const { identity } = about;
+const links = [
+  { href: identity.links.linkedin, label: 'LinkedIn' },
+  { href: identity.links.github, label: 'GitHub' },
+  { href: identity.links.x, label: 'X' },
+  { href: identity.links.lastfm, label: 'Last.fm' },
+];
+const span = (start: string, end: string | null) => ({
+  start: formatMonth(start),
+  end: end === null ? 'present' : formatMonth(end),
+});
 ---
 
 <Base title="About">
   <h1>About</h1>
-  <p>{site.author}, {site.role.toLowerCase()} in {site.location}.</p>
-  <p>Experience, certificates and a resume will be here soon.</p>
-  <ul>
-    <li><a href={site.links.github}>GitHub</a></li>
-    <li><a href={site.links.x}>X</a></li>
-    <li><a href={site.links.lastfm}>Last.fm</a></li>
-  </ul>
+  <p>{about.summary}</p>
+  <ResumeDownload published={about.resume.published} />
+
+  <section aria-labelledby="experience">
+    <h2 id="experience">Experience</h2>
+    <ol>
+      {about.experience.map((role) => {
+        const dates = span(role.start, role.end);
+        return (
+          <li>
+            <h3>
+              {role.role}, {role.company}
+            </h3>
+            <p>
+              {role.place}, <time datetime={role.start}>{dates.start}</time> to{' '}
+              {role.end === null ? dates.end : <time datetime={role.end}>{dates.end}</time>}
+            </p>
+            {role.outcomes.length > 0 && (
+              <ul>
+                {role.outcomes.map((outcome) => (
+                  <li>{outcome}</li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  </section>
+
+  <section aria-labelledby="certifications">
+    <h2 id="certifications">Certifications</h2>
+    <ul>
+      {about.certifications.map((cert) => (
+        <li>
+          <h3>{cert.name}</h3>
+          <p>
+            {cert.issuer}, issued <time datetime={cert.issued}>{formatMonth(cert.issued)}</time>
+            {cert.expires !== undefined && (
+              <>
+                , expires <time datetime={cert.expires}>{formatMonth(cert.expires)}</time>
+              </>
+            )}
+            {cert.credentialId !== undefined && <>. Credential ID {cert.credentialId}</>}.{' '}
+            <a href={cert.verifyUrl} aria-label={`Verify ${cert.name}`}>
+              Verify
+            </a>
+          </p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section aria-labelledby="education">
+    <h2 id="education">Education</h2>
+    <ul>
+      {about.education.map((school) => {
+        const dates = span(school.start, school.end);
+        return (
+          <li>
+            <h3>{school.school}</h3>
+            <p>
+              {school.field === undefined ? school.degree : `${school.degree}, ${school.field}`},{' '}
+              <time datetime={school.start}>{dates.start}</time> to{' '}
+              <time datetime={school.end}>{dates.end}</time>
+            </p>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+
+  <section aria-labelledby="skills">
+    <h2 id="skills">Skills</h2>
+    <p>{about.skills.join(', ')}</p>
+  </section>
+
+  <section aria-labelledby="elsewhere">
+    <h2 id="elsewhere">Elsewhere</h2>
+    <ul>
+      {links.map((link) => (
+        <li>
+          <a href={link.href}>{link.label}</a>
+        </li>
+      ))}
+    </ul>
+  </section>
 </Base>

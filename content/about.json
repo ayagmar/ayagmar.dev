@@ -1,0 +1,110 @@
+{
+  "identity": {
+    "name": "Abdeslam Yassine Agmar",
+    "role": "Software engineer",
+    "location": "Morocco",
+    "links": {
+      "site": "https://ayagmar.dev",
+      "github": "https://github.com/ayagmar",
+      "linkedin": "https://www.linkedin.com/in/ayagmar/",
+      "x": "https://x.com/ayagmar_",
+      "lastfm": "https://www.last.fm/user/min7_"
+    }
+  },
+  "summary": "Software engineer in Morocco. Java and Spring backends for high-traffic e-commerce, and open-source tools for developers.",
+  "experience": [
+    {
+      "role": "Software Engineer",
+      "company": "Theodo Morocco",
+      "place": "Casablanca, Morocco",
+      "start": "2025-05",
+      "end": null,
+      "outcomes": []
+    },
+    {
+      "role": "Software Engineer",
+      "company": "SQLI",
+      "place": "Rabat, Morocco",
+      "start": "2022-03",
+      "end": "2025-05",
+      "outcomes": [
+        "Developed and maintained backend services for the Nestlé Nespresso international e-commerce platform, a high-traffic site, with Java, Spring Framework and Spring Boot."
+      ]
+    },
+    {
+      "role": "Full Stack (Java / Angular) Software Engineer intern",
+      "company": "Adservio IT Quality Experts",
+      "place": "Casablanca, Morocco",
+      "start": "2021-07",
+      "end": "2021-08",
+      "outcomes": [
+        "Designed and built a meeting room reservation web application with a Spring Boot backend and an Angular frontend.",
+        "Deployed the Spring Boot application on AWS: Elastic Beanstalk, EC2, S3, RDS and CloudWatch."
+      ]
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Oracle Certified Professional: Java SE 25 Developer",
+      "issuer": "Oracle",
+      "issued": "2026-09",
+      "credentialId": "100772024JSE25OCP",
+      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=0AA77B8F454C8701C2F8DB071FE30142410E3EC7CF89C5631F04A26D95E9A0AA"
+    },
+    {
+      "name": "Claude Certified Developer - Foundations",
+      "issuer": "Anthropic",
+      "issued": "2026-09",
+      "expires": "2027-09",
+      "verifyUrl": "https://www.credly.com/badges/5d45dde1-4c1c-422d-8590-c0b2b1da9607"
+    },
+    {
+      "name": "Oracle Certified Professional, Java EE 7 Application Developer",
+      "issuer": "Oracle",
+      "issued": "2025-01",
+      "credentialId": "100772024OCPJEE7AD",
+      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=A95496BBDADAF638136F35118D71F1495EF7EA7515C27CD6A3209704C8A7EB96"
+    },
+    {
+      "name": "Professional Scrum Developer I (PSD I)",
+      "issuer": "Scrum.org",
+      "issued": "2024-10",
+      "credentialId": "1145888",
+      "verifyUrl": "https://www.credly.com/badges/20ac0298-22e8-4795-ac3a-03d5de7d603b"
+    },
+    {
+      "name": "Oracle Certified Professional: Java SE 17 Developer",
+      "issuer": "Oracle",
+      "issued": "2024-09",
+      "credentialId": "100772024OCPJSE17",
+      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=686A2CB5A9B83BE939EE54C5E7E104DA1FBFE1B010B0C390642853E1F64E60D0"
+    }
+  ],
+  "education": [
+    {
+      "school": "École Marocaine des Sciences de l'Ingénieur (EMSI)",
+      "degree": "Computer and Network Engineering",
+      "field": "Computer Engineering",
+      "start": "2017-10",
+      "end": "2022-09"
+    }
+  ],
+  "skills": [
+    "Java (SE 17, SE 25, EE)",
+    "Spring Boot",
+    "Spring Framework",
+    "Quarkus",
+    "TypeScript",
+    "Kotlin",
+    "Rust",
+    "Angular",
+    "PostgreSQL",
+    "AWS",
+    "GitHub Actions",
+    "Cloudflare Workers",
+    "Scrum"
+  ],
+  "resume": {
+    "published": false
+  }
+}
