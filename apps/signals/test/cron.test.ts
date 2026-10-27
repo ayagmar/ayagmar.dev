@@ -40,6 +40,8 @@ const durationMs: Partial<Record<SourceId, number>> = {
   projects: 8000,
   weather: 700,
   'listening-history': 800,
+  // Two requests, one after the other.
+  monkeytype: 1000,
 };
 
 /**
@@ -116,11 +118,12 @@ describe('scheduled', () => {
   });
 
   // Two days of minute triggers with the real registry's sources, intervals and due rules
-  // (ADR 0029, ADR 0030), across Rabat's midnight at +01 and at +00 and the change between
-  // them on 20 September 2026. Both clocks move: the trigger's scheduledTime, and Date, which
-  // stamps each stored attempt. Fetches take time; weather fails for six hours, every third
-  // failure hanging until the runner's 20 s timeout; the history fails from 23:50 to 00:01
-  // around the second midnight. Catches a source starved by the others, a failing one hogging
+  // (ADR 0029, ADR 0030, ADR 0033), across Rabat's midnight at +01 and at +00 and the change
+  // between them on 20 September 2026. Both clocks move: the trigger's scheduledTime, and Date,
+  // which stamps each stored attempt. Fetches take time; weather fails for six hours, every
+  // third failure hanging until the runner's 20 s timeout; the history fails from 23:50 to
+  // 00:01 around the second midnight; Monkeytype has no key for the first day, then is
+  // refused once. Catches a source starved by the others, a failing one hogging
   // the slot, two adapters sharing an invocation, and a history that waits for its interval
   // after midnight or refreshes too often. 2,880 runs against D1 take about 4 s here and 12 s
   // on a CI runner, so the default 5 s timeout is too short.
@@ -135,6 +138,7 @@ describe('scheduled', () => {
     const attempts = new Map<SourceId, number[]>();
     let run = 0;
     let weatherFailures = 0;
+    let monkeytypeKeyed = 0;
     const history = historyStandIn();
     const adapters = standIns(async (id) => {
       attempts.set(id, [...(attempts.get(id) ?? []), run]);
@@ -148,6 +152,12 @@ describe('scheduled', () => {
       }
       if (id === 'listening-history') {
         return history.part(now >= historyFailing.from && now < historyFailing.to);
+      }
+      if (id === 'monkeytype' && now < start + 24 * hour) {
+        throw Object.assign(new Error('no key'), { code: 'not_configured' });
+      }
+      if (id === 'monkeytype' && ++monkeytypeKeyed === 1) {
+        throw Object.assign(new Error('479'), { code: 'upstream_rate_limited' });
       }
       return {};
     });
@@ -175,10 +185,16 @@ describe('scheduled', () => {
       expect(runs[0], id).toBeLessThan(pullAdapters.length);
       expect(runs.length, id).toBeGreaterThan(1);
       const limit = id === 'listening' ? 5 : intervalSeconds / 60 + 5;
-      expect(Math.max(...(gaps.get(id) ?? [])), id).toBeLessThanOrEqual(limit);
+      const [first = 0, ...later] = gaps.get(id) ?? [];
+      // At startup listening waits while each of the other five sources is tried once (ADR
+      // 0033): measured 6 minutes, then at most 3.
+      expect(first, id).toBeLessThanOrEqual(id === 'listening' ? 6 : limit);
+      expect(Math.max(...later), id).toBeLessThanOrEqual(limit);
       expect(run - (runs.at(-1) ?? 0), `${id} at the end`).toBeLessThanOrEqual(limit);
     }
     expect(weatherFailures).toBeGreaterThan(0);
+    // Tried with a key after the refusal, and stored.
+    expect(monkeytypeKeyed).toBeGreaterThan(1);
     const weather = await fetchApi('/v1/weather').then((r) => r.json());
     expect(weather).toMatchObject({ data: { normalized: {} } });
     // Each new Rabat date has its history within 10 minutes with Last.fm answering, and 5
@@ -203,7 +219,7 @@ describe('scheduled', () => {
     ['+00', 'a success', Date.UTC(2026, 9, 27)],
     ['+00', 'a failure', Date.UTC(2026, 9, 27)],
   ])(
-    'publishes the history within 10 minutes of midnight at %s, after %s at 23:58',
+    'publishes the history within 10 minutes 2.3 seconds of midnight at %s, after %s at 23:58',
     async (_, last, midnight) => {
       const store = new D1SnapshotStore(env.DB);
       for (const { id, intervalSeconds } of pullAdapters) {
@@ -226,8 +242,10 @@ describe('scheduled', () => {
       } finally {
         vi.useRealTimers();
       }
+      // Measured 10 minutes 2.3 seconds with six sources (ADR 0033), 9 minutes 2.3 seconds
+      // with five: the history waits one more minute while Monkeytype is pulled.
       expect((history.published[0] ?? Number.POSITIVE_INFINITY) - midnight).toBeLessThanOrEqual(
-        10 * minute
+        10 * minute + 2_300
       );
     }
   );

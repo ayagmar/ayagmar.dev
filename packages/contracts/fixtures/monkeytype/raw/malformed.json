@@ -1,0 +1,28 @@
+{
+  "time": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": {
+        "60": [
+          {
+            "wpm": "103.99",
+            "acc": 91.79,
+            "raw": 110.59,
+            "consistency": 74.76,
+            "timestamp": 1610582400000,
+            "language": "english",
+            "difficulty": "normal"
+          }
+        ]
+      }
+    }
+  },
+  "words": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": null
+    }
+  }
+}

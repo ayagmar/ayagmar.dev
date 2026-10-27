@@ -6,6 +6,8 @@ import {
   isStale,
   type ListeningSnapshot,
   listeningEnvelopeSchema,
+  type MonkeytypeSnapshot,
+  monkeytypeEnvelopeSchema,
   type ProjectsSnapshot,
   projectsEnvelopeSchema,
   type ShippingSnapshot,
@@ -18,12 +20,14 @@ const envelopeSchemas = {
   listening: listeningEnvelopeSchema,
   shipping: shippingEnvelopeSchema,
   projects: projectsEnvelopeSchema,
+  monkeytype: monkeytypeEnvelopeSchema,
 };
 
 interface Snapshots {
   listening: ListeningSnapshot;
   shipping: ShippingSnapshot;
   projects: ProjectsSnapshot;
+  monkeytype: MonkeytypeSnapshot;
 }
 
 /** Sources pulled by signals; the pushed ones (llm-usage, shelf) are read once they have schemas. */

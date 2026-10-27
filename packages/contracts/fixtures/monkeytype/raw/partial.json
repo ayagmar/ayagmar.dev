@@ -1,0 +1,147 @@
+{
+  "time": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": {
+        "15": [
+          {
+            "wpm": 131.2,
+            "acc": 97.1,
+            "raw": 133.0,
+            "consistency": 80.2,
+            "timestamp": 1789516800000,
+            "language": "english_1k",
+            "difficulty": "normal"
+          },
+          {
+            "wpm": 140.0,
+            "acc": 96.0,
+            "raw": 141.0,
+            "consistency": 79.0,
+            "timestamp": 1790380800000,
+            "language": "english",
+            "difficulty": "expert"
+          },
+          {
+            "wpm": 150.5,
+            "acc": 98.0,
+            "raw": 151.0,
+            "consistency": 81.0,
+            "timestamp": 1791244800000,
+            "language": "english",
+            "difficulty": "normal",
+            "punctuation": true
+          },
+          {
+            "wpm": 118.4,
+            "acc": 94.2,
+            "raw": 121.9,
+            "consistency": 72.5,
+            "timestamp": 1758412800000,
+            "language": "english",
+            "difficulty": "normal"
+          },
+          {
+            "wpm": 118.4,
+            "acc": 96.5,
+            "raw": 120.0,
+            "consistency": 70.1,
+            "timestamp": 1792108800000,
+            "language": "english",
+            "difficulty": "normal",
+            "punctuation": false,
+            "numbers": false,
+            "lazyMode": false
+          }
+        ],
+        "30": [
+          {
+            "wpm": 120.0,
+            "acc": 95.0,
+            "raw": 121.0,
+            "consistency": 75.0,
+            "timestamp": 1792540800000,
+            "language": "english",
+            "difficulty": "normal",
+            "numbers": true
+          },
+          {
+            "wpm": 125.0,
+            "acc": 96.0,
+            "raw": 126.0,
+            "consistency": 76.0,
+            "timestamp": 1792540800000,
+            "language": "english",
+            "difficulty": "normal",
+            "lazyMode": true
+          }
+        ],
+        "60": [],
+        "45": [
+          {
+            "wpm": 99.0,
+            "acc": 90.0,
+            "raw": 100.0,
+            "consistency": 70.0,
+            "timestamp": 1792886400000,
+            "language": "english",
+            "difficulty": "normal"
+          }
+        ],
+        "120": [
+          {
+            "wpm": 98.7,
+            "acc": 93.3,
+            "raw": 101.2,
+            "consistency": 77.7,
+            "timestamp": 1792800000000,
+            "language": "english",
+            "difficulty": "normal",
+            "numbers": false
+          },
+          {
+            "wpm": 98.7,
+            "acc": 93.3,
+            "raw": 100.0,
+            "consistency": 77.0,
+            "timestamp": 1792713600000,
+            "language": "english",
+            "difficulty": "normal"
+          }
+        ]
+      }
+    }
+  },
+  "words": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": {
+        "10": [
+          {
+            "wpm": 160.0,
+            "acc": 100.0,
+            "raw": 160.0,
+            "consistency": 90.0,
+            "timestamp": 1792886400000,
+            "language": "english_10k",
+            "difficulty": "normal"
+          }
+        ],
+        "25": [
+          {
+            "wpm": 127.6,
+            "acc": 96.8,
+            "raw": 130.1,
+            "consistency": 78.9,
+            "timestamp": 1792972800000,
+            "language": "english",
+            "difficulty": "normal",
+            "lazyMode": false
+          }
+        ]
+      }
+    }
+  }
+}

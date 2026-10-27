@@ -11,7 +11,7 @@ const repo = (value: unknown) =>
   typeof value === 'string' && /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(value);
 const github = (value: unknown) => text(value, 2048) && /^https:\/\/github\.com\/\S*$/.test(value);
 /** A calendar date, `2026-10-24`. */
-const date = (value: unknown) =>
+export const calendarDate = (value: unknown) =>
   typeof value === 'string' && value.length === 10 && instantMs(`${value}T00:00:00Z`) !== undefined;
 
 function event(value: unknown) {
@@ -40,7 +40,7 @@ export function readShipping(data: unknown): ShippingSnapshot | undefined {
         repo(name) &&
         list(points, 90, (point) => {
           const { date: day, stars } = Object(point);
-          return date(day) && whole(stars);
+          return calendarDate(day) && whole(stars);
         })
       );
     })
