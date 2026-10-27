@@ -220,6 +220,19 @@ for (const [name, answer] of [
   });
 }
 
+// Catches modes sent as arrays read as "no bests": the contract rejects the answer, so the
+// build's bests stay, labelled with their own age.
+test('an answer with modes as arrays keeps the bests shown', async ({ page }) => {
+  const asked = await visit(page, noon, {
+    monkeytype: envelope('monkeytype', {
+      data: { time: Array(121).fill(null), words: Array(101).fill(null) },
+    }),
+  });
+  await expect.poll(() => asked.length).toBe(1);
+  await expect(freshness(page, 'monkeytype')).toHaveText('Updated 3 hours ago');
+  await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
+});
+
 // Catches a stale answer passed off as current, and a good answer dropped when a later request
 // fails: it stays, and its label ages until it is out of date.
 test('a good answer stays through failures and ages honestly', async ({ page }) => {

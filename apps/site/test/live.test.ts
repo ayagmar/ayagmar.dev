@@ -91,7 +91,11 @@ const readers = [
       'zero for none': { time: { 120: 0 } },
       'a slot left out': { words: { 100: undefined } },
     },
-    raw: { 'words left out': { time: snapshotFixtures.monkeytype.ok.time } },
+    raw: {
+      'words left out': { time: snapshotFixtures.monkeytype.ok.time },
+      'time as an array': { ...snapshotFixtures.monkeytype.ok, time: Array(121).fill(null) },
+      'words as an array': { ...snapshotFixtures.monkeytype.ok, words: Array(101).fill(null) },
+    },
     // Its corpus holds whole envelopes (ADR 0008); the reader reads their data.
     envelopes: true,
   },

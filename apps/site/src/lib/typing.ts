@@ -25,7 +25,10 @@ const lengths = { time: ['15', '30', '60', '120'], words: ['10', '25', '50', '10
 /** `data` if it is a Monkeytype snapshot, every slot present, else undefined. */
 export function readMonkeytype(data: unknown): MonkeytypeSnapshot | undefined {
   const { time, words } = Object(data);
-  return lengths.time.every((length) => best(Object(time)[length])) &&
+  // An array has the lengths as indexes, but the contract wants an object.
+  return !Array.isArray(time) &&
+    !Array.isArray(words) &&
+    lengths.time.every((length) => best(Object(time)[length])) &&
     lengths.words.every((length) => best(Object(words)[length]))
     ? (data as MonkeytypeSnapshot)
     : undefined;
