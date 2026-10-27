@@ -70,7 +70,7 @@ export function poll(
 
 const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 /** Days since the epoch of `time`'s calendar date in the reader's own time zone. */
-const day = (time: number) => {
+export const day = (time: number) => {
   const date = new Date(time);
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
 };

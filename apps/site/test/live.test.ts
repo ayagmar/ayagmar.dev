@@ -139,9 +139,13 @@ describe.each(readers)('the $source reader', ({ source, read, schema, edges, ...
   });
 });
 
-// Catches a best set years ago read in days, or a day off by the reader's time zone.
 describe('daysAgo', () => {
-  const now = Date.parse('2026-10-26T23:30:00Z');
+  const zone = process.env.TZ;
+  afterEach(() => {
+    process.env.TZ = zone;
+  });
+
+  // Catches a best set years ago read in days.
   it.each([
     ['2026-10-26', 'today'],
     ['2026-10-27', 'today'],
@@ -152,7 +156,22 @@ describe('daysAgo', () => {
     ['2025-10-26', 'last year'],
     ['2021-01-14', '5 years ago'],
   ])('reads %s as %s', (date, words) => {
-    expect(daysAgo(date, now)).toBe(words);
+    process.env.TZ = 'UTC';
+    expect(daysAgo(date, Date.parse('2026-10-26T23:30:00Z'))).toBe(words);
+  });
+
+  // Catches days counted in UTC, from 24-hour spans, or from the date's UTC midnight moved into
+  // the reader's time zone: a best set on 26 October is today until the reader's own midnight,
+  // on either side of UTC.
+  it.each([
+    ['Asia/Tokyo', '2026-10-26T14:30:00Z', 'today'], // 23:30 on the 26th
+    ['Asia/Tokyo', '2026-10-26T15:30:00Z', 'yesterday'], // 00:30 on the 27th
+    ['America/Los_Angeles', '2026-10-26T07:30:00Z', 'today'], // 00:30 on the 26th
+    ['America/Los_Angeles', '2026-10-27T06:30:00Z', 'today'], // 23:30 on the 26th
+    ['America/Los_Angeles', '2026-10-27T07:30:00Z', 'yesterday'], // 00:30 on the 27th
+  ])("reads 2026-10-26 in %s at %s by the reader's calendar", (timeZone, now, words) => {
+    process.env.TZ = timeZone;
+    expect(daysAgo('2026-10-26', Date.parse(now))).toBe(words);
   });
 });
 
