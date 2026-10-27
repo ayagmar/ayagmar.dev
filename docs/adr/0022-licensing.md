@@ -10,7 +10,7 @@ The repository is public. Code is meant to be reused; the writing is personal.
 
 Code is MIT (`LICENSE`). Everything under `content/` is all rights reserved, stated in `content/LICENSE`, with short attributed quotations allowed. The site footer links the colophon, which states both.
 
-Weather data is neither. It comes from Open-Meteo under CC BY 4.0 (ADR 0029): what signals serves on `/v1/weather`, the weather fixtures in `packages/contracts/fixtures/open-meteo/` and `fixtures/weather/`, and the weather the home page draws. The MIT licence does not cover it. The home page credits it under the room, with links to Open-Meteo and the licence and a note that the picture is simplified, and the colophon says the same.
+Weather data is neither. It comes from Open-Meteo under CC BY 4.0 (ADR 0029): what signals serves on `/v1/weather`, the weather fixtures in `packages/contracts/fixtures/open-meteo/` and `fixtures/weather/`, and the weather the home page draws. The MIT licence does not cover it. The colophon credits it, with links to Open-Meteo and the licence and a note that the picture is simplified (ADR 0029 records that the credit moved there from under the room).
 
 Skills metadata is neither: `content/skills.json` copies names, versions, one-line descriptions and credit lines from the public skills repo (MIT, with two Apache-2.0 skills), and each skill's licence and credit are shown beside it (ADR 0031).
 

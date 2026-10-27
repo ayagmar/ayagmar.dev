@@ -1,0 +1,53 @@
+{
+  "time": {
+    "status": 200,
+    "body": {
+      "data": {
+        "15": [
+          {
+            "wpm": 123.12,
+            "acc": 95.09,
+            "raw": 128.71,
+            "consistency": 73.15,
+            "timestamp": 1657843200000,
+            "language": "english",
+            "difficulty": "normal",
+            "punctuation": false,
+            "lazyMode": false
+          }
+        ],
+        "30": [
+          {
+            "wpm": 112.8,
+            "acc": 89.6,
+            "raw": 122.4,
+            "consistency": 77.11,
+            "timestamp": 1657843200000,
+            "language": "english",
+            "difficulty": "normal",
+            "punctuation": false,
+            "lazyMode": false
+          }
+        ],
+        "60": [
+          {
+            "wpm": 103.99,
+            "acc": 91.79,
+            "raw": 110.59,
+            "consistency": 74.76,
+            "timestamp": 1610582400000,
+            "language": "english",
+            "difficulty": "normal",
+            "punctuation": false
+          }
+        ]
+      }
+    }
+  },
+  "words": {
+    "status": 200,
+    "body": {
+      "data": null
+    }
+  }
+}

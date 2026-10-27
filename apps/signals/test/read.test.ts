@@ -171,6 +171,7 @@ describe('health', () => {
       { source: 'weather', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'listening-history', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'desktop', lastSuccessAt: null, stale: true, lastErrorCode: null },
+      { source: 'monkeytype', lastSuccessAt: null, stale: true, lastErrorCode: null },
     ]);
   });
 });

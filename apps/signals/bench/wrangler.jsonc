@@ -6,8 +6,12 @@
   "compatibility_date": "2026-10-26",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
-  // An obviously fake key: the bench answers Last.fm from memory.
-  "vars": { "COMMIT_SHA": "bench", "LASTFM_API_KEY": "bench-fake-lastfm-key" },
+  // Obviously fake keys: the bench answers Last.fm and Monkeytype from memory.
+  "vars": {
+    "COMMIT_SHA": "bench",
+    "LASTFM_API_KEY": "bench-fake-lastfm-key",
+    "MONKEYTYPE_APE_KEY": "bench-fake-monkeytype-key"
+  },
   "d1_databases": [
     {
       "binding": "DB",

@@ -28,7 +28,8 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
  producers                       signals (api.ayagmar.dev)              site (ayagmar.dev)
  ─────────                       ─────────────────────────              ──────────────────
  Last.fm, GitHub, npm,   cron    pull adapter ─ normalize ─┐
- repo-pulse, Open-Meteo ──────►                            ├─► D1: latest  ─► GET /v1/<source>
+ repo-pulse, Open-Meteo,                                   │
+ Monkeytype             ──────►                            ├─► D1: latest  ─► GET /v1/<source>
  llm-usage-metrics,      push    intake ─ auth ─ validate ─┘   snapshot          │
  trellis, desktop      ───────►                                per source        │
                                                                                  ▼
@@ -37,6 +38,7 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
                                                               room script reads /v1/weather,
                                                               /stats script reads /v1/listening,
                                                               /v1/shipping, /v1/projects,
+                                                              /v1/monkeytype,
                                                               /v1/listening-history and
                                                               /v1/llm-usage, /uses script reads
                                                               /v1/desktop and /v1/llm-usage

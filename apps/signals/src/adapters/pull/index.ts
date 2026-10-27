@@ -1,6 +1,7 @@
 import type { PullAdapter } from '../types.ts';
 import { listening } from './listening.ts';
 import { listeningHistory } from './listening-history.ts';
+import { monkeytype } from './monkeytype.ts';
 import { projects } from './projects.ts';
 import { shipping } from './shipping.ts';
 import { weather } from './weather.ts';
@@ -17,4 +18,5 @@ export const pullAdapters: PullAdapter[] = [
   projects,
   weather,
   listeningHistory,
+  monkeytype,
 ];

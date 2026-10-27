@@ -1,0 +1,16 @@
+{
+  "time": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": null
+    }
+  },
+  "words": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": {}
+    }
+  }
+}

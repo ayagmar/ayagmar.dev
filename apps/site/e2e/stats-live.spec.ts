@@ -1,4 +1,4 @@
-// /stats's listening, shipping and projects panels, kept current by the browser (ADR 0015). The
+// /stats's listening, shipping, projects and typing panels, kept current by the browser (ADR 0015). The
 // e2e build runs in fixtures mode, where the page asks signals for nothing. Each test below
 // turns a panel live as an api mode build would (its endpoint, and a freshness line where the
 // sample tape is), answers the API itself, and fixes the browser's clock.
@@ -7,7 +7,7 @@ import type { Browser, Locator, Page, Route } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1';
-const sources = ['listening', 'shipping', 'projects'] as const;
+const sources = ['listening', 'shipping', 'projects', 'monkeytype'] as const;
 type Source = (typeof sources)[number];
 // The build's snapshots were taken at 09:00 (fixturesCapturedAt).
 const noon = '2026-10-26T12:00:00Z';
@@ -100,6 +100,7 @@ const bodies = {
   listening: '.listening-body',
   shipping: '.shipping-body',
   projects: '.projects-body',
+  monkeytype: '.typing-body',
 };
 
 // Catches the live renderer drifting from the page's own markup: the same snapshot, built into
@@ -149,6 +150,7 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
       },
     }),
     projects: envelope('projects', { data: snapshotFixtures.projects.partial }),
+    monkeytype: envelope('monkeytype', { data: snapshotFixtures.monkeytype.partial }),
   });
   await expect(page.locator('.now-playing')).toHaveText(
     'Now playing Friendships and Love by Rocketship'
@@ -164,6 +166,16 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
   await expect(panel(page, 'projects').locator('.projects-body')).toHaveText(
     '7 featured projects, at least 233 stars; GitHub did not answer for 1. See them.'
   );
+  // No 60-second best: no headline borrowed from another length. Each day reads back from now.
+  const typing = panel(page, 'monkeytype').locator('.typing-body');
+  await expect(typing.locator('p').first()).toHaveText('No 60-second best yet.');
+  await expect(typing.locator('dt')).toHaveText(['15 seconds', '120 seconds', '25 words']);
+  await expect(typing.locator('dd')).toHaveText([
+    '118 wpm, 97%, 10 days ago',
+    '99 wpm, 93%, 2 days ago',
+    '128 wpm, 97%, today',
+  ]);
+  await expect(typing.locator('dd time').first()).toHaveAttribute('title', '16 Oct 2026');
   for (const source of sources) {
     await expect(freshness(page, source)).toHaveText(/^Updated (1|10) minutes? ago$/);
   }
@@ -207,6 +219,46 @@ for (const [name, answer] of [
     );
   });
 }
+
+// Catches modes sent as arrays read as "no bests": the contract rejects the answer, so the
+// build's bests stay, labelled with their own age.
+test('an answer with modes as arrays keeps the bests shown', async ({ page }) => {
+  const asked = await visit(page, noon, {
+    monkeytype: envelope('monkeytype', {
+      data: { time: Array(121).fill(null), words: Array(101).fill(null) },
+    }),
+  });
+  await expect.poll(() => asked.length).toBe(1);
+  await expect(freshness(page, 'monkeytype')).toHaveText('Updated 3 hours ago');
+  await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
+});
+
+// Catches the page passing on fields the contract does not name: fake identifiers around the
+// answer, around the bests and in one, which the reader accepts as extra keys, reach no HTML.
+test('identifiers in a typing answer never reach the page', async ({ page }) => {
+  const fake = {
+    uid: 'fake-uid-0000000000000000000000',
+    name: 'fake-monkeytype-name',
+    email: 'fake@example.invalid',
+    apeKeyId: 'fake-ape-key-id-000000',
+  };
+  const { ok } = snapshotFixtures.monkeytype;
+  await visit(page, noon, {
+    monkeytype: json({
+      ...fake,
+      source: 'monkeytype',
+      version: 1,
+      fetchedAt: '2026-10-26T11:59:00Z',
+      stale: false,
+      data: { ...ok, ...fake, time: { ...ok.time, ...fake, 60: { ...ok.time[60], ...fake } } },
+    }),
+  });
+  // Shown: the answer replaced the build's.
+  await expect(freshness(page, 'monkeytype')).toHaveText('Updated 1 minute ago');
+  await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
+  const html = await page.content();
+  for (const value of Object.values(fake)) expect(html).not.toContain(value);
+});
 
 // Catches a stale answer passed off as current, and a good answer dropped when a later request
 // fails: it stays, and its label ages until it is out of date.
@@ -282,15 +334,65 @@ test('each panel asks at its own pace', async ({ page }) => {
     listening: envelope('listening'),
     shipping: envelope('shipping'),
     projects: envelope('projects'),
+    monkeytype: envelope('monkeytype'),
   });
-  const count = (source: Source) => asked.filter((url) => url.endsWith(`/${source}`)).length;
-  await expect.poll(() => asked.length).toBe(3);
+  const counts = () =>
+    sources.map((source) => asked.filter((url) => url.endsWith(`/${source}`)).length);
+  await expect.poll(() => asked.length).toBe(4);
   await page.clock.runFor(14 * 60_000);
-  expect([count('listening'), count('shipping'), count('projects')]).toEqual([15, 1, 1]);
+  expect(counts()).toEqual([15, 1, 1, 1]);
   await page.clock.runFor(60_000);
-  await expect
-    .poll(() => [count('listening'), count('shipping'), count('projects')])
-    .toEqual([16, 2, 2]);
+  await expect.poll(counts).toEqual([16, 2, 2, 1]);
+  // Typing hourly (ADR 0033).
+  await page.clock.runFor(45 * 60_000);
+  await expect.poll(counts).toEqual([61, 5, 5, 2]);
+});
+
+// Catches a best's day that turns over only when a new answer is drawn: past the reader's
+// midnight, "today" must become "yesterday" on the minute tick and when the tab comes back,
+// whether the next answer is the same, a failure or never asked for (the sample).
+test.describe('a best set today', () => {
+  test.use({ timezoneId: 'UTC' });
+  const lastDay = (page: Page) => panel(page, 'monkeytype').locator('dd time').last();
+  // The partial snapshot's 25-word best was set on 26 October.
+  const same = envelope('monkeytype', {
+    fetchedAt: '2026-10-26T23:57:00Z',
+    data: snapshotFixtures.monkeytype.partial,
+  });
+
+  test('is yesterday an hour later, with the same answer again', async ({ page }) => {
+    const asked = await visit(page, '2026-10-26T23:58:00Z', { monkeytype: same });
+    await expect(lastDay(page)).toHaveText('today');
+    await page.clock.fastForward(60 * 60_000);
+    await expect.poll(() => asked.length).toBe(2);
+    await expect(lastDay(page)).toHaveText('yesterday');
+  });
+
+  test('is yesterday when the tab comes back, the request failing', async ({ page }) => {
+    let fail = false;
+    const asked = await visit(page, '2026-10-26T23:58:00Z', {
+      monkeytype: (route) => route.fulfill(fail ? { status: 502, body: '' } : same),
+    });
+    await expect(lastDay(page)).toHaveText('today');
+    fail = true;
+    // No timer fires; the tab's return is the only prompt.
+    await page.clock.setSystemTime('2026-10-27T00:59:00Z');
+    await page.evaluate(() =>
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    );
+    await expect.poll(() => asked.length).toBe(2);
+    await expect(lastDay(page)).toHaveText('yesterday');
+  });
+
+  test('is yesterday after midnight in the sample', async ({ page }) => {
+    // The sample's 15-second best was set on 15 July 2022.
+    await page.clock.install({ time: '2022-07-15T23:58:00Z' });
+    await page.goto('/stats');
+    const first = panel(page, 'monkeytype').locator('dd time').first();
+    await expect(first).toHaveText('today');
+    await page.clock.runFor(3 * 60_000);
+    await expect(first).toHaveText('yesterday');
+  });
 });
 
 // The exact time is the reader's own, in their locale; the text counts back from now.
@@ -333,5 +435,8 @@ test('without JavaScript the panels show the build, timed in Rabat', async ({ br
   );
   await expect(page.locator('.now-playing time')).toHaveAttribute('title', 'Rabat time');
   await expect(page.locator('.shipping time').first()).toHaveText(/^\d+ \w{3}, \d\d:\d\d$/);
+  // The day each best was set, as a date.
+  await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
+  await expect(panel(page, 'monkeytype').locator('time').first()).toHaveText('14 Jan 2021');
   await page.context().close();
 });

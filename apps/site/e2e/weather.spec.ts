@@ -428,3 +428,25 @@ for (const colorScheme of ['light', 'dark'] as const) {
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
   });
 }
+
+// Catches the CC BY 4.0 credit for Open-Meteo going missing when it moved from under the room
+// to the colophon (ADR 0029): the sentence, both links, and no credit line left on home.
+test('the colophon credits Open-Meteo under CC BY 4.0, and home carries no credit line', async ({
+  page,
+}) => {
+  await page.goto('/colophon');
+  const credit = page.getByText(
+    'Weather data by Open-Meteo (CC BY 4.0); simplified visualization.'
+  );
+  await expect(credit).toBeVisible();
+  await expect(credit.getByRole('link', { name: 'Open-Meteo' })).toHaveAttribute(
+    'href',
+    'https://open-meteo.com/'
+  );
+  await expect(credit.getByRole('link', { name: 'CC BY 4.0' })).toHaveAttribute(
+    'href',
+    'https://creativecommons.org/licenses/by/4.0/'
+  );
+  await page.goto('/');
+  await expect(page.getByText('Weather data by')).toHaveCount(0);
+});

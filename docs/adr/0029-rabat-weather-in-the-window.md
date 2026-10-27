@@ -1,6 +1,6 @@
 # 0029. Rabat weather in the window
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: code 3 (overcast) has its own layer (ADR 0034).
+Status: accepted, 2026-10-26. Amended 2026-10-26: code 3 (overcast) has its own layer (ADR 0034). Amended 2026-10-27: the credit moved from the home page to the colophon.
 
 ## Context
 
@@ -16,7 +16,7 @@ The same terms set the free limits: "Less than 10'000 API calls per day, 5'000 p
 
 What the data is: Open-Meteo's current conditions, which its docs describe as "based on 15-minutely weather model data", for the model grid cell it picks for the tower's coordinates. On 2026-10-26 that was the cell at 34.0044 N, 6.8209 W, 28 m up. It is modelled weather for that cell, not a measurement at Hassan Tower, and the site says no more than that.
 
-**Licence.** Open-Meteo's data is CC BY 4.0 (https://open-meteo.com/en/licence, retrieved 2026-10-26), which asks for credit, a link to the licence, a note of changes, and "a link next to any location Open-Meteo data are displayed". Under the room, on every build: "Weather data by Open-Meteo (CC BY 4.0); simplified visualization.", linking https://open-meteo.com/ and https://creativecommons.org/licenses/by/4.0/. The changes: signals keeps six values, checks their units, renames them and turns Unix time into RFC 3339; the site reduces the weather code to one of six pictures, lowercases Open-Meteo's words for it and rounds the temperature. The fixtures redistribute one real answer (`open-meteo/raw/ok.json`, Rabat at 13:30 UTC on 2026-10-26) and invented samples, as `packages/contracts/fixtures/README.md` says. ADR 0022 records that this data is not under the repository's MIT licence.
+**Licence.** Open-Meteo's data is CC BY 4.0 (https://open-meteo.com/en/licence, retrieved 2026-10-26), which asks for credit, a link to the licence, a note of changes, and "a link next to any location Open-Meteo data are displayed". The credit is on the colophon, which every page links from its footer: "Weather data by Open-Meteo (CC BY 4.0); simplified visualization.", linking https://open-meteo.com/ and https://creativecommons.org/licenses/by/4.0/. It was first set under the room on home; the owner moved it to the colophon on 2026-10-27 because it cluttered the scene. The licence asks for a link "next to" where the data is displayed, so this is the owner's call on how literally to read that, and it is recorded here: the colophon is one click from the room. The changes: signals keeps six values, checks their units, renames them and turns Unix time into RFC 3339; the site reduces the weather code to one of six pictures, lowercases Open-Meteo's words for it and rounds the temperature. The fixtures redistribute one real answer (`open-meteo/raw/ok.json`, Rabat at 13:30 UTC on 2026-10-26) and invented samples, as `packages/contracts/fixtures/README.md` says. ADR 0022 records that this data is not under the repository's MIT licence.
 
 ### signals: the `weather` source
 

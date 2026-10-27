@@ -228,18 +228,6 @@
   pointer-events: none;
 }
 
-/* Open-Meteo's credit, under the scene. */
-.room-credit {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font: 0.75rem / 1.4 var(--mono);
-  text-align: end;
-}
-
-.room-credit a {
-  color: inherit;
-}
-
 /* Hotspots: real links over the scene's objects, as percentages of its 480x160 pixels
    (scripts/scene.py). Below 360px wide the smallest would be under 24px, so they give way to
    the list under the scene. */

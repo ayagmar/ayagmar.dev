@@ -1,0 +1,43 @@
+{
+  "time": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": {
+        "60": [
+          {
+            "wpm": 103.99,
+            "acc": 91.79,
+            "raw": 110.59,
+            "consistency": 74.76,
+            "timestamp": 1610582400000,
+            "language": "english",
+            "difficulty": "normal",
+            "punctuation": false,
+            "uid": "fake-uid-0000000000000000000000",
+            "name": "fake-monkeytype-name",
+            "email": "fake@example.invalid",
+            "apeKeyId": "fake-ape-key-id-000000",
+            "tags": ["fake-tag-id-0000"],
+            "newField": {
+              "nested": "fake-nested-value"
+            }
+          }
+        ]
+      },
+      "uid": "fake-uid-0000000000000000000000",
+      "name": "fake-monkeytype-name"
+    }
+  },
+  "words": {
+    "status": 200,
+    "body": {
+      "message": "Personal bests retrieved",
+      "data": null,
+      "uid": "fake-uid-0000000000000000000000",
+      "extra": {
+        "email": "fake@example.invalid"
+      }
+    }
+  }
+}

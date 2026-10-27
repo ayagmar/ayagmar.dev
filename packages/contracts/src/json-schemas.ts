@@ -7,6 +7,7 @@ import { desktopEnvelopeSchema } from './snapshots/desktop.ts';
 import { listeningSnapshotSchema } from './snapshots/listening.ts';
 import { listeningHistoryEnvelopeSchema } from './snapshots/listening-history.ts';
 import { llmUsageEnvelopeSchema } from './snapshots/llm-usage.ts';
+import { monkeytypeEnvelopeSchema } from './snapshots/monkeytype.ts';
 import { projectsSnapshotSchema } from './snapshots/projects.ts';
 import { shelfEnvelopeSchema } from './snapshots/shelf.ts';
 import { repoPulseFeedSchema, shippingSnapshotSchema } from './snapshots/shipping.ts';
@@ -29,6 +30,7 @@ export const jsonSchemas: Readonly<Record<string, z.ZodType>> = {
   weather: weatherEnvelopeSchema,
   'listening-history': listeningHistoryEnvelopeSchema,
   desktop: desktopEnvelopeSchema,
+  monkeytype: monkeytypeEnvelopeSchema,
   // Push bodies (ADR 0013, ADR 0014, ADR 0032).
   'push-llm-usage': llmUsagePushSchema,
   'push-trellis': trellisPushSchema,

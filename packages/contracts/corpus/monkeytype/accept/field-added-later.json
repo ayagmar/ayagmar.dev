@@ -1,0 +1,42 @@
+{
+  "source": "monkeytype",
+  "version": 1,
+  "fetchedAt": "2026-10-26T23:12:19Z",
+  "stale": false,
+  "data": {
+    "time": {
+      "15": {
+        "wpm": 123.12,
+        "acc": 95.09,
+        "raw": 128.71,
+        "consistency": 73.15,
+        "date": "2022-07-15"
+      },
+      "30": {
+        "wpm": 112.8,
+        "acc": 89.6,
+        "raw": 122.4,
+        "consistency": 77.11,
+        "date": "2022-07-15"
+      },
+      "60": {
+        "wpm": 103.99,
+        "acc": 91.79,
+        "raw": 110.59,
+        "consistency": 74.76,
+        "date": "2021-01-14",
+        "rank": 12
+      },
+      "120": null,
+      "45": null
+    },
+    "words": {
+      "10": null,
+      "25": null,
+      "50": null,
+      "100": null
+    },
+    "quote": {}
+  },
+  "servedBy": "edge"
+}

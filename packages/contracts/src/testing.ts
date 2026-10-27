@@ -23,6 +23,7 @@ export interface UpstreamCases {
   npm?: Cases<'npm'>;
   repoPulse?: Cases<'repo-pulse'>;
   openMeteo?: Cases<'open-meteo'>;
+  monkeytype?: Cases<'monkeytype'>;
 }
 
 /**
@@ -42,6 +43,7 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
   const npm: Record<string, Recorded> = rawFixtures.npm[cases.npm ?? 'ok'];
   const repoPulse: Recorded = rawFixtures['repo-pulse'][cases.repoPulse ?? 'ok'];
   const openMeteo: Recorded = rawFixtures['open-meteo'][cases.openMeteo ?? 'ok'];
+  const monkeytype: Record<string, Recorded> = rawFixtures.monkeytype[cases.monkeytype ?? 'ok'];
 
   return [
     // signals POSTs its Last.fm parameters as a form, to keep the API key out of URLs.
@@ -86,6 +88,17 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
     }),
     http.get('https://repo-pulse.ayagmar.workers.dev/public/feed', () => reply(repoPulse)),
     http.get('https://api.open-meteo.com/v1/forecast', () => reply(openMeteo)),
+    // Monkeytype (ADR 0033): answered only with an ApeKey and for exactly `?mode=time` or
+    // `?mode=words`; the answer the case has none for (not asked) fails.
+    http.get('https://api.monkeytype.com/users/personalBests', ({ request }) => {
+      const query = new URL(request.url).searchParams;
+      const mode = query.get('mode') ?? '';
+      const valid =
+        /^ApeKey \S+$/.test(request.headers.get('authorization') ?? '') &&
+        query.size === 1 &&
+        (mode === 'time' || mode === 'words');
+      return valid ? reply(monkeytype[mode]) : HttpResponse.error();
+    }),
   ];
 }
 

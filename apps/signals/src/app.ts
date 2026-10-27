@@ -6,6 +6,7 @@ import { health } from './routes/v1/health.ts';
 import { listening } from './routes/v1/listening.ts';
 import { listeningHistory } from './routes/v1/listening-history.ts';
 import { llmUsage } from './routes/v1/llm-usage.ts';
+import { monkeytype } from './routes/v1/monkeytype.ts';
 import { projects } from './routes/v1/projects.ts';
 import { push } from './routes/v1/push.ts';
 import { shelf } from './routes/v1/shelf.ts';
@@ -22,6 +23,7 @@ export const app = new Hono<AppEnv>()
   .route('/v1/weather', weather)
   .route('/v1/listening-history', listeningHistory)
   .route('/v1/desktop', desktop)
+  .route('/v1/monkeytype', monkeytype)
   .route('/v1/push', push)
   .notFound(notFound)
   .onError(onError);
