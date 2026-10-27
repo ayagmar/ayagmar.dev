@@ -308,7 +308,7 @@ input {
 
 button,
 .button {
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   padding-inline: 0.6rem;
   background: transparent;
   color: var(--fg);
@@ -337,7 +337,7 @@ button[aria-disabled="true"] {
 
 input {
   max-width: 100%;
-  border: 2px solid var(--line);
+  border: 1px solid var(--line);
   padding-inline: 0.5rem;
   background: var(--ground);
   color: var(--text);
@@ -558,8 +558,12 @@ kbd {
 /* Between 52rem and 64rem the six nav links need the room the keyboard hint would take, and
    a little less space between them. */
 @media (min-width: 52rem) and (max-width: 63.99rem) {
+  .site-header {
+    gap: 0.5rem 0.75rem;
+  }
+
   .site-header nav ul {
-    gap: 0 1rem;
+    gap: 0 0.75rem;
   }
 }
 
@@ -807,7 +811,7 @@ time[data-ago] {
     transparent 8px 16px
   );
   color: var(--text);
-  font-size: 0.8125rem;
+  font: 600 0.9375rem / 1.5 var(--serif);
   letter-spacing: 0;
   text-transform: none;
 }
