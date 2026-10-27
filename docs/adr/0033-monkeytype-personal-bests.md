@@ -79,12 +79,12 @@ Costs:
 
 | What                                 | Before  | After                                              | Limit                                 |
 | ------------------------------------ | ------- | -------------------------------------------------- | ------------------------------------- |
-| `/stats` script, gzip 9              | 2,973 B | 3,739 B                                            | 3,750 B (was 3,000 B; ADR 0017)       |
-| Live reads chunk (`live.*.js`)       | 1,363 B | 1,387 B                                            | 1,400 B (ADR 0017)                    |
+| `/stats` script, gzip 9              | 2,973 B | 3,702 B                                            | 3,750 B (was 3,000 B; ADR 0017)       |
+| Live reads chunk (`live.*.js`)       | 1,363 B | 1,375 B                                            | 1,400 B (ADR 0017)                    |
 | Upstream requests (Monkeytype)       | 0       | 8 a day                                            | 30 a minute, shared by the account    |
 | Browser requests to `/v1/monkeytype` | 0       | 1 on load, then 1 an hour per visible `/stats` tab | Workers Free 100,000 a day (ADR 0010) |
 
-The 766 B are the reader, the renderer, the words and the day formatting. The live-reads chunk grows 24 B: `day()` is exported for the reader's calendar, and `live()` takes a `relabel` hook that runs with `tick()`, so the days turn over on the minute timer and tab returns it already has. The home, `/uses`, listening-reads and agent-reads files that import it change only in its file name.
+The 729 B are the reader, the renderer, the words and the day formatting. The live-reads chunk grows 12 B: `day()` is exported for the reader's calendar, and `live()` takes a `relabel` hook that runs with `tick()`, so the days turn over on the minute timer and tab returns it already has. The home, `/uses`, listening-reads and agent-reads files that import it change only in its file name.
 
 ### Operator commands
 
