@@ -171,8 +171,9 @@ budgets:
 lighthouse *args:
     CHROME_PATH="$({{ site }} node -p 'require("@playwright/test").chromium.executablePath()')" node scripts/lighthouse.ts {{ args }}
 
-# CI: Lighthouse on the site artifact against the base build in .lighthouse/base (ci.yml)
-lighthouse-ci: (lighthouse "--base" ".lighthouse/base/apps/site")
+# CI: Lighthouse for the profile in $LIGHTHOUSE_PROFILE on the site artifact against the base
+# build in .lighthouse/base, with the base's numbers cached in .lighthouse/cache (ci.yml)
+lighthouse-ci: (lighthouse "--base" ".lighthouse/base/apps/site" "--profile" env("LIGHTHOUSE_PROFILE") "--out" (".lighthouse/metrics-" + env("LIGHTHOUSE_PROFILE") + ".json") "--base-cache" ".lighthouse/cache/base.json" "--head-cache" ".lighthouse/cache/head.json")
 
 # CI: copy scripts/lighthouse-report.js into the lighthouse-comment job (run after editing it)
 lighthouse-embed:

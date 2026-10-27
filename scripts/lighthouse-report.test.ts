@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { parse } from 'yaml';
 import { budgets } from './budgets.ts';
 import { embedded } from './lighthouse-embed.ts';
-import { marker, maxBytes, metrics, pages, render, validate } from './lighthouse-report.js';
+import { marker, maxBytes, merge, metrics, pages, render, validate } from './lighthouse-report.js';
 
 const root = join(import.meta.dirname, '..');
 const report = join(import.meta.dirname, 'lighthouse-report.js');
@@ -70,6 +70,19 @@ describe('validate and render', () => {
     const body = render(validate(text((a) => a.results.splice(1, 1))));
     assert.match(body, /Every page is within budget and no metric regressed\./);
     assert.doesNotMatch(body, /✗|▲/);
+  });
+
+  it('marks a profile with no artifact as incomplete instead of giving the all-clear', () => {
+    const mobileOnly = text((a) => {
+      a.results = a.results.filter((r) => r.profile === 'mobile' && r.over.length === 0);
+    });
+    const body = render(validate(mobileOnly));
+    assert.match(body, /Incomplete: no metrics from the desktop job/);
+    assert.doesNotMatch(body, /Every page is within budget/);
+    assert.doesNotMatch(body, /### Desktop/);
+    // Both problems are told, and the budget failure is still counted.
+    const failing = render(validate(text((a) => a.results.splice(2, 1))));
+    assert.match(failing, /Incomplete: no metrics from the desktop job[\s\S]*1 page and profile/);
   });
 
   const hostile: [string, (a: Artifact) => void][] = [
@@ -157,13 +170,20 @@ describe('the render command', () => {
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  const run = (content: string) => {
-    writeFileSync(join(dir, 'metrics.json'), content);
-    return spawnSync(process.execPath, [report, 'render', 'metrics.json', 'comment.md'], {
+  const run = (...contents: string[]) => {
+    const files = contents.map((content, i) => {
+      writeFileSync(join(dir, `metrics-${i}.json`), content);
+      return `metrics-${i}.json`;
+    });
+    return spawnSync(process.execPath, [report, 'render', ...files, 'comment.md'], {
       cwd: dir,
       encoding: 'utf8',
     });
   };
+  const only = (profile: string) =>
+    text((a) => {
+      a.results = a.results.filter((r) => r.profile === profile);
+    });
 
   it('writes no comment and exits 1 for an oversized or hostile artifact', () => {
     for (const content of [' '.repeat(maxBytes + 1), text((a) => Object.assign(a, { x: 1 }))]) {
@@ -177,6 +197,23 @@ describe('the render command', () => {
     assert.equal(run(text()).status, 0);
     assert.equal(readFileSync(join(dir, 'comment.md'), 'utf8'), render(validate(text())));
   });
+
+  it('merges the profile jobs into one comment, and refuses a profile reported twice', () => {
+    assert.equal(run(only('mobile'), only('desktop')).status, 0);
+    assert.equal(readFileSync(join(dir, 'comment.md'), 'utf8'), render(validate(text())));
+    assert.throws(() => merge([validate(text()), validate(text())]), /repeat a page and profile/);
+    assert.throws(
+      () => merge([validate(only('mobile')), validate(text((a) => Object.assign(a, { runs: 5 })))]),
+      /runs differ/
+    );
+    const third = validate(only('desktop'));
+    assert.throws(() => merge([third, third, third]), /not 1 to 2 files/);
+    const bad = run(
+      only('mobile'),
+      text((a) => Object.assign(a, { x: 1 }))
+    );
+    assert.equal(bad.status, 1);
+  });
 });
 
 describe('ci.yml', () => {
@@ -185,6 +222,7 @@ describe('ci.yml', () => {
   };
   interface Step {
     uses?: string;
+    if?: string;
     run?: string;
     with?: Record<string, string>;
     env?: Record<string, string>;
@@ -201,8 +239,29 @@ describe('ci.yml', () => {
     const actions = comment.steps.flatMap((step) => (step.uses ? [step.uses] : []));
     assert.equal(actions.length, 1);
     assert.match(actions[0] ?? '', /^actions\/download-artifact@[0-9a-f]{40}$/);
-    assert.deepEqual(comment.steps[0]?.with?.name, 'lighthouse-metrics');
+    assert.deepEqual(comment.steps[0]?.with?.pattern, 'lighthouse-metrics-*');
     assert.ok(!comment.steps.some((step) => /\b(?:git|pnpm|npm|npx|just)\b/.test(step.run ?? '')));
+  });
+
+  const lighthouse = workflow.jobs.lighthouse;
+  assert.ok(lighthouse);
+  const cacheSteps = (action: 'restore' | 'save') =>
+    lighthouse.steps.filter((step) => step.uses?.startsWith(`actions/cache/${action}@`));
+
+  it('saves only on a push, at the path pull requests restore (part of a cache version)', () => {
+    const [restore] = cacheSteps('restore');
+    assert.ok(restore?.with?.path);
+    const saves = cacheSteps('save');
+    assert.ok(saves.length > 0);
+    for (const save of saves) assert.equal(save.with?.path, restore.with.path);
+    // A pull request run never writes the cache (ADR 0017): every save is for a push only.
+    for (const save of saves) assert.match(save.if ?? '', /github\.event_name == 'push'/);
+    // The numbers a push saves are the commit's own, under that commit's key.
+    assert.match(saves.at(-1)?.with?.key ?? '', /-\$\{\{ github\.sha \}\}$/);
+    assert.match(
+      restore.with.key ?? '',
+      /\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}$/
+    );
   });
 
   it('skips the comment job on forks and outside pull requests', () => {
