@@ -308,6 +308,53 @@ test('each panel asks at its own pace', async ({ page }) => {
   await expect.poll(counts).toEqual([61, 5, 5, 2]);
 });
 
+// Catches a best's day that turns over only when a new answer is drawn: past the reader's
+// midnight, "today" must become "yesterday" on the minute tick and when the tab comes back,
+// whether the next answer is the same, a failure or never asked for (the sample).
+test.describe('a best set today', () => {
+  test.use({ timezoneId: 'UTC' });
+  const lastDay = (page: Page) => panel(page, 'monkeytype').locator('dd time').last();
+  // The partial snapshot's 25-word best was set on 26 October.
+  const same = envelope('monkeytype', {
+    fetchedAt: '2026-10-26T23:57:00Z',
+    data: snapshotFixtures.monkeytype.partial,
+  });
+
+  test('is yesterday an hour later, with the same answer again', async ({ page }) => {
+    const asked = await visit(page, '2026-10-26T23:58:00Z', { monkeytype: same });
+    await expect(lastDay(page)).toHaveText('today');
+    await page.clock.fastForward(60 * 60_000);
+    await expect.poll(() => asked.length).toBe(2);
+    await expect(lastDay(page)).toHaveText('yesterday');
+  });
+
+  test('is yesterday when the tab comes back, the request failing', async ({ page }) => {
+    let fail = false;
+    const asked = await visit(page, '2026-10-26T23:58:00Z', {
+      monkeytype: (route) => route.fulfill(fail ? { status: 502, body: '' } : same),
+    });
+    await expect(lastDay(page)).toHaveText('today');
+    fail = true;
+    // No timer fires; the tab's return is the only prompt.
+    await page.clock.setSystemTime('2026-10-27T00:59:00Z');
+    await page.evaluate(() =>
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+    );
+    await expect.poll(() => asked.length).toBe(2);
+    await expect(lastDay(page)).toHaveText('yesterday');
+  });
+
+  test('is yesterday after midnight in the sample', async ({ page }) => {
+    // The sample's 15-second best was set on 15 July 2022.
+    await page.clock.install({ time: '2022-07-15T23:58:00Z' });
+    await page.goto('/stats');
+    const first = panel(page, 'monkeytype').locator('dd time').first();
+    await expect(first).toHaveText('today');
+    await page.clock.runFor(3 * 60_000);
+    await expect(first).toHaveText('yesterday');
+  });
+});
+
 // The exact time is the reader's own, in their locale; the text counts back from now.
 test('times read relative to now, exact in the title', async ({ browser }) => {
   const page = await newPage(browser, { timezoneId: 'Asia/Tokyo', locale: 'en-GB' });

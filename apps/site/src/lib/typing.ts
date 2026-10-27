@@ -89,9 +89,9 @@ export function daysAgo(date: string, now: number): string {
   return relative.format(-Math.max(1, Math.floor(days / 365.25)), 'year');
 }
 
-/** Rewrites each `time[data-day]` under `root` relative to `now`, its exact day in the title. */
-export function relabelDays(root: ParentNode, now: number): void {
-  for (const time of root.querySelectorAll<HTMLTimeElement>('time[data-day]')) {
+/** Rewrites every `time[data-day]` on the page relative to `now`, its exact day in the title. */
+export function relabelDays(now: number): void {
+  for (const time of document.querySelectorAll<HTMLTimeElement>('time[data-day]')) {
     time.textContent = daysAgo(time.dateTime, now);
     time.title = dayDate(time.dateTime);
   }

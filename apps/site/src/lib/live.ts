@@ -177,13 +177,15 @@ export function readAnswer<Data>(
  * Anything else keeps it. Whatever is shown is labelled with its age, and called out of date
  * once older than the threshold. `render` is told whether the answer still describes now:
  * fresh, and brought by the latest request, not a failure or any answer that did not replace
- * what is shown.
+ * what is shown. `relabel`, if given, runs with `tick` every time, whatever is shown: for times
+ * the panel reads relative to now its own way.
  */
 export function live<Data>(
   source: string,
   everyMs: number,
   read: (data: unknown) => Data | undefined,
-  render: (panel: HTMLElement, answer: Answer<Data>, now: boolean) => void
+  render: (panel: HTMLElement, answer: Answer<Data>, now: boolean) => void,
+  relabel?: (now: number) => void
 ): void {
   const panel = document.querySelector<HTMLElement>(`[data-live="${source}"]`);
   if (!panel) return;
@@ -216,5 +218,6 @@ export function live<Data>(
       }
     }
     tick(time);
+    relabel?.(time);
   });
 }

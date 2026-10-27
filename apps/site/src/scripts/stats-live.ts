@@ -123,27 +123,31 @@ function day(date: string) {
   return time;
 }
 
-// Monkeytype is pulled every 6 hours; asking hourly is soon enough (ADR 0033).
-live('monkeytype', 60 * minute, readMonkeytype, (panel, { data }) => {
-  const lead = headline(data);
-  const rows = bestRows(data);
-  panel
-    .querySelector('.typing-body')
-    ?.replaceChildren(
-      ...(rows.length === 0
-        ? [h('p', typingWords.none)]
-        : [
-            lead === null
-              ? h('p', typingWords.noHeadline)
-              : h('p', h('strong', lead.wpm), lead.text, day(lead.date)),
-            h(
-              'dl',
-              ...rows.flatMap((row) => [h('dt', row.label), h('dd', row.text, day(row.date))])
-            ),
-            h('p', typingWords.settings),
-          ])
-    );
-  relabelDays(panel, Date.now());
-});
-// The build's days, read relative to now as soon as the page runs.
-relabelDays(document, Date.now());
+// Monkeytype is pulled every 6 hours; asking hourly is soon enough (ADR 0033). Its days are
+// read relative to now on every tick, so they turn over at midnight with no new answer.
+live(
+  'monkeytype',
+  60 * minute,
+  readMonkeytype,
+  (panel, { data }) => {
+    const lead = headline(data);
+    const rows = bestRows(data);
+    panel
+      .querySelector('.typing-body')
+      ?.replaceChildren(
+        ...(rows.length === 0
+          ? [h('p', typingWords.none)]
+          : [
+              lead === null
+                ? h('p', typingWords.noHeadline)
+                : h('p', h('strong', lead.wpm), lead.text, day(lead.date)),
+              h(
+                'dl',
+                ...rows.flatMap((row) => [h('dt', row.label), h('dd', row.text, day(row.date))])
+              ),
+              h('p', typingWords.settings),
+            ])
+      );
+  },
+  relabelDays
+);
