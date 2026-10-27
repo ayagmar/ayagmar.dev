@@ -233,6 +233,33 @@ test('an answer with modes as arrays keeps the bests shown', async ({ page }) =>
   await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
 });
 
+// Catches the page passing on fields the contract does not name: fake identifiers around the
+// answer, around the bests and in one, which the reader accepts as extra keys, reach no HTML.
+test('identifiers in a typing answer never reach the page', async ({ page }) => {
+  const fake = {
+    uid: 'fake-uid-0000000000000000000000',
+    name: 'fake-monkeytype-name',
+    email: 'fake@example.invalid',
+    apeKeyId: 'fake-ape-key-id-000000',
+  };
+  const { ok } = snapshotFixtures.monkeytype;
+  await visit(page, noon, {
+    monkeytype: json({
+      ...fake,
+      source: 'monkeytype',
+      version: 1,
+      fetchedAt: '2026-10-26T11:59:00Z',
+      stale: false,
+      data: { ...ok, ...fake, time: { ...ok.time, ...fake, 60: { ...ok.time[60], ...fake } } },
+    }),
+  });
+  // Shown: the answer replaced the build's.
+  await expect(freshness(page, 'monkeytype')).toHaveText('Updated 1 minute ago');
+  await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
+  const html = await page.content();
+  for (const value of Object.values(fake)) expect(html).not.toContain(value);
+});
+
 // Catches a stale answer passed off as current, and a good answer dropped when a later request
 // fails: it stays, and its label ages until it is out of date.
 test('a good answer stays through failures and ages honestly', async ({ page }) => {

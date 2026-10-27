@@ -304,6 +304,7 @@ describe("Monkeytype's Retry-After", () => {
   // for that time, and still waits.
   it.each([
     [429, 'seconds', '25200'],
+    [429, 'an HTTP date', 'Tue, 27 Oct 2026 07:00:30 GMT'],
     [479, 'seconds', '25200'],
     [479, 'an HTTP date', 'Tue, 27 Oct 2026 07:00:30 GMT'],
   ])('%i waits until the time it gives as %s', async (status, _form, value) => {
@@ -315,11 +316,14 @@ describe("Monkeytype's Retry-After", () => {
 
   // Catches a refusal without a usable header retried every minute, or never.
   it.each([
-    ['no header', {}],
-    ['a header it cannot read', { 'Retry-After': 'soon' }],
-    ['a time already past', { 'Retry-After': 'Mon, 26 Oct 2026 00:00:00 GMT' }],
-  ])('falls back to the 6-hour interval with %s', async (_case, headers) => {
-    const seen = recordRequests(refused(479, headers));
+    [429, 'no header', {}],
+    [429, 'a header it cannot read', { 'Retry-After': 'soon' }],
+    [429, 'a time already past', { 'Retry-After': 'Mon, 26 Oct 2026 00:00:00 GMT' }],
+    [479, 'no header', {}],
+    [479, 'a header it cannot read', { 'Retry-After': 'soon' }],
+    [479, 'a time already past', { 'Retry-After': 'Mon, 26 Oct 2026 00:00:00 GMT' }],
+  ])('%i falls back to the 6-hour interval with %s', async (status, _case, headers) => {
+    const seen = recordRequests(refused(status, headers));
     expect(await asked(seen, triggers('2026-10-27T00:00:00Z', 8, 60))).toEqual(['00:00', '06:00']);
   });
 });
