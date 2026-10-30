@@ -23,7 +23,7 @@
 .room-art.night {
   background-image: url("../assets/room-night.png");
   /* The lamp coming on: the only motion besides the record. */
-  animation: lamp-on 1.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+  animation: lamp-on 1.8s steps(9) 0.1s backwards;
 }
 
 .room-art.day {
@@ -110,6 +110,14 @@
 
 .scene[data-sky="day"][data-weather="cloudy"] .room-weather {
   background-image: url("../assets/weather-cloudy-day.png");
+}
+
+.scene[data-weather="overcast"] .room-weather {
+  background-image: url("../assets/weather-overcast-night.png");
+}
+
+.scene[data-sky="day"][data-weather="overcast"] .room-weather {
+  background-image: url("../assets/weather-overcast-day.png");
 }
 
 .scene[data-weather="fog"] .room-weather {
@@ -218,18 +226,6 @@
   font: 600 clamp(0.6875rem, 0.45rem + 0.75vw, 0.9375rem) / 1.2 var(--mono);
   white-space: nowrap;
   pointer-events: none;
-}
-
-/* Open-Meteo's credit, under the scene. */
-.room-credit {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font: 0.75rem / 1.4 var(--mono);
-  text-align: end;
-}
-
-.room-credit a {
-  color: inherit;
 }
 
 /* Hotspots: real links over the scene's objects, as percentages of its 480x160 pixels
@@ -350,14 +346,50 @@
 }
 
 .intro {
-  margin: 1.25rem 0 0.25rem;
-  font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.9rem);
-  font-weight: 500;
-  line-height: 1.25;
+  margin: 1.5rem 0 0.25rem;
+  font-size: clamp(1.9rem, 1.2rem + 3.4vw, 3.4rem);
+  font-weight: 750;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
 }
 
+/* The role, marked with the tile star that ends a post. */
 .intro span {
-  color: var(--muted);
+  display: block;
+  margin-top: 0.5rem;
+  color: var(--lamp);
+  font-family: var(--serif);
+  font-size: 0.55em;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.intro span::before {
+  content: "";
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  margin-inline-end: 0.5em;
+  background: var(--lamp);
+  vertical-align: -0.05em;
+  clip-path: polygon(
+    50% 0,
+    64.6% 14.6%,
+    85.4% 14.6%,
+    85.4% 35.4%,
+    100% 50%,
+    85.4% 64.6%,
+    85.4% 85.4%,
+    64.6% 85.4%,
+    50% 100%,
+    35.4% 85.4%,
+    14.6% 85.4%,
+    14.6% 64.6%,
+    0 50%,
+    14.6% 35.4%,
+    14.6% 14.6%,
+    35.4% 14.6%
+  );
 }
 
 .room-list {
@@ -370,23 +402,26 @@
 }
 
 .room-list a {
-  display: flex;
-  flex-direction: column;
-  padding-block: 0.4rem;
+  display: block;
+  padding: 0.6rem 0.25rem 0.4rem;
+  border-top: 1px solid var(--line);
   color: var(--text);
-  font-weight: 600;
-  line-height: 1.25;
+  font: 600 0.8125rem / 1.25 var(--mono);
+  letter-spacing: 0.02em;
   text-decoration: none;
+  text-transform: lowercase;
 }
 
 /* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
 .room-list a span {
+  display: block;
   color: var(--muted);
-  font-weight: 400;
+  font: 400 1rem / 1.3 var(--serif);
+  text-transform: none;
 }
 
-.room-list a:hover,
-.room-list a:hover span {
+.room-list a:hover {
+  border-color: var(--lamp);
   color: var(--lamp);
 }
 
@@ -404,9 +439,20 @@
   margin: 0;
 }
 
+/* The link to the whole section: a small button. */
 .panel-head a {
   margin-inline-start: auto;
-  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border: 2px solid currentcolor;
+  font: 600 0.75rem / 1.5 var(--mono);
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.panel-head a:hover {
+  background: var(--accent);
+  color: var(--bg);
 }
 
 .home-panels {
@@ -416,14 +462,14 @@
   overflow-wrap: anywhere;
 }
 
-.home-panels .paper h2 {
-  font-size: clamp(1.75rem, 1.4rem + 1.5vw, 2.25rem);
+.home-panels h2 {
+  font-size: clamp(1.5rem, 1.3rem + 1vw, 1.9rem);
 }
 
 .home-panels .posts li:first-child a {
-  font-size: clamp(1.6rem, 1.2rem + 2vw, 2.4rem);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.7rem, 1.1rem + 2.4vw, 3rem);
+  font-weight: 750;
+  line-height: 1.04;
 }
 
 @media (min-width: 60rem) {
@@ -497,7 +543,7 @@
    script marks a live, fresh answer with a track (src/lib/listening.ts). The build-time value
    never turns it. */
 .record:has([data-playing]) .disc {
-  animation: spin 9s linear infinite;
+  animation: spin 9s steps(36) infinite;
 }
 
 .disc::after {
@@ -515,43 +561,5 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-/* The corkboard: shipping events pinned as paper slips. */
-.m-cork .shipping {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.m-cork .shipping li {
-  position: relative;
-  padding: 0.7rem 0.9rem 0.8rem;
-  background: var(--paper);
-  color: var(--ink);
-  line-height: 1.35;
-
-  --accent: var(--ink-link);
-}
-
-.m-cork .shipping li::before {
-  content: "";
-  position: absolute;
-  top: 5px;
-  right: 8px;
-  width: 6px;
-  height: 6px;
-  background: #bf433b;
-}
-
-.m-cork .shipping time {
-  display: block;
-  margin-bottom: 0.2rem;
-  color: var(--ink-2);
-}
-
-@media (min-width: 30rem) {
-  .m-cork .shipping {
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
   }
 }

@@ -27,8 +27,8 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
          weather: str | None = None) -> tuple[Image.Image, Image.Image]:
     """The room in daylight or at night, and the mask of the view through the window that
     nothing in the room covers. `sky` is that view (day, dusk or night, the theme's own by
-    default) and `lamp` scales the desk lamp's light. With `weather` (cloudy, fog, rain, snow
-    or storm) the mask is only the part of the view that weather covers (ADR 0029)."""
+    default) and `lamp` scales the desk lamp's light. With `weather` (cloudy, overcast, fog, rain,
+    snow or storm) the mask is only the part of the view that weather covers (ADR 0029)."""
     sky = sky or ("day" if DAY else "night")
     W, H = 480, 160
     rnd = random.Random(7)
@@ -222,6 +222,26 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
             for cx0, cy0, rx, ry in ((76, 22, 16, 7), (92, 16, 14, 7), (128, 30, 17, 6),
                                      (114, 26, 10, 5), (84, 42, 12, 4), (136, 47, 9, 3)):
                 cloud(cx0, cy0, rx, ry, lit, mid, shade)
+        elif weather == "overcast":
+            # A full deck in four banded greys, almost closed at the top and thinning to half
+            # toward the skyline so the roofs ghost through. The bands come from a few slow
+            # waves, so the deck has weather in it without a texture to repeat.
+            greys = (((96, 98, 134), (60, 62, 100), (46, 48, 84), (24, 25, 48)) if night
+                     else ((220, 223, 232), (194, 199, 212), (168, 174, 192), (144, 150, 172)))
+            for y in range(0, 90):
+                for x in range(CX - RAD, CX + RAD + 1):
+                    wave = (math.sin(x / 9.0 + math.sin(y / 5.0) * 1.4) + math.sin(x / 4.3 - y / 7.0 + 1)
+                            + math.sin(y / 3.1 + x / 17.0)) / 3
+                    band = min(3, max(0, int((wave + 1) * 2 - (y / 90) * 0.6)))
+                    cover = 0.98 - 0.48 * (y / 89) ** 1.4
+                    paint(x, y, greys[3 - band if night else band], cover)
+            if night:
+                # the moon behind the deck: a dim round glow where the moon is drawn
+                for y in range(14, 38):
+                    for x in range(110, 136):
+                        d = ((x - 122) ** 2 + (y - 25) ** 2) ** 0.5
+                        if d < 11:
+                            paint(x, y, greys[0], 1 - d / 11)
         elif weather == "fog":
             if night:
                 haze(0.45, 0.85, (44, 50, 92), (100, 112, 170))
@@ -626,7 +646,7 @@ outputs = {
 # night, which dusk shows too, plus the falling rain. Clear weather is the sky as it is.
 weather_outputs = {
     **{f"weather-{kind}-{sky}.png": window_only(*draw(False, sky, weather=kind))
-       for kind in ("cloudy", "fog", "rain", "snow", "storm") for sky in ("day", "night")},
+       for kind in ("cloudy", "overcast", "fog", "rain", "snow", "storm") for sky in ("day", "night")},
     **{f"weather-drops-{sky}.png": drops(sky) for sky in ("day", "night")},
 }
 for name, image in weather_outputs.items():

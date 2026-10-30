@@ -1,4 +1,5 @@
-/* The late-night room (ADR 0026): one token layer for day and night, mobile first.
+/* The late-night room (ADR 0026), lit and set in windows (ADR 0034): one token layer for day
+   and night, mobile first.
    Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
    It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
 
@@ -18,6 +19,30 @@
   font-display: swap;
 }
 
+/* The display face: the name, headings and big numbers. Never running text. One cut, soft and
+   a little wonky, at one optical size and one weight (750). */
+@font-face {
+  font-family: "min7 Display";
+  src: url("../fonts/display.woff2") format("woff2");
+  font-weight: 750;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* While the display face loads, headings show the serif roman (already loaded, so no second
+   download) scaled to Fraunces' width and set to its vertical metrics, so the swap moves nothing:
+   the page stays inside ADR 0017's CLS budget without a preload. */
+@font-face {
+  font-family: "min7 Display Fallback";
+  src: url("../fonts/serif-roman.woff2") format("woff2");
+  font-weight: 750;
+  font-style: normal;
+  size-adjust: 101.4%;
+  ascent-override: 97.8%;
+  descent-override: 25.5%;
+  line-gap-override: 0%;
+}
+
 @font-face {
   font-family: "JetBrains Mono";
   src: url("../fonts/mono.woff2") format("woff2");
@@ -29,15 +54,21 @@
 :root {
   color-scheme: light dark;
 
-  /* The room: wall, the lamp (links, time), the screen glow (projects), text. */
-  --ground: light-dark(#ece2cf, #0c0b14);
-  --surface: light-dark(#e3d7bf, #16192f);
-  --line: light-dark(#b9a98c, #3a3f6e);
-  --text: light-dark(#221c2c, #efe6d0);
-  --muted: light-dark(#5b5163, #aeabc4);
-  --lamp: light-dark(#7f4100, #f2b457);
-  --glow: light-dark(#155a46, #7fe0b4);
-  --rose: light-dark(#9c3328, #f0958a);
+  /* The room by lamplight: aubergine night and sunlit plaster, the amber lamp (links, time), the
+     screen's mint (projects), rose for what is not real. --line is the windows' chrome. */
+  --ground: light-dark(#efe3cb, #0d0a17);
+  --surface: light-dark(#e6d6b8, #191430);
+  --line: light-dark(#2a2144, #5a4fd6);
+  --text: light-dark(#241a2c, #f6ead2);
+  --muted: light-dark(#4a3f4d, #b9b0c8);
+  --lamp: light-dark(#7a3a00, #ffb54a);
+  --glow: light-dark(#0b4f3c, #6ee7b0);
+  --rose: light-dark(#a3372a, #ff8e7c);
+  --cyan: light-dark(#0b5f87, #5ad7ff);
+  /* The hard shadow under a window, and the text on a title bar or the status bar. */
+  --shade: light-dark(#2a2144, #2b2470);
+  --bar-text: light-dark(#fff8e4, #f3ead3);
+  --rose-bar: #a8243f;
 
   /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
   --paper: light-dark(#fbf6ea, #efe3c6);
@@ -48,37 +79,37 @@
   --code-bg: #1f1b2e;
   --code-fg: #efe6d0;
 
-  /* Panel materials: each panel wears its object's surface. */
-  --screen: light-dark(#dcebe4, #0a1a1c);
-  --vinyl: light-dark(#e6dfe6, #13111c);
-  --cork: light-dark(#e6d2b3, #4a3426);
-  --wood: light-dark(#ead9c0, #2c1d16);
+  /* Panel materials: each panel is lit from its top left corner (--hi) and falls off to its
+     bottom right (--lo), in its object's colour. */
+  --screen: light-dark(#d5e8dd, #08201f);
+  --screen-hi: light-dark(#e6f3ea, #0f3a35);
+  --screen-lo: light-dark(#c6dccf, #041312);
+  --vinyl: light-dark(#e6dae4, #17102a);
+  --vinyl-hi: light-dark(#f1e6ef, #2d2150);
+  --vinyl-lo: light-dark(#dccddb, #0d0918);
+  --cork: light-dark(#e8cfa8, #3d2619);
+  --cork-hi: light-dark(#f4dcae, #5e3a22);
+  --cork-lo: light-dark(#e0c595, #26150f);
+  --wood: light-dark(#ead9c0, #2b1a12);
+  --wood-hi: light-dark(#f1e1c9, #4a3022);
+  --wood-lo: light-dark(#dbc6a6, #1b100b);
   --tea: light-dark(#d9e8dd, #10241f);
-  --frame: light-dark(#e2dfec, #14172b);
+  --tea-hi: light-dark(#e8f3ea, #1a3a33);
+  --tea-lo: light-dark(#c8dccf, #08130f);
+  --frame: light-dark(#e2e1f2, #151b3d);
+  --frame-hi: light-dark(#e9e6f4, #232a52);
+  --frame-lo: light-dark(#d0cde4, #0b0e22);
+  --surface-hi: light-dark(#f6e9cb, #2e2038);
+  --surface-lo: light-dark(#e0cfae, #0f0c1f);
 
   --serif: "min7 Serif", Charter, "Iowan Old Style", Georgia, serif;
+  --display: "min7 Display", "min7 Display Fallback", var(--serif);
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --gutter: clamp(1rem, 0.5rem + 2.5vw, 2rem);
   --measure: 66ch;
   /* The reading size of a post, set on .reader and .prose so 66ch is the same width in both. */
   --read-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
   --pixel: 3px;
-  --notch: 6px;
-  /* Stepped pixel corners for panels. */
-  --step: polygon(
-    0 var(--notch),
-    var(--notch) var(--notch),
-    var(--notch) 0,
-    calc(100% - var(--notch)) 0,
-    calc(100% - var(--notch)) var(--notch),
-    100% var(--notch),
-    100% calc(100% - var(--notch)),
-    calc(100% - var(--notch)) calc(100% - var(--notch)),
-    calc(100% - var(--notch)) 100%,
-    var(--notch) 100%,
-    var(--notch) calc(100% - var(--notch)),
-    0 calc(100% - var(--notch))
-  );
 
   /* What the current surface draws with; panels and paper override these four. */
   --bg: var(--ground);
@@ -86,7 +117,7 @@
   --fg-2: var(--muted);
   --accent: var(--lamp);
 
-  background: var(--bg);
+  background: var(--ground);
   color: var(--fg);
   font: 400 1.0625rem / 1.6 var(--serif);
   -webkit-text-size-adjust: 100%;
@@ -111,6 +142,18 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-wrap: break-word;
+  background:
+    radial-gradient(
+      ellipse 60rem 28rem at 78% -4rem,
+      light-dark(rgb(255 236 190 / 0.85), rgb(255 170 60 / 0.16)),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 40rem 40rem at -10% 30%,
+      light-dark(rgb(255 255 255 / 0.35), rgb(110 231 176 / 0.06)),
+      transparent 70%
+    ),
+    var(--ground);
 }
 
 ::selection {
@@ -144,25 +187,33 @@ h1,
 h2,
 h3 {
   margin: 1.6em 0 0.5em;
-  font-weight: 650;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-family: var(--display);
+  font-weight: 750;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
 h1 {
   margin-top: 0.5em;
-  font-size: clamp(2rem, 1.5rem + 2.5vw, 3rem);
-  line-height: 1.08;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.2rem, 1.4rem + 3.6vw, 3.8rem);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: 1.5rem;
+  font-size: 1.55rem;
 }
 
 h3 {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 p,
@@ -255,7 +306,8 @@ input {
   padding-block: 0.25rem;
 }
 
-button {
+button,
+.button {
   border: 1px solid var(--line);
   padding-inline: 0.6rem;
   background: transparent;
@@ -264,8 +316,18 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+.button {
+  display: inline-block;
+  min-height: 24px;
+  padding-block: 0.4rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+button:hover,
+.button:hover {
   border-color: var(--accent);
+  box-shadow: 3px 3px 0 var(--shade);
 }
 
 button[aria-disabled="true"] {
@@ -325,6 +387,7 @@ kbd {
 .site-header {
   --header-h: 3.5rem;
   display: flex;
+  border-bottom: 3px solid var(--line);
   gap: 0.5rem;
   align-items: center;
   min-height: var(--header-h);
@@ -353,11 +416,11 @@ kbd {
   max-block-size: calc(100dvh - var(--header-h) - var(--gutter));
   overflow-y: auto;
   margin: 0;
-  border: 0;
   padding: 0.5rem 1.1rem 1.1rem;
+  border: 3px solid var(--line);
   background: var(--surface);
   color: var(--text);
-  clip-path: var(--step);
+  box-shadow: 7px 7px 0 var(--shade);
 }
 
 .site-header ul,
@@ -393,10 +456,12 @@ kbd {
   text-decoration: none;
 }
 
+/* The page you are on, and the one under the pointer, is lit like a menu item. */
 .site-header nav a:hover,
 .site-header nav a[aria-current="page"] {
-  color: var(--accent);
-  text-decoration: underline;
+  background: var(--lamp);
+  color: var(--ground);
+  text-decoration: none;
 }
 
 .site-tools {
@@ -493,8 +558,12 @@ kbd {
 /* Between 52rem and 64rem the six nav links need the room the keyboard hint would take, and
    a little less space between them. */
 @media (min-width: 52rem) and (max-width: 63.99rem) {
+  .site-header {
+    gap: 0.5rem 0.75rem;
+  }
+
   .site-header nav ul {
-    gap: 0 1rem;
+    gap: 0 0.75rem;
   }
 }
 
@@ -504,40 +573,89 @@ kbd {
   }
 }
 
+/* The status bar: the same bar a window has, along the bottom of the screen. */
 .site-footer {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1.5rem;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  margin-top: 3rem;
-  padding-block: 1.5rem 2.5rem;
-  border-top: 1px dashed var(--line);
-  color: var(--muted);
+  margin-block: 3.5rem 1.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--line);
+  color: var(--bar-text);
   font: 500 0.8125rem / 1.5 var(--mono);
+
+  /* Links and their focus ring take the bar's text colour: the lamp brown is 1.7:1 on this bar. */
+  --accent: var(--bar-text);
 }
 
 .site-footer p {
   margin: 0;
 }
 
-.site-footer a {
-  color: var(--fg);
+.site-footer p::before {
+  content: "";
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-inline-end: 0.6rem;
+  background: var(--glow);
+  animation: blink 2s steps(2) infinite;
+}
+
+.site-footer .keys-open {
+  border-color: var(--bar-text);
+  color: var(--bar-text);
 }
 
 /* ---------- surfaces ---------- */
 
+/* A panel is a window: a title bar with a file name, three buttons, a hard shadow. Each wears
+   its object's colour as its bar (the --wbar of its material). The file name is CSS content, so
+   it is not read: the window's own heading is. */
 .panel,
 .paper {
-  margin-block: 1.25rem;
-  background: var(--bg);
+  --wbar: var(--line);
+  --title: "window.txt";
+  --bar: 1.9rem;
+  position: relative;
+  margin-block: 1.6rem;
+  padding: calc(var(--bar) + 1.25rem) 1.1rem 1.4rem;
+  border: 3px solid var(--wbar);
+  background: linear-gradient(150deg, var(--hi), var(--bg) 48%, var(--lo));
   color: var(--fg);
-  clip-path: var(--step);
+  box-shadow: 7px 7px 0 var(--shade);
 }
 
-.panel {
-  --bg: var(--surface);
-  padding: 1.25rem 1.1rem 1.4rem;
+.panel::before,
+.paper::before {
+  content: var(--title);
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--bar);
+  padding-inline: 0.7rem;
+  overflow: hidden;
+  background: var(--wbar);
+  color: var(--bar-text);
+  font: 600 0.8125rem / var(--bar) var(--mono);
+  white-space: nowrap;
+}
+
+/* The three buttons: squares, drawn by a shadow each. */
+.panel::after,
+.paper::after {
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  background: var(--bar-text);
+  box-shadow:
+    -1.2rem 0 0 var(--bar-text),
+    -2.4rem 0 0 var(--bar-text);
+  opacity: 0.85;
 }
 
 .panel > :first-child,
@@ -550,54 +668,102 @@ kbd {
   margin-bottom: 0;
 }
 
+.panel {
+  --bg: var(--surface);
+  --hi: var(--surface-hi);
+  --lo: var(--surface-lo);
+}
+
 .panel h2 {
   margin-top: 0;
 }
 
 .m-screen {
   --bg: var(--screen);
+  --hi: var(--screen-hi);
+  --lo: var(--screen-lo);
   --accent: var(--glow);
+  --wbar: light-dark(#0b6249, #176b4e);
+  --title: "projects.json";
 }
 
 .m-vinyl {
   --bg: var(--vinyl);
+  --hi: var(--vinyl-hi);
+  --lo: var(--vinyl-lo);
+  --wbar: light-dark(#5a3f8a, #5a4fd6);
+  --title: "listening.app";
 }
 
 .m-cork {
   --bg: var(--cork);
+  --hi: var(--cork-hi);
+  --lo: var(--cork-lo);
+  --wbar: light-dark(#8f4700, #8a5410);
+  --title: "shipping.log";
 }
 
 .m-wood {
   --bg: var(--wood);
+  --hi: var(--wood-hi);
+  --lo: var(--wood-lo);
+  --wbar: light-dark(#7a4a30, #8a5a3a);
+  --title: "shelf.md";
 }
 
 .m-tea {
   --bg: var(--tea);
+  --hi: var(--tea-hi);
+  --lo: var(--tea-lo);
   --accent: var(--glow);
+  --wbar: light-dark(#0b6249, #176b4e);
+  --title: "tea.txt";
 }
 
 .m-frame {
   --bg: var(--frame);
+  --hi: var(--frame-hi);
+  --lo: var(--frame-lo);
+  --wbar: light-dark(#0b5f87, #1f6a96);
+  --title: "llm-usage.db";
 }
 
-/* The notebook: a sheet of paper with a perforated left edge, holding the writing. */
+/* The notebook: a window holding the writing. */
 .paper {
-  --bg: var(--paper);
-  --fg: var(--ink);
-  --fg-2: var(--ink-2);
-  --accent: var(--ink-link);
-  position: relative;
-  padding: 1.5rem 1.1rem 1.5rem 2rem;
+  --bg: var(--surface);
+  --hi: var(--surface-hi);
+  --lo: var(--surface-lo);
+  --fg: var(--text);
+  --fg-2: var(--muted);
+  --accent: var(--lamp);
+  --wbar: light-dark(#7a2c26, #a83a30);
+  --title: "writing.md";
 }
 
-.paper::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 10px;
-  background:
-    radial-gradient(circle at 0 5px, var(--ground) 0 5px, transparent 5.5px) 0 16px / 10px 40px
-    repeat-y;
+/* A page that names its windows sets data-file (ADR 0034). */
+.panel[data-file]::before,
+.paper[data-file]::before {
+  content: attr(data-file);
+}
+
+.t-about {
+  --title: "whoami.txt";
+}
+
+.t-cv {
+  --title: "cv.md";
+}
+
+.t-colophon {
+  --title: "colophon.txt";
+}
+
+/* The 404 is a dialog box in the middle of the desk. */
+.t-error {
+  --wbar: var(--rose-bar);
+  --title: "error.txt";
+  max-width: 34rem;
+  margin: 3rem auto;
 }
 
 .caption,
@@ -619,24 +785,32 @@ time[data-ago] {
   font: 500 0.8125rem / 1.5 var(--mono);
 }
 
-/* Fixtures mode (ADR 0015): sample numbers wear a strip of hazard tape, stuck on the panel in
-   the page's ground colour, so a Preview is never read as live. */
+/* Fixtures mode (ADR 0015): sample numbers wear a rose tag, so a Preview is never read as
+   live. Rose is the colour of what is not real. */
 .sample {
   width: fit-content;
-  border: 5px solid;
-  border-image: repeating-linear-gradient(-45deg, var(--lamp) 0 5px, var(--ground) 5px 10px) 5;
-  padding: 0.25rem 0.6rem;
-  background: var(--ground);
-  color: var(--text);
+  margin-block: 0.75rem 0;
+  padding: 0.15rem 0.5rem;
+  background: var(--rose);
+  color: var(--ground);
   font: 700 0.75rem / 1.5 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
+/* On /stats, the whole page's version: a hatched rose banner under the title. */
 .sample-banner {
   width: auto;
+  margin: 0 0 1.5rem;
   padding: 0.6rem 0.9rem;
-  font-size: 0.8125rem;
+  border: 3px solid var(--rose);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--rose) 22%, transparent) 0 8px,
+    transparent 8px 16px
+  );
+  color: var(--text);
+  font: 600 0.9375rem / 1.5 var(--serif);
   letter-spacing: 0;
   text-transform: none;
 }
@@ -646,19 +820,9 @@ time[data-ago] {
 }
 
 @media (min-width: 40rem) {
-  .panel {
-    padding: 1.75rem 1.9rem 1.9rem;
-  }
-
+  .panel,
   .paper {
-    padding: 2.25rem 2.5rem 2.25rem 3.5rem;
-  }
-
-  .paper::before {
-    width: 12px;
-    background:
-      radial-gradient(circle at 0 7px, var(--ground) 0 6px, transparent 6.5px) 0 22px / 12px 48px
-      repeat-y;
+    padding: calc(var(--bar) + 1.5rem) 1.9rem 1.9rem;
   }
 }
 
@@ -685,10 +849,10 @@ time[data-ago] {
 .posts a {
   display: block;
   color: var(--fg);
-  font-size: 1.3rem;
-  font-weight: 650;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 750;
   line-height: 1.2;
-  letter-spacing: -0.01em;
   text-decoration: none;
   text-wrap: balance;
 }
@@ -701,7 +865,7 @@ time[data-ago] {
 .posts time {
   display: block;
   margin-bottom: 0.2rem;
-  color: var(--fg-2);
+  color: var(--accent);
   font: 500 0.8125rem var(--mono);
 }
 
@@ -728,19 +892,97 @@ time[data-ago] {
   content: "#";
 }
 
+/* Shipping as a git graph: a dashed rail with a square node for each event, the newest one
+   amber and blinking, the time in mint. */
 .shipping {
-  padding: 0;
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 1.4rem;
   list-style: none;
 }
 
-.shipping li {
-  padding-block: 0.35rem;
+.shipping::before {
+  content: "";
+  position: absolute;
+  inset: 0.6rem auto 0.6rem 0.32rem;
+  width: 3px;
+  background: repeating-linear-gradient(180deg, var(--glow) 0 6px, transparent 6px 9px);
+  opacity: 0.7;
 }
 
-.shipping time {
-  margin-inline-end: 0.5rem;
+.shipping li {
+  position: relative;
+  padding-block: 0.5rem;
+  line-height: 1.4;
+}
+
+.shipping li::before {
+  content: "";
+  position: absolute;
+  top: 0.9rem;
+  left: -1.4rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--glow);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+
+.shipping li:first-child::before {
+  background: var(--lamp);
+  animation: blink 1.6s steps(2) infinite;
+}
+
+.shipping time,
+.shipping time[data-ago] {
+  display: block;
+  color: var(--glow);
+  font: 700 0.8125rem / 1.5 var(--mono);
+}
+
+/* The last four weeks, a cell a day, in its own inset box above the rail. The box and the cells
+   are opaque so each level can be held to 3:1 against it (WCAG 1.4.11): the levels are separate
+   steps of lightness, not a fade of one colour. */
+.heat {
+  --heat-bg: light-dark(#eadbbd, #1f140b);
+  margin: 0 0 1.2rem;
+  padding: 0.5rem;
+  border: 2px solid var(--wbar);
+  background: var(--heat-bg);
+}
+
+.heat-cells {
+  display: grid;
+  grid-template-columns: repeat(28, 1fr);
+  gap: 2px;
+}
+
+.heat i {
+  aspect-ratio: 1;
+  background: light-dark(#ddcba9, #2c2015);
+}
+
+.heat i[data-l="1"] {
+  background: light-dark(#a46a26, #8a5a22);
+}
+
+.heat i[data-l="2"] {
+  background: light-dark(#8a4f10, #b37a2c);
+}
+
+.heat i[data-l="3"] {
+  background: light-dark(#6c3a05, #e09a3a);
+}
+
+.heat i[data-l="4"] {
+  background: light-dark(#4a2200, #ffd58a);
+}
+
+.heat-cap {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.3rem;
   color: var(--fg-2);
-  font: 500 0.8125rem var(--mono);
+  font: 500 0.75rem var(--mono);
 }
 
 /* ---------- the reader: a post or TIL notes on the room's ground (ADR 0026) ----------
@@ -750,15 +992,14 @@ time[data-ago] {
 
 /* The lamp's pool, behind the top of the page, header included so it has no edge. */
 body:has(.reader) {
-  background: radial-gradient(
-      ellipse 42rem 20rem at 50% 0,
-      light-dark(
-        color-mix(in srgb, var(--lamp) 9%, transparent),
-        color-mix(in srgb, var(--lamp) 13%, transparent)
-      ),
-      transparent
+  background:
+    radial-gradient(
+      ellipse 46rem 24rem at 50% -2rem,
+      light-dark(rgb(255 236 190 / 0.9), rgb(255 170 60 / 0.2)),
+      transparent 70%
     )
-    no-repeat;
+    no-repeat,
+    var(--ground);
 }
 
 .reader {
@@ -784,9 +1025,28 @@ main:has(.toc) .reader ~ .project-card {
   max-width: 64rem;
 }
 
+/* The file bar: where the post lives and how long it is, as on a desktop. */
+.filebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  justify-content: space-between;
+  margin: 0 0 1.2rem;
+  padding: 0.3rem 0.7rem;
+  background: var(--line);
+  color: var(--bar-text);
+  font: 500 0.8125rem / 1.5 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.filebar:has(+ .post-art) {
+  margin-bottom: 0;
+}
+
 .post-header h1 {
   margin: 0 0 0.75rem;
-  font-size: clamp(1.75rem, 1.2rem + 2.8vw, 3.25rem);
+  font-size: clamp(1.9rem, 1.2rem + 3.6vw, 3.5rem);
+  line-height: 1.02;
 }
 
 .post-meta {
@@ -871,13 +1131,13 @@ main:has(.toc) .reader ~ .project-card {
 
 .prose h2 {
   margin-top: 2.2em;
-  font-size: 1.55em;
+  font-size: 1.4em;
   scroll-margin-top: 1rem;
 }
 
 .prose h3 {
   margin-top: 1.9em;
-  font-size: 1.2em;
+  font-size: 1.15em;
   scroll-margin-top: 1rem;
 }
 
@@ -900,7 +1160,7 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .prose pre {
-  border-block: 1px solid var(--line);
+  border-block: 2px solid var(--line);
 }
 
 /* The quote's bar is a column of pixels, not a rule. */
@@ -1003,8 +1263,8 @@ main:has(.toc) .reader ~ .project-card {
 /* The table of contents: a disclosure on phones, a sticky list beside the text on wide screens. */
 .toc {
   margin: 0 0 1.5rem;
+  border: 2px solid var(--line);
   background: var(--surface);
-  clip-path: var(--step);
   font-size: 1rem;
   line-height: 1.35;
 }
@@ -1101,8 +1361,11 @@ main:has(.toc) .reader ~ .project-card {
     padding-inline: var(--gutter);
   }
 
-  .reader .post-art {
+  /* The file bar and the art above it run to the screen edge, under the header. */
+  .reader .filebar {
+    margin-inline: calc(-1 * var(--gutter));
     margin-top: -1.25rem;
+    padding-inline: var(--gutter);
   }
 
   /* A wide table scrolls rather than squeezing its columns into slivers. */
@@ -1119,11 +1382,6 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 @media (min-width: 40rem) {
-  .prose pre,
-  .reader .diagram {
-    clip-path: var(--step);
-  }
-
   .prose pre:focus-visible,
   .reader .diagram:focus-visible {
     outline-offset: -4px;
@@ -1131,6 +1389,11 @@ main:has(.toc) .reader ~ .project-card {
 
   .prose pre {
     padding: 1.1rem 1.4rem;
+    border: 2px solid var(--line);
+  }
+
+  .reader .diagram {
+    border: 2px solid var(--line);
   }
 }
 
@@ -1146,8 +1409,8 @@ main:has(.toc) .reader ~ .project-card {
     position: sticky;
     top: 1.5rem;
     align-self: start;
+    border: 0;
     background: none;
-    clip-path: none;
   }
 }
 
@@ -1235,7 +1498,7 @@ main:has(.toc) .reader ~ .project-card {
 
 .projects h2,
 .project h1,
-.project-card h2 {
+.project-card h2 a {
   font-family: var(--mono);
   letter-spacing: -0.02em;
 }
@@ -1320,12 +1583,33 @@ main:has(.toc) .reader ~ .project-card {
 
 .stats-grid dl {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.2rem 1rem;
+  grid-template-columns: 1fr;
+  margin-block: 1rem;
 }
 
+.stats-grid dt {
+  color: var(--fg-2);
+  font: 500 0.75rem var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* The big numbers: the display face, lit. */
 .stats-grid dd {
-  margin: 0;
+  margin: 0 0 0.75rem;
+  color: var(--lamp);
+  font: 750 3.2rem / 1 var(--display);
+}
+
+/* A typing best is a sentence (wpm, accuracy, when), not one number: smaller, so it wraps
+   as a line and not as a banner. */
+.typing-body dd {
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
+.stats-grid li::marker {
+  color: var(--lamp);
   font-family: var(--mono);
 }
 
@@ -1363,10 +1647,11 @@ main:has(.toc) .reader ~ .project-card {
 dialog {
   width: min(40rem, 100% - 2rem);
   max-height: min(36rem, 100% - 4rem);
-  border: 1px solid var(--line);
+  border: 3px solid var(--line);
   padding: 1.25rem;
   background: var(--surface);
   color: var(--text);
+  box-shadow: 7px 7px 0 var(--shade);
 }
 
 dialog::backdrop {

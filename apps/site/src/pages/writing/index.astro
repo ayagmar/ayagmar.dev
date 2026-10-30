@@ -1,5 +1,6 @@
 ---
 import PostList from '../../components/PostList.astro';
+import display from '../../fonts/display.woff2?url';
 import Base from '../../layouts/Base.astro';
 import { getPosts } from '../../lib/posts.ts';
 import { postsByTag, tagPath } from '../../lib/writing.ts';
@@ -9,6 +10,8 @@ const tags = [...postsByTag(posts).keys()];
 ---
 
 <Base title="Writing">
+  {/* The titles rewrap if the display face swaps in late (CLS, ADR 0034). */}
+  <link slot="head" rel="preload" href={display} as="font" type="font/woff2" crossorigin>
   <div class="paper">
     <h1>Writing</h1>
     <PostList posts={posts} />

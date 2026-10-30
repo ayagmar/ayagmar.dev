@@ -51,3 +51,31 @@ export function projectsSummary(projects: readonly Pick<Project, 'stars'>[]): st
     ? `${head}, ${total} stars in total.`
     : `${head}, at least ${total} stars; GitHub did not answer for ${missing}.`;
 }
+
+const dayMs = 24 * 60 * 60 * 1000;
+
+/**
+ * The shipping heat strip: how busy each of the last `days` UTC days was, oldest first and
+ * ending with the day of `now`, as a level from 0 (nothing) to 4. An event counts for the
+ * day it happened; those older than the strip or after `now` count for none.
+ */
+export function heatLevels(events: readonly Pick<ShippingEvent, 'at'>[], now: Date, days = 28) {
+  const today = Math.floor(now.getTime() / dayMs);
+  const counts = new Array<number>(days).fill(0);
+  for (const { at } of events) {
+    const index = days - 1 - (today - Math.floor(Date.parse(at) / dayMs));
+    if (index >= 0 && index < days) counts[index] = (counts[index] ?? 0) + 1;
+  }
+  return counts.map((n) => (n === 0 ? 0 : n === 1 ? 1 : n === 2 ? 2 : n < 5 ? 3 : 4));
+}
+
+/**
+ * The strip's first and last day as `3 Oct` and `30 Oct` (UTC, the days `heatLevels` counts in).
+ * The strip is drawn once with the page and the live answer holds at most 50 events, too few to
+ * redraw 28 days, so it is labelled with the days it covers rather than "today".
+ */
+export function heatRange(now: Date, days = 28) {
+  const day = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short' });
+  const today = Math.floor(now.getTime() / dayMs) * dayMs;
+  return { from: day.format(today - (days - 1) * dayMs), to: day.format(today) };
+}

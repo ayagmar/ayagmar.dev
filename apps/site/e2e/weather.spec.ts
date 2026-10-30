@@ -13,7 +13,7 @@ const minute = 60_000;
 const noon = '2026-10-26T12:00:00Z';
 const night = '2026-10-26T03:00:00Z';
 
-type Case = 'ok' | 'clear' | 'fog' | 'rain' | 'snow' | 'storm' | 'unknown-code';
+type Case = 'ok' | 'partial' | 'clear' | 'fog' | 'rain' | 'snow' | 'storm' | 'unknown-code';
 
 // The shared weather fixtures (packages/contracts/fixtures/weather/snapshot).
 const snapshot = (name: Case) =>
@@ -98,10 +98,17 @@ for (const { name, weather, layer, rain, words } of [
   { name: 'clear', weather: 'clear', layer: null, rain: [null, null], words: ', clear sky, 17 °C' },
   {
     name: 'ok',
+    weather: 'overcast',
+    layer: 'weather-overcast-day',
+    rain: [null, null],
+    words: ', overcast, 24 °C',
+  },
+  {
+    name: 'partial',
     weather: 'cloudy',
     layer: 'weather-cloudy-day',
     rain: [null, null],
-    words: ', overcast, 24 °C',
+    words: ', partly cloudy',
   },
   {
     name: 'fog',
@@ -408,16 +415,37 @@ for (const name of ['rain', 'snow'] as const) {
   });
 }
 
-// Catches the credit or the weather label failing contrast or naming rules in either theme.
+// Catches the weather layers or the room's label failing contrast or naming rules in either theme.
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`home with weather has no axe violations (${colorScheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
     await visit(page, noon, (route) => route.fulfill(envelope('rain', noon)));
     await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'rain');
-    await expect(page.getByRole('link', { name: 'Open-Meteo' })).toBeVisible();
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
       .analyze();
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
   });
 }
+
+// Catches the CC BY 4.0 credit for Open-Meteo going missing when it moved from under the room
+// to the colophon (ADR 0029): the sentence, both links, and no credit line left on home.
+test('the colophon credits Open-Meteo under CC BY 4.0, and home carries no credit line', async ({
+  page,
+}) => {
+  await page.goto('/colophon');
+  const credit = page.getByText(
+    'Weather data by Open-Meteo (CC BY 4.0); simplified visualization.'
+  );
+  await expect(credit).toBeVisible();
+  await expect(credit.getByRole('link', { name: 'Open-Meteo' })).toHaveAttribute(
+    'href',
+    'https://open-meteo.com/'
+  );
+  await expect(credit.getByRole('link', { name: 'CC BY 4.0' })).toHaveAttribute(
+    'href',
+    'https://creativecommons.org/licenses/by/4.0/'
+  );
+  await page.goto('/');
+  await expect(page.getByText('Weather data by')).toHaveCount(0);
+});

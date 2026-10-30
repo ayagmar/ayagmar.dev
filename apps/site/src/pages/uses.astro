@@ -12,6 +12,12 @@ const materials = ['m-screen', 'm-tea', 'm-frame'];
 // never shows.
 const api = (source: string) =>
   signalsMode === 'api' ? `${signalsApiBase}/v1/${source}` : undefined;
+// The file name in a window's title bar (ADR 0034): the section's title as a file.
+const file = (title: string, extension: string) =>
+  `${title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')}.${extension}`;
 ---
 
 <Base title="Uses">
@@ -20,7 +26,11 @@ const api = (source: string) =>
 
   <div class="uses-grid">
     {uses.sections.map((section, i) => (
-      <section class={`panel ${materials[i % materials.length]}`} aria-labelledby={`uses-${i}`}>
+      <section
+        class={`panel ${materials[i % materials.length]}`}
+        aria-labelledby={`uses-${i}`}
+        data-file={file(section.title, 'txt')}
+      >
         <h2 id={`uses-${i}`}>{section.title}</h2>
         <ul>
           {section.items.map((item) => (
@@ -37,6 +47,7 @@ const api = (source: string) =>
       <section
         class={`panel ${i % 2 === 0 ? 'm-wood' : 'm-cork'}`}
         aria-labelledby={`machine-${i}`}
+        data-file={file(machine.name, 'spec')}
       >
         <h2 id={`machine-${i}`}>{machine.name}</h2>
         {machine.model && <p>{machine.model}</p>}
@@ -52,7 +63,12 @@ const api = (source: string) =>
     ))}
 
     {/* Filled in, and shown, by src/scripts/uses.ts; hidden without it. */}
-    <section class="panel m-vinyl uses-live" aria-labelledby="uses-live" hidden>
+    <section
+      class="panel m-vinyl uses-live"
+      aria-labelledby="uses-live"
+      data-file="live.log"
+      hidden
+    >
       <h2 id="uses-live">From my machines</h2>
       <div class="desktop-facts" data-desktop-src={api('desktop')} hidden>
         <h3>Desktop</h3>

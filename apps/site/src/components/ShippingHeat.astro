@@ -1,0 +1,30 @@
+---
+import type { ShippingEvent } from '@min7/contracts';
+import { heatLevels, heatRange } from '../data/format.ts';
+
+interface Props {
+  /** Every event in the snapshot, not only the ones listed next to it. */
+  events: readonly Pick<ShippingEvent, 'at'>[];
+}
+
+const { events } = Astro.props;
+// The strip is drawn once, with the page: its last day is the day of the build.
+const now = new Date();
+const levels = heatLevels(events, now);
+const { from, to } = heatRange(now, levels.length);
+const busy = levels.filter((level) => level > 0).length;
+---
+
+<figure class="heat">
+  <div
+    class="heat-cells"
+    role="img"
+    aria-label={`Shipping activity from ${from} to ${to}, as of this build: ${busy} days with something shipped.`}
+  >
+    {levels.map((level) => <i data-l={level}></i>)}
+  </div>
+  <figcaption class="heat-cap">
+    <span>{from}</span>
+    <span>{to}, as built</span>
+  </figcaption>
+</figure>

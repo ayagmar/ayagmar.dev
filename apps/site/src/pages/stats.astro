@@ -1,6 +1,7 @@
 ---
 import Freshness from '../components/Freshness.astro';
 import NowPlaying from '../components/NowPlaying.astro';
+import ShippingHeat from '../components/ShippingHeat.astro';
 import ShippingList from '../components/ShippingList.astro';
 import Stamp from '../components/Stamp.astro';
 import { count, projectsSummary, repoName } from '../data/format.ts';
@@ -106,6 +107,10 @@ const bests = typing.data === null ? [] : bestRows(typing.data);
 
     <section class="panel m-cork" aria-labelledby="shipping" {...liveAttrs('shipping', shipping)}>
       <h2 id="shipping">Shipping</h2>
+      {/* Built once: the live script redraws only the list under it (ADR 0034). */}
+      {shipping.data !== null && shipping.data.events.length > 0 && (
+        <ShippingHeat events={shipping.data.events} />
+      )}
       <div class="shipping-body">
         {shipping.data === null || shipping.data.events.length === 0 ? (
           <p>{words.noShipping}</p>

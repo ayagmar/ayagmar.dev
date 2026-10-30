@@ -2,6 +2,7 @@
 import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
 import Sample from '../components/Sample.astro';
+import ShippingHeat from '../components/ShippingHeat.astro';
 import ShippingList from '../components/ShippingList.astro';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
@@ -50,12 +51,7 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
         </a>
       ))}
     </div>
-    <!-- Open-Meteo's data is CC BY 4.0, which asks for credit next to where it shows (ADR 0029). -->
-    <p class="room-credit">
-      Weather data by <a href="https://open-meteo.com/">Open-Meteo</a>{' '}
-      (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>); simplified
-      visualization.
-    </p>
+    <!-- Open-Meteo's CC BY 4.0 credit is on the colophon, linked from the footer (ADR 0029). -->
   </section>
 
   <h1 class="intro">{site.author}. <span>{site.role}, {site.location}.</span></h1>
@@ -120,7 +116,10 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
         {recentlyShipped.length === 0 ? (
           <p>Nothing to show yet.</p>
         ) : (
-          <ShippingList events={recentlyShipped} />
+          <>
+            <ShippingHeat events={shipping.data?.events ?? []} />
+            <ShippingList events={recentlyShipped} />
+          </>
         )}
         {shipping.data !== null && <Sample />}
       </section>

@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import PostHeader from '../../components/PostHeader.astro';
 import Toc from '../../components/Toc.astro';
+import display from '../../fonts/display.woff2?url';
 import Base from '../../layouts/Base.astro';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { getNotes } from '../../lib/posts.ts';
@@ -20,11 +21,13 @@ const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length >
 ---
 
 <Base title={note.data.title} description={noteSummary(note)} feed={{ til: true }}>
+  {/* A title this large rewraps if the display face swaps in late (CLS, ADR 0034). */}
+  <link slot="head" rel="preload" href={display} as="font" type="font/woff2" crossorigin>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
     <!-- Search shows this as the result's title, so a note reads "TIL: ..." (ADR 0028). -->
     <span hidden data-pagefind-meta="title">TIL: {note.data.title}</span>
-    <PostHeader post={note} linkTags={false} />
+    <PostHeader post={note} linkTags={false} folder="til" />
     <Toc headings={headings} idPrefix={`${note.id}-`} />
     <div class="prose">
       <Content />
