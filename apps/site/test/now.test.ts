@@ -7,7 +7,7 @@ import { replyHref, site } from '../src/lib/site.ts';
 
 const built = new Date('2026-10-30T12:00:00Z');
 const valid = {
-  updated: new Date('2026-10-30'),
+  updated: '2026-10-30',
   brewing: [
     { name: 'runnerd', note: 'Ephemeral runners.', url: 'https://github.com/ayagmar/runnerd' },
   ],
@@ -29,7 +29,28 @@ describe('now frontmatter', () => {
 
   // Catches a typo such as 2062-10-30 making the page look permanently fresh.
   it.each([
-    ['a future day', { updated: new Date('2026-10-31') }, 'updated: must not be in the future'],
+    ['a future day', { updated: '2026-10-31' }, 'updated: must not be in the future'],
+    // Catches 2026-02-30 passing: unquoted, YAML has already turned it into 2 March.
+    [
+      'an impossible day',
+      { updated: '2026-02-30' },
+      'updated: must be a real day like "2026-10-30"',
+    ],
+    [
+      'a day that is not 31',
+      { updated: '2026-04-31' },
+      'updated: must be a real day like "2026-10-30"',
+    ],
+    [
+      'text that is not a day',
+      { updated: 'soon' },
+      'updated: must be a real day like "2026-10-30"',
+    ],
+    [
+      'an unquoted day, which YAML reads as a date',
+      { updated: new Date('2026-10-30') },
+      'updated: must be a quoted day like "2026-10-30"',
+    ],
     ['a missing day', { updated: undefined }, expect.stringMatching(/^updated: /)],
     [
       'an http url',

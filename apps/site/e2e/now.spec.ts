@@ -65,6 +65,46 @@ test.describe('the out-of-date notice follows the reader clock', () => {
   }
 });
 
+// Catches the notice being decided once at load: a tab left open, or a page restored from the
+// back/forward cache, crosses the 90-day line while no script runs again. The clock is installed
+// so timers are fake; setSystemTime jumps it without firing any, so an event alone must do it.
+test.describe('the out-of-date notice follows the clock while the page stays', () => {
+  const notice = (page: import('@playwright/test').Page) => page.getByText(/may be out of date/);
+  const lastFresh = '2027-01-27T23:59:59Z';
+  const stale = '2027-01-28T00:00:02Z';
+
+  // Catches the threshold passing with the page open and nothing noticing.
+  test('appears when the 90 days run out while the page is open', async ({ page }) => {
+    await page.clock.install({ time: lastFresh });
+    await page.goto('/now');
+    await expect(notice(page)).toBeHidden();
+    await page.clock.runFor(3000);
+    await expect(notice(page)).toBeVisible();
+  });
+
+  const returns = {
+    'a page restored from history (persisted pageshow)': () =>
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })),
+    'the window regaining focus': () => window.dispatchEvent(new Event('focus')),
+    'the tab becoming visible': () => document.dispatchEvent(new Event('visibilitychange')),
+  };
+  for (const [name, event] of Object.entries(returns)) {
+    // Catches a returning reader seeing no warning on a page that is now old, and a warning that
+    // stays after the reader's clock is corrected.
+    test(`follows the clock both ways on ${name}`, async ({ page }) => {
+      await page.clock.install({ time: lastFresh });
+      await page.goto('/now');
+      await expect(notice(page)).toBeHidden();
+      await page.clock.setSystemTime(stale);
+      await page.evaluate(event);
+      await expect(notice(page)).toBeVisible();
+      await page.clock.setSystemTime(lastFresh);
+      await page.evaluate(event);
+      await expect(notice(page)).toBeHidden();
+    });
+  }
+});
+
 test('the footer, /about and index.txt link /now; the sitemap lists it', async ({
   page,
   request,

@@ -55,8 +55,20 @@ it.each([
   [
     'content/now.md is dated in the future',
     'content/now.md',
-    '---\nupdated: 2999-01-01\n---\n\nSoon.\n',
+    '---\nupdated: "2999-01-01"\n---\n\nSoon.\n',
     'updated: must not be in the future',
+  ],
+  [
+    'content/now.md has an unquoted impossible day',
+    'content/now.md',
+    '---\nupdated: 2026-02-30\n---\n\nSoon.\n',
+    'updated: must be a quoted day like "2026-10-30"',
+  ],
+  [
+    'content/now.md has a quoted impossible day',
+    'content/now.md',
+    '---\nupdated: "2026-02-30"\n---\n\nSoon.\n',
+    'updated: must be a real day like "2026-10-30"',
   ],
   [
     "a project file's slug differs from its name",
