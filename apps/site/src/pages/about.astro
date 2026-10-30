@@ -2,6 +2,7 @@
 import { getEntry } from 'astro:content';
 import { formatMonth } from '../data/about.ts';
 import Base from '../layouts/Base.astro';
+import { nowPage, site } from '../lib/site.ts';
 
 // content/about.json, validated by the collection schema in content.config.ts.
 const entry = await getEntry('about', 'about');
@@ -9,6 +10,8 @@ if (entry === undefined) throw new Error('content/about.json is missing');
 const about = entry.data;
 const { identity } = about;
 const links = [
+  { href: nowPage.href, label: nowPage.label },
+  { href: `mailto:${site.email}`, label: site.email },
   { href: identity.links.linkedin, label: 'LinkedIn' },
   { href: identity.links.github, label: 'GitHub' },
   { href: identity.links.x, label: 'X' },

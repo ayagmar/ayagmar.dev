@@ -49,6 +49,12 @@ it.each([
     'summary',
   ],
   [
+    'content/now.md is dated in the future',
+    'content/now.md',
+    '---\nupdated: 2999-01-01\n---\n\nSoon.\n',
+    'updated: must not be in the future',
+  ],
+  [
     "a project file's slug differs from its name",
     'content/projects/ccdesk.md',
     '---\nslug: runnerd\nstatus: active\n---\n',

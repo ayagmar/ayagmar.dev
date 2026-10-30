@@ -4,7 +4,7 @@ import ThemeSwitch from '../components/ThemeSwitch.astro';
 import serifRoman from '../fonts/serif-roman.woff2?url';
 import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
 import { roomObjects } from '../lib/room.ts';
-import { nav, publicPath, site } from '../lib/site.ts';
+import { nav, nowPage, publicPath, site } from '../lib/site.ts';
 import themeScript from '../scripts/theme.js?url&no-inline';
 import '../styles/base.css';
 
@@ -130,6 +130,7 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
       <ul>
         <li><a href={feedPaths().rss}>RSS</a></li>
         <li><a href={feedPaths().atom}>Atom</a></li>
+        <li><a href={nowPage.href}>{nowPage.label}</a></li>
         <li><a href="/colophon">Colophon</a></li>
         <li><a href="/uses">Uses</a></li>
         <li><a href={site.links.github}>GitHub</a></li>

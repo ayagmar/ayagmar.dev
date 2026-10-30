@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { file, glob, type Loader } from 'astro/loaders';
 import { aboutSchema } from './data/about.ts';
 import { usesSchema } from './data/uses.ts';
+import { nowSchema } from './lib/now-schema.ts';
 import { projectSchema } from './lib/project-schema.ts';
 import { checkProjectFiles } from './lib/projects.ts';
 import { skillsSchema } from './lib/skills-schema.ts';
@@ -45,6 +46,11 @@ export const collections = {
   til: defineCollection({
     loader: glob({ pattern: '*.md', base: '../../content/til', deferRender: true }),
     schema: tilSchema,
+  }),
+  // One entry, id "now": the /now page (ADR 0035). `updated` is checked against the build's day.
+  now: defineCollection({
+    loader: glob({ pattern: 'now.md', base: '../../content', deferRender: true }),
+    schema: nowSchema(new Date()),
   }),
   projects: defineCollection({ loader: projects, schema: projectSchema }),
   // One entry, id "about": the whole file.

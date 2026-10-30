@@ -1,0 +1,13 @@
+---
+import { replyHref } from '../lib/site.ts';
+
+interface Props {
+  /** The title of the post or note being answered. */
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!-- Not in the feeds: changing every item's content would show every item as updated (ADR 0035). -->
+<p class="caption reply" data-pagefind-ignore><a href={replyHref(title)}>Reply by email</a></p>
