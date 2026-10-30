@@ -585,6 +585,9 @@ kbd {
   background: var(--line);
   color: var(--bar-text);
   font: 500 0.8125rem / 1.5 var(--mono);
+
+  /* Links and their focus ring take the bar's text colour: the lamp brown is 1.7:1 on this bar. */
+  --accent: var(--bar-text);
 }
 
 .site-footer p {
@@ -940,12 +943,15 @@ time[data-ago] {
   font: 700 0.8125rem / 1.5 var(--mono);
 }
 
-/* The last four weeks, a cell a day, in its own inset box above the rail. */
+/* The last four weeks, a cell a day, in its own inset box above the rail. The box and the cells
+   are opaque so each level can be held to 3:1 against it (WCAG 1.4.11): the levels are separate
+   steps of lightness, not a fade of one colour. */
 .heat {
+  --heat-bg: light-dark(#eadbbd, #1f140b);
   margin: 0 0 1.2rem;
   padding: 0.5rem;
   border: 2px solid var(--wbar);
-  background: light-dark(rgb(0 0 0 / 0.06), rgb(0 0 0 / 0.4));
+  background: var(--heat-bg);
 }
 
 .heat-cells {
@@ -956,23 +962,23 @@ time[data-ago] {
 
 .heat i {
   aspect-ratio: 1;
-  background: color-mix(in srgb, var(--fg) 14%, transparent);
+  background: color-mix(in srgb, var(--fg) 14%, var(--heat-bg));
 }
 
 .heat i[data-l="1"] {
-  background: color-mix(in srgb, var(--lamp) 35%, transparent);
+  background: light-dark(#a46a26, #8a5a22);
 }
 
 .heat i[data-l="2"] {
-  background: color-mix(in srgb, var(--lamp) 60%, transparent);
+  background: light-dark(#8a4f10, #b37a2c);
 }
 
 .heat i[data-l="3"] {
-  background: color-mix(in srgb, var(--lamp) 85%, transparent);
+  background: light-dark(#6c3a05, #e09a3a);
 }
 
 .heat i[data-l="4"] {
-  background: light-dark(#5e2a00, #ffd58a);
+  background: light-dark(#4a2200, #ffd58a);
 }
 
 .heat-cap {
@@ -1034,6 +1040,7 @@ main:has(.toc) .reader ~ .project-card {
   background: var(--line);
   color: var(--bar-text);
   font: 500 0.8125rem / 1.5 var(--mono);
+  overflow-wrap: anywhere;
 }
 
 .filebar:has(+ .post-art) {
