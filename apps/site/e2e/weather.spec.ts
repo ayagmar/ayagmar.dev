@@ -415,13 +415,12 @@ for (const name of ['rain', 'snow'] as const) {
   });
 }
 
-// Catches the credit or the weather label failing contrast or naming rules in either theme.
+// Catches the weather layers or the room's label failing contrast or naming rules in either theme.
 for (const colorScheme of ['light', 'dark'] as const) {
   test(`home with weather has no axe violations (${colorScheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
     await visit(page, noon, (route) => route.fulfill(envelope('rain', noon)));
     await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'rain');
-    await expect(page.getByRole('link', { name: 'Open-Meteo' })).toBeVisible();
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
       .analyze();
