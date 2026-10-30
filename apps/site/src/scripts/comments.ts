@@ -74,6 +74,7 @@ function open() {
   applied = isDark();
   frame = document.createElement('iframe');
   frame.title = 'Comments';
+  frame.allow = 'clipboard-write';
   frame.src = widgetUrl({ page: `${here}#comments`, term, dark: applied, session: stored() });
   holder.append(frame);
   show('loading');
@@ -90,7 +91,10 @@ window.addEventListener('message', (event) => {
   if (message.forgetSession && stored() !== null) {
     keep(null);
     heard = false;
-    frame.src = widgetUrl({ page: `${here}#comments`, term: term ?? '', dark: isDark() });
+    // replace, not src: a frame that has loaded would get a history entry, and Back would restore the old sign-in.
+    frame.contentWindow?.location.replace(
+      widgetUrl({ page: `${here}#comments`, term: term ?? '', dark: isDark() })
+    );
     applied = isDark();
     return;
   }

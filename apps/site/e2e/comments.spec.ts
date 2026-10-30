@@ -12,7 +12,18 @@ const press = (page: Page) => page.getByRole('button', { name: 'Show comments' }
 const widget = `<!doctype html><title>stub</title><script>
   window.received = [];
   addEventListener('message', (event) => received.push(event.data));
-  parent.postMessage({ giscus: { resizeHeight: 320 } }, '*');
+  // After the load event, as the real widget answers; a frame still loading would be replaced.
+  // A stored sign-in is answered the way giscus rejects an expired one.
+  addEventListener('load', () =>
+    setTimeout(() =>
+      parent.postMessage(
+        location.search.includes('session=EXPIRED')
+          ? { giscus: { error: 'Bad credentials' } }
+          : { giscus: { resizeHeight: 320 } },
+        '*'
+      )
+    )
+  );
 </script>`;
 
 /** Answers the widget request, once `release` is called when `hold` is set. */
@@ -49,6 +60,8 @@ test('nothing from giscus.app loads until the button is pressed, then one frame 
   await press(page).click();
   await expect(frames(page)).toHaveCount(1);
   await expect(frames(page)).toHaveAttribute('src', /^https:\/\/giscus\.app\/en\/widget\?/);
+  // Without it the copy button on a code block in a comment fails.
+  await expect(frames(page)).toHaveAttribute('allow', 'clipboard-write');
   const url = new URL((await frames(page).getAttribute('src')) ?? '');
   expect(url.searchParams.get('term')).toBe('writing/token-logs');
   expect(url.searchParams.get('origin')).toBe(`${new URL(page.url()).origin}${post}#comments`);
@@ -229,4 +242,19 @@ test('at 320px the open window does not overflow and the header stays one row', 
   );
   expect(overflow).toBeLessThanOrEqual(0);
   expect((await page.locator('.site-header').boundingBox())?.height).toBeLessThan(64);
+});
+
+// Catches Back after an expired sign-in: assigning the frame's src adds a history entry, and
+// going back would put the rejected session into the frame again.
+test('reloading the frame after an expired sign-in adds no history entry', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('giscus-session', '"EXPIRED"'));
+  await stubGiscus(page);
+  await page.goto(post);
+  await expect(press(page)).toBeVisible();
+  const before = await page.evaluate(() => history.length);
+  await press(page).click();
+  await expect.poll(() => frames(page).evaluate((f) => f.style.height)).toBe('320px');
+  expect(new URL((await widgetFrame(page)?.url()) ?? '').searchParams.get('session')).toBe('');
+  expect(await page.evaluate(() => localStorage.getItem('giscus-session'))).toBeNull();
+  expect(await page.evaluate(() => history.length)).toBe(before);
 });
