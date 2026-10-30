@@ -1,6 +1,6 @@
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
-import { heatLevels, projectsSummary } from '../src/data/format.ts';
+import { heatLevels, heatRange, projectsSummary } from '../src/data/format.ts';
 
 describe('projectsSummary', () => {
   it('gives the star total when GitHub answered for every project', () => {
@@ -46,5 +46,14 @@ describe('heatLevels', () => {
 
   it('is all zero with no events', () => {
     expect(heatLevels([], now).every((level) => level === 0)).toBe(true);
+  });
+});
+
+describe('heatRange', () => {
+  // Catches the caption's dates drifting from the days heatLevels counts: 28 days ending on the
+  // build's UTC day, including across a month and a year end.
+  it('names the 28 UTC days the strip covers, ending on the build day', () => {
+    expect(heatRange(new Date('2026-10-26T23:59:00Z'))).toEqual({ from: '29 Sept', to: '26 Oct' });
+    expect(heatRange(new Date('2027-01-03T00:00:00Z'))).toEqual({ from: '7 Dec', to: '3 Jan' });
   });
 });

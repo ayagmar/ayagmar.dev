@@ -1,6 +1,6 @@
 ---
 import type { ShippingEvent } from '@min7/contracts';
-import { heatLevels } from '../data/format.ts';
+import { heatLevels, heatRange } from '../data/format.ts';
 
 interface Props {
   /** Every event in the snapshot, not only the ones listed next to it. */
@@ -8,8 +8,10 @@ interface Props {
 }
 
 const { events } = Astro.props;
-// "Today" is the day of the build: the strip is drawn once, with the page.
-const levels = heatLevels(events, new Date());
+// The strip is drawn once, with the page: its last day is the day of the build.
+const now = new Date();
+const levels = heatLevels(events, now);
+const { from, to } = heatRange(now, levels.length);
 const busy = levels.filter((level) => level > 0).length;
 ---
 
@@ -17,12 +19,12 @@ const busy = levels.filter((level) => level > 0).length;
   <div
     class="heat-cells"
     role="img"
-    aria-label={`Shipping activity over the last ${levels.length} days: ${busy} days with something shipped.`}
+    aria-label={`Shipping activity from ${from} to ${to}, as of this build: ${busy} days with something shipped.`}
   >
     {levels.map((level) => <i data-l={level}></i>)}
   </div>
   <figcaption class="heat-cap">
-    <span>{levels.length} days ago</span>
-    <span>today</span>
+    <span>{from}</span>
+    <span>{to}, as built</span>
   </figcaption>
 </figure>

@@ -68,3 +68,14 @@ export function heatLevels(events: readonly Pick<ShippingEvent, 'at'>[], now: Da
   }
   return counts.map((n) => (n === 0 ? 0 : n === 1 ? 1 : n === 2 ? 2 : n < 5 ? 3 : 4));
 }
+
+/**
+ * The strip's first and last day as `3 Oct` and `30 Oct` (UTC, the days `heatLevels` counts in).
+ * The strip is drawn once with the page and the live answer holds at most 50 events, too few to
+ * redraw 28 days, so it is labelled with the days it covers rather than "today".
+ */
+export function heatRange(now: Date, days = 28) {
+  const day = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short' });
+  const today = Math.floor(now.getTime() / dayMs) * dayMs;
+  return { from: day.format(today - (days - 1) * dayMs), to: day.format(today) };
+}
