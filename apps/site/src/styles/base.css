@@ -1598,6 +1598,13 @@ main:has(.toc) .reader ~ .project-card {
   font: 750 3.2rem / 1 var(--display);
 }
 
+/* A typing best is a sentence (wpm, accuracy, when), not one number: smaller, so it wraps
+   as a line and not as a banner. */
+.typing-body dd {
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+
 .stats-grid li::marker {
   color: var(--lamp);
   font-family: var(--mono);
