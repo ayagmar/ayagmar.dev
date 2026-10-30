@@ -1,5 +1,6 @@
 // Runs `astro build` on bad content and checks the build itself stops, naming the file and the
 // slug. The schema and helper tests show the rules; this shows Astro enforces them.
+import { stripVTControlCharacters } from 'node:util';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { type SiteFixture, siteFixture } from './site-fixture.ts';
 
@@ -27,7 +28,10 @@ afterEach(() => {
 
 const output = () => {
   const result = fixture.build();
-  return { status: result.status, text: `${result.stdout}\n${result.stderr}` };
+  return {
+    status: result.status,
+    text: stripVTControlCharacters(`${result.stdout}\n${result.stderr}`),
+  };
 };
 
 it('builds valid posts and project files', () => {
