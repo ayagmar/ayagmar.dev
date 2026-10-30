@@ -604,10 +604,6 @@ kbd {
   animation: blink 2s steps(2) infinite;
 }
 
-.site-footer a {
-  color: var(--bar-text);
-}
-
 .site-footer .keys-open {
   border-color: var(--bar-text);
   color: var(--bar-text);
@@ -962,7 +958,7 @@ time[data-ago] {
 
 .heat i {
   aspect-ratio: 1;
-  background: color-mix(in srgb, var(--fg) 14%, var(--heat-bg));
+  background: light-dark(#ddcba9, #2c2015);
 }
 
 .heat i[data-l="1"] {
