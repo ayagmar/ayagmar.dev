@@ -14,6 +14,11 @@ const isCommit = /^[0-9a-f]{40}$/.test(COMMIT_SHA);
       cookies, no third-party scripts.
     </p>
     <p>
+      Comments under posts and notes are GitHub Discussions, shown by
+      <a href="https://giscus.app/">giscus</a>. They load from giscus.app only when you press "Show
+      comments".
+    </p>
+    <p>
       This build:
       {isCommit ? (
         <a href={`${repo}/commit/${COMMIT_SHA}`}>

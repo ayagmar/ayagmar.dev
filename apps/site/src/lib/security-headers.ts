@@ -1,4 +1,6 @@
-/** Sources the site may load from besides itself: only the signals read API. */
+import { comments } from './site.ts';
+
+/** Sources the site may load from besides itself: the signals read API, and giscus's frame. */
 const apiOrigin = 'https://api.ayagmar.dev';
 
 /**
@@ -15,6 +17,7 @@ export function contentSecurityPolicy(hashes: { scripts: string[]; styles: strin
     "img-src 'self'",
     "font-src 'self'",
     `connect-src 'self' ${apiOrigin}`,
+    `frame-src ${comments.origin}`,
     "worker-src 'self'",
     "manifest-src 'self'",
     "form-action 'self'",

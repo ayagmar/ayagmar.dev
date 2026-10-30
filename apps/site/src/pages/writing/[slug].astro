@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
+import Comments from '../../components/Comments.astro';
 import PostHeader from '../../components/PostHeader.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import ReplyByEmail from '../../components/ReplyByEmail.astro';
@@ -50,6 +51,7 @@ const { title, summary, art } = post.data;
       <Content />
     </div>
     <ReplyByEmail title={title} />
+    <Comments collection="writing" slug={post.id} />
   </article>
   {cards.map(({ project, more }) => (
     <ProjectCard project={project} envelope={envelope} more={more} />
