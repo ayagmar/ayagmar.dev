@@ -42,6 +42,17 @@ for (const note of notes) {
   });
 }
 
+// Catches a note's thread being keyed by the wrong collection, so notes and posts share threads.
+for (const note of notes) {
+  test(`/til/${note.slug} offers comments keyed to the note`, async ({ page }) => {
+    await page.goto(`/til/${note.slug}`);
+    await expect(page.getByRole('region', { name: 'Comments' })).toHaveAttribute(
+      'data-term',
+      `til/${note.slug}`
+    );
+  });
+}
+
 for (const path of paths) {
   test(`${path} does not scroll sideways at 320px`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 });

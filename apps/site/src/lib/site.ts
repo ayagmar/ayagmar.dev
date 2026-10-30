@@ -24,6 +24,18 @@ export const nav = [
   { href: '/about', label: 'About' },
 ] as const;
 
+/**
+ * Comments under posts and notes are GitHub Discussions in `repo`, category `category`, shown by
+ * giscus (ADR 0036). The ids come from `https://giscus.app/api/discussions/categories?repo=<repo>`.
+ */
+export const comments = {
+  origin: 'https://giscus.app',
+  repo: 'ayagmar/ayagmar.dev',
+  repoId: 'R_kgDOVXWySQ',
+  category: 'Comments',
+  categoryId: 'DIC_kwDOVXWySc4DKCkk',
+} as const;
+
 /** Linked from the footer and /about, not the header, which must stay one row at 320 px (ADR 0035). */
 export const nowPage = { href: '/now', label: 'Now' } as const;
 

@@ -21,4 +21,12 @@ describe('_headers', () => {
     expect(csp).not.toContain('unsafe-inline');
     expect(csp).toContain("script-src 'self' 'wasm-unsafe-eval' 'sha256-abc'");
   });
+
+  // Catches the policy loosening beyond the one frame comments need (ADR 0036).
+  it('allows framing giscus.app and nothing else', () => {
+    const csp = contentSecurityPolicy({ scripts: [], styles: [] });
+    expect(csp).toContain('frame-src https://giscus.app;');
+    expect(csp.match(/giscus/g)).toHaveLength(1);
+    expect(csp).toContain("default-src 'none'");
+  });
 });

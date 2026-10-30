@@ -1,0 +1,4 @@
+{
+  "origins": ["https://ayagmar.dev"],
+  "originsRegex": ["^https://[a-z0-9-]+-min7-site\\.ayagmar\\.workers\\.dev$"]
+}

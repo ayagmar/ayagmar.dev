@@ -1,0 +1,39 @@
+---
+import { commentTerm, discussionsHref } from '../lib/comments.ts';
+
+interface Props {
+  collection: 'writing' | 'til';
+  slug: string;
+}
+
+const { collection, slug } = Astro.props;
+const term = commentTerm(collection, slug);
+---
+
+{/* Nothing from giscus.app loads until the button is pressed (ADR 0036). The button is hidden
+    until src/scripts/comments.ts runs, so without JavaScript the link is all there is. */}
+<section
+  id="comments"
+  class="panel m-comments"
+  aria-labelledby="comments-title"
+  data-comments
+  data-term={term}
+  data-state="idle"
+  data-pagefind-ignore
+>
+  <h2 id="comments-title">Comments</h2>
+  <p>
+    Anyone can read them; writing one needs a GitHub account. They are GitHub Discussions, loaded
+    from giscus.app only when you ask.
+  </p>
+  <p class="comments-actions">
+    <button type="button" data-comments-open hidden>Show comments</button>
+    <a href={discussionsHref(term)}>Open the discussion on GitHub</a>
+  </p>
+  <p class="caption" role="status" data-comments-status></p>
+  <div class="comments-frame" data-comments-frame></div>
+</section>
+
+<script>
+import '../scripts/comments.ts';
+</script>

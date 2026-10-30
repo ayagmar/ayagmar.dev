@@ -790,6 +790,52 @@ kbd {
   margin-block: 2rem 0;
 }
 
+/* Comments under a post or note (ADR 0036). The giscus iframe is added by comments.ts on a press;
+   the status line keeps two lines so loading, ready and failed do not move what follows. */
+.m-comments {
+  --title: "comments.txt";
+  margin-block-start: 2.5rem;
+}
+
+.comments-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  align-items: center;
+}
+
+.comments-actions [hidden],
+.m-comments:not([data-state="idle"]) [data-comments-open] {
+  display: none;
+}
+
+.comments-actions a {
+  display: inline-block;
+  padding-block: 0.25rem;
+}
+
+.m-comments [data-comments-status] {
+  min-height: 3em;
+  margin-block: 0.75rem 0;
+}
+
+.m-comments[data-state="idle"] [data-comments-status],
+.m-comments[data-state="ready"] [data-comments-status] {
+  display: none;
+}
+
+.comments-frame iframe {
+  display: block;
+  width: 100%;
+  height: 0;
+  border: 0;
+  color-scheme: light dark;
+}
+
+.m-comments[data-state="ready"] .comments-frame {
+  margin-block-start: 1rem;
+}
+
 .reader .caption a {
   display: inline-block;
   min-height: 24px;
