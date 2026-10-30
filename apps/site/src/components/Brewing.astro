@@ -1,0 +1,23 @@
+---
+import type { BrewingItem } from '../lib/now-schema.ts';
+
+interface Props {
+  items: readonly BrewingItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{items.length > 0 && (
+  <section class="panel m-cork" aria-labelledby="brewing" data-file="brewing.log">
+    <h2 id="brewing">Currently brewing</h2>
+    <ul class="brewing">
+      {items.map((item) => (
+        <li>
+          <strong>{item.url === undefined ? item.name : <a href={item.url}>{item.name}</a>}</strong>
+          <span>{item.note}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}

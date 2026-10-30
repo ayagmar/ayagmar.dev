@@ -31,6 +31,17 @@ test.describe('axe, in both themes and at both sizes', () => {
   }
 });
 
+// Catches the link missing from a note, or its subject not being the note's own title.
+for (const note of notes) {
+  test(`/til/${note.slug} links "Reply by email" with the note's title as the subject`, async ({
+    page,
+  }) => {
+    await page.goto(`/til/${note.slug}`);
+    const href = await page.getByRole('link', { name: 'Reply by email' }).getAttribute('href');
+    expect(decodeURIComponent((href ?? '').split('subject=')[1] ?? '')).toBe(`Re: ${note.title}`);
+  });
+}
+
 for (const path of paths) {
   test(`${path} does not scroll sideways at 320px`, async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 800 });

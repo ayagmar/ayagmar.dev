@@ -1,7 +1,7 @@
 import type { ProjectSlug } from '@min7/contracts';
 import { feedPaths } from './feed.ts';
 import { postCount, postsAbout, projectPath } from './projects.ts';
-import { nav, site, siteUrl } from './site.ts';
+import { nav, nowPage, site, siteUrl } from './site.ts';
 import { type Note, notePath } from './til.ts';
 import { isoDay, type Post, postPath } from './writing.ts';
 
@@ -70,7 +70,7 @@ export function renderPlainText(
     'Projects',
     ...projectLines,
     rule,
-    ...nav.map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
+    ...[...nav, nowPage].map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
     `  ${'RSS'.padEnd(10)} ${siteUrl}${feedPaths().rss}`,
     `  ${'Atom'.padEnd(10)} ${siteUrl}${feedPaths().atom}`,
     `  ${'GitHub'.padEnd(10)} ${site.links.github}`,

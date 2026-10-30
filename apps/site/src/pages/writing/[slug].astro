@@ -3,6 +3,7 @@ import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import PostHeader from '../../components/PostHeader.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
+import ReplyByEmail from '../../components/ReplyByEmail.astro';
 import Toc from '../../components/Toc.astro';
 import display from '../../fonts/display.woff2?url';
 import Base from '../../layouts/Base.astro';
@@ -48,6 +49,7 @@ const { title, summary, art } = post.data;
     <div class="prose">
       <Content />
     </div>
+    <ReplyByEmail title={title} />
   </article>
   {cards.map(({ project, more }) => (
     <ProjectCard project={project} envelope={envelope} more={more} />

@@ -1,5 +1,6 @@
 // Runs `astro build` on bad content and checks the build itself stops, naming the file and the
 // slug. The schema and helper tests show the rules; this shows Astro enforces them.
+import { stripVTControlCharacters } from 'node:util';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { type SiteFixture, siteFixture } from './site-fixture.ts';
 
@@ -27,7 +28,10 @@ afterEach(() => {
 
 const output = () => {
   const result = fixture.build();
-  return { status: result.status, text: `${result.stdout}\n${result.stderr}` };
+  return {
+    status: result.status,
+    text: stripVTControlCharacters(`${result.stdout}\n${result.stderr}`),
+  };
 };
 
 it('builds valid posts and project files', () => {
@@ -47,6 +51,24 @@ it.each([
     'content/til/bad.md',
     '---\ntitle: A note\ndate: 2026-10-01\nsummary: Posts have one.\n---\n\nHello.\n',
     'summary',
+  ],
+  [
+    'content/now.md is dated in the future',
+    'content/now.md',
+    '---\nupdated: "2999-01-01"\n---\n\nSoon.\n',
+    'updated: must not be in the future',
+  ],
+  [
+    'content/now.md has an unquoted impossible day',
+    'content/now.md',
+    '---\nupdated: 2026-02-30\n---\n\nSoon.\n',
+    'updated: must be a quoted day like "2026-10-30"',
+  ],
+  [
+    'content/now.md has a quoted impossible day',
+    'content/now.md',
+    '---\nupdated: "2026-02-30"\n---\n\nSoon.\n',
+    'updated: must be a real day like "2026-10-30"',
   ],
   [
     "a project file's slug differs from its name",
