@@ -52,3 +52,4 @@ A code-3 sky (ADR 0029) has its own layer, `weather-overcast-{day,night}.png`, d
 - Home loads one more font than before.
 - Every window needs a file name, and a new panel material needs a bar colour chosen for 4.5:1 with `--bar-text` and three gradient stops checked in both themes.
 - Fraunces is for display only; running text stays in Source Serif 4.
+- Mobile LCP costs more than the font bytes suggest. The display face adds about one to two simulated steps (150 to 400 ms) of mobile LCP in CI against main: main's base measured about 1,386 ms (bc7b54b), and this branch reads 1,670 to 1,820 ms on a post, /writing and /stats. Every page stays under ADR 0017's 2.0 s budget, but the regression rule (more than 10 % and more than 200 ms) fails on a post. The owner accepted the cost on 2026-10-30 and #39 merged past that check once. Main's next push re-seeds the base, so later PRs compare against this design.
