@@ -28,11 +28,15 @@ async function stubGiscus(page: Page, { hold = false } = {}) {
   return { requests, release };
 }
 
-const received = (page: Page) =>
+const widgetFrame = (page: Page) =>
   page
     .frames()
-    .find((frame) => frame.url().startsWith('https://giscus.app'))
-    ?.evaluate(() => (window as unknown as { received: unknown[] }).received);
+    .find(
+      (frame) => URL.canParse(frame.url()) && new URL(frame.url()).origin === 'https://giscus.app'
+    );
+
+const received = (page: Page) =>
+  widgetFrame(page)?.evaluate(() => (window as unknown as { received: unknown[] }).received);
 
 test('nothing from giscus.app loads until the button is pressed, then one frame loads', async ({
   page,
@@ -117,8 +121,7 @@ test("messages that are not the widget's are ignored", async ({ page }) => {
   await press(page).click();
   await expect.poll(() => frames(page).evaluate((f) => f.style.height)).toBe('320px');
   await page.evaluate(() => window.postMessage({ giscus: { resizeHeight: 999 } }, '*'));
-  const widgetFrame = page.frames().find((frame) => frame.url().startsWith('https://giscus.app'));
-  await widgetFrame?.evaluate(() => {
+  await widgetFrame(page)?.evaluate(() => {
     for (const data of [
       { giscus: { resizeHeight: 'tall' } },
       { giscus: { resizeHeight: -1 } },
