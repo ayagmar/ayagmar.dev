@@ -37,8 +37,12 @@ test('diagrams add no script, no inline style and are fully styled by /diagrams.
     page
       .goto(path)
       .then(() => page.locator('script').evaluateAll((all) => all.map((s) => s.outerHTML).sort()));
-  // Same scripts as a page without diagrams: Astro's search island and nothing else.
-  expect(await scripts(post)).toEqual(await scripts('/about'));
+  // Same scripts as a page without diagrams: Astro's search island and the click handler of the
+  // comments window (ADR 0036) a post carries and /about does not.
+  const comments = /Comments\.astro_astro_type_script/;
+  const withoutComments = async (path: string) =>
+    (await scripts(path)).filter((script) => !comments.test(script));
+  expect(await withoutComments(post)).toEqual(await scripts('/about'));
 
   const css = await request.get('/diagrams.css');
   expect(css.headers()['content-type']).toContain('text/css');
