@@ -22,3 +22,15 @@ ecosystem = "npm"
 effectiveUntil = 2027-04-26
 vulnerability.ignore = true
 reason = "chromium-bidi under puppeteer-core; Lighthouse uses CDP, not BiDi, against the site's own pages."
+
+# GHSA-gcqx-w48m-w2h4: no fixed version exists. Reached through @astrojs/svelte >
+# @sveltejs/vite-plugin-svelte, which merges the integration's default options with this
+# repo's own inline options at build time. The poisoning needs attacker-supplied source
+# objects, and a build only merges config the repo wrote.
+[[PackageOverrides]]
+name = "deepmerge"
+version = "4.3.1"
+ecosystem = "npm"
+effectiveUntil = 2027-04-26
+vulnerability.ignore = true
+reason = "vite-plugin-svelte merges only the repo's own build config; no attacker-supplied objects reach it."
