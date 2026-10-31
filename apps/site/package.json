@@ -10,7 +10,7 @@
     "astro": "7.4.2",
     "pele": "1.9.0",
     "satteri": "0.10.5",
-    "svelte": "5.57.2"
+    "svelte": "5.57.3"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.12",
