@@ -2,7 +2,8 @@
  * The objects in the home page room and where each one leads (ADR 0026), in reading order:
  * left to right across the scene. The hotspots over the scene and the list under it both
  * render from this, so they always reach the same pages. Each object's rectangle on the scene
- * is in src/styles/room.css, keyed by `id`.
+ * is in src/styles/room.css, keyed by `id`. The shelf in the scene leads nowhere until /stats
+ * shows the shelf (trellis, ADR 0013): a link to an empty panel was a dead end.
  */
 export const roomObjects = [
   { id: 'corkboard', object: 'Corkboard', section: 'shipping', href: '/stats#shipping' },
@@ -12,5 +13,4 @@ export const roomObjects = [
   { id: 'keyboard', object: 'Keyboard', section: 'TIL', href: '/til' },
   { id: 'tea', object: 'Tea set', section: 'about', href: '/about' },
   { id: 'record-player', object: 'Record player', section: 'music', href: '/stats#listening' },
-  { id: 'shelf', object: 'Shelf', section: 'reading', href: '/stats#shelf' },
 ] as const;

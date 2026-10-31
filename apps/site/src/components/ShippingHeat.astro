@@ -23,8 +23,5 @@ const busy = levels.filter((level) => level > 0).length;
   >
     {levels.map((level) => <i data-l={level}></i>)}
   </div>
-  <figcaption class="heat-cap">
-    <span>{from}</span>
-    <span>{to}, as built</span>
-  </figcaption>
+  <figcaption class="heat-cap">One square a day, {from} to {to}</figcaption>
 </figure>

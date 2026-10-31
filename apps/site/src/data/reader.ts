@@ -52,9 +52,7 @@ export interface ReaderOptions {
 }
 
 /** The envelope of a source that has never succeeded: what pages render as empty. */
-export const emptyEnvelope = <Source extends SourceId>(
-  source: Source
-): Envelope<never, Source> => ({
+const emptyEnvelope = <Source extends SourceId>(source: Source): Envelope<never, Source> => ({
   source,
   version: 1,
   fetchedAt: null,

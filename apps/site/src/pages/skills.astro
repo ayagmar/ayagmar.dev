@@ -206,9 +206,8 @@ summary {
   grid-template-rows: auto 1fr;
   min-width: 0;
   overflow-wrap: anywhere;
-  border: 3px solid var(--line);
+  border: 1px solid var(--rule);
   background: var(--surface);
-  box-shadow: 5px 5px 0 var(--shade);
   scroll-margin-top: 1rem;
 }
 
@@ -218,8 +217,8 @@ summary {
   align-items: baseline;
   justify-content: space-between;
   padding: 0.4rem 0.8rem;
-  background: var(--line);
-  color: var(--bar-text);
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
 }
 
 .label h3 {
@@ -230,7 +229,7 @@ summary {
 
 .version {
   flex: none;
-  color: var(--bar-text);
+  color: var(--fg-2);
   font-family: var(--mono);
 }
 
@@ -260,7 +259,7 @@ summary {
 
 .badges span {
   padding: 0 0.4rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--rule);
 }
 
 .badges .mark {

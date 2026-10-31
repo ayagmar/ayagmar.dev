@@ -55,20 +55,19 @@
   color-scheme: light dark;
 
   /* The room by lamplight: aubergine night and sunlit plaster, the amber lamp (links, time), the
-     screen's mint (projects), rose for what is not real. --line is the windows' chrome. */
+     screen's mint (projects), rose for what is not real. --line edges buttons, inputs and code;
+   --rule (below) is the quieter edge of windows and sections. */
   --ground: light-dark(#efe3cb, #0d0a17);
   --surface: light-dark(#e6d6b8, #191430);
-  --line: light-dark(#2a2144, #5a4fd6);
+  --line: light-dark(#8f7b66, #514a78);
   --text: light-dark(#241a2c, #f6ead2);
   --muted: light-dark(#4a3f4d, #b9b0c8);
   --lamp: light-dark(#7a3a00, #ffb54a);
   --glow: light-dark(#0b4f3c, #6ee7b0);
-  --rose: light-dark(#a3372a, #ff8e7c);
+  --rose: light-dark(#952f24, #ff8e7c);
   --cyan: light-dark(#0b5f87, #5ad7ff);
-  /* The hard shadow under a window, and the text on a title bar or the status bar. */
-  --shade: light-dark(#2a2144, #2b2470);
-  --bar-text: light-dark(#fff8e4, #f3ead3);
-  --rose-bar: #a8243f;
+  /* The quiet edge of a window, the header and the footer. */
+  --rule: light-dark(#cdb993, #2e2746);
 
   /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
   --paper: light-dark(#fbf6ea, #efe3c6);
@@ -79,26 +78,8 @@
   --code-bg: #1f1b2e;
   --code-fg: #efe6d0;
 
-  /* Panel materials: each panel is lit from its top left corner (--hi) and falls off to its
-     bottom right (--lo), in its object's colour. */
-  --screen: light-dark(#d5e8dd, #08201f);
-  --screen-hi: light-dark(#e6f3ea, #0f3a35);
-  --screen-lo: light-dark(#c6dccf, #041312);
-  --vinyl: light-dark(#e6dae4, #17102a);
-  --vinyl-hi: light-dark(#f1e6ef, #2d2150);
-  --vinyl-lo: light-dark(#dccddb, #0d0918);
-  --cork: light-dark(#e8cfa8, #3d2619);
-  --cork-hi: light-dark(#f4dcae, #5e3a22);
-  --cork-lo: light-dark(#e0c595, #26150f);
-  --wood: light-dark(#ead9c0, #2b1a12);
-  --wood-hi: light-dark(#f1e1c9, #4a3022);
-  --wood-lo: light-dark(#dbc6a6, #1b100b);
-  --tea: light-dark(#d9e8dd, #10241f);
-  --tea-hi: light-dark(#e8f3ea, #1a3a33);
-  --tea-lo: light-dark(#c8dccf, #08130f);
-  --frame: light-dark(#e2e1f2, #151b3d);
-  --frame-hi: light-dark(#e9e6f4, #232a52);
-  --frame-lo: light-dark(#d0cde4, #0b0e22);
+  /* A window is lit from its top left corner (--surface-hi) and falls off to its bottom right
+     (--surface-lo). */
   --surface-hi: light-dark(#f6e9cb, #2e2038);
   --surface-lo: light-dark(#e0cfae, #0f0c1f);
 
@@ -327,7 +308,6 @@ button,
 button:hover,
 .button:hover {
   border-color: var(--accent);
-  box-shadow: 3px 3px 0 var(--shade);
 }
 
 button[aria-disabled="true"] {
@@ -387,11 +367,11 @@ kbd {
 .site-header {
   --header-h: 3.5rem;
   display: flex;
-  border-bottom: 3px solid var(--line);
   gap: 0.5rem;
   align-items: center;
   min-height: var(--header-h);
   padding-block: 0.5rem;
+  border-bottom: 1px solid var(--rule);
 }
 
 .wordmark {
@@ -417,10 +397,9 @@ kbd {
   overflow-y: auto;
   margin: 0;
   padding: 0.5rem 1.1rem 1.1rem;
-  border: 3px solid var(--line);
+  border: 1px solid var(--rule);
   background: var(--surface);
   color: var(--text);
-  box-shadow: 7px 7px 0 var(--shade);
 }
 
 .site-header ul,
@@ -443,7 +422,7 @@ kbd {
 }
 
 .site-header nav li + li {
-  border-top: 1px dashed var(--line);
+  border-top: 1px solid var(--rule);
 }
 
 .site-header nav a {
@@ -456,12 +435,15 @@ kbd {
   text-decoration: none;
 }
 
-/* The page you are on, and the one under the pointer, is lit like a menu item. */
-.site-header nav a:hover,
+/* The page you are on is underlined in the lamp's colour; the one under the pointer takes the
+   colour. */
+.site-header nav a:hover {
+  color: var(--lamp);
+}
+
 .site-header nav a[aria-current="page"] {
-  background: var(--lamp);
-  color: var(--ground);
-  text-decoration: none;
+  text-decoration: underline 2px var(--lamp);
+  text-underline-offset: 0.35em;
 }
 
 .site-tools {
@@ -573,21 +555,29 @@ kbd {
   }
 }
 
-/* The status bar: the same bar a window has, along the bottom of the screen. */
+/* The status line: a rule, the site's one line about itself, and the quiet links. */
 .site-footer {
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1.5rem;
   align-items: center;
   justify-content: space-between;
-  margin-block: 3.5rem 1.5rem;
-  padding: 0.7rem 1rem;
-  background: var(--line);
-  color: var(--bar-text);
+  margin-block: 4rem 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  background: var(--ground);
+  color: var(--muted);
   font: 500 0.8125rem / 1.5 var(--mono);
+}
 
-  /* Links and their focus ring take the bar's text colour: the lamp brown is 1.7:1 on this bar. */
-  --accent: var(--bar-text);
+.site-footer a {
+  color: var(--muted);
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+.site-footer a:hover {
+  color: var(--lamp);
+  text-decoration-color: currentColor;
 }
 
 .site-footer p {
@@ -605,27 +595,30 @@ kbd {
 }
 
 .site-footer .keys-open {
-  border-color: var(--bar-text);
-  color: var(--bar-text);
+  border-color: var(--rule);
+  color: var(--muted);
 }
 
 /* ---------- surfaces ---------- */
 
-/* A panel is a window: a title bar with a file name, three buttons, a hard shadow. Each wears
-   its object's colour as its bar (the --wbar of its material). The file name is CSS content, so
-   it is not read: the window's own heading is. */
+/* A panel is a window: a quiet title bar with a file name, one thin edge, no shadow. Every
+   window is the same lit surface; its object's colour is only the small square before the file
+   name (--dot) and the panel's links (--accent). The file name is CSS content, so it is not
+   read: the window's own heading is. */
 .panel,
 .paper {
-  --wbar: var(--line);
+  --dot: var(--lamp);
   --title: "window.txt";
-  --bar: 1.9rem;
+  --bar: 1.75rem;
+  --bg: var(--surface);
+  --hi: var(--surface-hi);
+  --lo: var(--surface-lo);
   position: relative;
-  margin-block: 1.6rem;
-  padding: calc(var(--bar) + 1.25rem) 1.1rem 1.4rem;
-  border: 3px solid var(--wbar);
-  background: linear-gradient(150deg, var(--hi), var(--bg) 48%, var(--lo));
+  margin-block: 1.25rem;
+  padding: calc(var(--bar) + 1.1rem) 1.1rem 1.25rem;
+  border: 1px solid var(--rule);
+  background: linear-gradient(160deg, var(--hi), var(--bg) 40%, var(--lo));
   color: var(--fg);
-  box-shadow: 7px 7px 0 var(--shade);
 }
 
 .panel::before,
@@ -634,32 +627,32 @@ kbd {
   position: absolute;
   inset: 0 0 auto;
   height: var(--bar);
-  padding-inline: 0.7rem;
+  padding-inline: 1.7rem 0.75rem;
   overflow: hidden;
-  background: var(--wbar);
-  color: var(--bar-text);
-  font: 600 0.8125rem / var(--bar) var(--mono);
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  color: var(--fg-2);
+  font: 500 0.75rem / calc(var(--bar) - 1px) var(--mono);
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* The three buttons: squares, drawn by a shadow each. */
+/* The window's colour: one small square before its file name. */
 .panel::after,
 .paper::after {
   content: "";
   position: absolute;
-  top: 0.55rem;
-  right: 0.6rem;
-  width: 0.8rem;
-  height: 0.8rem;
-  background: var(--bar-text);
-  box-shadow:
-    -1.2rem 0 0 var(--bar-text),
-    -2.4rem 0 0 var(--bar-text);
-  opacity: 0.85;
+  top: calc(var(--bar) / 2 - 0.25rem);
+  left: 0.75rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--dot);
 }
 
 .panel > :first-child,
-.paper > :first-child {
+.paper > :first-child,
+.panel > :first-child > :first-child,
+.paper > :first-child > :first-child {
   margin-top: 0;
 }
 
@@ -668,75 +661,47 @@ kbd {
   margin-bottom: 0;
 }
 
-.panel {
-  --bg: var(--surface);
-  --hi: var(--surface-hi);
-  --lo: var(--surface-lo);
-}
-
 .panel h2 {
   margin-top: 0;
 }
 
 .m-screen {
-  --bg: var(--screen);
-  --hi: var(--screen-hi);
-  --lo: var(--screen-lo);
   --accent: var(--glow);
-  --wbar: light-dark(#0b6249, #176b4e);
+  --dot: var(--glow);
   --title: "projects.json";
 }
 
 .m-vinyl {
-  --bg: var(--vinyl);
-  --hi: var(--vinyl-hi);
-  --lo: var(--vinyl-lo);
-  --wbar: light-dark(#5a3f8a, #5a4fd6);
+  --dot: light-dark(#5a3f8a, #9d8cff);
   --title: "listening.app";
 }
 
 .m-cork {
-  --bg: var(--cork);
-  --hi: var(--cork-hi);
-  --lo: var(--cork-lo);
-  --wbar: light-dark(#8f4700, #8a5410);
   --title: "shipping.log";
 }
 
 .m-wood {
-  --bg: var(--wood);
-  --hi: var(--wood-hi);
-  --lo: var(--wood-lo);
-  --wbar: light-dark(#7a4a30, #8a5a3a);
+  --dot: light-dark(#7a4a30, #d19a6a);
   --title: "shelf.md";
 }
 
 .m-tea {
-  --bg: var(--tea);
-  --hi: var(--tea-hi);
-  --lo: var(--tea-lo);
   --accent: var(--glow);
-  --wbar: light-dark(#0b6249, #176b4e);
+  --dot: var(--glow);
   --title: "tea.txt";
 }
 
 .m-frame {
-  --bg: var(--frame);
-  --hi: var(--frame-hi);
-  --lo: var(--frame-lo);
-  --wbar: light-dark(#0b5f87, #1f6a96);
+  --dot: var(--cyan);
   --title: "llm-usage.db";
 }
 
 /* The notebook: a window holding the writing. */
 .paper {
-  --bg: var(--surface);
-  --hi: var(--surface-hi);
-  --lo: var(--surface-lo);
   --fg: var(--text);
   --fg-2: var(--muted);
   --accent: var(--lamp);
-  --wbar: light-dark(#7a2c26, #a83a30);
+  --dot: var(--rose);
   --title: "writing.md";
 }
 
@@ -844,7 +809,7 @@ kbd {
 
 /* The 404 is a dialog box in the middle of the desk. */
 .t-error {
-  --wbar: var(--rose-bar);
+  --dot: var(--rose);
   --title: "error.txt";
   max-width: 34rem;
   margin: 3rem auto;
@@ -880,13 +845,11 @@ time[data-ago] {
    live. Rose is the colour of what is not real. */
 .sample {
   width: fit-content;
-  margin-block: 0.75rem 0;
-  padding: 0.15rem 0.5rem;
-  background: var(--rose);
-  color: var(--ground);
-  font: 700 0.75rem / 1.5 var(--mono);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  margin-block: 1rem 0;
+  padding: 0 0.4rem;
+  border: 1px solid var(--rose);
+  color: var(--rose);
+  font: 600 0.75rem / 1.6 var(--mono);
 }
 
 /* On /stats, the whole page's version: a hatched rose banner under the title. */
@@ -894,7 +857,7 @@ time[data-ago] {
   width: auto;
   margin: 0 0 1.5rem;
   padding: 0.6rem 0.9rem;
-  border: 3px solid var(--rose);
+  border: 1px solid var(--rose);
   background: repeating-linear-gradient(
     135deg,
     color-mix(in srgb, var(--rose) 22%, transparent) 0 8px,
@@ -1037,7 +1000,7 @@ time[data-ago] {
   --heat-bg: light-dark(#eadbbd, #1f140b);
   margin: 0 0 1.2rem;
   padding: 0.5rem;
-  border: 2px solid var(--wbar);
+  border: 1px solid var(--rule);
   background: var(--heat-bg);
 }
 
@@ -1123,9 +1086,9 @@ main:has(.toc) .reader ~ .project-card {
   gap: 0 1rem;
   justify-content: space-between;
   margin: 0 0 1.2rem;
-  padding: 0.3rem 0.7rem;
-  background: var(--line);
-  color: var(--bar-text);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
   font: 500 0.8125rem / 1.5 var(--mono);
   overflow-wrap: anywhere;
 }
@@ -1580,10 +1543,10 @@ main:has(.toc) .reader ~ .project-card {
   min-inline-size: 0;
 }
 
+/* The list on /projects is itself a window, so the window's padding stands. */
 .projects {
   display: grid;
   gap: 1.25rem;
-  padding: 0;
   list-style: none;
 }
 
@@ -1645,6 +1608,8 @@ main:has(.toc) .reader ~ .project-card {
 
 .timeline h3 {
   margin: 0 0 0.15rem;
+  font-size: 1.05rem;
+  line-height: 1.3;
 }
 
 .timeline p {
@@ -1658,7 +1623,12 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .timeline ul {
+  margin: 0.5rem 0 0;
   padding-inline-start: 1.1rem;
+}
+
+.timeline ul li + li {
+  margin-top: 0.3rem;
 }
 
 .lede {
@@ -1667,44 +1637,216 @@ main:has(.toc) .reader ~ .project-card {
   line-height: 1.35;
 }
 
-/* /about: the note on the name under the summary, an aside rather than a second lede. */
+/* /about: the note on the name, an aside rather than a second lede: under the summary on a
+   phone, beside it from 52rem, behind a thin rule. */
 .lede-aside {
   max-width: 52ch;
-  margin-top: 0.75rem;
+  margin-top: 1.25rem;
+  padding-inline-start: 1rem;
+  border-inline-start: 1px solid var(--rule);
   color: var(--fg-2);
-  font-size: 0.9rem;
+  font-size: 0.9375rem;
 }
 
+@media (min-width: 52rem) {
+  .t-about {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 0 3rem;
+    align-items: end;
+  }
+
+  .t-about h1 {
+    grid-column: 1 / -1;
+  }
+
+  .t-about .lede {
+    margin: 0;
+  }
+
+  .lede-aside {
+    margin: 0;
+  }
+}
+
+/* The resume: experience and certifications side by side from 60rem, the rest under them. */
+.t-cv section + section {
+  margin-top: 2.25rem;
+}
+
+.t-cv h2 {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+}
+
+@media (min-width: 60rem) {
+  .t-cv {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 3rem;
+  }
+
+  .t-cv section + section {
+    margin-top: 0;
+  }
+
+  .t-cv section:nth-child(n + 3) {
+    margin-top: 2.25rem;
+  }
+}
+
+/* /stats: two stacks of panels side by side from 60rem, one column on a phone. */
 .stats-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0 1.25rem;
+  align-items: start;
 }
 
-.stats-grid dl {
+.stats-grid .panel {
+  margin-block: 0 1.25rem;
+}
+
+@media (min-width: 60rem) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.stats-grid h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+/* A stat: a small label, then its value, a little larger than the text and never broken. */
+.tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 2.5rem;
+  margin-block: 1.25rem;
+}
+
+.tiles dt,
+.bests dt {
+  color: var(--fg-2);
+  font: 500 0.75rem / 1.5 var(--mono);
+}
+
+.tiles dd {
+  margin: 0;
+  font: 750 1.6rem / 1.2 var(--display);
+  white-space: nowrap;
+}
+
+/* Typing bests: label, speed, accuracy and day in aligned columns; on a narrow phone the
+   accuracy and the day move under the speed together. */
+.bests {
   display: grid;
-  grid-template-columns: 1fr;
+  gap: 0 1rem;
   margin-block: 1rem;
 }
 
-.stats-grid dt {
+@media (min-width: 30rem) {
+  .bests {
+    grid-template-columns: max-content 1fr;
+    row-gap: 0.35rem;
+  }
+
+  .bests dd {
+    margin: 0;
+  }
+}
+
+.bests > div {
+  display: contents;
+}
+
+.bests dt {
+  line-height: 1.9;
+}
+
+.bests dd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
+  align-items: baseline;
+  margin: 0 0 0.4rem;
+}
+
+.bests dd > * {
+  white-space: nowrap;
+}
+
+.bests .wpm {
+  min-width: 4.25rem;
+  font-weight: 650;
+}
+
+.bests time {
   color: var(--fg-2);
-  font: 500 0.75rem var(--mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 500 0.8125rem / 1.5 var(--mono);
 }
 
-/* The big numbers: the display face, lit. */
-.stats-grid dd {
-  margin: 0 0 0.75rem;
-  color: var(--lamp);
-  font: 750 3.2rem / 1 var(--display);
+/* The rest of a long list, folded: open without JavaScript. */
+.more {
+  margin-block: 0.25rem 0;
 }
 
-/* A typing best is a sentence (wpm, accuracy, when), not one number: smaller, so it wraps
-   as a line and not as a banner. */
-.typing-body dd {
-  font-size: 1.5rem;
-  line-height: 1.15;
+.more summary {
+  display: inline-block;
+  min-height: 24px;
+  padding-block: 0.25rem;
+  color: var(--accent);
+  font: 500 0.8125rem / 1.2 var(--mono);
+  cursor: pointer;
+}
+
+.more summary::after {
+  content: " ↓";
+}
+
+.more[open] summary::after {
+  content: " ↑";
+}
+
+.more > :last-child {
+  margin-top: 0.25rem;
+}
+
+/* A name and its number on one ruled row, the number right-aligned; on a narrow phone the
+   number moves under the name whole. */
+.rows {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.rows li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  justify-content: space-between;
+  padding-block: 0.35rem;
+  border-bottom: 1px solid var(--rule);
+  font: 500 0.9375rem / 1.5 var(--mono);
+}
+
+.rows .row-value {
+  margin-inline-start: auto;
+  color: var(--fg-2);
+  font-size: 0.8125rem;
+  line-height: 1.8;
+  white-space: nowrap;
+}
+
+.rows .row-value time {
+  font: inherit;
+}
+
+/* Small print under a panel's numbers: how they were measured. */
+.fine-print {
+  color: var(--fg-2);
+  font-size: 0.875rem;
 }
 
 .stats-grid li::marker {
@@ -1718,15 +1860,19 @@ main:has(.toc) .reader ~ .project-card {
   display: contents;
 }
 
-/* Tracks and artists in the listening lists link to Last.fm. A faint underline, full on hover,
-   so ten rows of links do not read as a wall of underlines. */
+/* Links in long lists (tracks, artists, shipping events, projects): a faint underline, full on
+   hover, so ten rows of links do not read as a wall of underlines. */
 .listening-body li a,
-.history li a {
+.history li a,
+.shipping a,
+.rows a {
   text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
 }
 
 .listening-body li a:hover,
-.history li a:hover {
+.history li a:hover,
+.shipping a:hover,
+.rows a:hover {
   text-decoration-color: currentColor;
 }
 
@@ -1737,32 +1883,15 @@ main:has(.toc) .reader ~ .project-card {
   font-weight: 600;
 }
 
-@media (min-width: 60rem) {
-  .stats-grid {
-    grid-template-columns: repeat(12, 1fr);
-    align-items: start;
-  }
-
-  .stats-grid > * {
-    grid-column: span 6;
-  }
-
-  /* Listening and shipping side by side, the three smaller sources in a row under them. */
-  .stats-grid > :nth-child(n + 3) {
-    grid-column: span 4;
-  }
-}
-
 /* ---------- search dialog ---------- */
 
 dialog {
   width: min(40rem, 100% - 2rem);
   max-height: min(36rem, 100% - 4rem);
-  border: 3px solid var(--line);
+  border: 1px solid var(--rule);
   padding: 1.25rem;
   background: var(--surface);
   color: var(--text);
-  box-shadow: 7px 7px 0 var(--shade);
 }
 
 dialog::backdrop {
@@ -1799,7 +1928,7 @@ dialog ul {
 
 dialog li {
   padding-block: 0.6rem;
-  border-bottom: 1px dashed var(--line);
+  border-bottom: 1px solid var(--rule);
 }
 
 dialog li p {

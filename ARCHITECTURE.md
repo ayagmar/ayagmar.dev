@@ -108,7 +108,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Room clock: sun, moon, Rabat time (ADR 0027)                              | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/window-*.png`                                             |
 | Weather in the window: code table, art (ADR 0029)                         | `apps/site/src/lib/weather.ts`, `src/scripts/room.ts`, `src/assets/weather-*.png`                                        |
 | On this day: Rabat dates, history check (ADR 0030)                        | `packages/contracts/src/rabat.ts`, `apps/site/src/lib/history.ts`, `src/scripts/history.ts`                              |
-| Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,llm-usage,llm-usage-panel,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`               |
+| Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,llm-usage,llm-usage-panel,stats-panels,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`  |
 | /uses page data, its schema (ADR 0032)                                    | `content/uses.json`, `apps/site/src/data/uses.ts`, `apps/site/src/pages/uses.astro`                                      |
 | Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                               |
 | Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`                    |

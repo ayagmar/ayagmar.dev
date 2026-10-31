@@ -163,18 +163,20 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
   await expect(panel(page, 'shipping').locator('.shipping li')).toHaveText([
     '10 minutes ago runnerd merged #7: Live stats',
   ]);
-  await expect(panel(page, 'shipping').getByRole('heading', { name: 'Stars' })).toHaveCount(0);
+  await expect(
+    panel(page, 'shipping').getByRole('heading', { name: 'GitHub stars, last counted' })
+  ).toHaveCount(0);
   await expect(panel(page, 'projects').locator('.projects-body')).toHaveText(
-    '7 featured projects, at least 233 stars; GitHub did not answer for 1. See them.'
+    /7 featured projects, at least 233 stars; GitHub did not answer for 1\. All projects\.$/
   );
   // No 60-second best: no headline borrowed from another length. Each day reads back from now.
   const typing = panel(page, 'monkeytype').locator('.typing-body');
   await expect(typing.locator('p').first()).toHaveText('No 60-second best yet.');
   await expect(typing.locator('dt')).toHaveText(['15 seconds', '120 seconds', '25 words']);
   await expect(typing.locator('dd')).toHaveText([
-    '118 wpm, 97%, 10 days ago',
-    '99 wpm, 93%, 2 days ago',
-    '128 wpm, 97%, today',
+    '118 wpm 97% accuracy 10 days ago',
+    '99 wpm 93% accuracy 2 days ago',
+    '128 wpm 97% accuracy today',
   ]);
   await expect(typing.locator('dd time').first()).toHaveAttribute('title', '16 Oct 2026');
   for (const source of ['listening', 'shipping', 'projects', 'monkeytype'] as const) {
