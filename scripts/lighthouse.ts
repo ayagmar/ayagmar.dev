@@ -100,7 +100,10 @@ export function regressions(head: Values, base: Values | null, profile: Profile)
   });
 }
 
-/** The URL path of each page; a path ending in `/*` is the largest page directly under it. */
+/**
+ * The URL path of each page; a path ending in `/*` is the largest page directly under it, and
+ * is left out while the build has none (no published post, say).
+ */
 export function pagePaths(dist: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [name, path] of Object.entries(budgets.lighthouse.pages)) {
@@ -112,12 +115,15 @@ export function pagePaths(dist: string): Record<string, string> {
       continue;
     }
     const dir = path.slice(1, -2);
-    const candidates = readdirSync(join(dist, dir))
+    const candidates = (existsSync(join(dist, dir)) ? readdirSync(join(dist, dir)) : [])
       .filter((file) => file.endsWith('.html'))
       .map((file) => ({ file, size: statSync(join(dist, dir, file)).size }))
       .sort((a, b) => b.size - a.size || a.file.localeCompare(b.file));
     const largest = candidates[0];
-    if (!largest) throw new Error(`budgets.json: no page under /${dir} for ${name}`);
+    if (!largest) {
+      console.log(`lighthouse: ${name} left out: the build has no page under /${dir}`);
+      continue;
+    }
     out[name] = `/${dir}/${largest.file.replace(/\.html$/, '')}`;
   }
   return out;
