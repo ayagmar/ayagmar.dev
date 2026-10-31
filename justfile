@@ -4,7 +4,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # The version of every build: Workers Builds' commit, else the local checkout, else "dev".
 # renovate: datasource=npm depName=renovate
-renovate_version := "44.192.0"
+renovate_version := "44.192.2"
 commit_sha := env("WORKERS_CI_COMMIT_SHA", `git rev-parse HEAD 2>/dev/null || echo dev`)
 
 # Where the site build reads source data (ADR 0015): the read API when Workers Builds builds
