@@ -1,11 +1,12 @@
 /**
- * The parts of `/v1/llm-usage` the browser shows (ADR 0014): estimated agent hours on /stats
- * and this month's agents on /uses. Pure functions; the page scripts and the tests share them.
- * The browser does not load zod, so the contract's checks that matter here are repeated, and
- * the tests hold them to the contract's corpus.
+ * Reading `/v1/llm-usage` (ADR 0014) in the browser: the whole snapshot for the LLM usage panel
+ * on /stats (drawn by src/lib/llm-usage-panel.ts), and this month's agents for /uses. The
+ * browser does not load zod, so the contract's checks are repeated here, and the tests hold
+ * them to the contract's corpus.
  */
+import type { LlmUsageSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
-import { instantMs } from './live.ts';
+import { calendarDate, instantMs, list, text, whole } from './live.ts';
 import { knowsRabatDate } from './rabat-date.ts';
 
 const hourMs = 3_600_000;
@@ -14,63 +15,60 @@ const maxDayMs = 25 * hourMs;
 const maxWeekMs = 7 * maxDayMs;
 const maxMonthMs = 31 * maxDayMs;
 
-export interface LlmUsage {
-  /** When the producer took the snapshot. */
-  fetchedAt: string;
-  /** Agent time this month and in the last 7 days, each absent when not sent. */
-  monthMs?: number;
-  weekMs?: number;
-  /** Public agent names, most tokens first; absent when the list cannot be read. */
-  agents?: string[];
+const tokenCount = (value: unknown) => whole(value) && (value as number) <= 1e18;
+const usd = (value: unknown) =>
+  value === null || (typeof value === 'number' && value >= 0 && value <= 1_000_000);
+const activeMs = (value: unknown, max: number) =>
+  value === undefined || (whole(value) && (value as number) <= max);
+const dayCount = (value: unknown) => whole(value) && (value as number) <= 36_600;
+const usage = (value: unknown, maxMs: number) => {
+  const { costUsd, totalTokens, activeMs: ms } = Object(value);
+  return usd(costUsd) && tokenCount(totalTokens) && activeMs(ms, maxMs);
+};
+
+/** `data` if it is an llm-usage snapshot as the contract states it, else undefined. */
+export function readLlmUsageSnapshot(data: unknown): LlmUsageSnapshot | undefined {
+  const { last7Days, monthToDate, streak, days } = Object(data);
+  const month = Object(monthToDate);
+  const { currentDays, longestDays } = Object(streak);
+  return usage(last7Days, maxWeekMs) &&
+    usage(monthToDate, maxMonthMs) &&
+    usd(month.cacheSavingsUsd) &&
+    list(month.agents, Infinity, (item) => {
+      const { agent, costUsd, totalTokens, tokenShare } = Object(item);
+      return (
+        text(agent, 64) &&
+        usd(costUsd) &&
+        tokenCount(totalTokens) &&
+        typeof tokenShare === 'number' &&
+        tokenShare >= 0 &&
+        tokenShare <= 1
+      );
+    }) &&
+    dayCount(currentDays) &&
+    dayCount(longestDays) &&
+    list(days, Infinity, (item) => calendarDate(Object(item).date) && usage(item, maxDayMs))
+    ? (data as LlmUsageSnapshot)
+    : undefined;
 }
 
-const within = (value: unknown, max: number): value is number =>
-  Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= max;
-
 /**
- * What a `/v1/llm-usage` answer lets the page show at `now`, or undefined for nothing. Its
- * month and week are the producer's, so they are shown only on the date in Rabat they were
- * taken: after midnight "this month" and "last 7 days" would describe another period. A
- * snapshot that is stale, dated after the browser's clock or on a day the calendar does not
- * have, or read by a browser that does not know Morocco's clock, shows nothing.
+ * This month's agents for /uses, most tokens first, or undefined for nothing: shown only from
+ * a current snapshot taken on today's date in Rabat, since after midnight "this month" may be
+ * another month. A snapshot that is stale, dated after the browser's clock or on a day the
+ * calendar does not have, or read by a browser that does not know Morocco's clock, shows
+ * nothing.
  */
-export function readLlmUsage(body: unknown, now: number): LlmUsage | undefined {
+export function readLlmUsage(
+  body: unknown,
+  now: number
+): { fetchedAt: string; agents: string[] } | undefined {
   const { source, version, stale, fetchedAt, data } = Object(body);
-  if (source !== 'llm-usage' || version !== 1 || stale !== false || data === null) return;
+  if (source !== 'llm-usage' || version !== 1 || stale !== false) return;
   const taken = instantMs(fetchedAt, true);
   if (taken === undefined || taken > now || !knowsRabatDate()) return;
   if (rabatDate(taken) !== rabatDate(now)) return;
-  const { monthToDate, last7Days, days } = Object(data);
-  const month = Object(monthToDate);
-  const week = Object(last7Days);
-  const usage: LlmUsage = { fetchedAt };
-  // Hours are shown only if every value sent is one the contract allows: one out of range
-  // anywhere means the snapshot's hours cannot be trusted.
-  const sent = (value: unknown, max: number) => value === undefined || within(value, max);
-  const trusted =
-    sent(month.activeMs, maxMonthMs) &&
-    sent(week.activeMs, maxWeekMs) &&
-    Array.isArray(days) &&
-    days.every((entry) => sent(Object(entry).activeMs, maxDayMs));
-  if (trusted && month.activeMs !== undefined) usage.monthMs = month.activeMs;
-  if (trusted && week.activeMs !== undefined) usage.weekMs = week.activeMs;
-  const { agents } = month;
-  if (
-    Array.isArray(agents) &&
-    agents.length <= 64 &&
-    agents.every((entry) => {
-      const { agent } = Object(entry);
-      return typeof agent === 'string' && agent.length >= 1 && agent.length <= 64;
-    })
-  ) {
-    usage.agents = agents.map((entry) => Object(entry).agent);
-  }
-  return usage;
-}
-
-/** `283 hours`, `7.5 hours`, `0 hours`: whole hours from 10 up, one decimal below. */
-export function hours(ms: number): string {
-  const value = ms / hourMs;
-  const shown = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${shown.toLocaleString('en')} ${shown === 1 ? 'hour' : 'hours'}`;
+  const snapshot = readLlmUsageSnapshot(data);
+  if (!snapshot) return;
+  return { fetchedAt, agents: snapshot.monthToDate.agents.map(({ agent }) => agent) };
 }

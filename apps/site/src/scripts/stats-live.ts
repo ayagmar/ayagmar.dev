@@ -1,16 +1,22 @@
-// /stats's listening, shipping, projects and typing panels, kept current in the browser (ADR 0015).
+// /stats's listening, shipping, projects, typing and LLM usage panels, kept current in the
+// browser (ADR 0015).
 // Each panel's HTML is the build's snapshot; a newer valid answer from signals replaces it,
-// rendered as the page renders it (src/pages/stats.astro; the listening panel from the same
-// markup, src/lib/listening-panel.ts), and every time on the page reads relative to now. Each
+// rendered as the page renders it (src/pages/stats.astro; the listening and LLM usage panels
+// from the same markup, src/lib/listening-panel.ts and src/lib/llm-usage-panel.ts), and every time on the page reads relative to now. Each
 // panel asks at its own pace while the page is visible, and when the tab comes back once its
 // last request is a minute old (src/lib/live.ts). In fixtures mode no panel has an endpoint
 // and nothing is requested.
+
+import { rabatDate } from '@min7/contracts/rabat';
 import { count, describeEvent, projectsSummary, repoName } from '../data/format.ts';
 import { dayName } from '../lib/history.ts';
 import { readListening, renderNowPlaying } from '../lib/listening.ts';
 import { listeningBody } from '../lib/listening-panel.ts';
 import { live, stamp } from '../lib/live.ts';
+import { readLlmUsageSnapshot } from '../lib/llm-usage.ts';
+import { llmUsagePanel } from '../lib/llm-usage-panel.ts';
 import { toNode } from '../lib/markup.ts';
+import { knowsRabatDate } from '../lib/rabat-date.ts';
 import { readProjects, readShipping, starTotals, statsWords as words } from '../lib/stats.ts';
 import { bestRows, headline, readMonkeytype, relabelDays, typingWords } from '../lib/typing.ts';
 
@@ -125,4 +131,28 @@ live(
       );
   },
   relabelDays
+);
+
+// llm-usage is pushed hourly; asking every quarter hour is soon enough. A browser that does not
+// know Morocco's clock could date the snapshot a day off, so it keeps the build's. The month,
+// the last 7 days, the agents and the current streak describe the date in Rabat the snapshot
+// was taken: once that date has passed they are hidden until a newer snapshot comes, whether
+// the build drew them or an answer did (ADR 0014). The sample in fixtures mode keeps them.
+const llmUsage = document.querySelector<HTMLElement>('[data-live="llm-usage"]');
+live(
+  'llm-usage',
+  15 * minute,
+  (data) => (knowsRabatDate() ? readLlmUsageSnapshot(data) : undefined),
+  (panel, { data, fetchedAt }) => {
+    panel
+      .querySelector('.llm-usage-body')
+      ?.replaceChildren(...llmUsagePanel(data, fetchedAt).map(toNode));
+  },
+  (now) => {
+    if (!llmUsage?.dataset.liveSrc) return;
+    const today = knowsRabatDate() ? rabatDate(now) : undefined;
+    for (const block of llmUsage.querySelectorAll<HTMLElement>('[data-rabat-date]')) {
+      block.hidden = block.dataset.rabatDate !== today;
+    }
+  }
 );

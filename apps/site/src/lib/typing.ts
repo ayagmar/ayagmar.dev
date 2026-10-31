@@ -5,8 +5,7 @@
  * them.
  */
 import type { MonkeytypeSnapshot, TypingBest } from '@min7/contracts';
-import { day } from './live.ts';
-import { calendarDate } from './stats.ts';
+import { calendarDate, day } from './live.ts';
 
 const number = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0;

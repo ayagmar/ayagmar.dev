@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import {
   anyEnvelopeSchema,
   listeningSnapshotSchema,
+  llmUsageSnapshotSchema,
   monkeytypeSnapshotSchema,
   projectsSnapshotSchema,
   shippingSnapshotSchema,
@@ -11,6 +12,7 @@ import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { afterEach, describe, expect, it } from 'vitest';
 import { nowPlaying, readListening } from '../src/lib/listening.ts';
 import { ago, readAnswer } from '../src/lib/live.ts';
+import { readLlmUsageSnapshot } from '../src/lib/llm-usage.ts';
 import { readProjects, readShipping } from '../src/lib/stats.ts';
 import { daysAgo, readMonkeytype } from '../src/lib/typing.ts';
 
@@ -101,6 +103,22 @@ const readers = [
       'words as an array': { ...snapshotFixtures.monkeytype.ok, words: Array(101).fill(null) },
     },
     // Its corpus holds whole envelopes (ADR 0008); the reader reads their data.
+    envelopes: true,
+  },
+  {
+    source: 'llm-usage',
+    read: readLlmUsageSnapshot,
+    schema: llmUsageSnapshotSchema,
+    edges: {
+      'fractional tokens': { monthToDate: { totalTokens: 1.5 } },
+      'a share above 1': { monthToDate: { agents: [{ tokenShare: 1.01 }] } },
+      'an empty agent name': { monthToDate: { agents: [{ agent: '' }] } },
+      'a day on 30 February': { days: [{ date: '2026-02-30' }] },
+      'a day of 26 hours': { days: [{ activeMs: 26 * 3_600_000 }] },
+      'a week of 176 hours': { last7Days: { activeMs: 176 * 3_600_000 } },
+      'a negative streak': { streak: { currentDays: -1 } },
+      'a cost as a string': { last7Days: { costUsd: '41.37' } },
+    },
     envelopes: true,
   },
 ] as const;

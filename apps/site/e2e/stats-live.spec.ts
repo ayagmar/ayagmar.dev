@@ -1,4 +1,4 @@
-// /stats's listening, shipping, projects and typing panels, kept current by the browser (ADR 0015). The
+// /stats's listening, shipping, projects, typing and LLM usage panels, kept current by the browser (ADR 0015). The
 // e2e build runs in fixtures mode, where the page asks signals for nothing. Each test below
 // turns a panel live as an api mode build would (its endpoint, and a freshness line where the
 // sample tape is), answers the API itself, and fixes the browser's clock.
@@ -7,7 +7,7 @@ import type { Browser, Locator, Page, Route } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1';
-const sources = ['listening', 'shipping', 'projects', 'monkeytype'] as const;
+const sources = ['listening', 'shipping', 'projects', 'monkeytype', 'llm-usage'] as const;
 type Source = (typeof sources)[number];
 // The build's snapshots were taken at 09:00 (fixturesCapturedAt).
 const noon = '2026-10-26T12:00:00Z';
@@ -101,6 +101,7 @@ const bodies = {
   shipping: '.shipping-body',
   projects: '.projects-body',
   monkeytype: '.typing-body',
+  'llm-usage': '.llm-usage-body',
 };
 
 // Catches the live renderer drifting from the page's own markup: the same snapshot, built into
@@ -176,7 +177,7 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
     '128 wpm, 97%, today',
   ]);
   await expect(typing.locator('dd time').first()).toHaveAttribute('title', '16 Oct 2026');
-  for (const source of sources) {
+  for (const source of ['listening', 'shipping', 'projects', 'monkeytype'] as const) {
     await expect(freshness(page, source)).toHaveText(/^Updated (1|10) minutes? ago$/);
   }
 });
@@ -413,19 +414,21 @@ test('each panel asks at its own pace', async ({ page }) => {
     shipping: envelope('shipping'),
     projects: envelope('projects'),
     monkeytype: envelope('monkeytype'),
+    'llm-usage': envelope('llm-usage'),
   });
   const counts = () =>
     sources.map((source) => asked.filter((url) => url.endsWith(`/${source}`)).length);
-  await expect.poll(() => asked.length).toBe(4);
-  // Listening every minute, shipping every 5, typing every 15, projects every 30 (ADR 0015).
+  await expect.poll(() => asked.length).toBe(5);
+  // Listening every minute, shipping every 5, typing and LLM usage every 15, projects every 30
+  // (ADR 0015).
   await page.clock.runFor(4 * 60_000);
-  expect(counts()).toEqual([5, 1, 1, 1]);
+  expect(counts()).toEqual([5, 1, 1, 1, 1]);
   await page.clock.runFor(60_000);
-  await expect.poll(counts).toEqual([6, 2, 1, 1]);
+  await expect.poll(counts).toEqual([6, 2, 1, 1, 1]);
   await page.clock.runFor(10 * 60_000);
-  await expect.poll(counts).toEqual([16, 4, 1, 2]);
+  await expect.poll(counts).toEqual([16, 4, 1, 2, 2]);
   await page.clock.runFor(15 * 60_000);
-  await expect.poll(counts).toEqual([31, 7, 2, 3]);
+  await expect.poll(counts).toEqual([31, 7, 2, 3, 3]);
 });
 
 // Catches a best's day that turns over only when a new answer is drawn: past the reader's
@@ -519,4 +522,70 @@ test('without JavaScript the panels show the build, timed in Rabat', async ({ br
   await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
   await expect(panel(page, 'monkeytype').locator('time').first()).toHaveText('14 Jan 2021');
   await page.context().close();
+});
+
+test.describe('LLM usage', () => {
+  const usage = panel as (page: Page, source: 'llm-usage') => Locator;
+  const body = (page: Page) => usage(page, 'llm-usage').locator('.llm-usage-body');
+  const period = (page: Page) => body(page).locator('.llm-period');
+
+  // Catches the wrong period's number, tokens in the wrong unit, an agent without its share,
+  // a heatmap without its text, or a cost on the page.
+  test('the build shows the snapshot, without costs', async ({ browser }) => {
+    const page = await newPage(browser, { javaScriptEnabled: false });
+    await page.goto('/stats');
+    const table = body(page).getByRole('table', { name: 'Tokens and estimated agent hours' });
+    await expect(table.locator('thead th')).toHaveText([
+      'This month 1–26 Oct',
+      'Last 7 days 20–26 Oct',
+    ]);
+    await expect(table.locator('tbody tr').first()).toHaveText('Tokens61.3M16.4M');
+    await expect(table.locator('tbody tr').last()).toHaveText('Agent hours144 hours60 hours');
+    await expect(body(page).locator('.llm-agents li')).toHaveText([
+      'Claude Code39.8M65%',
+      'Codex15.3M25%',
+      'pi6.2M10%',
+    ]);
+    await expect(body(page).getByRole('img')).toHaveAttribute(
+      'aria-label',
+      'Tokens per day from 27 Oct 2025 to 26 Oct 2026: 11 days with use, the busiest 20 Oct 2026 with 3.1M.'
+    );
+    await expect(usage(page, 'llm-usage')).not.toContainText('$');
+    await page.context().close();
+  });
+
+  // Catches a live answer that does not replace the build's, or one drawn with old numbers.
+  test('a newer answer replaces the build', async ({ page }) => {
+    const { ok } = snapshotFixtures['llm-usage'];
+    const agents = [
+      { agent: 'Claude Code', costUsd: null, totalTokens: 41_000_000_000, tokenShare: 0.958 },
+      { agent: 'Codex', costUsd: null, totalTokens: 1_800_000_000, tokenShare: 0.042 },
+      { agent: 'goose', costUsd: null, totalTokens: 1_000, tokenShare: 0 },
+    ];
+    await visit(page, noon, {
+      'llm-usage': envelope('llm-usage', {
+        data: { ...ok, monthToDate: { ...ok.monthToDate, agents, totalTokens: 42_800_001_000 } },
+      }),
+    });
+    await expect(freshness(page, 'llm-usage')).toHaveText('Updated 1 minute ago');
+    await expect(body(page).locator('.llm-agents li')).toHaveText([
+      'Claude Code41.0B96%',
+      'Codex1.8B4%',
+      'goose1.0K0%',
+    ]);
+    await expect(body(page).locator('tbody tr').first()).toHaveText('Tokens42.8B16.4M');
+  });
+
+  // Catches "this month" left on screen past midnight in Rabat by an open tab: the period goes,
+  // the year stays.
+  test('hides the period at midnight in Rabat while the tab is open', async ({ page }) => {
+    await visit(page, '2026-10-26T23:58:00Z', {
+      'llm-usage': envelope('llm-usage', { fetchedAt: '2026-10-26T23:50:00Z' }),
+    });
+    await expect(freshness(page, 'llm-usage')).toHaveText('Updated 8 minutes ago');
+    await expect(period(page)).toBeVisible();
+    await page.clock.runFor(3 * 60_000);
+    await expect(period(page)).toBeHidden();
+    await expect(body(page).getByRole('img')).toBeVisible();
+  });
 });
