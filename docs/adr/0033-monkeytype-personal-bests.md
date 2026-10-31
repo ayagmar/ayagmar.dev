@@ -1,6 +1,6 @@
 # 0033. Monkeytype personal bests
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. Amended 2026-10-31: pulled hourly, 2 requests an hour.
 
 ## Context
 
@@ -21,12 +21,12 @@ One pull is two requests, one after the other: `?mode=time` and then `?mode=word
 - The docs: "a rate limit of `30 requests per minute` across all endpoints with some endpoints being more strict. Rate limit rates are shared across all ape keys"; for this endpoint, "can be called up to 60 times per hour for regular users".
 - The repository (`backend/src/middlewares/rate-limit.ts`, `packages/contracts/src/rate-limit/index.ts`): the endpoint's limiter is `userGet` (60 an hour), but a request authenticated with an ApeKey uses `defaultApeRateLimit` instead, 30 a minute, keyed by the account's uid, so a second key on the same account shares it. Over its limit an ApeKey request gets 479; others get 429. A root limiter allows 1,000 requests an hour per address. The 30-a-day limit on `/results` does not apply here.
 
-signals makes 2 requests every 6 hours, 8 a day; the runner's 30-second early allowance (ADR 0010) cannot add a pull. No other integration on the owner's account uses the API today; one that does shares the same 30 a minute.
+signals makes 2 requests an hour, 48 a day (every 6 hours, 8 a day, until 2026-10-31, when the docs, API version 2.5.0, still gave both limits above): a thirtieth of the endpoint's 60 an hour and well inside the account's 30 a minute. The runner's 30-second early allowance (ADR 0010) cannot add a pull. No other integration on the owner's account uses the API today; one that does shares the same 30 a minute.
 
 ### The ApeKey
 
 - Monkeytype has no personal-bests-only key. A key has a name and an enabled flag (`packages/schemas/src/ape-keys.ts`) and reads whatever endpoints accept ApeKeys; this one is not narrower than any other. It stays in signals; the site has none.
-- Optional, so it cannot block a signals deploy: `readSecret` knows `MONKEYTYPE_APE_KEY`, but it is not in `secrets.required` or the justfile's required list. Without it the adapter asks nothing and fails with `not_configured`, which keeps the snapshot and its `fetchedAt`; the runner records the attempt, so it logs one `pull failed` line with that code per attempt, four a day, and holds no state between invocations.
+- Optional, so it cannot block a signals deploy: `readSecret` knows `MONKEYTYPE_APE_KEY`, but it is not in `secrets.required` or the justfile's required list. Without it the adapter asks nothing and fails with `not_configured`, which keeps the snapshot and its `fetchedAt`; the runner records the attempt, so it logs one `pull failed` line with that code per attempt, 24 a day, and holds no state between invocations.
 - `secrets.required` also limits which names Wrangler loads from `.dev.vars` locally (https://developers.cloudflare.com/workers/configuration/secrets/), so an ApeKey there does not reach `just signals-dev`. Tests pass a fake key in `env`; the live capture ran outside Wrangler with the key in that one command's environment.
 - The key goes only to `api.monkeytype.com`, in the header, never in a URL (Workers traces record URLs). `getJson` takes `redirect: 'manual'` for these requests: Workers forwards every header, `Authorization` included, to wherever a followed redirect points (https://developers.cloudflare.com/workers/runtime-apis/request/), so a 3xx is answered as `upstream_http_error`, same host or not. Other adapters keep following redirects; GitHub's renamed repositories need it. Same 5-second deadline over headers and body, `min7-signals (+https://ayagmar.dev)` User-Agent, and a 128 KiB body cap checked against `Content-Length` and while streaming.
 - `getJson` now also stops reading a body that stalls after its headers when its deadline passes. Before, that guarantee leaned on the runtime tying the body to the request's signal, which a mocked response does not; every adapter gets the fix, and nothing else in its behaviour changes.
@@ -42,7 +42,7 @@ Statuses:
 | A body that is not the map, a bad best | `upstream_malformed`                                                           |
 | No answer in 5 s, a body over 128 KiB  | `upstream_timeout`, `upstream_too_large`                                       |
 
-Every failure keeps the whole last snapshot and its `fetchedAt`; a pull whose words request fails after time succeeded publishes nothing. Neither request is retried within an invocation, and no other key or address is tried. The runner never pulls before a recorded `Retry-After` time, with no early allowance, and otherwise waits the 6-hour interval: a `Retry-After` shorter than that changes nothing, a longer one (up to the day the runner accepts) delays the next pull. Logs and `/v1/health` carry the code only, never a message, body or header.
+Every failure keeps the whole last snapshot and its `fetchedAt`; a pull whose words request fails after time succeeded publishes nothing. Neither request is retried within an invocation, and no other key or address is tried. The runner never pulls before a recorded `Retry-After` time, with no early allowance, and otherwise waits the hourly interval: a `Retry-After` shorter than that changes nothing, a longer one (up to the day the runner accepts) delays the next pull. Logs and `/v1/health` carry the code only, never a message, body or header.
 
 ### What is published
 
@@ -54,8 +54,8 @@ These numbers and days are the owner's own and deliberately public, not anonymiz
 
 ### signals: the `monkeytype` source
 
-- `apps/signals/src/adapters/pull/monkeytype.ts`, appended to the registry: one adapter, both requests, `intervalSeconds` 21,600 (6 hours).
-- `staleAfterSeconds.monkeytype` 86,400 (a day, three missed pulls), from the last successful fetch only, never from a best's date: a best set years ago is still current.
+- `apps/signals/src/adapters/pull/monkeytype.ts`, appended to the registry: one adapter, both requests, `intervalSeconds` 3,600 (an hour; 21,600 until 2026-10-31).
+- `staleAfterSeconds.monkeytype` 86,400 (a day of missed pulls; bests change rarely, so the hourly pull did not shorten it), from the last successful fetch only, never from a best's date: a best set years ago is still current.
 - `GET /v1/monkeytype` is `snapshotRoute('monkeytype')`, unchanged: the envelope, `stale`, at most 60 seconds of edge and browser cache and never past the stale moment, the query-free cache key, HEAD, OPTIONS and CORS as for every source. A read never calls Monkeytype, cached or not.
 - Contracts: `monkeytypeBestsSchema` and `monkeytypeBucketSchema` (wire), `monkeytypeSnapshotSchema` and `monkeytypeEnvelopeSchema` (output). The whole envelope is exported as `schema/monkeytype.{input,output}.json` with its own accept and reject corpus and frozen as `test/frozen/v1/monkeytype.output.json` (ADR 0008); the generic envelope's corpus and frozen file are unchanged.
 - Fixtures: `monkeytype/raw/*` as `{ time, words }`, each a recorded answer, `words` null when it was not asked, and `monkeytype/snapshot/*` (`packages/contracts/fixtures/README.md`). The `ok` case is a minimized real capture, made on 2026-10-26 at 23:12 UTC with the owner's key by a one-off script that printed only the answer's shape: only the bests the page can show, only the ten fields the adapter reads, timestamps cut to the UTC day, no message. The other cases are invented, among them `sensitive-fields`, with fake ids, a name, an email and new fields in and around the data, which `test/monkeytype.test.ts` follows into D1, `/v1/monkeytype` and the logs and finds in none of them.
@@ -65,7 +65,7 @@ These numbers and days are the owner's own and deliberately public, not anonymiz
 One adapter per invocation still, on the same minute trigger: no new trigger and no shared invocation. A sixth pulled source costs the others a minute in two places, measured with the real registry in `apps/signals/test/cron.test.ts`, which now runs Monkeytype in its two-day simulation (no key for the first day, refused once with a key, then answering):
 - Listening's first gap after a cold start, while each of the other five sources is tried once, is 6 minutes (it was 5); after that it stays at most 3. Approved by the orchestrator on 2026-10-26 up to 6; the test asserts 6 for the first gap and keeps 5 for the rest.
 - The history's worst case at midnight (every source due, the history last attempted at 23:58, the 00:02 and 00:03 triggers lost, three past years) publishes at 10 minutes 2.3 seconds (it was 9 minutes 2.3 seconds). Approved up to 11 minutes; the test asserts the measured 10 minutes 2.3 seconds.
-- Over the two days: Monkeytype at most 6 hours 3 minutes apart, shipping 17 minutes, weather 16, projects 24 hours 1 minute, and the history 5 minutes 2.3 seconds after the first midnight and 11 minutes 2.3 seconds after the second, where its first attempt fails (bound 15).
+- Over the two days: Monkeytype at most 6 hours 3 minutes apart, shipping 17 minutes, weather 16, projects 24 hours 1 minute, and the history 5 minutes 2.3 seconds after the first midnight and 11 minutes 2.3 seconds after the second, where its first attempt fails (bound 15). With Monkeytype hourly and projects every 6 hours (2026-10-31), the same simulation measures Monkeytype at most 61 minutes apart, projects 6 hours 2 minutes, shipping 18, weather 17, listening unchanged (6, then 3), and the history 5 minutes 2.3 seconds and 10 minutes 2.3 seconds after the two midnights; the midnight worst case stays 10 minutes 2.3 seconds.
 
 Subrequests: 2 a pull, counted by `test/monkeytype.test.ts`. CPU, from `just signals-cpu` (two runs, each over a no-adapter baseline of 8.6 ms cold): with the real answers (0.7 KiB), 2.6 and 5.4 ms cold and under 1 ms warm; with answers near the 128 KiB cap (ten lengths of 40 bests in each mode), 10.6 and 14.9 ms cold and 0.7 and 3.2 ms warm median. These are local numbers, as noisy as ADR 0030 says; cold invocations over 10 ms are already the case for other adapters and are `fix/cron-cpu`'s subject, not settled here.
 
@@ -81,7 +81,7 @@ Costs:
 | ------------------------------------ | ------- | -------------------------------------------------- | ------------------------------------- |
 | `/stats` script, gzip 9              | 2,973 B | 3,702 B                                            | 3,750 B (was 3,000 B; ADR 0017)       |
 | Live reads chunk (`live.*.js`)       | 1,363 B | 1,375 B                                            | 1,400 B (ADR 0017)                    |
-| Upstream requests (Monkeytype)       | 0       | 8 a day                                            | 30 a minute, shared by the account    |
+| Upstream requests (Monkeytype)       | 0       | 48 a day (8 until 2026-10-31)                      | 30 a minute, shared by the account    |
 | Browser requests to `/v1/monkeytype` | 0       | 1 on load, then 1 an hour per visible `/stats` tab | Workers Free 100,000 a day (ADR 0010) |
 
 The 729 B are the reader, the renderer, the words and the day formatting. The live-reads chunk grows 12 B: `day()` is exported for the reader's calendar, and `live()` takes a `relabel` hook that runs with `tick()`, so the days turn over on the minute timer and tab returns it already has. The home, `/uses`, listening-reads and agent-reads files that import it change only in its file name.
