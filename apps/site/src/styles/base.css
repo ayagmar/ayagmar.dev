@@ -1815,8 +1815,8 @@ main:has(.toc) .reader ~ .project-card {
   margin-top: 0.25rem;
 }
 
-/* A name and its number on one ruled row, the number right-aligned; on a narrow phone the
-   number moves under the name whole. */
+/* A name and its number on one ruled row, the number right-aligned; below 30rem every row puts
+   the number under the name, so the column stays even. */
 .rows {
   margin: 0 0 1rem;
   padding: 0;
@@ -1843,6 +1843,17 @@ main:has(.toc) .reader ~ .project-card {
 
 .rows .row-value time {
   font: inherit;
+}
+
+@media (max-width: 29.99rem) {
+  .rows li {
+    flex-direction: column;
+    align-items: start;
+  }
+
+  .rows .row-value {
+    margin-inline-start: 0;
+  }
 }
 
 /* Small print under a panel's numbers: how they were measured. */
