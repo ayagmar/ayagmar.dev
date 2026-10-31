@@ -36,3 +36,6 @@ overrides:
   "@lhci/cli>uuid": 11.1.1
   # GHSA-c475-qrg2-pj4r, fixed in 6.2.1; via proxy-agent.
   "get-uri>basic-ftp": 6.2.3
+  # GHSA-g3hv-75wg-m249 in minimatch 3.1.5, through chrome-launcher 0.13.4 > rimraf 3 > glob 7.
+  # @lhci/cli only calls Launcher.getInstallations(); 1.2.2 has it and drops rimraf.
+  "@lhci/cli>chrome-launcher": 1.2.2
