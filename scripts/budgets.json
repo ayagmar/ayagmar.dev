@@ -78,6 +78,10 @@
         "lcp": {
           "ratio": 1.1,
           "delta": 200
+        },
+        "tbt": {
+          "ratio": 1.1,
+          "delta": 75
         }
       },
       "desktop": {

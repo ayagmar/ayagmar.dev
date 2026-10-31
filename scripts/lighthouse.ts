@@ -3,8 +3,8 @@
 // pages in scripts/budgets.json for each profile, takes the median of the runs, and fails when
 // a head page is over budget or regressed against the base beyond the noise allowance. A page
 // that looks regressed is measured again, base and head in turn, and the regression stands only
-// if it holds on those numbers. Writes the metrics artifact (scripts/lighthouse-report.js has
-// its schema) either way.
+// if it holds on those numbers; a page over its CLS budget is measured again on head alone. Writes
+// the metrics artifact (scripts/lighthouse-report.js has its schema) either way.
 // Chromium comes from CHROME_PATH (`just lighthouse` sets it to Playwright's).
 // A base cache file holds the base's medians by URL path, so a base measured once (CI keys the
 // file by the base commit) is not measured again; the base is served only for pages the cache
@@ -31,7 +31,7 @@ import { freePort } from './free-port.ts';
 import { pages as knownPages, metrics, profiles, render, validate } from './lighthouse-report.js';
 
 type Profile = (typeof profiles)[number];
-type Metric = keyof typeof metrics;
+export type Metric = keyof typeof metrics;
 type Values = Record<Metric, number>;
 
 const scores = new Set<Metric>(['performance', 'accessibility', 'bestPractices']);
@@ -149,8 +149,12 @@ async function serve(
   throw new Error(`wrangler dev in ${site} did not answer within 60 s`);
 }
 
-/** Time allowed for one Lighthouse run of one page, Lighthouse's own 45 s load limit included. */
-const runTimeout = 90_000;
+/**
+ * Time allowed per Lighthouse run of one page, about 11 s in CI. A collect gets two runs more,
+ * for lhci's own retries of a failed run: 13 minutes for 24 runs, so a hung collect is killed
+ * and run once more inside the job's 35 minutes.
+ */
+const runTimeout = 30_000;
 
 /** Why a child process failed, in a few words; its own output is already in the log. */
 const failure = (error: unknown) => {
@@ -194,7 +198,7 @@ function collect(
       execFileSync(lhci, args, {
         cwd: dir,
         stdio: ['ignore', 'ignore', 'inherit'],
-        timeout: runTimeout * urls.length * runs,
+        timeout: runTimeout * (urls.length * runs + 2),
       });
       break;
     } catch (error) {
@@ -228,26 +232,32 @@ const complete = (byPage: Record<string, Values[]>, runs: number) =>
     ])
   ) as Record<string, Values | null>;
 
+/** The runs of a re-measure of one page; `base` is empty when only head was measured. */
+type Remeasured = { base: Values[]; head: Values[] };
+
 /**
- * Base and head measured again on these pages, one run of each in turn, so both sides see the
- * same runner at the same time: a slow minute slows both. Each side gets as many runs as the
- * first measurement. Throws when a run cannot be measured.
+ * Head measured again on its pages, and base on its own (a subset), one run of each side in
+ * turn, so both sides see the same runner at the same time: a slow minute slows both. Each side
+ * gets as many runs as the first measurement. Throws when a run cannot be measured.
  */
 function remeasure(
   lhci: string,
-  origins: { base: string; head: string },
-  paths: Record<string, string>,
+  origins: { base: string | undefined; head: string },
+  paths: { base: Record<string, string>; head: Record<string, string> },
   profile: Profile,
   work: string
-): Record<string, { base: Values[]; head: Values[] }> {
-  const out: Record<string, { base: Values[]; head: Values[] }> = {};
-  for (const name of Object.keys(paths)) out[name] = { base: [], head: [] };
+): Record<string, Remeasured> {
+  const out: Record<string, Remeasured> = {};
+  for (const name of Object.keys(paths.head)) out[name] = { base: [], head: [] };
   for (let run = 0; run < budgets.lighthouse.runs; run++) {
     for (const side of ['base', 'head'] as const) {
+      const origin = origins[side];
+      if (Object.keys(paths[side]).length === 0) continue;
+      if (!origin) throw new Error(`no ${side} server`);
       const measured = collect(
         lhci,
-        origins[side],
-        paths,
+        origin,
+        paths[side],
         profile,
         join(work, `remeasure-${side}-${profile}`),
         1
@@ -261,9 +271,23 @@ function remeasure(
   return out;
 }
 
-/** The regressions that stand on the runs of a re-measure: its base medians against its head's. */
-export function confirmed(runs: { base: Values[]; head: Values[] }, profile: Profile): Metric[] {
-  return regressions(medians(runs.head), medians(runs.base), profile);
+/**
+ * What stands after a re-measure of a page, from what the first numbers said: regressions on
+ * the base's medians against the head's (when the base was measured again), and the CLS budget
+ * on the head's median. Every other budget keeps its first verdict.
+ */
+export function decide(
+  first: { over: Metric[]; regressed: Metric[] },
+  runs: Remeasured,
+  profile: Profile
+): { over: Metric[]; regressed: Metric[] } {
+  const head = medians(runs.head);
+  const stillOver = overBudget(head, profile);
+  return {
+    over: first.over.filter((key) => key !== 'cls' || stillOver.includes('cls')),
+    regressed:
+      runs.base.length > 0 ? regressions(head, medians(runs.base), profile) : first.regressed,
+  };
 }
 
 /** Medians by profile and URL path, the format of the cache files. */
@@ -431,14 +455,12 @@ async function main() {
         }
         headByPath[paths[page] as string] = h;
         const b = known[paths[page] as string] ?? null;
-        const over = overBudget(h, profile);
-        for (const key of over) problems.push(`${page} (${profile}): ${key} ${h[key]} over budget`);
         rows.push({
           page,
           profile,
           head: h,
           base: b,
-          over,
+          over: overBudget(h, profile),
           regressed: regressions(h, b, profile),
           remeasured: null,
         });
@@ -447,47 +469,62 @@ async function main() {
         );
       }
       // A base measured on another runner, or minutes earlier, can sit a simulated round trip
-      // or two below what this runner reads now. A regression decides only against a base
-      // measured beside the head; budgets are absolute and are not measured again.
-      const suspects = rows.filter((row) => row.regressed.length > 0);
+      // or two below what this runner reads now, so a regression decides only against a base
+      // measured beside the head. CLS reads a third-decimal shift now and then on an unchanged
+      // page, so its budget decides on head measured again. Other budgets are not measured again.
+      const regressedRows = rows.filter((row) => row.regressed.length > 0);
+      const suspects = rows.filter((row) => row.regressed.length > 0 || row.over.includes('cls'));
       if (suspects.length > 0) {
         const names = suspects.map((row) => row.page);
+        const pathsOf = (list: typeof rows) =>
+          Object.fromEntries(list.map((row) => [row.page, paths[row.page] as string]));
         console.log(
-          `lighthouse: measuring ${names.join(', ')} (${profile}) again, base and head in turn`
+          `lighthouse: measuring ${names.join(', ')} (${profile}) again, ${regressedRows.length > 0 ? 'base and head in turn' : 'head only'}`
         );
         try {
           const again = remeasure(
             bin('lhci'),
-            { base: await startBase(), head: headServer.origin },
-            Object.fromEntries(names.map((name) => [name, paths[name] as string])),
+            {
+              base: regressedRows.length > 0 ? await startBase() : undefined,
+              head: headServer.origin,
+            },
+            { base: pathsOf(regressedRows), head: pathsOf(suspects) },
             profile,
             work
           );
           for (const row of suspects) {
-            const measured = again[row.page] as { base: Values[]; head: Values[] };
-            row.remeasured = { base: medians(measured.base), head: medians(measured.head) };
-            row.regressed = confirmed(measured, profile);
-            const list = (side: 'base' | 'head', key: Metric) =>
-              measured[side].map((v) => Math.round(v[key])).join(' ');
+            const measured = again[row.page] as Remeasured;
+            Object.assign(row, decide(row, measured, profile));
+            row.remeasured = {
+              base: measured.base.length > 0 ? medians(measured.base) : null,
+              head: medians(measured.head),
+            };
+            const list = (side: 'base' | 'head') =>
+              measured[side].length === 0
+                ? ''
+                : ` ${side} lcp ${measured[side].map((v) => Math.round(v.lcp)).join(' ')}, tbt ${measured[side].map((v) => Math.round(v.tbt)).join(' ')}, cls ${measured[side].map((v) => v.cls.toFixed(4)).join(' ')};`;
             console.log(
-              `lighthouse: ${row.page} (${profile}) re-measured: lcp base ${list('base', 'lcp')}, head ${list('head', 'lcp')}; tbt base ${list('base', 'tbt')}, head ${list('head', 'tbt')}`
+              `lighthouse: ${row.page} (${profile}) re-measured:${list('base')}${list('head')}`
             );
           }
         } catch (error) {
           const why = error instanceof Error ? error.message : String(error);
           problems.push(
-            `${names.join(', ')} (${profile}): the re-measure failed, so the regression stands: ${why}`
+            `${names.join(', ')} (${profile}): the re-measure failed, so the first numbers stand: ${why}`
           );
         }
       }
       for (const row of rows) {
-        const [b, h] = row.remeasured
-          ? [row.remeasured.base, row.remeasured.head]
-          : [row.base as Values, row.head];
-        const again = row.remeasured ? ', re-measured' : '';
+        const again = row.remeasured;
+        for (const key of row.over) {
+          const [value, note] =
+            key === 'cls' && again ? [again.head.cls, ', re-measured'] : [row.head[key], ''];
+          problems.push(`${row.page} (${profile}): ${key} ${value} over budget${note}`);
+        }
+        const [b, h] = again?.base ? [again.base, again.head] : [row.base as Values, row.head];
         for (const key of row.regressed) {
           problems.push(
-            `${row.page} (${profile}): ${key} regressed from ${b[key]} to ${h[key]}${again}`
+            `${row.page} (${profile}): ${key} regressed from ${b[key]} to ${h[key]}${again?.base ? ', re-measured' : ''}`
           );
         }
       }

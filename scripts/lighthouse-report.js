@@ -33,9 +33,11 @@ export const profiles = /** @type {const} */ (['mobile', 'desktop']);
  * @typedef {'performance' | 'accessibility' | 'bestPractices' | 'lcp' | 'tbt' | 'cls'} Metric
  * @typedef {Record<Metric, number>} Values
  * @typedef {{ page: string, profile: 'mobile' | 'desktop', head: Values, base: Values | null,
- *   over: Metric[], regressed: Metric[], remeasured: { base: Values, head: Values } | null }} Result
+ *   over: Metric[], regressed: Metric[], remeasured: { base: Values | null, head: Values } | null }} Result
  * `remeasured`: the page looked regressed against `base`, so base and head were measured again in
- * turn on the same runner; `regressed` is decided on those numbers.
+ * turn on the same runner, and `regressed` is decided on those numbers; or its CLS was over
+ * budget, so head was measured again (base only if it also looked regressed), and the CLS entry
+ * in `over` is decided on that head.
  * @typedef {{ version: 2, runs: number, results: Result[] }} Metrics
  */
 
@@ -108,11 +110,14 @@ function metricList(value, where) {
 /**
  * @param {unknown} value
  * @param {string} where
- * @returns {{ base: Values, head: Values }}
+ * @returns {{ base: Values | null, head: Values }}
  */
 function remeasured(value, where) {
   const object = exactObject(value, ['base', 'head'], where);
-  return { base: values(object.base, `${where}.base`), head: values(object.head, `${where}.head`) };
+  return {
+    base: object.base === null ? null : values(object.base, `${where}.base`),
+    head: values(object.head, `${where}.head`),
+  };
 }
 
 /**
@@ -218,7 +223,7 @@ export function render(m) {
     ...(m.results.some((r) => r.remeasured)
       ? [
           '',
-          'A page that looked regressed has a second row, *re-measured*: base and head measured again on the same runner, one run of each in turn. That row decides the regression; the budgets are judged on the first.',
+          'A page that looked regressed, or was over its CLS budget, has a second row, _re-measured_: measured again on the same runner, base and head one run of each in turn (head alone for CLS). That row decides the regression and the CLS budget; the other budgets are judged on the first.',
         ]
       : []),
   ];
@@ -236,18 +241,29 @@ export function render(m) {
     rows.sort((a, b) => order.indexOf(a.page) - order.indexOf(b.page));
     for (const r of rows) {
       const again = r.remeasured;
+      /**
+       * Each mark on the row whose numbers decided it: a regression on the re-measured row when
+       * the base was measured again, the CLS budget there when the page was, the rest on the first.
+       * @param {Metric} k
+       * @param {boolean} remeasuredRow
+       */
+      const flags = (k, remeasuredRow) => {
+        const over = r.over.includes(k) && (k === 'cls' && !!again) === remeasuredRow;
+        const regressed = r.regressed.includes(k) && !!again?.base === remeasuredRow;
+        return `${over ? ' ✗' : ''}${regressed ? ' ▲' : ''}`;
+      };
       const cells = metricKeys.map((k) => {
         const { format } = metrics[k];
         const base = r.base === null ? 'new' : format(r.base[k]);
-        const flags = `${r.over.includes(k) ? ' ✗' : ''}${!again && r.regressed.includes(k) ? ' ▲' : ''}`;
-        return `${base} → ${format(r.head[k])}${flags}`;
+        return `${base} → ${format(r.head[k])}${flags(k, false)}`;
       });
       lines.push(`| ${pages[r.page]} | ${cells.join(' | ')} |`);
       if (!again) continue;
       const remeasuredCells = metricKeys.map((k) => {
         const { format } = metrics[k];
-        const flag = r.regressed.includes(k) ? ' ▲' : '';
-        return `${format(again.base[k])} → ${format(again.head[k])}${flag}`;
+        const head = format(again.head[k]);
+        const cell = again.base ? `${format(again.base[k])} → ${head}` : head;
+        return `${cell}${flags(k, true)}`;
       });
       lines.push(`| ${pages[r.page]}, re-measured | ${remeasuredCells.join(' | ')} |`);
     }

@@ -3,7 +3,8 @@
 // whose file starts with FAIL), and an `lhci collect` that, like the pinned one, exits 1 when a
 // page does not answer 200 and otherwise writes one result per run. Chromium is never started.
 // A page's file sets what the stand-in measures: `lcp:N` its LCP (400 ms otherwise), `drift`
-// adds 40 ms for every run of a drifting page before it (a runner slowing down), `crash` makes
+// adds 40 ms for every run of a drifting page before it (a runner slowing down), `cls:a,b,...`
+// the CLS of its successive runs (the last repeats; 0 otherwise), `crash` makes
 // Lighthouse crash on it as NO_NAVSTART does; a `crash-once` file next to the stand-in makes
 // the next collect crash. Each measured URL is appended to `calls.log` there.
 import assert from 'node:assert/strict';
@@ -68,6 +69,11 @@ for (const url of urls) {
   for (let run = 0; run < runs; run++) {
     appendFileSync(join(here, 'calls.log'), new URL(url).pathname + '\\n');
     let lcp = Number(/lcp:(\\d+)/.exec(body)?.[1] ?? 400);
+    const clsList = (/cls:([\\d.,]+)/.exec(body)?.[1] ?? '0').split(',').map(Number);
+    const seen = join(here, 'cls-count-' + new URL(url).pathname.replaceAll('/', '_'));
+    const clsRun = existsSync(seen) ? Number(readFileSync(seen, 'utf8')) : 0;
+    writeFileSync(seen, String(clsRun + 1));
+    const cls = clsList[Math.min(clsRun, clsList.length - 1)];
     if (body.includes('drift')) {
       const counter = join(here, 'drift-count');
       const count = existsSync(counter) ? Number(readFileSync(counter, 'utf8')) : 0;
@@ -80,7 +86,7 @@ for (const url of urls) {
       audits: {
         'largest-contentful-paint': { numericValue: lcp },
         'total-blocking-time': { numericValue: 0 },
-        'cumulative-layout-shift': { numericValue: 0 },
+        'cumulative-layout-shift': { numericValue: cls },
       },
     };
     writeFileSync('.lighthouseci/lhr-' + n++ + '.json', JSON.stringify(lhr));
@@ -226,8 +232,9 @@ const metricsFile = () =>
       page: string;
       base: { lcp: number };
       head: { lcp: number };
+      over: string[];
       regressed: string[];
-      remeasured: { base: { lcp: number }; head: { lcp: number } } | null;
+      remeasured: { base: { lcp: number } | null; head: { lcp: number; cls: number } } | null;
     }[];
   };
 const row = (page: string) => metricsFile().results.find((r) => r.page === page);
@@ -248,7 +255,7 @@ it('passes a page that only looked regressed against a lucky cached base, measur
   assert.equal(projectsRow?.base.lcp, 400);
   assert.equal(projectsRow?.head.lcp, 540);
   assert.deepEqual(
-    projectsRow?.remeasured && [projectsRow.remeasured.base.lcp, projectsRow.remeasured.head.lcp],
+    projectsRow?.remeasured && [projectsRow.remeasured.base?.lcp, projectsRow.remeasured.head.lcp],
     [700, 740]
   );
   assert.deepEqual(projectsRow?.regressed, []);
@@ -276,10 +283,35 @@ it('fails, naming the cause, when the re-measure cannot run', () => {
   assert.match(result.stderr, /NO_NAVSTART/);
   assert.match(
     result.stderr,
-    /projects \(desktop\): the re-measure failed, so the regression stands: lhci collect .* exited with 1 again/
+    /projects \(desktop\): the re-measure failed, so the first numbers stand: lhci collect .* exited with 1 again/
   );
   assert.equal(row('projects')?.remeasured, null);
   assert.deepEqual(row('projects')?.regressed, ['lcp']);
+});
+
+it('measures head alone again for a CLS budget miss, and fails only a miss that repeats', () => {
+  // No base at all: a CLS budget is absolute, so its re-measure needs none.
+  const head = (writing: string) => {
+    rmSync(join(dir, 'head'), { recursive: true, force: true });
+    site('head', { ...pages, 'writing.html': writing }, true);
+    return spawnSync(
+      process.execPath,
+      [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
+      { cwd: dir, encoding: 'utf8', env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/x' } }
+    );
+  };
+  // #52: 0.0102 three times, then the page's usual 0.0015.
+  const noise = head('cls:0.0102,0.0102,0.0102,0.0015');
+  assert.equal(noise.status, 0, noise.stderr);
+  assert.deepEqual(row('writing')?.over, []);
+  assert.equal(row('writing')?.remeasured?.head.cls, 0.0015);
+  assert.equal(row('writing')?.remeasured?.base, null);
+  assert.deepEqual(calls().slice(24), Array(3).fill('/writing'));
+
+  const shifted = head('cls:0.0515');
+  assert.equal(shifted.status, 1);
+  assert.match(shifted.stderr, /writing \(desktop\): cls 0\.0515 over budget, re-measured/);
+  assert.deepEqual(row('writing')?.over, ['cls']);
 });
 
 it('runs a crashed lhci collect once more, and fails with its error when it crashes again', () => {

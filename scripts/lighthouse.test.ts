@@ -5,7 +5,15 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { confirmed, medians, overBudget, pagePaths, readLhr, regressions } from './lighthouse.ts';
+import {
+  decide,
+  type Metric,
+  medians,
+  overBudget,
+  pagePaths,
+  readLhr,
+  regressions,
+} from './lighthouse.ts';
 
 const values = (over: Partial<Record<string, number>> = {}) => ({
   performance: 1,
@@ -38,10 +46,12 @@ describe('budgets', () => {
     assert.deepEqual(regressions(values({ lcp: 9000 }), null, 'mobile'), []);
   });
 
-  it('leaves mobile TBT to its budget: unchanged pages read 0 to 62 ms', () => {
+  it('flags mobile TBT above the 62 ms that unchanged pages read, under the 100 ms budget', () => {
     // #73, which changed no page: home read 0 ms on the base and 56 ms on head.
     assert.deepEqual(regressions(values({ tbt: 56 }), values({ tbt: 0 }), 'mobile'), []);
-    assert.deepEqual(overBudget(values({ tbt: 101 }), 'mobile'), ['tbt']);
+    // One 30 ms task, four times slower on mobile: about 70 ms of TBT, which desktop reads as 0.
+    assert.deepEqual(regressions(values({ tbt: 76 }), values({ tbt: 0 }), 'mobile'), ['tbt']);
+    assert.deepEqual(overBudget(values({ tbt: 76 }), 'mobile'), []);
   });
 
   it('absorbs one simulated mobile round trip, the jump seen between identical builds', () => {
@@ -79,19 +89,45 @@ describe('measured again', () => {
   };
   const heavy = { base: [1660, 1361, 1512], head: [2858, 2857, 2858] };
   const runs = (lcps: number[]) => lcps.map((lcp) => values({ lcp }));
+  const suspect = { over: [] as Metric[], regressed: ['lcp'] as Metric[] };
 
   it('never fails an unchanged page on the runs Lighthouse recorded for it, 15 times over', () => {
     const recorded = [...Object.entries(identical), ...Object.entries(second)];
     assert.equal(recorded.length, 15);
     for (const [page, lcp] of recorded) {
       const measured = { base: runs(lcp.base), head: runs(lcp.head) };
-      assert.deepEqual(confirmed(measured, 'mobile'), [], page);
+      assert.deepEqual(decide(suspect, measured, 'mobile').regressed, [], page);
     }
   });
 
   it('still fails a 300 KB render-blocking script on the runs recorded for it', () => {
     const measured = { base: runs(heavy.base), head: runs(heavy.head) };
-    assert.deepEqual(confirmed(measured, 'mobile'), ['lcp']);
+    assert.deepEqual(decide(suspect, measured, 'mobile').regressed, ['lcp']);
+  });
+
+  // #52 read 0.0102 on desktop /writing against the 0.01 budget; the other 117 desktop medians
+  // of /writing in CI read 0.0015 or 0.0016.
+  const overCls = { over: ['cls'] as Metric[], regressed: [] as Metric[] };
+  const clsRuns = (cls: number[]) => ({ base: [], head: cls.map((c) => values({ cls: c })) });
+
+  it('passes a CLS budget miss that a clean re-measure of head does not repeat', () => {
+    assert.deepEqual(decide(overCls, clsRuns([0.0015, 0.0016, 0.0015]), 'desktop'), {
+      over: [],
+      regressed: [],
+    });
+    // One more 0.0102 among the three is still noise: the median decides.
+    assert.deepEqual(decide(overCls, clsRuns([0.0102, 0.0016, 0.0015]), 'desktop').over, []);
+  });
+
+  it('still fails a real CLS shift of 0.05, and keeps every other budget miss as first read', () => {
+    const shifted = clsRuns([0.0515, 0.0516, 0.0515]);
+    assert.deepEqual(decide(overCls, shifted, 'desktop').over, ['cls']);
+    const first = { over: ['lcp', 'cls'] as Metric[], regressed: ['lcp'] as Metric[] };
+    // Head alone measured again: the regression is not decided again, and LCP's budget stays.
+    assert.deepEqual(decide(first, clsRuns([0.0015, 0.0015, 0.0015]), 'desktop'), {
+      over: ['lcp'],
+      regressed: ['lcp'],
+    });
   });
 });
 

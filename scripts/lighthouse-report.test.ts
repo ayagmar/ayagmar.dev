@@ -95,7 +95,7 @@ describe('validate and render', () => {
       cleared,
       /\| Home \| .* \| 1\.23 s → 1\.53 s \| .*\|\n\| Home, re-measured \| .* \| 1\.52 s → 1\.53 s \|/
     );
-    assert.match(cleared, /second row, \*re-measured\*/);
+    assert.match(cleared, /second row, _re-measured_/);
     assert.match(cleared, /Every page is within budget and no metric regressed\./);
     assert.doesNotMatch(cleared, /▲/);
     // A regression that held is marked on the re-measured row, where it was decided.
@@ -111,6 +111,32 @@ describe('validate and render', () => {
     assert.match(
       held,
       /\| A post \| .* \| 1\.50 s → 2\.30 s ✗ \|.*\n\| A post, re-measured \| .* \| 1\.50 s → 2\.30 s ▲ \|/
+    );
+  });
+
+  it('marks a CLS budget miss on the row of the head measured again, which decided it', () => {
+    const once = (cls: number) =>
+      render(
+        validate(
+          text((a) => {
+            a.results.splice(1, 1);
+            Object.assign(a.results[0] ?? {}, {
+              head: values({ cls: 0.0102 }),
+              over: cls > 0.01 ? ['cls'] : [],
+              remeasured: { base: null, head: values({ cls }) },
+            });
+          })
+        )
+      );
+    const cleared = once(0.0015);
+    assert.match(
+      cleared,
+      /\| Home \| .* \| 0\.002 → 0\.010 \|\n\| Home, re-measured \| 99 \| .* \| 0\.002 \|/
+    );
+    assert.match(cleared, /Every page is within budget/);
+    assert.match(
+      once(0.0515),
+      /\| Home \| .* \| 0\.002 → 0\.010 \|\n\| Home, re-measured \| .* \| 0\.051 ✗ \|/
     );
   });
 
