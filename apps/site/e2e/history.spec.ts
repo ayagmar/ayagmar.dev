@@ -132,7 +132,8 @@ for (const width of [320, 360, 1280]) {
     await visit(page, noon, async (route) => {
       await page.evaluate(async () => {
         await document.fonts.ready;
-        while (document.querySelector('astro-island[ssr]')) {
+        // Only the search island: one that hydrates when visible would never end this loop.
+        while (document.querySelector('.site-tools astro-island[ssr]')) {
           await new Promise((resolve) => setTimeout(resolve, 20));
         }
         // A shift is recorded in the frame after the change that causes it.
@@ -143,7 +144,16 @@ for (const width of [320, 360, 1280]) {
       await route.fulfill(envelope('ok'));
     });
     await expect(lines(page)).toHaveCount(3);
-    expect(await page.evaluate(() => window.shifts)).toBeLessThan(0.01);
+    // Read after the frames in which the fill-in's shift is recorded, with the entries the
+    // observer has not delivered yet.
+    const shifts = await page.evaluate(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const pending = window.shiftObserver.takeRecords() as (PerformanceEntry & {
+        value: number;
+      })[];
+      return window.shifts + pending.reduce((sum, entry) => sum + entry.value, 0);
+    });
+    expect(shifts).toBeLessThan(0.01);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
