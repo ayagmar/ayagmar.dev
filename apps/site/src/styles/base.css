@@ -1802,12 +1802,13 @@ main:has(.toc) .reader ~ .project-card {
   cursor: pointer;
 }
 
+/* Decoration only: the empty alternative keeps the arrow out of the summary's name. */
 .more summary::after {
-  content: " ↓";
+  content: " ↓" / "";
 }
 
 .more[open] summary::after {
-  content: " ↑";
+  content: " ↑" / "";
 }
 
 .more > :last-child {

@@ -466,8 +466,9 @@
   text-decoration: none;
 }
 
+/* Decoration only: the empty alternative keeps the arrow out of the link's name. */
 .panel-head a::after {
-  content: " →";
+  content: " →" / "";
 }
 
 .panel-head a:hover {
