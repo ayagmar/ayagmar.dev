@@ -31,7 +31,7 @@ const feeds = feedPaths({ project: project.slug });
   description={project.summary ?? `${project.slug}, a project by ${site.author}.`}
   feed={{ project: project.slug }}
 >
-  <article class="project">
+  <article class="project column">
     <header class="panel m-screen">
       <h1>{project.slug}</h1>
       {project.summary !== null && <p class="project-summary">{project.summary}</p>}

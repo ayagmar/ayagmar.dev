@@ -24,20 +24,22 @@ const absolute = new Intl.DateTimeFormat('en-GB', {
   title={nowPage.label}
   description="What Abdeslam Yassine Agmar is working on and thinking about this month."
 >
-  <header class="intro">
-    <h1>Now</h1>
-    <p class="caption">Updated <time datetime={day}>{absolute}</time>.</p>
-    {/* Shown by src/scripts/now.ts against the reader's clock; never claims freshness itself. */}
-    <p class="caption stale" data-stale-after={staleAfterDays} data-updated={day} hidden>
-      This page may be out of date: it was last updated more than {staleAfterDays} days ago.
-    </p>
-  </header>
+  <div class="column">
+    <header class="intro">
+      <h1>Now</h1>
+      <p class="caption">Updated <time datetime={day}>{absolute}</time>.</p>
+      {/* Shown by src/scripts/now.ts against the reader's clock; never claims freshness itself. */}
+      <p class="caption stale" data-stale-after={staleAfterDays} data-updated={day} hidden>
+        This page may be out of date: it was last updated more than {staleAfterDays} days ago.
+      </p>
+    </header>
 
-  <Brewing items={brewing} />
+    <Brewing items={brewing} />
 
-  <div class="paper t-now">
-    <div class="prose">
-      <Content />
+    <div class="paper t-now">
+      <div class="prose">
+        <Content />
+      </div>
     </div>
   </div>
 </Base>

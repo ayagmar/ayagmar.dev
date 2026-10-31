@@ -61,7 +61,10 @@ async function search() {
     const found = await (await pagefind).debouncedSearch(term);
     if (found === null) return; // A newer keystroke superseded this search.
     results = await Promise.all(found.results.slice(0, limit).map((result) => result.data()));
-    status = results.length === 0 ? 'No results.' : `${results.length} results.`;
+    status =
+      results.length === 0
+        ? 'No results.'
+        : `${results.length} ${results.length === 1 ? 'result' : 'results'}.`;
   } catch {
     pagefind = undefined;
     status = 'Search is unavailable right now.';

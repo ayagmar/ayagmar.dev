@@ -9,7 +9,7 @@ const { items } = Astro.props;
 ---
 
 {items.length > 0 && (
-  <section class="panel m-cork" aria-labelledby="brewing" data-file="brewing.log">
+  <section class="panel m-cork" aria-labelledby="brewing">
     <h2 id="brewing">Currently brewing</h2>
     <ul class="brewing">
       {items.map((item) => (

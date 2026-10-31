@@ -39,18 +39,25 @@ export function capped(
   ];
 }
 
+// The time, then the event in one element, so the two make the log's columns (base.css).
 const shippingItem = (event: ShippingEvent) =>
   el(
     'li',
     {},
     stampMarkup(event.at),
-    ` ${repoName(event.repo)} `,
-    'url' in event ? el('a', { href: event.url }, describeEvent(event)) : describeEvent(event)
+    ' ',
+    el(
+      'span',
+      {},
+      el('span', { class: 'repo' }, repoName(event.repo)),
+      ' ',
+      'url' in event ? el('a', { href: event.url }, describeEvent(event)) : describeEvent(event)
+    )
   );
 
-/** The shipping events as a git graph: all of `events`, or the first `keep` and the rest folded. */
+/** The shipping events as a log: all of `events`, or the first `keep` and the rest folded. */
 export const shippingList = (events: readonly ShippingEvent[], keep = events.length) =>
-  capped('ul', { class: 'shipping' }, events.map(shippingItem), keep, (rest) =>
+  capped('ul', { class: 'shipping log' }, events.map(shippingItem), keep, (rest) =>
     rest === 1 ? '1 earlier event' : `${rest} earlier events`
   );
 

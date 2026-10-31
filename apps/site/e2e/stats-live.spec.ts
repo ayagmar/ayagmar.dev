@@ -159,7 +159,7 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
   await expect(panel(page, 'listening').locator('dd')).toHaveText(['999', 'unknown']);
   await expect(
     panel(page, 'listening').locator('.listening-body ol').first().locator('li')
-  ).toHaveText(['Half Right by Heatmiser · 3 hours ago']);
+  ).toHaveText(['3 hours ago Half Right by Heatmiser']);
   await expect(panel(page, 'shipping').locator('.shipping li')).toHaveText([
     '10 minutes ago runnerd merged #7: Live stats',
   ]);

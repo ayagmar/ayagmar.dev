@@ -91,12 +91,7 @@ const featured = featuredProjects.map((project) => project.repo);
         <Freshness envelope={projects} />
       </section>
 
-      <section
-        class="panel m-tea"
-        data-file="typing.log"
-        aria-labelledby="typing"
-        {...liveAttrs('monkeytype', typing)}
-      >
+      <section class="panel m-tea" aria-labelledby="typing" {...liveAttrs('monkeytype', typing)}>
         <h2 id="typing">Typing</h2>
         {/* The day each best was set; src/scripts/stats-live.ts reads it relative to now. */}
         <div class="typing-body">
