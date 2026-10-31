@@ -228,32 +228,32 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
     el(
       'figure',
       { class: 'heat llm-heat' },
-      // Scrolls sideways on a narrow screen, starting at the latest week (stats.astro); the
-      // dates under the year scroll with it, so each stays under its own week.
+      // Scrolls sideways on a narrow screen, starting at the latest week (stats.astro). The
+      // caption gives the range, not dates under particular weeks, so scrolling cannot misplace
+      // or clip them.
       el(
         'div',
         { class: 'llm-heat-scroll', tabindex: '0' },
         el(
           'div',
-          { class: 'llm-heat-year' },
-          el(
-            'div',
-            { class: 'heat-cells', role: 'img', 'aria-label': summary },
-            ...heat.cells.map(({ date: day, tokens: count, level }) =>
-              el('i', {
-                'data-l': String(level),
-                ...(count === undefined
-                  ? {}
-                  : { title: `${dayMonth.format(utcDate(day))}: ${tokens(count)}` }),
-              })
-            )
-          ),
-          el(
-            'p',
-            { class: 'heat-cap' },
-            el('span', {}, fullDate.format(utcDate(heat.from))),
-            el('span', {}, fullDate.format(utcDate(heat.to)))
+          { class: 'heat-cells', role: 'img', 'aria-label': summary },
+          ...heat.cells.map(({ date: day, tokens: count, level }) =>
+            el('i', {
+              'data-l': String(level),
+              ...(count === undefined
+                ? {}
+                : { title: `${dayMonth.format(utcDate(day))}: ${tokens(count)}` }),
+            })
           )
+        )
+      ),
+      el(
+        'figcaption',
+        { class: 'heat-cap' },
+        el(
+          'span',
+          {},
+          `${fullDate.format(utcDate(heat.from))} – ${fullDate.format(utcDate(heat.to))}`
         )
       )
     ),

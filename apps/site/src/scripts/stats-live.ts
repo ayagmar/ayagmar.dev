@@ -138,12 +138,17 @@ live(
 // the last 7 days, the agents and the current streak describe the date in Rabat the snapshot
 // was taken: once that date has passed they are hidden until a newer snapshot comes, whether
 // the build drew them or an answer did (ADR 0014). The sample in fixtures mode keeps them.
+// The year's 371 cells are costly to rebuild on a phone, so an answer is drawn only when it is
+// another snapshot than the one shown: the build's, most of the time, is the latest one.
 const llmUsage = document.querySelector<HTMLElement>('[data-live="llm-usage"]');
+let llmUsageDrawn = Date.parse(llmUsage?.dataset.fetchedAt ?? '');
 live(
   'llm-usage',
   15 * minute,
   (data) => (knowsRabatDate() ? readLlmUsageSnapshot(data) : undefined),
-  (panel, { data, fetchedAt }) => {
+  (panel, { data, fetchedAt, at }) => {
+    if (at === llmUsageDrawn) return;
+    llmUsageDrawn = at;
     panel
       .querySelector('.llm-usage-body')
       ?.replaceChildren(...llmUsagePanel(data, fetchedAt).map(toNode));

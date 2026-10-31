@@ -231,7 +231,7 @@ import '../scripts/stats-live.ts';
 }
 
 /* Name, bar, tokens and share on one line; the bar takes what is left, never less than 2.5rem,
-   and a long name wraps instead. */
+   and a long name wraps instead, at a space unless one word is wider than its column. */
 .llm-agents li {
   display: grid;
   grid-template-columns: minmax(0, 7.5rem) minmax(2.5rem, 1fr) 3.5rem 2.75rem;
@@ -241,7 +241,7 @@ import '../scripts/stats-live.ts';
 }
 
 .llm-agent {
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .llm-bar {
@@ -263,8 +263,15 @@ import '../scripts/stats-live.ts';
 
 /* A year of days, a column a week: 4px cells and 1px gaps fit 53 weeks in 264px, the panel's
    width on a desktop. On a phone it scrolls, starting at the latest week: the scroller runs
-   right to left, the year and its dates left to right. Contained, so the year's width does
-   not widen the panel. */
+   right to left, the cells left to right. Contained, so the year's width does not widen the
+   panel. Its 371 cells cost more style and layout than the rest of the page (mobile TBT, ADR
+   0017); it sits below the fold, so the browser skips that work until it is near the screen,
+   holding its height meanwhile. */
+.llm-heat {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.4rem;
+}
+
 .llm-heat-scroll {
   overflow-x: auto;
   direction: rtl;
@@ -272,21 +279,14 @@ import '../scripts/stats-live.ts';
 }
 
 /* As wide as its weeks need, so the scroller can reach every one; wider cells when it fits. */
-.llm-heat-year {
+.llm-heat .heat-cells {
   width: max-content;
   min-width: 100%;
   direction: ltr;
-}
-
-.llm-heat .heat-cells {
   grid-template-columns: none;
   grid-template-rows: repeat(7, auto);
   grid-auto-columns: minmax(4px, 1fr);
   grid-auto-flow: column;
   gap: 1px;
-}
-
-.llm-heat .heat-cap {
-  margin-bottom: 0;
 }
 </style>
