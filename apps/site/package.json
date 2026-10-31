@@ -8,7 +8,7 @@
     "@astrojs/svelte": "9.1.1",
     "@min7/contracts": "workspace:*",
     "astro": "7.4.2",
-    "pele": "1.9.0",
+    "pele": "1.12.0",
     "satteri": "0.10.5",
     "svelte": "5.57.3"
   },
