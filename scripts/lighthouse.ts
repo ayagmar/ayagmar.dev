@@ -38,11 +38,28 @@ const scores = new Set<Metric>(['performance', 'accessibility', 'bestPractices']
 const metricKeys = Object.keys(metrics) as Metric[];
 
 /** The fields of a Lighthouse result this script reads. */
+interface LayoutShift {
+  score?: number;
+  node?: { selector?: string; snippet?: string };
+}
+
 interface Lhr {
   requestedUrl: string;
   runtimeError?: { code: string };
   categories: Record<string, { score: number | null }>;
-  audits: Record<string, { numericValue?: number }>;
+  audits: Record<string, { numericValue?: number; details?: { items?: LayoutShift[] } }>;
+}
+
+/**
+ * The elements a run saw move, worst first, as `0.0479 main > div.stats-grid`. The report keeps
+ * only numbers, so this is the one place a CLS over budget on the runner is explained.
+ */
+export function shifts(lhr: Lhr): string[] {
+  const items = lhr.audits['layout-shifts']?.details?.items ?? [];
+  return items.map(
+    (item) =>
+      `${(item.score ?? 0).toFixed(4)} ${item.node?.selector ?? item.node?.snippet ?? 'an unnamed node'}`
+  );
 }
 
 /** One run's metrics, or null when Lighthouse could not measure the page (such as a 404). */
@@ -221,6 +238,11 @@ function collect(
     const values = readLhr(lhr);
     if (!values) failed = true;
     const path = new URL(lhr.requestedUrl).pathname;
+    if (values && overBudget(values, profile).includes('cls')) {
+      console.log(
+        `lighthouse: ${path} (${profile}) moved: ${shifts(lhr).join('; ') || 'nothing named'}`
+      );
+    }
     measured.set(path, [...(measured.get(path) ?? []), ...(values ? [values] : [])]);
   }
   if (failed) console.error(`lighthouse: some runs on ${origin} could not measure the page`);
