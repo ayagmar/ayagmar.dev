@@ -4,6 +4,7 @@ import { listeningHistoryEnvelopeSchema } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { knowsRabatDate, readHistory, yearLine } from '../src/lib/history.ts';
+import type { Markup } from '../src/lib/markup.ts';
 
 const corpus = join(import.meta.dirname, '../../../packages/contracts/corpus/listening-history');
 
@@ -80,7 +81,9 @@ it('knows the Rabat date by current rules here', () => {
 });
 
 describe('the words for a year', () => {
-  const join = (line: ReturnType<typeof yearLine>) => `${line.before}${line.track}${line.after}`;
+  const text = (node: Markup): string =>
+    typeof node === 'string' ? node : node.children.map(text).join('');
+  const join = (line: Markup[]) => line.map(text).join('');
 
   // Catches a top track of a partly read day presented as the day's own.
   it('says when the top track is only the top of what was read', () => {

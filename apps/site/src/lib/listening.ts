@@ -3,7 +3,9 @@
  * show, and the now-playing line both pages render, at build time (NowPlaying.astro) and live.
  */
 import type { ListeningSnapshot } from '@min7/contracts';
-import { type Answer, instantMs, list, stamp, text, whole } from './live.ts';
+import { artistUrl, trackUrl } from './lastfm.ts';
+import { type Answer, instantMs, list, text, whole } from './live.ts';
+import { el, type Markup, toNode, when } from './markup.ts';
 
 /** A Last.fm page, or null. Links only; the site never loads from Last.fm. */
 const lastfm = (value: unknown) =>
@@ -47,7 +49,7 @@ export interface NowPlayingLine {
    * while the line describes now.
    */
   at: string | null;
-  /** The words between the sentence and `at`. */
+  /** The words between the dot and `at`: `checked ` for an empty answer. */
   when: string;
 }
 
@@ -73,9 +75,32 @@ export function nowPlaying(
         track: null,
         // An empty answer that no longer describes now is dated like any other.
         at: now ? null : fetchedAt,
-        when: ', checked ',
+        when: 'checked ',
       }
-    : { lead: 'Last played', playing: false, track: last, at: last.playedAt, when: ', ' };
+    : { lead: 'Last played', playing: false, track: last, at: last.playedAt, when: '' };
+}
+
+/**
+ * `<a><cite>Title</cite></a> by <a>Artist</a>`, each a link to its Last.fm page. A link from
+ * signals is used as it is, the reader having checked it is on Last.fm; otherwise one is built
+ * from the names.
+ */
+export const trackBy = (track: string, artist: string, url: string | null): Markup[] => [
+  el('a', { href: url ?? trackUrl(artist, track) }, el('cite', {}, track)),
+  ' by ',
+  el('a', { href: artistUrl(artist) }, artist),
+];
+
+/**
+ * The now-playing line as markup, at build time (NowPlaying.astro) and live: the sentence,
+ * announced whole when it changes, and the time after it, which ticks outside it.
+ */
+export function nowPlayingMarkup(line: NowPlayingLine): { words: Markup[]; at: Markup | null } {
+  const { lead, track, at } = line;
+  return {
+    words: track === null ? [lead] : [`${lead} `, ...trackBy(track.track, track.artist, track.url)],
+    at: at === null ? null : when(at, line.when),
+  };
 }
 
 // What the line's live region says now, so it is announced only when that changes.
@@ -90,26 +115,15 @@ export function renderNowPlaying(
   { data, fetchedAt }: Answer<ListeningSnapshot>,
   now: boolean
 ): void {
-  const { lead, playing, track, at, when } = nowPlaying(data, fetchedAt, now);
-  const words = line.firstElementChild as HTMLElement;
-  const key = JSON.stringify([lead, track]);
+  const current = nowPlaying(data, fetchedAt, now);
+  const { words, at } = nowPlayingMarkup(current);
+  const sentence = line.firstElementChild as HTMLElement;
+  const key = JSON.stringify(words);
   if (key !== said) {
     said = key;
-    if (track === null) {
-      words.replaceChildren(lead);
-    } else {
-      // Text only: titles and artists are Last.fm's, so never markup.
-      const cite = document.createElement('cite');
-      cite.textContent = track.track;
-      let title: Node = cite;
-      if (track.url !== null) {
-        title = document.createElement('a');
-        (title as HTMLAnchorElement).href = track.url;
-        title.appendChild(cite);
-      }
-      words.replaceChildren(`${lead} `, title, ` by ${track.artist}`);
-    }
+    // Text only: titles and artists are Last.fm's, so never markup.
+    sentence.replaceChildren(...words.map(toNode));
   }
-  line.toggleAttribute('data-playing', playing);
-  line.replaceChildren(words, ...(at === null ? [] : [when, stamp(at)]));
+  line.toggleAttribute('data-playing', current.playing);
+  line.replaceChildren(sentence, ...(at === null ? [] : [' ', toNode(at)]));
 }

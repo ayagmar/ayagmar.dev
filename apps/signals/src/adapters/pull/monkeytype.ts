@@ -24,8 +24,9 @@ export interface MonkeytypeRaw {
 
 export const monkeytype: PullAdapter<MonkeytypeRaw, MonkeytypeSnapshot> = {
   id: 'monkeytype',
-  // Personal bests change rarely: four pulls a day, eight requests (ADR 0033).
-  intervalSeconds: 6 * 60 * 60,
+  // Hourly, two requests a pull: a new best shows within the hour, and 2 requests an hour sit
+  // far inside the endpoint's 60 an hour and the account's 30 a minute (ADR 0033).
+  intervalSeconds: 60 * 60,
 
   async fetch(env, signal) {
     const apeKey = readSecret(env, 'MONKEYTYPE_APE_KEY');

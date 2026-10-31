@@ -26,12 +26,13 @@ test('now playing shows the build-time value as last played, with its age', asyn
   await page.clock.install({ time: '2026-10-26T12:00:00Z' });
   await page.goto('/');
   const line = page.locator('.now-playing');
-  await expect(line).toHaveText('Last played Friendships and Love by Rocketship, 3 hours ago');
+  await expect(line).toHaveText('Last played Friendships and Love by Rocketship · 3 hours ago');
   // A track change rewrites the sentence's nodes; it must be announced whole. The time ticks
   // every minute outside the announced part.
-  await expect(line.locator('span')).toHaveAttribute('aria-live', 'polite');
-  await expect(line.locator('span')).toHaveAttribute('aria-atomic', 'true');
-  await expect(line.locator('span time')).toHaveCount(0);
+  const sentence = line.locator('span').first();
+  await expect(sentence).toHaveAttribute('aria-live', 'polite');
+  await expect(sentence).toHaveAttribute('aria-atomic', 'true');
+  await expect(sentence.locator('time')).toHaveCount(0);
   await expect(line.locator('time')).toHaveAttribute('datetime', '2026-10-26T09:00:00Z');
 });
 
@@ -89,10 +90,15 @@ test('now playing updates from the read API', async ({ page }) => {
     )
   );
   await expect(page.locator('.now-playing')).toHaveText('Now playing Which Will by Nick Drake');
-  await expect(page.locator('.now-playing a')).toHaveAttribute(
-    'href',
-    'https://www.last.fm/music/Nick+Drake/_/Which+Will'
-  );
+  // The track by signals' link, the artist by one built from the name.
+  expect(
+    await page
+      .locator('.now-playing a')
+      .evaluateAll((links) => links.map((a) => a.getAttribute('href')))
+  ).toEqual([
+    'https://www.last.fm/music/Nick+Drake/_/Which+Will',
+    'https://www.last.fm/music/Nick+Drake',
+  ]);
 });
 
 test('now playing keeps the build-time value when the API fails', async ({ page }) => {
@@ -103,7 +109,7 @@ test('now playing keeps the build-time value when the API fails', async ({ page 
   });
   await expect.poll(() => asked).toBe(true);
   await expect(page.locator('.now-playing')).toHaveText(
-    'Last played Friendships and Love by Rocketship, 1 hour ago'
+    'Last played Friendships and Love by Rocketship · 1 hour ago'
   );
 });
 
@@ -111,7 +117,7 @@ test('now playing does not claim a stale answer is live', async ({ page }) => {
   await goLive(page, (route) => route.fulfill(listening(true, null)));
   // Not current, so it does not replace the build's track.
   await expect(page.locator('.now-playing')).toHaveText(
-    'Last played Friendships and Love by Rocketship, 1 hour ago'
+    'Last played Friendships and Love by Rocketship · 1 hour ago'
   );
 });
 
@@ -127,10 +133,9 @@ test('now playing ignores an answer that links off Last.fm', async ({ page }) =>
   });
   await expect.poll(() => asked).toBe(true);
   await expect(page.locator('.now-playing')).toHaveText(/^Last played Friendships and Love/);
-  await expect(page.locator('.now-playing a')).toHaveAttribute(
-    'href',
-    /^https:\/\/www\.last\.fm\//
-  );
+  for (const link of await page.locator('.now-playing a').all()) {
+    await expect(link).toHaveAttribute('href', /^https:\/\/www\.last\.fm\//);
+  }
 });
 
 const disc = (page: Page) =>
@@ -156,7 +161,7 @@ for (const { name, stale, data, text, turns, motion } of [
     name: 'rests on a stale answer',
     stale: true,
     data: 'ok',
-    text: 'Last played Friendships and Love by Rocketship, 1 hour ago',
+    text: 'Last played Friendships and Love by Rocketship · 1 hour ago',
     turns: false,
     motion: 'no-preference',
   },
@@ -203,7 +208,7 @@ const expectLive = async (page: Page, track = 'Which Will') => {
 
 const expectRested = async (page: Page, when: string, track = 'Which Will') => {
   await expect(page.locator('.now-playing')).toHaveText(
-    `Last played ${track} by Nick Drake, ${when}`
+    `Last played ${track} by Nick Drake · ${when}`
   );
   expect(await disc(page)).toBe('none');
 };
@@ -269,7 +274,7 @@ test('nothing played says when it was checked once it no longer describes now', 
   await expect(page.locator('.now-playing')).toHaveText('Nothing playing right now');
   await page.clock.fastForward(7 * 24 * 60 * 60_000);
   await page.clock.runFor(60_000);
-  await expect(page.locator('.now-playing')).toHaveText('Nothing played lately, checked 26 Oct');
+  await expect(page.locator('.now-playing')).toHaveText('Nothing played lately · checked 26 Oct');
   await expect(page.locator('.now-playing time')).toHaveAttribute(
     'datetime',
     '2026-10-26T10:30:00Z'
@@ -293,7 +298,7 @@ test('the record stops when a refresh hangs past its deadline', async ({ page })
   expect(requests).toBe(2);
   await page.clock.runFor(5_000);
   await expect(page.locator('.now-playing')).toHaveText(
-    'Last played Which Will by Nick Drake, 2 minutes ago',
+    'Last played Which Will by Nick Drake · 2 minutes ago',
     { timeout: 10_000 }
   );
   // A hang must not stop the polling: a later minute asks again.

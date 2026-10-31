@@ -11,6 +11,8 @@ import {
   readHistory,
   yearLine,
 } from '../lib/history.ts';
+import { due } from '../lib/live.ts';
+import { el, toNode } from '../lib/markup.ts';
 
 const block = document.querySelector<HTMLElement>('.history');
 // `${SIGNALS_API_BASE}/v1/listening-history`, absent in fixtures mode: then no request.
@@ -19,7 +21,7 @@ const endpoint = knowsRabatDate() ? block?.dataset.historySrc : undefined;
 // The last answer, read again on every check so that it shows only on the date it is for.
 let answer: unknown;
 // When the last request started (ms); never yet.
-let asked = 0;
+let asked: number | undefined;
 let pending = false;
 // What is on the page now, so a check that changes nothing leaves the DOM alone.
 let shown = '';
@@ -28,11 +30,12 @@ let midnight: ReturnType<typeof setTimeout> | undefined;
 /**
  * Asks signals while the page is visible, one request at a time: on load, then every 5
  * minutes while there is nothing for today to show (signals publishes a new date's history
- * within minutes of midnight), and hourly once there is. Given up after 5 s.
+ * within minutes of midnight), and hourly once there is; when the tab comes back, once the
+ * last request is a minute old (src/lib/live.ts). Given up after 5 s.
  */
-function refresh(now: number, current: boolean) {
+function refresh(now: number, current: boolean, returned: boolean) {
   if (!endpoint || pending || document.hidden) return;
-  if (asked !== 0 && now - asked < (current ? 60 : 5) * 60_000) return;
+  if (asked !== undefined && !due(now - asked, (current ? 60 : 5) * 60_000, returned)) return;
   asked = now;
   pending = true;
   fetch(endpoint, { signal: AbortSignal.timeout(5_000) })
@@ -46,8 +49,11 @@ function refresh(now: number, current: boolean) {
     });
 }
 
-/** Shows the history if it is for today in Rabat, else hides it; then asks again if due. */
-function check() {
+/**
+ * Shows the history if it is for today in Rabat, else hides it; then asks again if due.
+ * `returned` when the tab has just come back.
+ */
+function check(returned = false) {
   if (!block || !endpoint) return;
   const now = Date.now();
   const history = readHistory(answer, now);
@@ -60,9 +66,12 @@ function check() {
   // Hide it the moment the date changes in Rabat, whatever the minute tick does.
   clearTimeout(midnight);
   if (history) {
-    midnight = setTimeout(check, rabatDayStart(nextDate(history.describedDate)) * 1000 - now);
+    midnight = setTimeout(
+      () => check(),
+      rabatDayStart(nextDate(history.describedDate)) * 1000 - now
+    );
   }
-  refresh(now, history !== undefined);
+  refresh(now, history !== undefined, returned);
 }
 
 function render(block: HTMLElement, date: string, years: HistoryYear[]) {
@@ -75,23 +84,15 @@ function render(block: HTMLElement, date: string, years: HistoryYear[]) {
   time.textContent = dayName(date);
   caption.replaceChildren(time);
   // Text only: titles and artists are Last.fm's, so never markup.
-  list.replaceChildren(
-    ...years.map((year) => {
-      const { before, track, after } = yearLine(year);
-      const item = document.createElement('li');
-      const cite = document.createElement('cite');
-      cite.textContent = track;
-      item.append(before, cite, after);
-      return item;
-    })
-  );
+  list.replaceChildren(...years.map((year) => toNode(el('li', {}, ...yearLine(year)))));
   list.hidden = years.length === 0;
   empty.hidden = years.length > 0;
 }
 
 check();
-setInterval(check, 60_000);
+setInterval(() => check(), 60_000);
 // A tab that slept, or came back from the back/forward cache, checks the date at once.
-document.addEventListener('visibilitychange', check);
-window.addEventListener('focus', check);
-window.addEventListener('pageshow', check);
+const back = () => check(true);
+document.addEventListener('visibilitychange', back);
+window.addEventListener('focus', back);
+window.addEventListener('pageshow', back);

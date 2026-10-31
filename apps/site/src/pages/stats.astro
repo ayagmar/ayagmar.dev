@@ -1,16 +1,17 @@
 ---
 import Freshness from '../components/Freshness.astro';
+import Markup from '../components/Markup.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import ShippingHeat from '../components/ShippingHeat.astro';
 import ShippingList from '../components/ShippingList.astro';
-import Stamp from '../components/Stamp.astro';
 import { count, projectsSummary, repoName } from '../data/format.ts';
 import { emptyEnvelope } from '../data/reader.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { dayName } from '../lib/history.ts';
+import { listeningBody } from '../lib/listening-panel.ts';
 import { site } from '../lib/site.ts';
-import { starTotals, weekCount, statsWords as words } from '../lib/stats.ts';
+import { starTotals, statsWords as words } from '../lib/stats.ts';
 import { bestRows, dayDate, headline, typingWords } from '../lib/typing.ts';
 
 const listening = await signals.read('listening');
@@ -51,40 +52,7 @@ const bests = typing.data === null ? [] : bestRows(typing.data);
       <h2 id="listening">Listening</h2>
       <NowPlaying listening={listening} />
       <div class="listening-body">
-        {music !== null && (
-          <>
-            <dl>
-              <dt>{words.thisWeek}</dt>
-              <dd>{weekCount(music.scrobbles.thisWeek)}</dd>
-              <dt>{words.lastWeek}</dt>
-              <dd>{weekCount(music.scrobbles.lastWeek)}</dd>
-            </dl>
-            <h3>{words.recent}</h3>
-            {music.recent.length === 0 ? (
-              <p>{words.noRecent}</p>
-            ) : (
-              <ol>
-                {music.recent.map((track) => (
-                  <li>
-                    <cite>{track.track}</cite> by {track.artist}, <Stamp iso={track.playedAt} />
-                  </li>
-                ))}
-              </ol>
-            )}
-            <h3>{words.top}</h3>
-            {music.topArtists === null || music.topArtists.length === 0 ? (
-              <p>{words.noTop}</p>
-            ) : (
-              <ol>
-                {music.topArtists.map((artist) => (
-                  <li>
-                    {artist.artist}, {count(artist.plays)} plays
-                  </li>
-                ))}
-              </ol>
-            )}
-          </>
-        )}
+        {music !== null && <Markup nodes={listeningBody(music)} />}
       </div>
       <p>
         <a href={site.links.lastfm}>All of it on Last.fm</a>

@@ -98,7 +98,7 @@ just signals-preview-secrets                          # Preview base config: ran
 just signals-preview-secret MONKEYTYPE_APE_KEY        # Preview base config: a random fake
 ```
 
-`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a required secret is missing; `GITHUB_TOKEN` and `MONKEYTYPE_APE_KEY` are not in that list. Without the ApeKey the typing pull asks Monkeytype nothing, records `not_configured` at each 6-hourly attempt and keeps the last snapshot. Without it GitHub allows 60 requests an hour per IP, shared with other Workers, so the daily projects pull may be refused. Locally, without `LASTFM_API_KEY` in `.dev.vars`, the listening pull fails with `not_configured`.
+`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a required secret is missing; `GITHUB_TOKEN` and `MONKEYTYPE_APE_KEY` are not in that list. Without the ApeKey the typing pull asks Monkeytype nothing, records `not_configured` at each hourly attempt and keeps the last snapshot. Without it GitHub allows 60 requests an hour per IP, shared with other Workers, so a projects pull (every 6 hours) may be refused. Locally, without `LASTFM_API_KEY` in `.dev.vars`, the listening pull fails with `not_configured`.
 
 Wrangler rejects `secrets` under `previews`, so Previews are not checked the same way; a Preview without its base config secrets answers every push with 401. The fake `LASTFM_API_KEY` and `MONKEYTYPE_APE_KEY` in Previews are never used, because the cron never runs there. A Preview made before a base config secret was set keeps running without it until it is recreated.
 

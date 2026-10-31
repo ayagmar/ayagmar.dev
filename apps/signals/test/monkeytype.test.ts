@@ -265,7 +265,7 @@ describe('a pull through the runner', () => {
     await cron(['2026-10-27T00:00:00Z']);
     const before = await served();
     const seen = recordRequests(...upstreamHandlers());
-    const minutes = Array.from({ length: 7 * 60 }, (_, i) =>
+    const minutes = Array.from({ length: 2 * 60 }, (_, i) =>
       new Date(at('2026-10-27T06:00:00Z') + i * 60_000).toISOString()
     );
     const logs = await logged(() => cron(minutes, env));
@@ -298,7 +298,7 @@ describe("Monkeytype's Retry-After", () => {
       new Date(at(from) + i * stepMinutes * 60_000).toISOString()
     );
 
-  // Catches a retry before the time Monkeytype named, past the 6-hour interval, in both of
+  // Catches a retry before the time Monkeytype named, past the hourly interval, in both of
   // Retry-After's forms and for both refusals, by a runner that starts afresh each minute as a
   // cron invocation does. The 07:00 trigger is inside the runner's 30-second early allowance
   // for that time, and still waits.
@@ -322,8 +322,12 @@ describe("Monkeytype's Retry-After", () => {
     [479, 'no header', {}],
     [479, 'a header it cannot read', { 'Retry-After': 'soon' }],
     [479, 'a time already past', { 'Retry-After': 'Mon, 26 Oct 2026 00:00:00 GMT' }],
-  ])('%i falls back to the 6-hour interval with %s', async (status, _case, headers) => {
+  ])('%i falls back to the hourly interval with %s', async (status, _case, headers) => {
     const seen = recordRequests(refused(status, headers));
-    expect(await asked(seen, triggers('2026-10-27T00:00:00Z', 8, 60))).toEqual(['00:00', '06:00']);
+    expect(await asked(seen, triggers('2026-10-27T00:00:00Z', 13, 10))).toEqual([
+      '00:00',
+      '01:00',
+      '02:00',
+    ]);
   });
 });

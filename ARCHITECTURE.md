@@ -96,6 +96,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                            |
 | Build-time snapshot reader (`fixtures` or `api` mode)                     | `apps/site/src/data/`                                                                                                    |
 | Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/live.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{now-playing,stats-live}.ts`        |
+| Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/markup.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                      |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                      |
 | Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                              |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                              |

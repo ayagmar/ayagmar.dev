@@ -5,6 +5,8 @@
  */
 import { rabatDate } from '@min7/contracts/rabat';
 import { count } from '../data/format.ts';
+import { trackBy } from './listening.ts';
+import type { Markup } from './markup.ts';
 
 export interface HistoryYear {
   year: number;
@@ -71,15 +73,15 @@ const dayMonth = new Intl.DateTimeFormat('en-GB', {
 export const dayName = (date: string) => dayMonth.format(Date.parse(`${date}T12:00:00Z`));
 
 /**
- * One year's line, in parts so the page can set the title in a `<cite>`: `2025: 29
- * scrobbles. Most played: `, the title, ` by LTN, 2 times.` A day signals read only part of
- * says so (`Most played of the 200 read: `), since its top is only the top of those.
+ * One year's line: `2025: 29 scrobbles. Most played: `, the title and artist, each a link to
+ * its Last.fm page, then `, 2 times.` A day signals read only part of says so (`Most played of
+ * the 200 read: `), since its top is only the top of those.
  */
-export function yearLine({ year, scrobbles, read, top }: HistoryYear) {
+export function yearLine({ year, scrobbles, read, top }: HistoryYear): Markup[] {
   const times = `${count(top.plays)} ${top.plays === 1 ? 'time' : 'times'}`;
-  return {
-    before: `${year}: ${count(scrobbles)} ${scrobbles === 1 ? 'scrobble' : 'scrobbles'}. Most played${read < scrobbles ? ` of the ${count(read)} read` : ''}: `,
-    track: top.track,
-    after: ` by ${top.artist}, ${times}.`,
-  };
+  return [
+    `${year}: ${count(scrobbles)} ${scrobbles === 1 ? 'scrobble' : 'scrobbles'}. Most played${read < scrobbles ? ` of the ${count(read)} read` : ''}: `,
+    ...trackBy(top.track, top.artist, null),
+    `, ${times}.`,
+  ];
 }

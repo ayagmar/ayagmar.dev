@@ -158,7 +158,7 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
   await expect(panel(page, 'listening').locator('dd')).toHaveText(['999', 'unknown']);
   await expect(
     panel(page, 'listening').locator('.listening-body ol').first().locator('li')
-  ).toHaveText(['Half Right by Heatmiser, 3 hours ago']);
+  ).toHaveText(['Half Right by Heatmiser · 3 hours ago']);
   await expect(panel(page, 'shipping').locator('.shipping li')).toHaveText([
     '10 minutes ago runnerd merged #7: Live stats',
   ]);
@@ -179,6 +179,56 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
   for (const source of sources) {
     await expect(freshness(page, source)).toHaveText(/^Updated (1|10) minutes? ago$/);
   }
+});
+
+/** The links in each of the listening panel's `selector`, by href. */
+const hrefs = (page: Page, selector: string) =>
+  panel(page, 'listening')
+    .locator(selector)
+    .evaluateAll((items) =>
+      items.map((item) => [...item.querySelectorAll('a')].map((a) => a.getAttribute('href')))
+    );
+
+// Catches a track or artist that is not a link, a link off Last.fm, and a link built from a
+// name Last.fm would not find: signals' own link when it sent one, else one built from the
+// names, on the build's page and on a live answer alike.
+test('links each track and artist to its Last.fm page', async ({ page }) => {
+  const { ok } = snapshotFixtures.listening;
+  const [first] = ok.recent;
+  await page.clock.install({ time: noon });
+  await page.goto('/stats');
+  expect((await hrefs(page, '.listening-body ol >> nth=0 >> li')).at(0)).toEqual([
+    'https://www.last.fm/music/Heatmiser/_/Half+Right',
+    'https://www.last.fm/music/Heatmiser',
+  ]);
+  await page.unrouteAll();
+
+  const fresh = await page.context().newPage();
+  await visit(fresh, noon, {
+    listening: envelope('listening', {
+      data: {
+        ...ok,
+        nowPlaying: null,
+        recent: [{ ...first, track: 'Why Bother?', artist: 'AC/DC', url: null }],
+        topArtists: [
+          { artist: 'Florence + the Machine', plays: 3, url: null },
+          { artist: 'Simon & Garfunkel', plays: 2, url: 'https://www.last.fm/music/S&G' },
+        ],
+      },
+    }),
+  });
+  await expect
+    .poll(() => hrefs(fresh, '.now-playing'))
+    .toEqual([
+      ['https://www.last.fm/music/AC%2FDC/_/Why+Bother%3F', 'https://www.last.fm/music/AC%2FDC'],
+    ]);
+  expect(await hrefs(fresh, '.listening-body ol >> nth=0 >> li')).toEqual([
+    ['https://www.last.fm/music/AC%2FDC/_/Why+Bother%3F', 'https://www.last.fm/music/AC%2FDC'],
+  ]);
+  expect(await hrefs(fresh, '.listening-body ol >> nth=1 >> li')).toEqual([
+    ['https://www.last.fm/music/Florence+%252B+the+Machine'],
+    ['https://www.last.fm/music/S&G'],
+  ]);
 });
 
 // A source that never succeeded, a failed request, an answer for another source, one that is
@@ -215,7 +265,7 @@ for (const [name, answer] of [
       '2026-10-26T09:00:00Z'
     );
     await expect(page.locator('.now-playing')).toHaveText(
-      'Last played Friendships and Love by Rocketship, 3 hours ago'
+      'Last played Friendships and Love by Rocketship · 3 hours ago'
     );
   });
 }
@@ -273,7 +323,7 @@ test('a good answer stays through failures and ages honestly', async ({ page }) 
   fail = true;
   await page.clock.runFor(60_000);
   await expect(page.locator('.now-playing')).toHaveText(
-    'Last played Friendships and Love by Rocketship, 2 minutes ago'
+    'Last played Friendships and Love by Rocketship · 2 minutes ago'
   );
   await expect(freshness(page, 'listening')).toHaveText('Updated 2 minutes ago');
   await page.clock.runFor(14 * 60_000);
@@ -297,10 +347,9 @@ test('a stale answer keeps what is shown, ageing', async ({ page }) => {
   await expect(panel(page, 'shipping').locator('.shipping li')).toHaveCount(15);
 });
 
-// Catches polling a hidden tab, and a tab restored from the back/forward cache showing what it
-// showed hours ago without asking again.
-test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
-  await page.addInitScript(() => {
+/** Lets the test hide and show the page with `window.setHidden`. */
+const hideable = (page: Page) =>
+  page.addInitScript(() => {
     let hidden = false;
     Object.defineProperty(document, 'hidden', { get: () => hidden });
     Object.defineProperty(document, 'visibilityState', {
@@ -310,6 +359,11 @@ test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
       hidden = value;
     };
   });
+
+// Catches polling a hidden tab, and a tab restored from the back/forward cache showing what it
+// showed hours ago without asking again.
+test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
+  await hideable(page);
   const asked = await visit(page, noon, { shipping: envelope('shipping') });
   await expect(freshness(page, 'shipping')).toHaveText('Updated 1 minute ago');
   await page.evaluate(() => window.setHidden(true));
@@ -321,6 +375,30 @@ test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
   });
   await expect.poll(() => asked.length).toBe(2);
   await expect(freshness(page, 'shipping')).toHaveText(/^Updated 3 hours ago/);
+});
+
+// Catches a tab that comes back showing what it had when it hid until the panel's next turn
+// (shipping asks every 5 minutes), and one that asks again on every return.
+test('a tab that comes back asks at once if its last request is a minute old', async ({ page }) => {
+  await hideable(page);
+  const asked = await visit(page, noon, { shipping: envelope('shipping') });
+  await expect(freshness(page, 'shipping')).toHaveText('Updated 1 minute ago');
+  const away = async (ms: number) => {
+    await page.evaluate(() => window.setHidden(true));
+    await page.clock.fastForward(ms);
+    await page.evaluate(() => {
+      window.setHidden(false);
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+  };
+  await away(30_000);
+  await page.waitForTimeout(300);
+  expect(asked).toHaveLength(1);
+  await away(60_000);
+  await expect.poll(() => asked.length).toBe(2);
+  await page.waitForTimeout(300);
+  expect(asked).toHaveLength(2);
 });
 
 declare global {
@@ -339,13 +417,15 @@ test('each panel asks at its own pace', async ({ page }) => {
   const counts = () =>
     sources.map((source) => asked.filter((url) => url.endsWith(`/${source}`)).length);
   await expect.poll(() => asked.length).toBe(4);
-  await page.clock.runFor(14 * 60_000);
-  expect(counts()).toEqual([15, 1, 1, 1]);
+  // Listening every minute, shipping every 5, typing every 15, projects every 30 (ADR 0015).
+  await page.clock.runFor(4 * 60_000);
+  expect(counts()).toEqual([5, 1, 1, 1]);
   await page.clock.runFor(60_000);
-  await expect.poll(counts).toEqual([16, 2, 2, 1]);
-  // Typing hourly (ADR 0033).
-  await page.clock.runFor(45 * 60_000);
-  await expect.poll(counts).toEqual([61, 5, 5, 2]);
+  await expect.poll(counts).toEqual([6, 2, 1, 1]);
+  await page.clock.runFor(10 * 60_000);
+  await expect.poll(counts).toEqual([16, 4, 1, 2]);
+  await page.clock.runFor(15 * 60_000);
+  await expect.poll(counts).toEqual([31, 7, 2, 3]);
 });
 
 // Catches a best's day that turns over only when a new answer is drawn: past the reader's
@@ -431,7 +511,7 @@ test('without JavaScript the panels show the build, timed in Rabat', async ({ br
   const page = await newPage(browser, { javaScriptEnabled: false });
   await page.goto('/stats');
   await expect(page.locator('.now-playing')).toHaveText(
-    'Last played Friendships and Love by Rocketship, 26 Oct, 09:00'
+    'Last played Friendships and Love by Rocketship · 26 Oct, 09:00'
   );
   await expect(page.locator('.now-playing time')).toHaveAttribute('title', 'Rabat time');
   await expect(page.locator('.shipping time').first()).toHaveText(/^\d+ \w{3}, \d\d:\d\d$/);

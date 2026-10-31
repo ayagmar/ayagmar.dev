@@ -1,0 +1,26 @@
+---
+import type { Markup } from '../lib/markup.ts';
+import Stamp from './Stamp.astro';
+
+interface Props {
+  nodes: Markup[];
+}
+
+// Renders src/lib/markup.ts's markup; the browser renders the same with `toNode`. Astro escapes
+// the text and attribute values. A time read relative to now is a `Stamp`, so the page without
+// JavaScript gives it in Rabat time.
+const { nodes } = Astro.props;
+---
+
+{nodes.map((node) => {
+  if (typeof node === 'string') return node;
+  if (node.tag === 'time' && 'data-ago' in node.attrs) {
+    return <Stamp iso={node.attrs.datetime ?? ''} />;
+  }
+  const Tag = node.tag;
+  return (
+    <Tag {...node.attrs}>
+      <Astro.self nodes={node.children} />
+    </Tag>
+  );
+})}
