@@ -17,9 +17,9 @@ const checked = [
 ];
 
 for (const { path, title, details } of checked) {
-  test.describe(title, details, () => {
+  test.describe(title, () => {
     for (const viewport of viewports) {
-      test(`has no axe violations at ${viewport.width}px`, async ({ page }) => {
+      test(`has no axe violations at ${viewport.width}px`, details, async ({ page }) => {
         await page.setViewportSize(viewport);
         const response = await page.goto(path);
         expect(response?.status()).toBe(path === notFoundPath ? 404 : 200);
@@ -33,7 +33,7 @@ for (const { path, title, details } of checked) {
       });
     }
 
-    test('does not scroll sideways at 320px', async ({ page }) => {
+    test('does not scroll sideways at 320px', details, async ({ page }) => {
       await page.setViewportSize({ width: 320, height: 800 });
       await page.goto(path);
       const overflow = await page.evaluate(
