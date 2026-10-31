@@ -66,7 +66,7 @@ Days are local calendar days in Africa/Casablanca. A local day lasts 23, 24 or 2
 
 ### Producer
 
-`producers/llm-usage.ts`, run by a systemd user timer every 6 hours ([docs/producers/llm-usage.md](../producers/llm-usage.md)). It runs three commands, all with `--timezone Africa/Casablanca` and the same default scope (every source, every machine, no filter):
+`producers/llm-usage.ts`, run by a systemd user timer every hour ([docs/producers/llm-usage.md](../producers/llm-usage.md)). It runs three commands, all with `--timezone Africa/Casablanca` and the same default scope (every source, every machine, no filter):
 1. `llm-usage summary --timezone Africa/Casablanca --json`, first. Its `timezone` must be Africa/Casablanca and `activity.to` must be the reporting date when collection started; its window `activity.from`–`activity.to` fixes the dates of the other two.
 2. `llm-usage daily --since <from> --until <to> --timezone Africa/Casablanca --json`, for the daily costs.
 3. `llm-usage trends --metric active-hours --since <from> --until <to> --timezone Africa/Casablanca --json`, for the hours.
