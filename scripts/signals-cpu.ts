@@ -14,12 +14,13 @@
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import { readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { freePort } from './free-port.ts';
 
 const app = join(import.meta.dirname, '..', 'apps/signals');
 const wrangler = join(app, 'node_modules/.bin/wrangler');
 const config = join(app, 'bench/wrangler.jsonc');
 const persist = join(app, '.wrangler/bench');
-const port = 8797;
+let port = 0;
 const warmRuns = 10;
 
 const allScenarios = [
@@ -94,6 +95,7 @@ const median = (values: number[]) =>
 async function measure(scenario: string) {
   let dev: ChildProcess | undefined;
   try {
+    port = await freePort();
     dev = spawn(
       wrangler,
       [

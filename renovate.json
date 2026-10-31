@@ -91,6 +91,11 @@
       "allowedVersions": "<12.0.0"
     },
     {
+      "description": "@types/node follows the Node major in .node-version (24). Raise this bound in the pull request that moves .node-version to a new major.",
+      "matchPackageNames": ["@types/node"],
+      "allowedVersions": "<25.0.0"
+    },
+    {
       "groupName": "github-actions",
       "matchManagers": ["github-actions"]
     },
