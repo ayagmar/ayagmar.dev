@@ -46,7 +46,7 @@ Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` r
    - When: `http.host eq "www.ayagmar.dev"`
    - Then: dynamic redirect to `concat("https://ayagmar.dev", http.request.uri.path)`, status `301`, **preserve query string** on.
 
-The rule as an API payload (`PUT /zones/<zone id>/rulesets/phases/http_request_dynamic_redirect/entrypoint`):
+The rule as an API payload (`PUT /zones/<zone id>/rulesets/phases/http_request_dynamic_redirect/entrypoint`). The `PUT` replaces every dynamic redirect rule in the zone; to add the rule alongside others, `POST /zones/<zone id>/rulesets/<ruleset id>/rules` with the single rule object:
 
 ```json
 {
