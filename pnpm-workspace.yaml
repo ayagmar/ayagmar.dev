@@ -21,13 +21,8 @@ catalog:
   wrangler: 4.154.0
 
 # Patched versions of transitive dependencies osv-scanner flags, until their parents update.
-# Both are test and local-dev only (the Worker test runtime). Remove an entry once the parent
-# package depends on a fixed version.
+# Remove an entry once the parent package depends on a fixed version.
 overrides:
-  # GHSA-mrhx-c7xc-m3w5, fixed in 4.6.6; via @cloudflare/vitest-plugin 1.4.7.
-  "@cloudflare/vitest-plugin>zod": 4.6.7
-  # GHSA-4qv8-2p9j-2685, GHSA-f72v-6w45-q472, GHSA-xjj6-f33q-929c, fixed in 7.30.1; via miniflare.
-  "miniflare>undici": 7.30.1
   # Under @lhci/cli 0.15.1 (Lighthouse CI, ADR 0017), all on code paths `lhci collect` never
   # takes. GHSA-ph9p-34f9-6g65 and GHSA-52f5-9888-hmc6, fixed in 0.2.6.
   "@lhci/cli>tmp": 0.2.7

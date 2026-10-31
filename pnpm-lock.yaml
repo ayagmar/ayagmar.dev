@@ -181,8 +181,6 @@ catalogs:
       version: 4.154.0
 
 overrides:
-  '@cloudflare/vitest-plugin>zod': 4.6.7
-  miniflare>undici: 7.30.1
   '@lhci/cli>tmp': 0.2.7
   external-editor>tmp: 0.2.7
   '@lhci/cli>uuid': 11.1.1
@@ -3956,6 +3954,9 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
+  zod@4.6.6:
+    resolution: {integrity: sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA==}
+
   zod@4.6.7:
     resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
@@ -4243,7 +4244,7 @@ snapshots:
       miniflare: 5.20261023.1-beta(@types/node@24.19.2)
       vitest: 5.0.5(@types/node@24.19.2)(msw@3.0.3(@types/node@24.19.2)(supports-color@10.2.2)(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)))(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       wrangler: 4.154.0(@types/node@24.19.2)
-      zod: 4.6.7
+      zod: 4.6.6
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
       - '@types/node'
@@ -7509,6 +7510,8 @@ snapshots:
   zimmerframe@1.1.5: {}
 
   zod@3.25.76: {}
+
+  zod@4.6.6: {}
 
   zod@4.6.7: {}
 
