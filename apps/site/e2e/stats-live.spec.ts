@@ -350,6 +350,24 @@ test('a stale answer keeps what is shown, ageing', async ({ page }) => {
   await expect(panel(page, 'shipping').locator('.shipping li')).toHaveCount(15);
 });
 
+// Catches a panel rebuilt with the snapshot it already shows: a failed request, or the answer
+// ageing, closed the fold the reader had opened.
+test('a fold the reader opened stays open while the snapshot is the same', async ({ page }) => {
+  let fail = false;
+  await visit(page, noon, {
+    shipping: (route) =>
+      fail ? route.fulfill({ status: 502, body: '' }) : route.fulfill(envelope('shipping')),
+  });
+  await expect(freshness(page, 'shipping')).toHaveText('Updated 1 minute ago');
+  const fold = panel(page, 'shipping').locator('details.more').first();
+  await fold.locator('summary').click();
+  await expect(fold).toHaveAttribute('open');
+  fail = true;
+  await page.clock.runFor(5 * 60_000);
+  await expect(freshness(page, 'shipping')).toHaveText('Updated 6 minutes ago');
+  await expect(fold).toHaveAttribute('open');
+});
+
 /** Lets the test hide and show the page with `window.setHidden`. */
 const hideable = (page: Page) =>
   page.addInitScript(() => {
