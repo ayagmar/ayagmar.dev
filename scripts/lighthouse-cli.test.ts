@@ -3,7 +3,7 @@
 // whose file starts with FAIL), and an `lhci collect` that, like the pinned one, exits 1 when a
 // page does not answer 200 and otherwise writes one result per run. Chromium is never started.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import {
   chmodSync,
   existsSync,
@@ -13,9 +13,11 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, it } from 'node:test';
+import { promisify } from 'node:util';
 
 const script = join(import.meta.dirname, 'lighthouse.ts');
 
@@ -178,4 +180,34 @@ it('measures only the pages a cache lacks, and treats a cache it cannot read as 
   // The cache the run wrote replaces the unreadable file.
   assert.ok(existsSync(join(dir, 'garbage.json')));
   assert.equal(JSON.parse(readFileSync(join(dir, 'garbage.json'), 'utf8')).version, 1);
+});
+
+it('serves on free ports, so ports another run or a leftover server holds do not matter', async () => {
+  site('head', pages, true);
+  // The ports the script used to take; if one is held already, that is the same situation.
+  const held = await Promise.all(
+    [8791, 8792].map(
+      (port) =>
+        new Promise<ReturnType<typeof createServer>>((resolve) => {
+          const server = createServer((_req, res) => res.writeHead(503).end()).once('error', () =>
+            resolve(server)
+          );
+          server.listen(port, '127.0.0.1', () => resolve(server));
+        })
+    )
+  );
+  try {
+    // Asynchronous, so the servers holding the ports keep answering while the script runs.
+    await promisify(execFile)(
+      process.execPath,
+      [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
+      {
+        cwd: dir,
+        timeout: 60_000,
+        env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/nonexistent' },
+      }
+    );
+  } finally {
+    for (const server of held) server.close();
+  }
 });

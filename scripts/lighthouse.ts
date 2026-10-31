@@ -25,6 +25,7 @@ import {
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { budgets } from './budgets.ts';
+import { freePort } from './free-port.ts';
 import { pages as knownPages, metrics, profiles, render, validate } from './lighthouse-report.js';
 
 type Profile = (typeof profiles)[number];
@@ -120,7 +121,13 @@ export function pagePaths(dist: string): Record<string, string> {
   return out;
 }
 
-async function serve(site: string, port: number, wrangler: string): Promise<ChildProcess> {
+/** Serves a site through `wrangler dev` on a free port; the caller stops the child. */
+async function serve(
+  site: string,
+  wrangler: string
+): Promise<{ child: ChildProcess; origin: string }> {
+  const port = await freePort();
+  const origin = `http://127.0.0.1:${port}`;
   const child = spawn(
     wrangler,
     ['dev', '--port', String(port), '--ip', '127.0.0.1', '--log-level', 'warn'],
@@ -130,7 +137,7 @@ async function serve(site: string, port: number, wrangler: string): Promise<Chil
   while (Date.now() < deadline) {
     if (child.exitCode !== null) throw new Error(`wrangler dev in ${site} exited`);
     try {
-      if ((await fetch(`http://127.0.0.1:${port}/index.txt`)).ok) return child;
+      if ((await fetch(`${origin}/index.txt`)).ok) return { child, origin };
     } catch {
       // Not listening yet.
     }
@@ -282,14 +289,14 @@ async function main() {
   const problems: string[] = [];
   const baseCache = readCache(args['base-cache']);
   const headCache: Cache = {};
-  const baseOrigin = 'http://127.0.0.1:8792';
+  let baseOrigin: string | undefined;
   try {
-    servers.push(await serve(head, 8791, bin('wrangler')));
-    let baseUp = false;
+    const headServer = await serve(head, bin('wrangler'));
+    servers.push(headServer.child);
     for (const profile of args.profile as Profile[]) {
       const headRuns = collect(
         bin('lhci'),
-        'http://127.0.0.1:8791',
+        headServer.origin,
         paths,
         profile,
         join(work, `head-${profile}`)
@@ -303,8 +310,11 @@ async function main() {
         Object.entries(paths).filter(([, path]) => !(path in known))
       );
       if (base && Object.keys(uncached).length > 0) {
-        if (!baseUp) servers.push(await serve(base, 8792, bin('wrangler')));
-        baseUp = true;
+        if (!baseOrigin) {
+          const baseServer = await serve(base, bin('wrangler'));
+          servers.push(baseServer.child);
+          baseOrigin = baseServer.origin;
+        }
         const onBase = await existing(baseOrigin, uncached);
         for (const name of Object.keys(uncached).filter((n) => !(n in onBase))) {
           console.log(`lighthouse: ${name} (${paths[name]}) is new: not on the base`);
