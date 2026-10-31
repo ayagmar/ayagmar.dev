@@ -59,7 +59,7 @@
    --rule (below) is the quieter edge of windows and sections. */
   --ground: light-dark(#efe3cb, #0d0a17);
   --surface: light-dark(#e6d6b8, #191430);
-  --line: light-dark(#8f7b66, #514a78);
+  --line: light-dark(#7f6b57, #716aa8);
   --text: light-dark(#241a2c, #f6ead2);
   --muted: light-dark(#4a3f4d, #b9b0c8);
   --lamp: light-dark(#7a3a00, #ffb54a);
