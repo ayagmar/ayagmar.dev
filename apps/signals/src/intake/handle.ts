@@ -58,7 +58,7 @@ async function authenticate<Push extends { deliveryId: string; sentAt: string }>
   const timestamp = c.req.header('x-min7-timestamp') ?? '';
   const inWindow =
     /^\d{1,12}$/.test(timestamp) &&
-    Math.abs(now / 1000 - Number(timestamp)) <= signatureWindowSeconds;
+    Math.abs(Math.floor(now / 1000) - Number(timestamp)) <= signatureWindowSeconds;
   const prefix = encoder.encode(`${timestamp}.`);
   const message = new Uint8Array(prefix.byteLength + body.byteLength);
   message.set(prefix);
