@@ -869,6 +869,13 @@ time[data-ago] {
   font: 500 0.8125rem / 1.5 var(--mono);
 }
 
+/* `· 3 hours ago` after the words it dates (src/lib/markup.ts): the dot and the time wrap
+   together, so a line never ends on the dot. */
+.when {
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+
 /* Fixtures mode (ADR 0015): sample numbers wear a rose tag, so a Preview is never read as
    live. Rose is the colour of what is not real. */
 .sample {
@@ -1701,6 +1708,18 @@ main:has(.toc) .reader ~ .project-card {
    takes no space. Not scoped to /stats, so the live panels' markup matches the build's. */
 .agent-hours dl > div:not([hidden]) {
   display: contents;
+}
+
+/* Tracks and artists in the listening lists link to Last.fm. A faint underline, full on hover,
+   so ten rows of links do not read as a wall of underlines. */
+.listening-body li a,
+.history li a {
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+
+.listening-body li a:hover,
+.history li a:hover {
+  text-decoration-color: currentColor;
 }
 
 /* Track names as on home: an italic here loads the italic font, whose swap reflows the

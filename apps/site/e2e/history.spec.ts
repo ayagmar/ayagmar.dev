@@ -76,6 +76,20 @@ test('shows each past year with scrobbles on today, newest first', async ({ page
     '2023: 99 scrobbles. Most played: Better Off Alone by Always Mirin, 3 times.',
   ]);
   await expect(block(page).locator('.history-empty')).toBeHidden();
+  // Each title and artist links to its Last.fm page, built from the names.
+  await expect(lines(page).nth(1).locator('a')).toHaveText([
+    'The Less I Know the Better',
+    'Tame Impala',
+  ]);
+  expect(
+    await lines(page)
+      .nth(1)
+      .locator('a')
+      .evaluateAll((links) => links.map((a) => a.getAttribute('href')))
+  ).toEqual([
+    'https://www.last.fm/music/Tame+Impala/_/The+Less+I+Know+the+Better',
+    'https://www.last.fm/music/Tame+Impala',
+  ]);
 });
 
 // Catches a partly read day presented as complete.

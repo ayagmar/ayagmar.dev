@@ -12,6 +12,7 @@ import {
   yearLine,
 } from '../lib/history.ts';
 import { due } from '../lib/live.ts';
+import { el, toNode } from '../lib/markup.ts';
 
 const block = document.querySelector<HTMLElement>('.history');
 // `${SIGNALS_API_BASE}/v1/listening-history`, absent in fixtures mode: then no request.
@@ -83,16 +84,7 @@ function render(block: HTMLElement, date: string, years: HistoryYear[]) {
   time.textContent = dayName(date);
   caption.replaceChildren(time);
   // Text only: titles and artists are Last.fm's, so never markup.
-  list.replaceChildren(
-    ...years.map((year) => {
-      const { before, track, after } = yearLine(year);
-      const item = document.createElement('li');
-      const cite = document.createElement('cite');
-      cite.textContent = track;
-      item.append(before, cite, after);
-      return item;
-    })
-  );
+  list.replaceChildren(...years.map((year) => toNode(el('li', {}, ...yearLine(year)))));
   list.hidden = years.length === 0;
   empty.hidden = years.length > 0;
 }

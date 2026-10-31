@@ -37,6 +37,10 @@ const readers = [
       'played on a leap day': { recent: [{ playedAt: '2028-02-29T23:59:59.5+01:00' }] },
       'a link to another site': { nowPlaying: { url: 'https://evil.example/www.last.fm/' } },
       'a script link': { nowPlaying: { url: 'javascript:alert(1)' } },
+      // The page puts these links in an href as they are.
+      'a recent track linked off Last.fm': { recent: [{ url: 'https://last.fm.evil.example/' }] },
+      'a top artist linked by plain http': { topArtists: [{ url: 'http://www.last.fm/music/x' }] },
+      'a top artist linked as a script': { topArtists: [{ url: 'javascript:alert(1)' }] },
       'an empty title': { nowPlaying: { track: '' } },
       'a fractional count': { scrobbles: { thisWeek: 1.5, lastWeek: 0 } },
       'eleven recent tracks': { recent: Array(11).fill({}) },

@@ -1,20 +1,17 @@
 // /stats's listening, shipping, projects and typing panels, kept current in the browser (ADR 0015).
 // Each panel's HTML is the build's snapshot; a newer valid answer from signals replaces it,
-// rendered as the page renders it (src/pages/stats.astro), and every time on the page reads
-// relative to now. Each panel asks at its own pace while the page is visible, and when the tab
-// comes back once its last request is a minute old (src/lib/live.ts). In fixtures mode no panel
-// has an endpoint and nothing is requested.
+// rendered as the page renders it (src/pages/stats.astro; the listening panel from the same
+// markup, src/lib/listening-panel.ts), and every time on the page reads relative to now. Each
+// panel asks at its own pace while the page is visible, and when the tab comes back once its
+// last request is a minute old (src/lib/live.ts). In fixtures mode no panel has an endpoint
+// and nothing is requested.
 import { count, describeEvent, projectsSummary, repoName } from '../data/format.ts';
 import { dayName } from '../lib/history.ts';
 import { readListening, renderNowPlaying } from '../lib/listening.ts';
+import { listeningBody } from '../lib/listening-panel.ts';
 import { live, stamp } from '../lib/live.ts';
-import {
-  readProjects,
-  readShipping,
-  starTotals,
-  weekCount,
-  statsWords as words,
-} from '../lib/stats.ts';
+import { toNode } from '../lib/markup.ts';
+import { readProjects, readShipping, starTotals, statsWords as words } from '../lib/stats.ts';
 import { bestRows, headline, readMonkeytype, relabelDays, typingWords } from '../lib/typing.ts';
 
 /** An element with text and element children; text is never parsed as markup. */
@@ -35,34 +32,9 @@ const minute = 60_000;
 // Last.fm is pulled every minute.
 live('listening', minute, readListening, (panel, answer, now) => {
   renderNowPlaying(panel.querySelector('.now-playing') as HTMLElement, answer, now);
-  const { scrobbles, recent, topArtists } = answer.data;
   panel
     .querySelector('.listening-body')
-    ?.replaceChildren(
-      h(
-        'dl',
-        h('dt', words.thisWeek),
-        h('dd', weekCount(scrobbles.thisWeek)),
-        h('dt', words.lastWeek),
-        h('dd', weekCount(scrobbles.lastWeek))
-      ),
-      h('h3', words.recent),
-      recent.length === 0
-        ? h('p', words.noRecent)
-        : h(
-            'ol',
-            ...recent.map((track) =>
-              h('li', h('cite', track.track), ` by ${track.artist}, `, stamp(track.playedAt))
-            )
-          ),
-      h('h3', words.top),
-      topArtists === null || topArtists.length === 0
-        ? h('p', words.noTop)
-        : h(
-            'ol',
-            ...topArtists.map(({ artist, plays }) => h('li', `${artist}, ${count(plays)} plays`))
-          )
-    );
+    ?.replaceChildren(...listeningBody(answer.data).map(toNode));
 });
 
 // repo-pulse is pulled every 15 minutes; asking every 5 keeps the page within 20 minutes of
