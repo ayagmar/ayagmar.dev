@@ -32,8 +32,8 @@ export interface ProjectsRaw {
 
 export const projects: PullAdapter<ProjectsRaw, ProjectsSnapshot> = {
   id: 'projects',
-  // Every 6 hours: 19 requests a pull, 16 of them to GitHub, inside its 60 an hour without a
-  // token (ADR 0009).
+  // Every 6 hours: 19 requests a pull, 16 of them to GitHub. Without a token they share the 60
+  // an hour GitHub allows Cloudflare's egress IPs, and may be refused (ADR 0009).
   intervalSeconds: 6 * 60 * 60,
 
   async fetch(env, signal) {
