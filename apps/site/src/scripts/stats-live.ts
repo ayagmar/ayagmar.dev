@@ -32,7 +32,10 @@ live('listening', minute, readListening, (panel, answer, now) => {
 // repo-pulse is pulled every 15 minutes; asking every 5 keeps the page within 20 minutes of
 // the feed.
 live('shipping', 5 * minute, readShipping, (panel, { data }) => {
-  panel.querySelector('.shipping-body')?.replaceChildren(...shippingBody(data).map(toNode));
+  const featured = panel.dataset.featured?.split(' ') ?? [];
+  panel
+    .querySelector('.shipping-body')
+    ?.replaceChildren(...shippingBody(data, featured).map(toNode));
 });
 
 // GitHub and npm are pulled every 6 hours; asking every half hour is soon enough.

@@ -1,4 +1,5 @@
 ---
+import { featuredProjects } from '@min7/contracts';
 import Freshness from '../components/Freshness.astro';
 import Markup from '../components/Markup.astro';
 import NowPlaying from '../components/NowPlaying.astro';
@@ -21,6 +22,9 @@ const llmUsage = await signals.read('llm-usage');
 // empty box said nothing. The panel comes back when the site reads it.
 
 const music = listening.data;
+// The projects window counts these repositories' stars; shipping's star list leaves them out,
+// in the build and in the live script, which reads them from data-featured.
+const featured = featuredProjects.map((project) => project.repo);
 ---
 
 <Base title="Stats">
@@ -107,7 +111,12 @@ const music = listening.data;
     </div>
 
     <div class="stats-col">
-      <section class="panel m-cork" aria-labelledby="shipping" {...liveAttrs('shipping', shipping)}>
+      <section
+        class="panel m-cork"
+        aria-labelledby="shipping"
+        data-featured={featured.join(' ')}
+        {...liveAttrs('shipping', shipping)}
+      >
         <h2 id="shipping">Shipping</h2>
         {/* Built once: the live script redraws only the list under it (ADR 0034). */}
         {shipping.data !== null && shipping.data.events.length > 0 && (
@@ -117,7 +126,7 @@ const music = listening.data;
           {shipping.data === null ? (
             <p>{words.noShipping}</p>
           ) : (
-            <Markup nodes={shippingBody(shipping.data)} />
+            <Markup nodes={shippingBody(shipping.data, featured)} />
           )}
         </div>
         <Freshness envelope={shipping} />

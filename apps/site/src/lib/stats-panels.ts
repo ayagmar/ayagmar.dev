@@ -54,9 +54,13 @@ export const shippingList = (events: readonly ShippingEvent[], keep = events.len
     rest === 1 ? '1 earlier event' : `${rest} earlier events`
   );
 
-/** /stats's shipping body: the 15 latest events, 5 open, then each repository's star count. */
-export function shippingBody(data: ShippingSnapshot): Markup[] {
-  const stars = starTotals(data);
+/**
+ * /stats's shipping body: the 15 latest events, 5 open, then the star counts of the
+ * repositories that are not `featured` (`owner/name`). The projects window counts the featured
+ * ones from its own, fresher source, so a repository never shows two counts on one page.
+ */
+export function shippingBody(data: ShippingSnapshot, featured: readonly string[]): Markup[] {
+  const stars = starTotals(data).filter((entry) => !featured.includes(entry.repo));
   return [
     ...(data.events.length === 0
       ? [el('p', {}, words.noShipping)]
