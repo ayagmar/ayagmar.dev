@@ -11,9 +11,13 @@ const viewports = [
 // every post is a draft, production has none of them.
 const checked = [
   ...[...pages, notFoundPath].map((path) => ({ path, title: path, details: {} })),
-  ...['/', '/writing', '/writing/tags/rust', ...posts.map((post) => `/writing/${post.slug}`)].map(
-    (path) => ({ path, title: `${path} with drafts`, details: { tag: '@drafts' } })
-  ),
+  ...[
+    '/',
+    '/writing',
+    '/writing/tags/rust',
+    '/projects/llm-usage-metrics',
+    ...posts.map((post) => `/writing/${post.slug}`),
+  ].map((path) => ({ path, title: `${path} with drafts`, details: { tag: '@drafts' } })),
 ];
 
 for (const { path, title, details } of checked) {
