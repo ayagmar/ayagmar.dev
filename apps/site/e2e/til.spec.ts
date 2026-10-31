@@ -1,8 +1,9 @@
 // The production build: no draft note reaches /til, a feed, search, index.txt or the sitemap.
 // Notes on a build that shows drafts are in til-preview.spec.ts.
+
+import { notes } from './content.ts';
 import { expectValidFeed } from './feed-rules.ts';
 import { expect, test } from './fixtures.ts';
-import { notes } from './til-notes.ts';
 
 const published = notes.filter((note) => !note.draft);
 const drafts = notes.filter((note) => note.draft);

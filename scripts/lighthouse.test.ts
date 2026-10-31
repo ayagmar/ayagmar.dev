@@ -170,4 +170,19 @@ describe('runs and pages', () => {
       rmSync(dist, { recursive: true, force: true });
     }
   });
+
+  // Catches the run failing when every post is a draft: production has no /writing/* page.
+  it('leaves out a page kind the build has none of', () => {
+    const dist = mkdtempSync(join(tmpdir(), 'min7-lighthouse-'));
+    try {
+      mkdirSync(join(dist, 'projects'));
+      writeFileSync(join(dist, 'projects/a.html'), 'x');
+      const paths = pagePaths(dist);
+      assert.equal('post' in paths, false);
+      assert.equal(paths.project, '/projects/a');
+      assert.equal(paths.writing, '/writing');
+    } finally {
+      rmSync(dist, { recursive: true, force: true });
+    }
+  });
 });

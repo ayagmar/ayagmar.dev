@@ -1,6 +1,6 @@
 import { expect, test } from './fixtures.ts';
 
-test('Ctrl+K opens search and finds a post', async ({ page }) => {
+test('Ctrl+K opens search and finds a post', { tag: '@drafts' }, async ({ page }) => {
   await page.goto('/about');
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
 
@@ -37,7 +37,9 @@ test.describe('without JavaScript', () => {
   });
 });
 
-test('the open search dialog keeps 24px targets and fits a 320px screen', async ({ page }) => {
+test('the open search dialog keeps 24px targets and fits a 320px screen', {
+  tag: '@drafts',
+}, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto('/');
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();

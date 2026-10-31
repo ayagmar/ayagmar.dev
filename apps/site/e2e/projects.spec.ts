@@ -1,6 +1,10 @@
+// Tests that need a post carry @drafts and run on the build that shows drafts, where the
+// placeholder drafts in content/writing are posts (playwright.config.ts).
 import { expect, test } from './fixtures.ts';
 
-test('a post about a project shows its card and the other posts on it', async ({ page }) => {
+test('a post about a project shows its card and the other posts on it', { tag: '@drafts' }, async ({
+  page,
+}) => {
   await page.goto('/writing/token-logs');
   const card = page.getByRole('complementary', { name: 'About llm-usage-metrics' });
   await expect(card.getByRole('link', { name: 'llm-usage-metrics', exact: true })).toHaveAttribute(
@@ -20,7 +24,9 @@ test('a post about a project shows its card and the other posts on it', async ({
   await expect(only.getByRole('region')).toHaveCount(0);
 });
 
-test('a project page lists its writing newest first and links its feeds', async ({ page }) => {
+test('a project page lists its writing newest first and links its feeds', {
+  tag: '@drafts',
+}, async ({ page }) => {
   await page.goto('/projects/llm-usage-metrics');
   await expect(page.locator('.posts a')).toHaveText([
     'Placeholder: counting cache reads that agents never log',
@@ -47,14 +53,16 @@ for (const slug of ['headroom', 'niri-computer-use']) {
   });
 }
 
-test('the projects index counts published posts per project', async ({ page }) => {
+test('the projects index counts the posts per project', { tag: '@drafts' }, async ({ page }) => {
   await page.goto('/projects');
   await expect(page.locator('#llm-usage-metrics .project-post-count')).toHaveText(/^2 posts/);
   await expect(page.locator('#runnerd .project-post-count')).toHaveText(/^1 post/);
-  await expect(page.locator('#niri-computer-use .project-post-count')).toHaveText(/^no posts/);
+  await expect(page.locator('#headroom .project-post-count')).toHaveText(/^no posts/);
 });
 
-test("a project feed carries only that project's posts", async ({ request }) => {
+test("a project feed carries only that project's posts", { tag: '@drafts' }, async ({
+  request,
+}) => {
   const rss = await (await request.get('/projects/llm-usage-metrics/feed.xml')).text();
   const links = [...rss.matchAll(/<item>\s*<title>[^<]*<\/title>\s*<link>([^<]+)/g)].map(
     ([, link]) => link
@@ -65,7 +73,7 @@ test("a project feed carries only that project's posts", async ({ request }) => 
   ]);
 });
 
-test('search results name the project a post is about', async ({ page }) => {
+test('search results name the project a post is about', { tag: '@drafts' }, async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
@@ -79,10 +87,10 @@ test('search results name the project a post is about', async ({ page }) => {
 
 // GitHub descriptions, names and tags are upstream text: one long unbroken token in any of
 // them must wrap instead of pushing the page sideways on a phone. Post titles too: on home, one
-// long word in a grid track widens every panel.
+// long word in a grid track widens every panel. On the drafts build, so home lists posts.
 for (const path of ['/', '/projects/pi-mobile', '/projects', '/writing/token-logs']) {
   for (const width of [320, 360, 390]) {
-    test(`${path} wraps long metadata at ${width}px`, async ({ page }) => {
+    test(`${path} wraps long metadata at ${width}px`, { tag: '@drafts' }, async ({ page }) => {
       await page.setViewportSize({ width, height: 800 });
       await page.goto(path);
       const filled = await page

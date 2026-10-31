@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { posts } from './content.ts';
 import { expect, feeds, notFoundPath, test } from './fixtures.ts';
 
 const browser = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/156.0 Safari/537.36';
@@ -28,7 +29,7 @@ const expectCacheable = (headers: Record<string, string>) => {
 test.describe('responses', () => {
   for (const [path, status, type] of [
     ['/', 200, 'text/html'],
-    ['/writing/token-logs', 200, 'text/html'],
+    ['/writing', 200, 'text/html'],
     ['/index.txt', 200, 'text/plain'],
     [notFoundPath, 404, 'text/html'],
   ] as const) {
@@ -87,12 +88,13 @@ test.describe('responses', () => {
 });
 
 test.describe('feeds', () => {
-  test('the build wrote site-wide, tag and project feeds', () => {
+  // Tag feeds exist only for tags a published post carries; writing.spec.ts reads them on the
+  // drafts build.
+  test('the build wrote site-wide and project feeds', () => {
     expect(feeds).toEqual(
       expect.arrayContaining([
         '/feed.xml',
         '/atom.xml',
-        '/writing/tags/rust/feed.xml',
         '/projects/runnerd/feed.xml',
         '/projects/headroom/atom.xml',
       ])
@@ -116,7 +118,9 @@ test.describe('feeds', () => {
       expect(parsed.error).toBeNull();
       expect(parsed.root).toBe(path.endsWith('atom.xml') ? 'feed' : 'rss');
       for (const link of parsed.links) expect(link).toMatch(/^https:\/\/ayagmar\.dev\//);
-      expect(xml).not.toContain('ricing-niri');
+      for (const post of posts.filter((p) => p.draft)) {
+        expect(xml).not.toContain(`/writing/${post.slug}`);
+      }
     });
   }
 });

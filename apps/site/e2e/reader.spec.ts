@@ -3,13 +3,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures.ts';
 
+// A placeholder draft, so these tests run on the drafts build.
 const post = '/writing/token-logs';
 
 test.describe('on a 390px phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
   // Catches card chrome or a paper margin coming back and squeezing the text column.
-  test('the post text runs nearly edge to edge', async ({ page }) => {
+  test('the post text runs nearly edge to edge', { tag: '@drafts' }, async ({ page }) => {
     await page.goto(post);
     const box = await page.locator('.reader > .prose').boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(390 - 2 * 20);
@@ -17,7 +18,9 @@ test.describe('on a 390px phone', () => {
 
   // Catches a header that wraps to several rows again, a keyboard hint on a touch screen, or a
   // nav that the Menu button cannot reach.
-  test('the header is one row and Menu opens the nav and the theme switch', async ({ page }) => {
+  test('the header is one row and Menu opens the nav and the theme switch', {
+    tag: '@drafts',
+  }, async ({ page }) => {
     await page.goto(post);
     await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
     const header = await page.locator('.site-header').boundingBox();
@@ -39,7 +42,9 @@ test.describe('on a 390px phone', () => {
 test.describe('on a 568x320 landscape phone', () => {
   test.use({ viewport: { width: 568, height: 320 }, hasTouch: true });
 
-  test('Menu scrolls inside itself so a theme button can be pressed', async ({ page }) => {
+  test('Menu scrolls inside itself so a theme button can be pressed', { tag: '@drafts' }, async ({
+    page,
+  }) => {
     await page.goto(post);
     await page.getByRole('button', { name: 'Menu' }).click();
     const theme = page.getByRole('group', { name: 'Theme' });
@@ -50,7 +55,9 @@ test.describe('on a 568x320 landscape phone', () => {
 
 // Catches a Menu left open on a phone staying a floating panel after the window grows to the
 // desktop layout (a rotated tablet, a resized window), where the nav row should be in the header.
-test('an open Menu closes when the window grows to the desktop layout', async ({ page }) => {
+test('an open Menu closes when the window grows to the desktop layout', { tag: '@drafts' }, async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(post);
   await page.getByRole('button', { name: 'Menu' }).click();
@@ -67,7 +74,9 @@ test('an open Menu closes when the window grows to the desktop layout', async ({
 // Catches reader colours (text, links, the quote and rule pixels, the paper diagram cards) that
 // pass in day and fail on the night ground; pages.spec.ts checks the day.
 for (const width of [360, 1280]) {
-  test(`a post has no axe violations at night at ${width}px`, async ({ page }) => {
+  test(`a post has no axe violations at night at ${width}px`, { tag: '@drafts' }, async ({
+    page,
+  }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.setViewportSize({ width, height: 800 });
     await page.goto(post);

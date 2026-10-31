@@ -22,6 +22,8 @@ export const aboutSchema = z.strictObject({
     links: z.strictObject({ site: url, github: url, linkedin: url, x: url, lastfm: url }),
   }),
   summary: text,
+  /** The owner's note on the name min7, shown once on /about under the summary. */
+  nameNote: text,
   /** Newest first. `end: null` is the current role. */
   experience: z
     .array(

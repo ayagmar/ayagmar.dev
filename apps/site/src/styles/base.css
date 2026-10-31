@@ -1660,6 +1660,14 @@ main:has(.toc) .reader ~ .project-card {
   line-height: 1.35;
 }
 
+/* /about: the note on the name under the summary, an aside rather than a second lede. */
+.lede-aside {
+  max-width: 52ch;
+  margin-top: 0.75rem;
+  color: var(--fg-2);
+  font-size: 0.9rem;
+}
+
 .stats-grid {
   display: grid;
   gap: 0 1.25rem;

@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const port = 8790;
-// The build that shows drafts, so the notes in content/til have pages to test (ADR 0028).
+// The build that shows drafts (ADR 0028). While every post is a draft, tests that need a post
+// carry the @drafts tag and run there; til-preview.spec.ts runs there whole.
 const previewPort = 8791;
 const previewDir = 'node_modules/.cache/preview';
 
@@ -13,7 +14,18 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
   use: { baseURL: `http://127.0.0.1:${port}` },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /til-preview/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /til-preview/,
+      grepInvert: /@drafts/,
+    },
+    {
+      name: 'drafts',
+      use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${previewPort}` },
+      testIgnore: /til-preview/,
+      grep: /@drafts/,
+    },
     {
       name: 'til-preview',
       use: { ...devices['Desktop Chrome'], baseURL: `http://127.0.0.1:${previewPort}` },

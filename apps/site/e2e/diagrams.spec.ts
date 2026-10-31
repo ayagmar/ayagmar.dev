@@ -1,13 +1,13 @@
 import { expect, test } from './fixtures.ts';
 
-// The placeholder post with a flowchart and a chart.
+// The placeholder draft with a flowchart and a chart, so these tests run on the drafts build.
 const post = '/writing/token-logs';
 const chart = 'Placeholder numbers: cache reads per agent, in millions of tokens';
 const diagrams = [{ name: 'From session log to token totals' }, { name: chart }];
 
 for (const width of [320, 360, 1280]) {
   // Catches diagrams that are missing, unnamed, or wider than a phone screen.
-  test(`diagrams show and fit at ${width}px`, async ({ page }) => {
+  test(`diagrams show and fit at ${width}px`, { tag: '@drafts' }, async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto(post);
     for (const { name } of diagrams) {
@@ -26,10 +26,9 @@ for (const width of [320, 360, 1280]) {
 
 // Catches diagrams that bring their own JavaScript or style attributes the CSP would block, and
 // a stylesheet that misses the classes a page uses.
-test('diagrams add no script, no inline style and are fully styled by /diagrams.css', async ({
-  page,
-  request,
-}) => {
+test('diagrams add no script, no inline style and are fully styled by /diagrams.css', {
+  tag: '@drafts',
+}, async ({ page, request }) => {
   const html = await (await request.get(post)).text();
   expect(html).not.toMatch(/\sstyle=/);
 
@@ -57,7 +56,9 @@ for (const [colorScheme, accent] of [
   ['light', 'rgb(47, 109, 90)'],
   ['dark', 'rgb(138, 44, 38)'],
 ] as const) {
-  test(`chart bars take the paper's accent in the ${colorScheme} theme`, async ({ page }) => {
+  test(`chart bars take the paper's accent in the ${colorScheme} theme`, {
+    tag: '@drafts',
+  }, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
     await page.goto(post);
     const fill = await page
