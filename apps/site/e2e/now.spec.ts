@@ -129,7 +129,9 @@ test('the footer, /about and index.txt link /now; the sitemap lists it', async (
 });
 
 // Catches a title character cutting the subject short, or the link missing from a real page.
-test('a post links "Reply by email" with its title as the subject', async ({ page }) => {
+test('a post links "Reply by email" with its title as the subject', { tag: '@drafts' }, async ({
+  page,
+}) => {
   await page.goto('/writing/token-logs');
   const title = (await page.getByRole('heading', { level: 1 }).textContent())?.trim();
   const href = await page.getByRole('link', { name: 'Reply by email' }).getAttribute('href');
@@ -138,7 +140,7 @@ test('a post links "Reply by email" with its title as the subject', async ({ pag
 });
 
 // Catches reply links reaching feed items, which would show every item as updated in readers.
-test('the feeds do not carry the reply link', async ({ request }) => {
+test('the feeds do not carry the reply link', { tag: '@drafts' }, async ({ request }) => {
   for (const feed of ['/feed.xml', '/atom.xml', '/til/feed.xml', '/til/atom.xml']) {
     expect(await (await request.get(feed)).text(), feed).not.toContain('mailto:');
   }

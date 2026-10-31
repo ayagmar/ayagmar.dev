@@ -2,13 +2,14 @@
 
 title: 'Placeholder: what 17 coding agents taught me about token logs'
 date: 2026-10-20
-summary: 'Placeholder post for layout and tests. Session logs, <usage> blocks & the cost of caching.'
+summary: 'Placeholder draft for layout and tests. Session logs, <usage> blocks & the cost of caching.'
 tags: [llm, tooling]
 projects: [llm-usage-metrics]
 art: { kind: ascii, palette: screen }
+draft: true
 ---
 
-**This is a placeholder post.** It exists so the site has something to render, index and put in the feeds. It will be replaced by real writing.
+**This is a placeholder draft.** Production builds leave it out; the e2e tests read it on the build that shows drafts.
 
 Every coding agent writes its session log differently. Some record a `usage` object per message, some only per session, and a few never record cache reads at all.
 

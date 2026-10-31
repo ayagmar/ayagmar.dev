@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { posts } from './content.ts';
 import { expect, notFoundPath, pages, test } from './fixtures.ts';
 
 const viewports = [
@@ -6,8 +7,17 @@ const viewports = [
   { width: 1280, height: 800 },
 ];
 
-for (const path of [...pages, notFoundPath]) {
-  test.describe(path, () => {
+// Every page in the sitemap, and on the drafts build the pages that show or list a post: while
+// every post is a draft, production has none of them.
+const checked = [
+  ...[...pages, notFoundPath].map((path) => ({ path, title: path, details: {} })),
+  ...['/', '/writing', '/writing/tags/rust', ...posts.map((post) => `/writing/${post.slug}`)].map(
+    (path) => ({ path, title: `${path} with drafts`, details: { tag: '@drafts' } })
+  ),
+];
+
+for (const { path, title, details } of checked) {
+  test.describe(title, details, () => {
     for (const viewport of viewports) {
       test(`has no axe violations at ${viewport.width}px`, async ({ page }) => {
         await page.setViewportSize(viewport);
@@ -34,7 +44,7 @@ for (const path of [...pages, notFoundPath]) {
   });
 }
 
-test('pages link their feeds for discovery', async ({ page }) => {
+test('pages link their feeds for discovery', { tag: '@drafts' }, async ({ page }) => {
   await page.goto('/writing/tags/rust');
   const feeds = await page
     .locator('link[rel="alternate"]')

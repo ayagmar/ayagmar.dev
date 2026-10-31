@@ -75,7 +75,7 @@ A post may set `art: { kind, seed, palette }` in its frontmatter (`writing-schem
 
 Sizes: dither about 4 KB gzip, ascii and pattern about 0.5 KB.
 
-The three placeholder posts carry one kind each, so e2e and axe see all three in both themes.
+The three placeholder posts carry one kind each, so e2e and axe see all three in both themes. They are drafts, so those tests run on the build that shows drafts.
 
 ### The CSP and the build
 

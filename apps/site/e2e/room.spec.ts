@@ -26,9 +26,9 @@ for (const { system, choice } of [
 ] as const) {
   // Catches a choice that is not stored, not read on the next page, or applied only after the
   // page has painted once in the system theme (a flash).
-  test(`a ${choice} choice on a ${system} system holds across pages from the first frame`, async ({
-    page,
-  }) => {
+  test(`a ${choice} choice on a ${system} system holds across pages from the first frame`, {
+    tag: '@drafts',
+  }, async ({ page }) => {
     await page.emulateMedia({ colorScheme: system });
     await page.addInitScript(() => {
       requestAnimationFrame(() => {
@@ -135,17 +135,18 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
   await expect(page.locator('.scene a').first()).toBeHidden();
 });
 
-// The three posts carry the three kinds of art (ADR 0027): ascii, dither, pattern.
-for (const path of [
-  '/',
-  '/writing/token-logs',
-  '/writing/ephemeral-runners',
-  '/writing/cache-reads',
-  '/about',
-  '/stats',
-]) {
+// The three placeholder drafts carry the three kinds of art (ADR 0027): ascii, dither, pattern.
+// Their pages, and home listing them, are checked on the drafts build.
+for (const [path, details] of [
+  ['/', { tag: '@drafts' }],
+  ['/writing/token-logs', { tag: '@drafts' }],
+  ['/writing/ephemeral-runners', { tag: '@drafts' }],
+  ['/writing/cache-reads', { tag: '@drafts' }],
+  ['/about', {}],
+  ['/stats', {}],
+] as const) {
   // Catches text or links that lose contrast in the night theme (pages.spec.ts checks the day).
-  test(`${path} has no axe violations at night`, async ({ page }) => {
+  test(`${path} has no axe violations at night`, details, async ({ page }) => {
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto(path);
     await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
@@ -322,7 +323,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 }
 
 // Catches art missing from a post that asks for it, or the wrong kind drawn.
-test('each post draws the art its frontmatter asks for', async ({ page }) => {
+test('each post draws the art its frontmatter asks for', { tag: '@drafts' }, async ({ page }) => {
   for (const [path, kind] of [
     ['/writing/token-logs', 'ascii'],
     ['/writing/ephemeral-runners', 'dither'],

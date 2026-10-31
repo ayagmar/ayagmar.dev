@@ -5,6 +5,7 @@ import AxeBuilder from '@axe-core/playwright';
 import type { Page, Route } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
+// A placeholder draft, so these tests run on the drafts build.
 const post = '/writing/token-logs';
 const frames = (page: Page) => page.locator('[data-comments-frame] iframe');
 const press = (page: Page) => page.getByRole('button', { name: 'Show comments' });
@@ -49,9 +50,9 @@ const widgetFrame = (page: Page) =>
 const received = (page: Page) =>
   widgetFrame(page)?.evaluate(() => (window as unknown as { received: unknown[] }).received);
 
-test('nothing from giscus.app loads until the button is pressed, then one frame loads', async ({
-  page,
-}) => {
+test('nothing from giscus.app loads until the button is pressed, then one frame loads', {
+  tag: '@drafts',
+}, async ({ page }) => {
   const { requests } = await stubGiscus(page);
   await page.goto(post);
   await expect(press(page)).toBeVisible();
@@ -69,7 +70,7 @@ test('nothing from giscus.app loads until the button is pressed, then one frame 
 });
 
 // Catches a double press (or the OAuth return opening it again) stacking a second thread.
-test('pressing the button twice leaves one frame', async ({ page }) => {
+test('pressing the button twice leaves one frame', { tag: '@drafts' }, async ({ page }) => {
   await stubGiscus(page);
   await page.goto(post);
   await expect(press(page)).toBeVisible();
@@ -84,7 +85,9 @@ test('pressing the button twice leaves one frame', async ({ page }) => {
 
 // Catches the theme being read once at press time: a reader who switches while the frame loads
 // would get a light thread on a night page.
-test('a theme switch before the frame has loaded still reaches it', async ({ page }) => {
+test('a theme switch before the frame has loaded still reaches it', { tag: '@drafts' }, async ({
+  page,
+}) => {
   await page.emulateMedia({ colorScheme: 'light' });
   const { requests, release } = await stubGiscus(page, { hold: true });
   await page.goto(post);
@@ -103,7 +106,9 @@ test('a theme switch before the frame has loaded still reaches it', async ({ pag
 });
 
 // Catches the thread staying in the old theme after the reader switches, including by system.
-test('the open thread follows the switch and the system preference', async ({ page }) => {
+test('the open thread follows the switch and the system preference', { tag: '@drafts' }, async ({
+  page,
+}) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await stubGiscus(page);
   await page.goto(post);
@@ -127,7 +132,7 @@ test('the open thread follows the switch and the system preference', async ({ pa
 });
 
 // Catches messages from the page itself, or malformed ones from the widget, resizing the window.
-test("messages that are not the widget's are ignored", async ({ page }) => {
+test("messages that are not the widget's are ignored", { tag: '@drafts' }, async ({ page }) => {
   await stubGiscus(page);
   await page.goto(post);
   await expect(press(page)).toBeVisible();
@@ -147,7 +152,9 @@ test("messages that are not the widget's are ignored", async ({ page }) => {
 });
 
 // Catches the window staying on "Loading" forever, or the page shifting when it gives up.
-test('a blocked giscus.app says so, keeps the link and moves nothing', async ({ page }) => {
+test('a blocked giscus.app says so, keeps the link and moves nothing', { tag: '@drafts' }, async ({
+  page,
+}) => {
   await page.route('https://giscus.app/**', (route) => route.abort());
   await page.clock.install();
   await page.goto(post);
@@ -163,7 +170,7 @@ test('a blocked giscus.app says so, keeps the link and moves nothing', async ({ 
 });
 
 // Catches a slow widget that answers after the window gave up staying hidden behind the error.
-test('a late answer replaces the error message', async ({ page }) => {
+test('a late answer replaces the error message', { tag: '@drafts' }, async ({ page }) => {
   const { release } = await stubGiscus(page, { hold: true });
   await page.clock.install();
   await page.goto(post);
@@ -177,7 +184,7 @@ test('a late answer replaces the error message', async ({ page }) => {
 });
 
 // Catches a restored page, or going back, opening a second frame.
-test('returning to the page does not duplicate the frame', async ({ page }) => {
+test('returning to the page does not duplicate the frame', { tag: '@drafts' }, async ({ page }) => {
   await stubGiscus(page);
   await page.goto(post);
   await expect(press(page)).toBeVisible();
@@ -195,9 +202,9 @@ test('returning to the page does not duplicate the frame', async ({ page }) => {
   await expect(frames(page)).toHaveCount(1);
 });
 
-test('without JavaScript the window offers the discussion on GitHub and no frame', async ({
-  browser,
-}) => {
+test('without JavaScript the window offers the discussion on GitHub and no frame', {
+  tag: '@drafts',
+}, async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto(post);
@@ -214,9 +221,9 @@ test('without JavaScript the window offers the discussion on GitHub and no frame
 for (const colorScheme of ['light', 'dark'] as const) {
   // Catches the closed window failing contrast or naming rules in one theme; the third-party
   // frame is not scanned.
-  test(`a post with the comments window closed has no axe violations in ${colorScheme}`, async ({
-    page,
-  }) => {
+  test(`a post with the comments window closed has no axe violations in ${colorScheme}`, {
+    tag: '@drafts',
+  }, async ({ page }) => {
     await page.emulateMedia({ colorScheme });
     await page.goto(post);
     await expect(press(page)).toBeVisible();
@@ -228,9 +235,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
 }
 
 // Catches the window, open or failed, pushing the page sideways or the header onto two rows.
-test('at 320px the open window does not overflow and the header stays one row', async ({
-  page,
-}) => {
+test('at 320px the open window does not overflow and the header stays one row', {
+  tag: '@drafts',
+}, async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await stubGiscus(page);
   await page.goto(post);
@@ -246,7 +253,9 @@ test('at 320px the open window does not overflow and the header stays one row', 
 
 // Catches Back after an expired sign-in: assigning the frame's src adds a history entry, and
 // going back would put the rejected session into the frame again.
-test('reloading the frame after an expired sign-in adds no history entry', async ({ page }) => {
+test('reloading the frame after an expired sign-in adds no history entry', {
+  tag: '@drafts',
+}, async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('giscus-session', '"EXPIRED"'));
   await stubGiscus(page);
   await page.goto(post);

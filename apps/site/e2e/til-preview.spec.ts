@@ -3,9 +3,9 @@
 // a draft, so this is where a note page, the stacked /til page and feeds with entries are
 // checked.
 import AxeBuilder from '@axe-core/playwright';
+import { notes } from './content.ts';
 import { expectValidFeed } from './feed-rules.ts';
 import { expect, test } from './fixtures.ts';
-import { notes } from './til-notes.ts';
 
 const newestFirst = notes.toSorted((a, b) => b.date.localeCompare(a.date));
 const paths = ['/til', ...newestFirst.map((note) => `/til/${note.slug}`)];

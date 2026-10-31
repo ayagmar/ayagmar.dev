@@ -195,7 +195,7 @@ site-build:
     {{ site }} node scripts/postbuild.ts
 
 # Site: the same build with drafts shown, in apps/site/node_modules/.cache/preview, for the e2e
-# checks of TIL notes while every note is a draft (ADR 0028)
+# checks that need a post or note while they are drafts (ADR 0028, the @drafts tests)
 site-build-preview:
     PUBLIC_SHOW_DRAFTS=1 COMMIT_SHA={{ commit_sha }} SIGNALS_MODE=fixtures {{ site }} astro build --outDir node_modules/.cache/preview
     {{ site }} pagefind --site node_modules/.cache/preview --quiet
