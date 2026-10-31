@@ -112,7 +112,9 @@ test('shows titles and artists as text, never markup', async ({ page }) => {
 });
 
 // Catches the block overflowing a phone, failing axe in either theme, or pushing the page
-// around once it fills in.
+// around once it fills in. Only that last shift is counted: the fonts swapping in and the
+// search island hydrating also move the page, at times that depend on the machine, so the
+// answer is held until both are done and the count starts then.
 for (const width of [320, 360, 1280]) {
   test(`fits ${width}px, passes axe in both themes and shifts nothing in view`, async ({
     page,
@@ -120,13 +122,26 @@ for (const width of [320, 360, 1280]) {
     await page.setViewportSize({ width, height: 800 });
     await page.addInitScript(() => {
       window.shifts = 0;
-      new PerformanceObserver((list) => {
+      window.shiftObserver = new PerformanceObserver((list) => {
         for (const entry of list.getEntries() as (PerformanceEntry & { value: number })[]) {
           window.shifts += entry.value;
         }
-      }).observe({ type: 'layout-shift', buffered: true });
+      });
+      window.shiftObserver.observe({ type: 'layout-shift', buffered: true });
     });
-    await visit(page, noon, (route) => route.fulfill(envelope('ok')));
+    await visit(page, noon, async (route) => {
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        while (document.querySelector('astro-island[ssr]')) {
+          await new Promise((resolve) => setTimeout(resolve, 20));
+        }
+        // A shift is recorded in the frame after the change that causes it.
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        window.shiftObserver.takeRecords();
+        window.shifts = 0;
+      });
+      await route.fulfill(envelope('ok'));
+    });
     await expect(lines(page)).toHaveCount(3);
     expect(await page.evaluate(() => window.shifts)).toBeLessThan(0.01);
     expect(
@@ -148,6 +163,7 @@ for (const width of [320, 360, 1280]) {
 declare global {
   interface Window {
     shifts: number;
+    shiftObserver: PerformanceObserver;
     setHidden(hidden: boolean): void;
   }
 }
