@@ -12,8 +12,8 @@
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 
 export const marker = '<!-- min7-lighthouse -->';
-export const version = 1;
-/** Larger artifacts are refused unread. The real one is about 4 KB. */
+export const version = 2;
+/** Larger artifacts are refused unread. The real one is about 4 KB, 6 KB with every page re-measured. */
 export const maxBytes = 16_384;
 
 /** @type {Readonly<Record<string, string>>} Page names in the artifact, and their labels. */
@@ -33,8 +33,10 @@ export const profiles = /** @type {const} */ (['mobile', 'desktop']);
  * @typedef {'performance' | 'accessibility' | 'bestPractices' | 'lcp' | 'tbt' | 'cls'} Metric
  * @typedef {Record<Metric, number>} Values
  * @typedef {{ page: string, profile: 'mobile' | 'desktop', head: Values, base: Values | null,
- *   over: Metric[], regressed: Metric[] }} Result
- * @typedef {{ version: 1, runs: number, results: Result[] }} Metrics
+ *   over: Metric[], regressed: Metric[], remeasured: { base: Values, head: Values } | null }} Result
+ * `remeasured`: the page looked regressed against `base`, so base and head were measured again in
+ * turn on the same runner; `regressed` is decided on those numbers.
+ * @typedef {{ version: 2, runs: number, results: Result[] }} Metrics
  */
 
 /** @type {Readonly<Record<Metric, { label: string, max: number, format: (n: number) => string }>>} */
@@ -104,6 +106,16 @@ function metricList(value, where) {
 }
 
 /**
+ * @param {unknown} value
+ * @param {string} where
+ * @returns {{ base: Values, head: Values }}
+ */
+function remeasured(value, where) {
+  const object = exactObject(value, ['base', 'head'], where);
+  return { base: values(object.base, `${where}.base`), head: values(object.head, `${where}.head`) };
+}
+
+/**
  * Parses and checks an artifact. Returns a fresh copy holding only the known fields; throws
  * with a message that never repeats the artifact's content.
  * @param {string} text
@@ -131,7 +143,11 @@ export function validate(text) {
   const seen = new Set();
   const results = /** @type {unknown[]} */ (top.results).map((item, i) => {
     const where = `artifact.results[${i}]`;
-    const r = exactObject(item, ['page', 'profile', 'head', 'base', 'over', 'regressed'], where);
+    const r = exactObject(
+      item,
+      ['page', 'profile', 'head', 'base', 'over', 'regressed', 'remeasured'],
+      where
+    );
     const page = r.page;
     if (typeof page !== 'string' || !Object.hasOwn(pages, page)) {
       throw new Error(`${where}.page: not a known page`);
@@ -147,6 +163,7 @@ export function validate(text) {
       base: r.base === null ? null : values(r.base, `${where}.base`),
       over: metricList(r.over, `${where}.over`),
       regressed: metricList(r.regressed, `${where}.regressed`),
+      remeasured: r.remeasured === null ? null : remeasured(r.remeasured, `${where}.remeasured`),
     };
   });
   return { version, runs, results };
@@ -198,6 +215,12 @@ export function render(m) {
     '',
     ...summary.flatMap((paragraph) => [paragraph, '']),
     `Base → head, median of ${m.runs} ${m.runs === 1 ? 'run' : 'runs'} with simulated throttling, both built in fixtures mode. Budgets: ADR 0017.`,
+    ...(m.results.some((r) => r.remeasured)
+      ? [
+          '',
+          'A page that looked regressed has a second row, *re-measured*: base and head measured again on the same runner, one run of each in turn. That row decides the regression; the budgets are judged on the first.',
+        ]
+      : []),
   ];
   for (const profile of profiles) {
     const rows = m.results.filter((r) => r.profile === profile);
@@ -212,13 +235,21 @@ export function render(m) {
     const order = Object.keys(pages);
     rows.sort((a, b) => order.indexOf(a.page) - order.indexOf(b.page));
     for (const r of rows) {
+      const again = r.remeasured;
       const cells = metricKeys.map((k) => {
         const { format } = metrics[k];
         const base = r.base === null ? 'new' : format(r.base[k]);
-        const flags = `${r.over.includes(k) ? ' ✗' : ''}${r.regressed.includes(k) ? ' ▲' : ''}`;
+        const flags = `${r.over.includes(k) ? ' ✗' : ''}${!again && r.regressed.includes(k) ? ' ▲' : ''}`;
         return `${base} → ${format(r.head[k])}${flags}`;
       });
       lines.push(`| ${pages[r.page]} | ${cells.join(' | ')} |`);
+      if (!again) continue;
+      const remeasuredCells = metricKeys.map((k) => {
+        const { format } = metrics[k];
+        const flag = r.regressed.includes(k) ? ' ▲' : '';
+        return `${format(again.base[k])} → ${format(again.head[k])}${flag}`;
+      });
+      lines.push(`| ${pages[r.page]}, re-measured | ${remeasuredCells.join(' | ')} |`);
     }
   }
   return `${lines.join('\n')}\n`;

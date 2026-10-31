@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { medians, overBudget, pagePaths, readLhr, regressions } from './lighthouse.ts';
+import { confirmed, medians, overBudget, pagePaths, readLhr, regressions } from './lighthouse.ts';
 
 const values = (over: Partial<Record<string, number>> = {}) => ({
   performance: 1,
@@ -34,14 +34,64 @@ describe('budgets', () => {
     // +10 % but only +60 ms; +200 ms but only +5 %.
     assert.deepEqual(regressions(values({ lcp: 660 }), values({ lcp: 600 }), 'desktop'), []);
     assert.deepEqual(regressions(values({ lcp: 4200 }), values({ lcp: 4000 }), 'mobile'), []);
-    assert.deepEqual(regressions(values({ tbt: 100 }), base, 'mobile'), ['tbt']);
+    assert.deepEqual(regressions(values({ tbt: 100 }), base, 'desktop'), ['tbt']);
     assert.deepEqual(regressions(values({ lcp: 9000 }), null, 'mobile'), []);
+  });
+
+  it('leaves mobile TBT to its budget: unchanged pages read 0 to 62 ms', () => {
+    // #73, which changed no page: home read 0 ms on the base and 56 ms on head.
+    assert.deepEqual(regressions(values({ tbt: 56 }), values({ tbt: 0 }), 'mobile'), []);
+    assert.deepEqual(overBudget(values({ tbt: 101 }), 'mobile'), ['tbt']);
   });
 
   it('absorbs one simulated mobile round trip, the jump seen between identical builds', () => {
     // CI, same site output: 762 ms and 912 ms medians, one 150 ms RTT apart.
     assert.deepEqual(regressions(values({ lcp: 912 }), values({ lcp: 762 }), 'mobile'), []);
     assert.deepEqual(regressions(values({ lcp: 1063 }), values({ lcp: 762 }), 'mobile'), ['lcp']);
+  });
+});
+
+describe('measured again', () => {
+  // Two local `just lighthouse --profile mobile` runs on 2026-10-31 against a cached base of
+  // 600 ms on every page, so every page was measured again: each run's LCP in ms, in the order
+  // measured, base and head in turn. TBT was 0 ms in every run. The first compared two copies
+  // of one build; the second the same, but with a 300 KB render-blocking script in the head of
+  // /projects on head. Unchanged pages' medians land up to a round trip apart (/writing 1,512 →
+  // 1,657 ms, home 1,962 → 1,809 ms), never two.
+  const identical = {
+    home: { base: [1964, 1957, 1962], head: [1809, 1959, 1807] },
+    post: { base: [1657, 1657, 1658], head: [1657, 1659, 1514] },
+    writing: { base: [1512, 1512, 1657], head: [1656, 1657, 1807] },
+    projects: { base: [1363, 1510, 1660], head: [1507, 1512, 1212] },
+    project: { base: [1509, 1659, 1512], head: [1509, 1507, 1655] },
+    about: { base: [1807, 1511, 1807], head: [1661, 1807, 1513] },
+    stats: { base: [1809, 1662, 1807], head: [1660, 1659, 1807] },
+    uses: { base: [1811, 1810, 1811], head: [1810, 1811, 1663] },
+  };
+  const second = {
+    home: { base: [1810, 1957, 1808], head: [1809, 1958, 1812] },
+    post: { base: [1658, 1657, 1656], head: [1657, 1658, 1659] },
+    writing: { base: [1510, 1510, 1511], head: [1512, 1657, 1657] },
+    project: { base: [1510, 1656, 1209], head: [1362, 1512, 1365] },
+    about: { base: [1510, 1807, 1807], head: [1806, 1808, 1807] },
+    stats: { base: [1808, 1511, 1664], head: [1659, 1662, 1658] },
+    uses: { base: [1809, 1665, 1661], head: [1664, 1809, 1809] },
+  };
+  const heavy = { base: [1660, 1361, 1512], head: [2858, 2857, 2858] };
+  const runs = (lcps: number[]) => lcps.map((lcp) => values({ lcp }));
+
+  it('never fails an unchanged page on the runs Lighthouse recorded for it, 15 times over', () => {
+    const recorded = [...Object.entries(identical), ...Object.entries(second)];
+    assert.equal(recorded.length, 15);
+    for (const [page, lcp] of recorded) {
+      const measured = { base: runs(lcp.base), head: runs(lcp.head) };
+      assert.deepEqual(confirmed(measured, 'mobile'), [], page);
+    }
+  });
+
+  it('still fails a 300 KB render-blocking script on the runs recorded for it', () => {
+    const measured = { base: runs(heavy.base), head: runs(heavy.head) };
+    assert.deepEqual(confirmed(measured, 'mobile'), ['lcp']);
   });
 });
 

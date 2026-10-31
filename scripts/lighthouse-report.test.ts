@@ -26,10 +26,18 @@ const values = (over: Partial<Record<string, number>> = {}) => ({
   ...over,
 });
 const artifact = () => ({
-  version: 1,
+  version: 2,
   runs: 3,
   results: [
-    { page: 'home', profile: 'mobile', head: values(), base: values(), over: [], regressed: [] },
+    {
+      page: 'home',
+      profile: 'mobile',
+      head: values(),
+      base: values(),
+      over: [],
+      regressed: [],
+      remeasured: null,
+    },
     {
       page: 'post',
       profile: 'mobile',
@@ -37,6 +45,7 @@ const artifact = () => ({
       base: values({ lcp: 1500 }),
       over: ['lcp'],
       regressed: ['lcp'],
+      remeasured: null,
     },
     {
       page: 'stats',
@@ -45,6 +54,7 @@ const artifact = () => ({
       base: null,
       over: [],
       regressed: [],
+      remeasured: null,
     },
   ],
 });
@@ -64,6 +74,44 @@ describe('validate and render', () => {
     assert.match(body, /### Mobile[\s\S]*\| A post \| 99 → 99 \| .* \| 1\.50 s → 2\.30 s ✗ ▲ \|/);
     assert.match(body, /### Desktop[\s\S]*\| Stats \| new → 99 \|/);
     assert.ok(body.indexOf('| Home |') < body.indexOf('| A post |'));
+  });
+
+  it('shows the numbers a regression was decided on when the page was measured again', () => {
+    // Home looked regressed against the cached base; measured again it is not, and its first
+    // row must not show a ▲ that the job did not fail on.
+    const cleared = render(
+      validate(
+        text((a) => {
+          a.results.splice(1, 1);
+          Object.assign(a.results[0] ?? {}, {
+            base: values({ lcp: 1225 }),
+            head: values({ lcp: 1533 }),
+            remeasured: { base: values({ lcp: 1525 }), head: values({ lcp: 1533 }) },
+          });
+        })
+      )
+    );
+    assert.match(
+      cleared,
+      /\| Home \| .* \| 1\.23 s → 1\.53 s \| .*\|\n\| Home, re-measured \| .* \| 1\.52 s → 1\.53 s \|/
+    );
+    assert.match(cleared, /second row, \*re-measured\*/);
+    assert.match(cleared, /Every page is within budget and no metric regressed\./);
+    assert.doesNotMatch(cleared, /▲/);
+    // A regression that held is marked on the re-measured row, where it was decided.
+    const held = render(
+      validate(
+        text((a) =>
+          Object.assign(a.results[1] ?? {}, {
+            remeasured: { base: values({ lcp: 1500 }), head: values({ lcp: 2300 }) },
+          })
+        )
+      )
+    );
+    assert.match(
+      held,
+      /\| A post \| .* \| 1\.50 s → 2\.30 s ✗ \|.*\n\| A post, re-measured \| .* \| 1\.50 s → 2\.30 s ▲ \|/
+    );
   });
 
   it('says so when everything passes', () => {
@@ -114,7 +162,18 @@ describe('validate and render', () => {
     ['a repeated page and profile', (a) => a.results.push(a.results[0] as never)],
     ['more results than pages × profiles', (a) => a.results.push(...Array(12).fill(a.results[0]))],
     ['no results', (a) => a.results.splice(0)],
-    ['another version', (a) => Object.assign(a, { version: 2 })],
+    ['another version', (a) => Object.assign(a, { version: 1 })],
+    [
+      'a re-measure with markup in place of numbers',
+      (a) => Object.assign(a.results[0] ?? {}, { remeasured: { base: values(), head: injection } }),
+    ],
+    [
+      'a re-measure with an extra field',
+      (a) =>
+        Object.assign(a.results[0] ?? {}, {
+          remeasured: { base: values(), head: values(), note: injection },
+        }),
+    ],
     ['a fractional run count', (a) => Object.assign(a, { runs: 2.5 })],
   ];
   for (const [name, change] of hostile) {
@@ -127,7 +186,7 @@ describe('validate and render', () => {
   }
 
   it('refuses an own __proto__ key, which JSON.parse keeps as data', () => {
-    const json = text().replace('{"version":1', '{"__proto__":{"polluted":true},"version":1');
+    const json = text().replace('{"version":2', '{"__proto__":{"polluted":true},"version":2');
     assert.throws(() => validate(json), /fields are not exactly/);
     assert.equal(({} as Record<string, unknown>).polluted, undefined);
   });
@@ -135,10 +194,10 @@ describe('validate and render', () => {
   it('refuses an artifact over the size limit, and anything that is not JSON', () => {
     const padded = text().replace('{"version"', `${' '.repeat(maxBytes)}{"version"`);
     assert.throws(() => validate(padded), /over 16384 bytes/);
-    assert.throws(() => validate('{"version":1,'), /^Error: artifact: not JSON$/);
+    assert.throws(() => validate('{"version":2,'), /^Error: artifact: not JSON$/);
   });
 
-  it('keeps the artifact under the limit at its largest: every page in both profiles', () => {
+  it('keeps the artifact under the limit at its largest: every page in both profiles, re-measured', () => {
     const results = Object.keys(pages).flatMap((page) =>
       ['mobile', 'desktop'].map((profile) => ({
         page,
@@ -147,9 +206,13 @@ describe('validate and render', () => {
         base: values({ lcp: 119_999.123456789 }),
         over: Object.keys(metrics),
         regressed: Object.keys(metrics),
+        remeasured: {
+          base: values({ lcp: 119_999.123456789, cls: 9.123456789 }),
+          head: values({ lcp: 119_999.123456789, cls: 9.123456789 }),
+        },
       }))
     );
-    validate(JSON.stringify({ version: 1, runs: 9, results }));
+    validate(JSON.stringify({ version: 2, runs: 9, results }));
   });
 
   it('knows exactly the pages and metrics budgets.json measures', () => {
