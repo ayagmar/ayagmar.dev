@@ -21,7 +21,7 @@ export const el = (tag: string, attrs: Record<string, string>, ...children: Mark
  * A time the page reads relative to now. `Markup.astro` writes it as `Stamp.astro` does, the
  * time in Rabat; `tick` (src/lib/live.ts) fills it in the browser, as it rewrites the build's.
  */
-const stampMarkup = (iso: string) => el('time', { datetime: iso, 'data-ago': '' });
+export const stampMarkup = (iso: string) => el('time', { datetime: iso, 'data-ago': '' });
 
 /**
  * `· 3 hours ago`, or with `words` `· checked 3 hours ago`: a time after the words it dates.

@@ -112,7 +112,7 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
     .getByRole('navigation', { name: 'The room as a list' })
     .getByRole('link')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
-  expect(list).toHaveLength(8);
+  expect(list).toHaveLength(7);
   expect(await roomLinks(page)).toEqual(list);
 
   for (const href of new Set(list)) {
@@ -257,7 +257,7 @@ test('? lists the keys, and t and the room numbers work', async ({ page }) => {
   const keys = page.getByRole('dialog', { name: 'Keyboard' });
   await page.keyboard.press('?');
   await expect(keys).toBeVisible();
-  await expect(keys.getByText(/^Corkboard: shipping$|^Shelf: reading$/)).toHaveCount(2);
+  await expect(keys.getByText(/^Corkboard: shipping$|^Record player: music$/)).toHaveCount(2);
   await page.keyboard.press('Escape');
   await expect(keys).toBeHidden();
 

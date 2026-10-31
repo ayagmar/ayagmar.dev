@@ -6,13 +6,17 @@ import ShippingHeat from '../components/ShippingHeat.astro';
 import ShippingList from '../components/ShippingList.astro';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
-import { getPosts, getProjects } from '../lib/posts.ts';
+import { getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
 import { roomObjects } from '../lib/room.ts';
 import { site } from '../lib/site.ts';
+import { notePath } from '../lib/til.ts';
+import { isoDay } from '../lib/writing.ts';
 import '../styles/room.css';
 
 const posts = (await getPosts()).slice(0, 4);
+// Until the first post, the Writing window shows the latest TIL notes instead of an empty box.
+const notes = posts.length === 0 ? (await getNotes()).slice(0, 3) : [];
 const projects = (await getProjects()).projects.slice(0, 5);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
@@ -54,7 +58,7 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
     <!-- Open-Meteo's CC BY 4.0 credit is on the colophon, linked from the footer (ADR 0029). -->
   </section>
 
-  <h1 class="intro">{site.author}. <span>{site.role}, {site.location}.</span></h1>
+  <h1 class="intro">{site.author} <span>{site.role}, {site.location}.</span></h1>
   <nav aria-label="The room as a list">
     <ul class="room-list">
       {roomObjects.map((item) => (
@@ -71,9 +75,23 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
     <section class="paper" aria-labelledby="writing">
       <div class="panel-head">
         <h2 id="writing">Writing</h2>
-        <a href="/writing">All writing</a>
+        {notes.length === 0 ? <a href="/writing">All writing</a> : <a href="/til">All notes</a>}
       </div>
-      <PostList posts={posts} />
+      {notes.length === 0 ? (
+        <PostList posts={posts} />
+      ) : (
+        <>
+          <p class="home-notes-lede">No posts yet. The latest short notes, from TIL:</p>
+          <ul class="home-notes">
+            {notes.map((note) => (
+              <li>
+                <time datetime={isoDay(note.data.date)}>{isoDay(note.data.date)}</time>
+                <a href={notePath(note.id)}>{note.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </section>
 
     <section class="panel m-screen" aria-labelledby="projects">

@@ -163,18 +163,20 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
   await expect(panel(page, 'shipping').locator('.shipping li')).toHaveText([
     '10 minutes ago runnerd merged #7: Live stats',
   ]);
-  await expect(panel(page, 'shipping').getByRole('heading', { name: 'Stars' })).toHaveCount(0);
+  await expect(
+    panel(page, 'shipping').getByRole('heading', { name: 'Stars on other repositories' })
+  ).toHaveCount(0);
   await expect(panel(page, 'projects').locator('.projects-body')).toHaveText(
-    '7 featured projects, at least 233 stars; GitHub did not answer for 1. See them.'
+    /7 featured projects, at least 233 stars; GitHub did not answer for 1\. All projects\.$/
   );
   // No 60-second best: no headline borrowed from another length. Each day reads back from now.
   const typing = panel(page, 'monkeytype').locator('.typing-body');
   await expect(typing.locator('p').first()).toHaveText('No 60-second best yet.');
   await expect(typing.locator('dt')).toHaveText(['15 seconds', '120 seconds', '25 words']);
   await expect(typing.locator('dd')).toHaveText([
-    '118 wpm, 97%, 10 days ago',
-    '99 wpm, 93%, 2 days ago',
-    '128 wpm, 97%, today',
+    '118 wpm 97% accuracy 10 days ago',
+    '99 wpm 93% accuracy 2 days ago',
+    '128 wpm 97% accuracy today',
   ]);
   await expect(typing.locator('dd time').first()).toHaveAttribute('title', '16 Oct 2026');
   for (const source of ['listening', 'shipping', 'projects', 'monkeytype'] as const) {
@@ -521,6 +523,31 @@ test('without JavaScript the panels show the build, timed in Rabat', async ({ br
   // The day each best was set, as a date.
   await expect(panel(page, 'monkeytype').locator('strong')).toHaveText('104 wpm');
   await expect(panel(page, 'monkeytype').locator('time').first()).toHaveText('14 Jan 2021');
+  await page.context().close();
+});
+
+// Catches folded rows that are dropped instead of folded (event 6 on gone from the page), a fold
+// that needs JavaScript to open, and a repository counted in both the shipping and projects
+// windows from two sources that can disagree.
+test('without JavaScript long lists fold, and a repository has one star count', async ({
+  browser,
+}) => {
+  const page = await newPage(browser, { javaScriptEnabled: false });
+  await page.goto('/stats');
+  const shipping = panel(page, 'shipping');
+  const events = shipping.locator('.shipping li');
+  await expect(events).toHaveCount(15);
+  await expect(events.filter({ visible: true })).toHaveCount(5);
+  const more = shipping.locator('details.more summary').first();
+  await expect(more).toHaveText('10 earlier events');
+  await more.click();
+  await expect(events.filter({ visible: true })).toHaveCount(15);
+
+  const projects = await panel(page, 'projects').locator('.rows a').allTextContents();
+  const counted = await shipping.locator('.rows li > span:first-child').allTextContents();
+  expect(projects.length).toBeGreaterThan(0);
+  expect(counted.length).toBeGreaterThan(0);
+  expect(counted.filter((name) => projects.includes(name))).toEqual([]);
   await page.context().close();
 });
 

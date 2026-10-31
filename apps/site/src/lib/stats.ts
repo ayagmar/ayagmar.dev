@@ -95,7 +95,7 @@ export const statsWords = {
   top: 'Top artists',
   noTop: 'No top artists yet.',
   noShipping: 'No public activity to show yet.',
-  stars: 'Stars',
+  stars: 'Stars on other repositories',
   noProjects: 'No project data yet.',
 };
 
@@ -103,9 +103,11 @@ export const statsWords = {
 export const weekCount = (scrobbles: number | null) =>
   scrobbles === null ? 'unknown' : scrobbles.toLocaleString('en');
 
-/** The latest star count of each repository, for the Stars list. */
+/** The latest star count of each repository, most stars first, for the GitHub stars list. */
 export const starTotals = ({ starHistory }: ShippingSnapshot) =>
-  starHistory.flatMap(({ repo, points }) => {
-    const last = points.at(-1);
-    return last === undefined ? [] : [{ repo, stars: last.stars, date: last.date }];
-  });
+  starHistory
+    .flatMap(({ repo, points }) => {
+      const last = points.at(-1);
+      return last === undefined ? [] : [{ repo, stars: last.stars, date: last.date }];
+    })
+    .sort((a, b) => b.stars - a.stars);

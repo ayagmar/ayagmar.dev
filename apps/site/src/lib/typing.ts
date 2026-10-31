@@ -41,7 +41,7 @@ export const typingWords = {
   settings: 'Monkeytype personal bests: English · normal · no punctuation or numbers.',
 };
 
-/** One row per best there is: `15 seconds`, then its numbers, then the day it was set. */
+/** One row per best there is: `15 seconds`, its speed, its accuracy, and the day it was set. */
 export function bestRows({ time, words }: MonkeytypeSnapshot) {
   const row = (label: string, best: TypingBest) =>
     best === null
@@ -49,7 +49,8 @@ export function bestRows({ time, words }: MonkeytypeSnapshot) {
       : [
           {
             label,
-            text: `${Math.round(best.wpm)} wpm, ${Math.round(best.acc)}%, `,
+            wpm: `${Math.round(best.wpm)} wpm`,
+            acc: `${Math.round(best.acc)}% accuracy`,
             date: best.date,
           },
         ];

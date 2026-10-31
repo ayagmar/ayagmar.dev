@@ -33,6 +33,27 @@ for (const colorScheme of ['light', 'dark'] as const) {
       expect(contrast(ring, bar)).toBeGreaterThanOrEqual(3);
     });
 
+    // Catches a text field whose only edge fades into the dialog: until it has focus, its
+    // border is all that shows where to type (WCAG 1.4.11), and axe does not check it. The
+    // input sits on the ground inside the dialog's surface, so both sides are held to 3:1.
+    test('the search input border is at least 3:1 against the dialog and its own fill', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+      await page.keyboard.press('/');
+      const dialog = page.getByRole('dialog', { name: 'Search' });
+      const input = dialog.getByLabel('Search posts');
+      await expect(input).toBeVisible();
+      const { border, fill, around } = await input.evaluate((el) => ({
+        border: getComputedStyle(el).borderTopColor,
+        fill: getComputedStyle(el).backgroundColor,
+        around: getComputedStyle(el.closest('dialog') as Element).backgroundColor,
+      }));
+      expect(contrast(border, around)).toBeGreaterThanOrEqual(3);
+      expect(contrast(border, fill)).toBeGreaterThanOrEqual(3);
+    });
+
     // Catches a heat level fading back into the strip: a day with activity is a mark, and colour
     // is its only encoding. Each level must also stand apart from the one below it.
     // Shipping's strip and the LLM usage year share the levels.

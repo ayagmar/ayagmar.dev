@@ -11,15 +11,18 @@ const drafts = posts.filter((post) => post.draft);
 test.describe('without published posts', () => {
   test.skip(published.length > 0, 'a post is published');
 
-  // Catches an empty list that renders a blank panel, an error or a tag list with no tags.
+  // Catches an empty list that renders a blank panel, an error or a tag list with no tags, and
+  // home's Writing window left empty while there are notes to show in it.
   test('home, /writing and index.txt say nothing is published', async ({ page, request }) => {
     await page.goto('/');
     const panel = page.getByRole('region', { name: 'Writing' });
-    await expect(panel.getByText('Nothing published yet.')).toBeVisible();
-    await expect(panel.getByRole('link', { name: 'All writing' })).toHaveAttribute(
-      'href',
-      '/writing'
-    );
+    await expect(panel.getByText('No posts yet. The latest short notes, from TIL:')).toBeVisible();
+    await expect(panel.getByRole('link', { name: 'All notes' })).toHaveAttribute('href', '/til');
+    const notes = await panel
+      .locator('.home-notes a')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+    expect(notes.length).toBeGreaterThan(0);
+    for (const href of notes) expect(href).toMatch(/^\/til\/[a-z0-9-]+$/);
 
     await page.goto('/writing');
     await expect(page.getByRole('heading', { level: 1, name: 'Writing' })).toBeVisible();
