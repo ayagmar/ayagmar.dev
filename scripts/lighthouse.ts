@@ -1,7 +1,9 @@
 // Lighthouse on the built site (ADR 0017): serves the head build, and the base build when given,
 // each through its own Worker with `wrangler dev` (local, offline), runs Lighthouse CI on the
 // pages in scripts/budgets.json for each profile, takes the median of the runs, and fails when
-// a head page is over budget or regressed against the base beyond the noise allowance. Writes
+// a head page is over budget or regressed against the base beyond the noise allowance. A page
+// that looks regressed is measured again, base and head in turn, and the regression stands only
+// if it holds on those numbers; a page over its CLS budget is measured again on head alone. Writes
 // the metrics artifact (scripts/lighthouse-report.js has its schema) either way.
 // Chromium comes from CHROME_PATH (`just lighthouse` sets it to Playwright's).
 // A base cache file holds the base's medians by URL path, so a base measured once (CI keys the
@@ -29,7 +31,7 @@ import { freePort } from './free-port.ts';
 import { pages as knownPages, metrics, profiles, render, validate } from './lighthouse-report.js';
 
 type Profile = (typeof profiles)[number];
-type Metric = keyof typeof metrics;
+export type Metric = keyof typeof metrics;
 type Values = Record<Metric, number>;
 
 const scores = new Set<Metric>(['performance', 'accessibility', 'bestPractices']);
@@ -147,33 +149,65 @@ async function serve(
   throw new Error(`wrangler dev in ${site} did not answer within 60 s`);
 }
 
-/** Runs Lighthouse CI on every page and returns the median metrics per page (null: not measured). */
+/**
+ * Time allowed per Lighthouse run of one page, about 11 s in CI. A collect gets two runs more,
+ * for lhci's own retries of a failed run: 13 minutes for 24 runs, so a hung collect is killed
+ * and run once more inside the job's 35 minutes.
+ */
+const runTimeout = 30_000;
+
+/** Why a child process failed, in a few words; its own output is already in the log. */
+const failure = (error: unknown) => {
+  const e = error as { code?: string; status?: number | null; signal?: string | null };
+  if (e.code === 'ETIMEDOUT') return 'timed out';
+  if (typeof e.status === 'number') return `exited with ${e.status}`;
+  if (e.signal) return `was killed by ${e.signal}`;
+  return error instanceof Error ? error.message : String(error);
+};
+
+/**
+ * Runs Lighthouse CI on every page `runs` times and returns each page's measured runs (fewer
+ * than `runs` when Lighthouse could not measure it). Lighthouse sometimes crashes on a page it
+ * measures fine the next time (NO_NAVSTART from a gatherer), so a failed `lhci collect` is run
+ * once more; a second failure throws, after lhci's own error in the log.
+ */
 function collect(
   lhci: string,
   origin: string,
   paths: Record<string, string>,
   profile: Profile,
-  dir: string
-): Record<string, Values | null> {
-  rmSync(dir, { recursive: true, force: true });
-  mkdirSync(dir, { recursive: true });
+  dir: string,
+  runs: number
+): Record<string, Values[]> {
   const urls = Object.values(paths).map((path) => `--url=${origin}${path}`);
-  execFileSync(
-    lhci,
-    [
-      'collect',
-      ...urls,
-      `--numberOfRuns=${budgets.lighthouse.runs}`,
-      '--settings.onlyCategories=performance',
-      '--settings.onlyCategories=accessibility',
-      '--settings.onlyCategories=best-practices',
-      // As Playwright launches the same Chromium; the pages are the site's own.
-      '--settings.chromeFlags=--headless=new --no-sandbox',
-      ...(profile === 'desktop' ? ['--settings.preset=desktop'] : []),
-    ],
-    { cwd: dir, stdio: ['ignore', 'ignore', 'inherit'] }
-  );
-  const runs = new Map<string, Values[]>();
+  const args = [
+    'collect',
+    ...urls,
+    `--numberOfRuns=${runs}`,
+    '--settings.onlyCategories=performance',
+    '--settings.onlyCategories=accessibility',
+    '--settings.onlyCategories=best-practices',
+    // As Playwright launches the same Chromium; the pages are the site's own.
+    '--settings.chromeFlags=--headless=new --no-sandbox',
+    ...(profile === 'desktop' ? ['--settings.preset=desktop'] : []),
+  ];
+  for (let attempt = 1; ; attempt++) {
+    rmSync(dir, { recursive: true, force: true });
+    mkdirSync(dir, { recursive: true });
+    try {
+      execFileSync(lhci, args, {
+        cwd: dir,
+        stdio: ['ignore', 'ignore', 'inherit'],
+        timeout: runTimeout * (urls.length * runs + 2),
+      });
+      break;
+    } catch (error) {
+      const what = `lhci collect on ${origin} (${profile}) ${failure(error)}`;
+      if (attempt === 2) throw new Error(`${what} again`);
+      console.error(`lighthouse: ${what}; running it once more`);
+    }
+  }
+  const measured = new Map<string, Values[]>();
   let failed = false;
   const results = join(dir, '.lighthouseci');
   for (const file of readdirSync(results).filter((f) => /^lhr-.*\.json$/.test(f))) {
@@ -181,15 +215,79 @@ function collect(
     const values = readLhr(lhr);
     if (!values) failed = true;
     const path = new URL(lhr.requestedUrl).pathname;
-    runs.set(path, [...(runs.get(path) ?? []), ...(values ? [values] : [])]);
-  }
-  const out: Record<string, Values | null> = {};
-  for (const [name, path] of Object.entries(paths)) {
-    const measured = runs.get(path) ?? [];
-    out[name] = measured.length === budgets.lighthouse.runs ? medians(measured) : null;
+    measured.set(path, [...(measured.get(path) ?? []), ...(values ? [values] : [])]);
   }
   if (failed) console.error(`lighthouse: some runs on ${origin} could not measure the page`);
+  return Object.fromEntries(
+    Object.entries(paths).map(([name, path]) => [name, measured.get(path) ?? []])
+  );
+}
+
+/** The median of each page's runs, or null for a page with fewer runs than asked for. */
+const complete = (byPage: Record<string, Values[]>, runs: number) =>
+  Object.fromEntries(
+    Object.entries(byPage).map(([name, measured]) => [
+      name,
+      measured.length === runs ? medians(measured) : null,
+    ])
+  ) as Record<string, Values | null>;
+
+/** The runs of a re-measure of one page; `base` is empty when only head was measured. */
+type Remeasured = { base: Values[]; head: Values[] };
+
+/**
+ * Head measured again on its pages, and base on its own (a subset), one run of each side in
+ * turn, so both sides see the same runner at the same time: a slow minute slows both. Each side
+ * gets as many runs as the first measurement. Throws when a run cannot be measured.
+ */
+function remeasure(
+  lhci: string,
+  origins: { base: string | undefined; head: string },
+  paths: { base: Record<string, string>; head: Record<string, string> },
+  profile: Profile,
+  work: string
+): Record<string, Remeasured> {
+  const out: Record<string, Remeasured> = {};
+  for (const name of Object.keys(paths.head)) out[name] = { base: [], head: [] };
+  for (let run = 0; run < budgets.lighthouse.runs; run++) {
+    for (const side of ['base', 'head'] as const) {
+      const origin = origins[side];
+      if (Object.keys(paths[side]).length === 0) continue;
+      if (!origin) throw new Error(`no ${side} server`);
+      const measured = collect(
+        lhci,
+        origin,
+        paths[side],
+        profile,
+        join(work, `remeasure-${side}-${profile}`),
+        1
+      );
+      for (const [name, values] of Object.entries(measured)) {
+        if (values.length !== 1) throw new Error(`Lighthouse could not measure ${name} on ${side}`);
+        out[name]?.[side].push(...values);
+      }
+    }
+  }
   return out;
+}
+
+/**
+ * What stands after a re-measure of a page, from what the first numbers said: regressions on
+ * the base's medians against the head's (when the base was measured again), and the CLS budget
+ * on the head's median. Every other budget keeps its first verdict.
+ */
+export function decide(
+  first: { over: Metric[]; regressed: Metric[] },
+  runs: Remeasured,
+  profile: Profile
+): { over: Metric[]; regressed: Metric[] } {
+  const head = medians(runs.head);
+  const stillOver = overBudget(head, profile);
+  return {
+    over: first.over.filter((key) => key !== 'cls' || stillOver.includes('cls')),
+    regressed:
+      runs.base.length > 0 ? regressions(head, medians(runs.base), profile) : first.regressed,
+  };
 }
 
 /** Medians by profile and URL path, the format of the cache files. */
@@ -286,6 +384,7 @@ async function main() {
 
   const servers: ChildProcess[] = [];
   const results: ReturnType<typeof validate>['results'] = [];
+  const runs = budgets.lighthouse.runs;
   const problems: string[] = [];
   const baseCache = readCache(args['base-cache']);
   const headCache: Cache = {};
@@ -293,13 +392,26 @@ async function main() {
   try {
     const headServer = await serve(head, bin('wrangler'));
     servers.push(headServer.child);
+    const startBase = async () => {
+      if (!base) throw new Error('no base build to measure');
+      if (!baseOrigin) {
+        const baseServer = await serve(base, bin('wrangler'));
+        servers.push(baseServer.child);
+        baseOrigin = baseServer.origin;
+      }
+      return baseOrigin;
+    };
     for (const profile of args.profile as Profile[]) {
-      const headRuns = collect(
-        bin('lhci'),
-        headServer.origin,
-        paths,
-        profile,
-        join(work, `head-${profile}`)
+      const headRuns = complete(
+        collect(
+          bin('lhci'),
+          headServer.origin,
+          paths,
+          profile,
+          join(work, `head-${profile}`),
+          runs
+        ),
+        runs
       );
       // The base is measured only for pages its cache lacks, and only if it has them.
       const known = baseCache[profile] ?? {};
@@ -310,22 +422,21 @@ async function main() {
         Object.entries(paths).filter(([, path]) => !(path in known))
       );
       if (base && Object.keys(uncached).length > 0) {
-        if (!baseOrigin) {
-          const baseServer = await serve(base, bin('wrangler'));
-          servers.push(baseServer.child);
-          baseOrigin = baseServer.origin;
-        }
-        const onBase = await existing(baseOrigin, uncached);
+        const onBase = await existing(await startBase(), uncached);
         for (const name of Object.keys(uncached).filter((n) => !(n in onBase))) {
           console.log(`lighthouse: ${name} (${paths[name]}) is new: not on the base`);
         }
         if (Object.keys(onBase).length > 0) {
-          const measured = collect(
-            bin('lhci'),
-            baseOrigin,
-            onBase,
-            profile,
-            join(work, `base-${profile}`)
+          const measured = complete(
+            collect(
+              bin('lhci'),
+              await startBase(),
+              onBase,
+              profile,
+              join(work, `base-${profile}`),
+              runs
+            ),
+            runs
           );
           for (const [name, values] of Object.entries(measured)) {
             if (values) known[paths[name] as string] = values;
@@ -333,6 +444,7 @@ async function main() {
           if (args['base-cache']) writeCache(args['base-cache'], baseCache);
         }
       }
+      const rows: ReturnType<typeof validate>['results'] = [];
       for (const page of Object.keys(paths)) {
         const h = headRuns[page];
         if (!h) {
@@ -343,17 +455,80 @@ async function main() {
         }
         headByPath[paths[page] as string] = h;
         const b = known[paths[page] as string] ?? null;
-        const over = overBudget(h, profile);
-        const regressed = regressions(h, b, profile);
-        for (const key of over) problems.push(`${page} (${profile}): ${key} ${h[key]} over budget`);
-        for (const key of regressed) {
-          problems.push(`${page} (${profile}): ${key} regressed from ${b?.[key]} to ${h[key]}`);
-        }
-        results.push({ page, profile, head: h, base: b, over, regressed });
+        rows.push({
+          page,
+          profile,
+          head: h,
+          base: b,
+          over: overBudget(h, profile),
+          regressed: regressions(h, b, profile),
+          remeasured: null,
+        });
         console.log(
           `${profile.padEnd(7)} ${page.padEnd(9)} perf ${pct(h.performance)} a11y ${pct(h.accessibility)} bp ${pct(h.bestPractices)} lcp ${h.lcp} ms tbt ${h.tbt} ms cls ${h.cls}`
         );
       }
+      // A base measured on another runner, or minutes earlier, can sit a simulated round trip
+      // or two below what this runner reads now, so a regression decides only against a base
+      // measured beside the head. CLS reads a third-decimal shift now and then on an unchanged
+      // page, so its budget decides on head measured again. Other budgets are not measured again.
+      const regressedRows = rows.filter((row) => row.regressed.length > 0);
+      const suspects = rows.filter((row) => row.regressed.length > 0 || row.over.includes('cls'));
+      if (suspects.length > 0) {
+        const names = suspects.map((row) => row.page);
+        const pathsOf = (list: typeof rows) =>
+          Object.fromEntries(list.map((row) => [row.page, paths[row.page] as string]));
+        console.log(
+          `lighthouse: measuring ${names.join(', ')} (${profile}) again, ${regressedRows.length > 0 ? 'base and head in turn' : 'head only'}`
+        );
+        try {
+          const again = remeasure(
+            bin('lhci'),
+            {
+              base: regressedRows.length > 0 ? await startBase() : undefined,
+              head: headServer.origin,
+            },
+            { base: pathsOf(regressedRows), head: pathsOf(suspects) },
+            profile,
+            work
+          );
+          for (const row of suspects) {
+            const measured = again[row.page] as Remeasured;
+            Object.assign(row, decide(row, measured, profile));
+            row.remeasured = {
+              base: measured.base.length > 0 ? medians(measured.base) : null,
+              head: medians(measured.head),
+            };
+            const list = (side: 'base' | 'head') =>
+              measured[side].length === 0
+                ? ''
+                : ` ${side} lcp ${measured[side].map((v) => Math.round(v.lcp)).join(' ')}, tbt ${measured[side].map((v) => Math.round(v.tbt)).join(' ')}, cls ${measured[side].map((v) => v.cls.toFixed(4)).join(' ')};`;
+            console.log(
+              `lighthouse: ${row.page} (${profile}) re-measured:${list('base')}${list('head')}`
+            );
+          }
+        } catch (error) {
+          const why = error instanceof Error ? error.message : String(error);
+          problems.push(
+            `${names.join(', ')} (${profile}): the re-measure failed, so the first numbers stand: ${why}`
+          );
+        }
+      }
+      for (const row of rows) {
+        const again = row.remeasured;
+        for (const key of row.over) {
+          const [value, note] =
+            key === 'cls' && again ? [again.head.cls, ', re-measured'] : [row.head[key], ''];
+          problems.push(`${row.page} (${profile}): ${key} ${value} over budget${note}`);
+        }
+        const [b, h] = again?.base ? [again.base, again.head] : [row.base as Values, row.head];
+        for (const key of row.regressed) {
+          problems.push(
+            `${row.page} (${profile}): ${key} regressed from ${b[key]} to ${h[key]}${again?.base ? ', re-measured' : ''}`
+          );
+        }
+      }
+      results.push(...rows);
     }
   } finally {
     for (const server of servers) server.kill();
@@ -361,7 +536,7 @@ async function main() {
   if (args['head-cache']) writeCache(args['head-cache'], headCache);
 
   if (results.length > 0) {
-    const artifact = JSON.stringify({ version: 1, runs: budgets.lighthouse.runs, results });
+    const artifact = JSON.stringify({ version: 2, runs, results });
     // The comment job will refuse anything this check refuses; fail here first.
     validate(artifact);
     mkdirSync(dirname(resolve(args.out)), { recursive: true });

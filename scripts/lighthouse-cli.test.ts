@@ -2,6 +2,11 @@
 // node_modules/.bin: a `wrangler dev` that serves dist/ (404 for a missing page, 500 for one
 // whose file starts with FAIL), and an `lhci collect` that, like the pinned one, exits 1 when a
 // page does not answer 200 and otherwise writes one result per run. Chromium is never started.
+// A page's file sets what the stand-in measures: `lcp:N` its LCP (400 ms otherwise), `drift`
+// adds 40 ms for every run of a drifting page before it (a runner slowing down), `cls:a,b,...`
+// the CLS of its successive runs (the last repeats; 0 otherwise), `crash` makes
+// Lighthouse crash on it as NO_NAVSTART does; a `crash-once` file next to the stand-in makes
+// the next collect crash. Each measured URL is appended to `calls.log` there.
 import assert from 'node:assert/strict';
 import { execFile, spawnSync } from 'node:child_process';
 import {
@@ -38,25 +43,50 @@ createServer((req, res) => {
 `;
 
 const lhci = `#!/usr/bin/env node
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+const here = dirname(process.argv[1]);
+const crash = () => {
+  console.error('Runtime error encountered: NO_NAVSTART');
+  process.exit(1);
+};
+if (existsSync(join(here, 'crash-once'))) {
+  rmSync(join(here, 'crash-once'));
+  crash();
+}
 const urls = process.argv.filter((a) => a.startsWith('--url=')).map((a) => a.slice(6));
 const runs = Number(process.argv.find((a) => a.startsWith('--numberOfRuns=')).split('=')[1]);
 mkdirSync('.lighthouseci', { recursive: true });
 let n = 0;
 for (const url of urls) {
-  const status = (await fetch(url)).status;
-  if (status !== 200) {
-    console.error('Lighthouse failed on ' + url + ' (status ' + status + ')');
+  const response = await fetch(url);
+  const body = await response.text();
+  if (response.status !== 200) {
+    console.error('Lighthouse failed on ' + url + ' (status ' + response.status + ')');
     process.exit(1);
   }
+  if (body.includes('crash')) crash();
   for (let run = 0; run < runs; run++) {
+    appendFileSync(join(here, 'calls.log'), new URL(url).pathname + '\\n');
+    let lcp = Number(/lcp:(\\d+)/.exec(body)?.[1] ?? 400);
+    const clsList = (/cls:([\\d.,]+)/.exec(body)?.[1] ?? '0').split(',').map(Number);
+    const seen = join(here, 'cls-count-' + new URL(url).pathname.replaceAll('/', '_'));
+    const clsRun = existsSync(seen) ? Number(readFileSync(seen, 'utf8')) : 0;
+    writeFileSync(seen, String(clsRun + 1));
+    const cls = clsList[Math.min(clsRun, clsList.length - 1)];
+    if (body.includes('drift')) {
+      const counter = join(here, 'drift-count');
+      const count = existsSync(counter) ? Number(readFileSync(counter, 'utf8')) : 0;
+      writeFileSync(counter, String(count + 1));
+      lcp += 40 * count;
+    }
     const lhr = {
       requestedUrl: url,
       categories: { performance: { score: 1 }, accessibility: { score: 1 }, 'best-practices': { score: 1 } },
       audits: {
-        'largest-contentful-paint': { numericValue: 400 },
+        'largest-contentful-paint': { numericValue: lcp },
         'total-blocking-time': { numericValue: 0 },
-        'cumulative-layout-shift': { numericValue: 0 },
+        'cumulative-layout-shift': { numericValue: cls },
       },
     };
     writeFileSync('.lighthouseci/lhr-' + n++ + '.json', JSON.stringify(lhr));
@@ -180,6 +210,122 @@ it('measures only the pages a cache lacks, and treats a cache it cannot read as 
   // The cache the run wrote replaces the unreadable file.
   assert.ok(existsSync(join(dir, 'garbage.json')));
   assert.equal(JSON.parse(readFileSync(join(dir, 'garbage.json'), 'utf8')).version, 1);
+});
+
+// A base cache as a main push leaves it: every page measured, LCP 400 ms unless given.
+const cache = (lcp: Record<string, number> = {}) => {
+  const paths = ['/', '/about', '/projects', '/projects/a', '/stats', '/uses', '/writing'];
+  const byPath = Object.fromEntries(
+    [...paths, '/writing/old-post'].map((path) => [
+      path,
+      { performance: 1, accessibility: 1, bestPractices: 1, lcp: lcp[path] ?? 400, tbt: 0, cls: 0 },
+    ])
+  );
+  writeFileSync(
+    join(dir, 'base.json'),
+    JSON.stringify({ version: 1, profiles: { desktop: byPath } })
+  );
+};
+const metricsFile = () =>
+  JSON.parse(readFileSync(join(dir, 'out/metrics.json'), 'utf8')) as {
+    results: {
+      page: string;
+      base: { lcp: number };
+      head: { lcp: number };
+      over: string[];
+      regressed: string[];
+      remeasured: { base: { lcp: number } | null; head: { lcp: number; cls: number } } | null;
+    }[];
+  };
+const row = (page: string) => metricsFile().results.find((r) => r.page === page);
+const calls = () =>
+  readFileSync(join(dir, 'head/node_modules/.bin/calls.log'), 'utf8').trim().split('\n');
+
+it('passes a page that only looked regressed against a lucky cached base, measuring only it again', () => {
+  // The cache says /projects read 400 ms; this runner reads 500 ms on both builds and slows by
+  // 40 ms a run. Measured in turn, base and head stay one run apart; measured one side after
+  // the other, head would read 120 ms worse, past desktop's 100 ms allowance.
+  const projects = { 'projects.html': 'lcp:500 drift' };
+  site('base', { ...pages, ...projects });
+  site('head', { ...pages, ...projects }, true);
+  cache();
+  const result = run('--base-cache', 'base.json');
+  assert.equal(result.status, 0, result.stderr);
+  const projectsRow = row('projects');
+  assert.equal(projectsRow?.base.lcp, 400);
+  assert.equal(projectsRow?.head.lcp, 540);
+  assert.deepEqual(
+    projectsRow?.remeasured && [projectsRow.remeasured.base?.lcp, projectsRow.remeasured.head.lcp],
+    [700, 740]
+  );
+  assert.deepEqual(projectsRow?.regressed, []);
+  assert.ok(metricsFile().results.every((r) => r.page === 'projects' || r.remeasured === null));
+  // 8 pages × 3 runs on head, then only /projects: 3 runs on each side.
+  assert.deepEqual(calls().slice(24), Array(6).fill('/projects'));
+});
+
+it('still fails a regression that holds against the base measured beside it', () => {
+  site('base', { ...pages, 'projects.html': 'lcp:500' });
+  site('head', { ...pages, 'projects.html': 'lcp:800' }, true);
+  cache({ '/projects': 500 });
+  const result = run('--base-cache', 'base.json');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /projects \(desktop\): lcp regressed from 500 to 800, re-measured/);
+  assert.deepEqual(row('projects')?.regressed, ['lcp']);
+});
+
+it('fails, naming the cause, when the re-measure cannot run', () => {
+  site('base', { ...pages, 'projects.html': 'lcp:500 crash' });
+  site('head', { ...pages, 'projects.html': 'lcp:800' }, true);
+  cache({ '/projects': 500 });
+  const result = run('--base-cache', 'base.json');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /NO_NAVSTART/);
+  assert.match(
+    result.stderr,
+    /projects \(desktop\): the re-measure failed, so the first numbers stand: lhci collect .* exited with 1 again/
+  );
+  assert.equal(row('projects')?.remeasured, null);
+  assert.deepEqual(row('projects')?.regressed, ['lcp']);
+});
+
+it('measures head alone again for a CLS budget miss, and fails only a miss that repeats', () => {
+  // No base at all: a CLS budget is absolute, so its re-measure needs none.
+  const head = (writing: string) => {
+    rmSync(join(dir, 'head'), { recursive: true, force: true });
+    site('head', { ...pages, 'writing.html': writing }, true);
+    return spawnSync(
+      process.execPath,
+      [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
+      { cwd: dir, encoding: 'utf8', env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/x' } }
+    );
+  };
+  // #52: 0.0102 three times, then the page's usual 0.0015.
+  const noise = head('cls:0.0102,0.0102,0.0102,0.0015');
+  assert.equal(noise.status, 0, noise.stderr);
+  assert.deepEqual(row('writing')?.over, []);
+  assert.equal(row('writing')?.remeasured?.head.cls, 0.0015);
+  assert.equal(row('writing')?.remeasured?.base, null);
+  assert.deepEqual(calls().slice(24), Array(3).fill('/writing'));
+
+  const shifted = head('cls:0.0515');
+  assert.equal(shifted.status, 1);
+  assert.match(shifted.stderr, /writing \(desktop\): cls 0\.0515 over budget, re-measured/);
+  assert.deepEqual(row('writing')?.over, ['cls']);
+});
+
+it('runs a crashed lhci collect once more, and fails with its error when it crashes again', () => {
+  site('head', pages, true);
+  writeFileSync(join(dir, 'head/node_modules/.bin/crash-once'), '');
+  const once = run();
+  assert.equal(once.status, 0, once.stderr);
+  assert.match(once.stderr, /NO_NAVSTART[\s\S]*exited with 1; running it once more/);
+
+  site('head', { 'about.html': 'crash' });
+  const twice = run();
+  assert.equal(twice.status, 1);
+  assert.match(twice.stderr, /NO_NAVSTART[\s\S]*NO_NAVSTART/);
+  assert.match(twice.stderr, /lighthouse: lhci collect on .* \(desktop\) exited with 1 again/);
 });
 
 it('serves on free ports, so ports another run or a leftover server holds do not matter', async () => {
