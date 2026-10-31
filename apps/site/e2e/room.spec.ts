@@ -3,7 +3,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
 // The page background of each theme (--ground in base.css).
-const ground = { day: 'rgb(239, 227, 203)', night: 'rgb(13, 10, 23)' } as const;
+const ground = { day: 'rgb(243, 242, 238)', night: 'rgb(11, 11, 16)' } as const;
 
 const background = (page: Page) =>
   page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
@@ -76,8 +76,8 @@ test('without JavaScript the page follows the system theme and hides the switch'
 
 // Catches both scenes downloading when the stored choice differs from the system, more than one
 // window layer (ADR 0027), and italic text on home, which puts another font in front of the
-// scene and pushes mobile LCP past 2 s. The display face (ADR 0034) is the third, by design.
-test('home loads one scene, one window and three fonts', async ({ page }) => {
+// scene and pushes mobile LCP past 2 s.
+test('home loads one scene, one window and two fonts', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/about');
   await page.evaluate(() => localStorage.setItem('theme', 'day'));
@@ -92,7 +92,6 @@ test('home loads one scene, one window and three fonts', async ({ page }) => {
   );
   // Which window depends on the time in Rabat; there is exactly one.
   expect(assets.filter((name) => !name.startsWith('window-'))).toEqual([
-    'display',
     'mono',
     'room-day',
     'serif-roman',

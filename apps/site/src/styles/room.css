@@ -337,20 +337,19 @@
 }
 
 .intro {
-  margin: 1.5rem 0 0.25rem;
-  font-size: clamp(1.9rem, 1.2rem + 3.4vw, 3.4rem);
-  font-weight: 750;
-  line-height: 1.02;
-  letter-spacing: -0.03em;
+  margin: 2rem 0 0;
+  font-size: clamp(1.625rem, 1.2rem + 2vw, 2.5rem);
+  line-height: 1.1;
+  letter-spacing: -0.04em;
 }
 
 /* The role, marked with the tile star that ends a post. */
 .intro span {
   display: block;
-  margin-top: 0.5rem;
-  color: var(--lamp);
+  margin-top: 0.6rem;
+  color: var(--muted);
   font-family: var(--serif);
-  font-size: 0.45em;
+  font-size: clamp(1rem, 0.9rem + 0.4vw, 1.1875rem);
   font-weight: 400;
   letter-spacing: 0;
 }
@@ -358,10 +357,10 @@
 .intro span::before {
   content: "";
   display: inline-block;
-  width: 0.7em;
-  height: 0.7em;
-  margin-inline-end: 0.5em;
-  background: var(--lamp);
+  width: 0.6em;
+  height: 0.6em;
+  margin-inline-end: 0.55em;
+  background: var(--glow);
   vertical-align: -0.05em;
   clip-path: polygon(
     50% 0,
@@ -385,13 +384,16 @@
 
 /* Two columns on phones, four on tablets, then every object in one row. An odd one out on a
    phone takes the whole last row rather than half of it. */
+/* The room as a row of keys: each object's number is its shortcut (ADR 0027), shown where
+   there is a keyboard. */
 .room-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 1rem;
-  margin: 1.25rem 0 0;
+  gap: 0.5rem;
+  margin: 1.5rem 0 0;
   padding: 0;
   list-style: none;
+  counter-reset: room;
 }
 
 .room-list li:last-child:nth-child(odd) {
@@ -417,29 +419,55 @@
 }
 
 .room-list a {
-  display: block;
-  padding: 0.55rem 0 0.45rem;
-  border-top: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column-reverse;
+  position: relative;
+  height: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--surface);
   color: var(--muted);
-  font: 500 0.75rem / 1.25 var(--mono);
+  font: 400 0.75rem / 1.4 var(--mono);
   text-decoration: none;
-  text-transform: lowercase;
+  counter-increment: room;
 }
 
-/* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
 .room-list a span {
-  display: block;
   color: var(--text);
-  font: 400 1rem / 1.35 var(--serif);
-  text-transform: none;
+  font: 500 0.875rem / 1.4 var(--mono);
+}
+
+.room-list a span::first-letter {
+  text-transform: uppercase;
 }
 
 .room-list a:hover {
-  border-color: var(--lamp);
+  border-color: var(--line);
 }
 
 .room-list a:hover span {
-  color: var(--lamp);
+  color: var(--glow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .room-list a::after {
+    content: counter(room) / "";
+    position: absolute;
+    top: 0.55rem;
+    right: 0.6rem;
+    min-width: 1.25rem;
+    padding: 0 0.3rem;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    color: var(--muted);
+    font: 400 0.6875rem / 1.4 var(--mono);
+    text-align: center;
+  }
+
+  :root[data-shortcuts="off"] .room-list a::after {
+    content: none;
+  }
 }
 
 /* ---------- panels ---------- */
@@ -454,6 +482,9 @@
 
 .panel-head h2 {
   margin: 0;
+  color: var(--fg-2);
+  font-size: 0.8125rem;
+  font-weight: 500;
 }
 
 /* The link to the whole section: a quiet link with an arrow, underlined under the pointer. */
@@ -462,7 +493,7 @@
   min-height: 24px;
   margin-inline-start: auto;
   padding-block: 0.25rem;
-  font: 500 0.8125rem / 1.2 var(--mono);
+  font: 400 0.75rem / 1.2 var(--mono);
   text-decoration: none;
 }
 
@@ -477,24 +508,26 @@
 
 .home-panels {
   display: grid;
-  gap: 0 1.25rem;
+  gap: 0 1rem;
+  margin-top: 1rem;
   /* A long unbroken title or summary would set the grid track's minimum width. */
   overflow-wrap: anywhere;
 }
 
-.home-panels h2 {
-  font-size: clamp(1.5rem, 1.3rem + 1vw, 1.9rem);
+.home-panels .posts li:first-child a {
+  font-size: clamp(1.4rem, 1.15rem + 1.2vw, 1.875rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
-.home-panels .posts li:first-child a {
-  font-size: clamp(1.7rem, 1.1rem + 2.4vw, 3rem);
-  font-weight: 750;
-  line-height: 1.04;
+.home-panels .panel,
+.home-panels .paper {
+  margin-block: 0 1rem;
 }
 
 @media (min-width: 60rem) {
   .home-panels {
-    grid-template-columns: 7fr 5fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: start;
   }
 
@@ -511,7 +544,7 @@
 .home-notes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  gap: 0.75rem 1.5rem;
+  gap: 0.75rem 2rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -525,12 +558,12 @@
 .home-notes time {
   display: block;
   color: var(--fg-2);
-  font: 500 0.8125rem / 1.5 var(--mono);
+  font: 400 0.75rem / 1.6 var(--mono);
 }
 
 .home-notes a {
   color: var(--fg);
-  font: 750 1.15rem / 1.25 var(--display);
+  font: 600 1.1875rem / 1.3 var(--serif);
   text-decoration: none;
   text-wrap: balance;
 }
@@ -542,13 +575,23 @@
 
 .home-projects {
   display: grid;
-  gap: 1rem;
+  gap: 0;
   padding: 0;
   list-style: none;
 }
 
+.home-projects li {
+  padding-block: 0.6rem;
+  border-top: 1px solid var(--rule);
+}
+
+.home-projects li:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .home-projects a {
-  font: 600 1rem var(--mono);
+  font: 600 0.9375rem var(--mono);
   text-decoration: none;
 }
 
@@ -559,6 +602,9 @@
 .home-projects p {
   margin: 0.15rem 0 0;
   max-width: 60ch;
+  color: var(--fg-2);
+  font-size: 0.9375rem;
+  line-height: 1.5;
 }
 
 /* The record player: a turning record next to what is playing. */
