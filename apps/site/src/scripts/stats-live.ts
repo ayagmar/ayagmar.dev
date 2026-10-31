@@ -7,13 +7,14 @@
 // comes back once its last request is a minute old (src/lib/live.ts). In fixtures mode no panel
 // has an endpoint and nothing is requested.
 
+import type { ListeningSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 import { readListening, renderNowPlaying } from '../lib/listening.ts';
 import { listeningBody } from '../lib/listening-panel.ts';
-import { live } from '../lib/live.ts';
+import { type Answer, live } from '../lib/live.ts';
 import { readLlmUsageSnapshot } from '../lib/llm-usage.ts';
 import { llmUsagePanel } from '../lib/llm-usage-panel.ts';
-import { toNode } from '../lib/markup.ts';
+import { type Markup, toNode } from '../lib/markup.ts';
 import { knowsRabatDate } from '../lib/rabat-date.ts';
 import { readProjects, readShipping } from '../lib/stats.ts';
 import { projectsBody, shippingBody, typingBody } from '../lib/stats-panels.ts';
@@ -21,27 +22,51 @@ import { readMonkeytype, relabelDays } from '../lib/typing.ts';
 
 const minute = 60_000;
 
-// Last.fm is pulled every minute.
+/**
+ * Draws the panel's `selector` from `markup` only for another snapshot than the one it shows:
+ * the build's at first, most of the time the latest. `live` calls again with the same snapshot
+ * when it ages or a request fails; rebuilding the body then would cost a phone main-thread time
+ * for nothing (mobile TBT, ADR 0017) and close a fold the reader opened.
+ */
+function body<Data>(
+  selector: string,
+  markup: (answer: Answer<Data>, panel: HTMLElement) => Markup[]
+) {
+  let drawn: number | undefined;
+  return (panel: HTMLElement, answer: Answer<Data>) => {
+    drawn ??= Date.parse(panel.dataset.fetchedAt ?? '');
+    if (answer.at === drawn) return;
+    drawn = answer.at;
+    panel.querySelector(selector)?.replaceChildren(...markup(answer, panel).map(toNode));
+  };
+}
+
+// Last.fm is pulled every minute. The now-playing line also turns on whether the answer still
+// describes now, so it is redrawn every time.
+const listening = body<ListeningSnapshot>('.listening-body', ({ data }) => listeningBody(data));
 live('listening', minute, readListening, (panel, answer, now) => {
   renderNowPlaying(panel.querySelector('.now-playing') as HTMLElement, answer, now);
-  panel
-    .querySelector('.listening-body')
-    ?.replaceChildren(...listeningBody(answer.data).map(toNode));
+  listening(panel, answer);
 });
 
 // repo-pulse is pulled every 15 minutes; asking every 5 keeps the page within 20 minutes of
 // the feed.
-live('shipping', 5 * minute, readShipping, (panel, { data }) => {
-  const featured = panel.dataset.featured?.split(' ') ?? [];
-  panel
-    .querySelector('.shipping-body')
-    ?.replaceChildren(...shippingBody(data, featured).map(toNode));
-});
+live(
+  'shipping',
+  5 * minute,
+  readShipping,
+  body('.shipping-body', ({ data }, panel) =>
+    shippingBody(data, panel.dataset.featured?.split(' ') ?? [])
+  )
+);
 
 // GitHub and npm are pulled every 6 hours; asking every half hour is soon enough.
-live('projects', 30 * minute, readProjects, (panel, { data }) => {
-  panel.querySelector('.projects-body')?.replaceChildren(...projectsBody(data).map(toNode));
-});
+live(
+  'projects',
+  30 * minute,
+  readProjects,
+  body('.projects-body', ({ data }) => projectsBody(data))
+);
 
 // Monkeytype is pulled hourly; asking every quarter hour is soon enough (ADR 0033). Its days
 // are read relative to now on every tick, so they turn over at midnight with no new answer.
@@ -49,9 +74,7 @@ live(
   'monkeytype',
   15 * minute,
   readMonkeytype,
-  (panel, { data }) => {
-    panel.querySelector('.typing-body')?.replaceChildren(...typingBody(data).map(toNode));
-  },
+  body('.typing-body', ({ data }) => typingBody(data)),
   relabelDays
 );
 
@@ -60,21 +83,12 @@ live(
 // the last 7 days, the agents and the current streak describe the date in Rabat the snapshot
 // was taken: once that date has passed they are hidden until a newer snapshot comes, whether
 // the build drew them or an answer did (ADR 0014). The sample in fixtures mode keeps them.
-// The year's 371 cells are costly to rebuild on a phone, so an answer is drawn only when it is
-// another snapshot than the one shown: the build's, most of the time, is the latest one.
 const llmUsage = document.querySelector<HTMLElement>('[data-live="llm-usage"]');
-let llmUsageDrawn = Date.parse(llmUsage?.dataset.fetchedAt ?? '');
 live(
   'llm-usage',
   15 * minute,
   (data) => (knowsRabatDate() ? readLlmUsageSnapshot(data) : undefined),
-  (panel, { data, fetchedAt, at }) => {
-    if (at === llmUsageDrawn) return;
-    llmUsageDrawn = at;
-    panel
-      .querySelector('.llm-usage-body')
-      ?.replaceChildren(...llmUsagePanel(data, fetchedAt).map(toNode));
-  },
+  body('.llm-usage-body', ({ data, fetchedAt }) => llmUsagePanel(data, fetchedAt)),
   (now) => {
     if (!llmUsage?.dataset.liveSrc) return;
     const today = knowsRabatDate() ? rabatDate(now) : undefined;
