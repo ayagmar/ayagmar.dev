@@ -146,7 +146,7 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
         for sx, sy in ((78, 22), (92, 14), (118, 18), (130, 30), (84, 40), (110, 28), (72, 52), (136, 46), (100, 10)):
             if in_arch(sx, sy, RAD - 1) and (sky == "night" or sy < 16):
                 P(sx, sy, (226, 230, 255), True)
-    # skyline (rooftops, a minaret, a dome, a palm): whitewashed walls by day, silhouettes by night
+    # skyline (rooftops, Hassan Tower, a dome, a palm): whitewashed walls by day, silhouettes by night
     SIL = (232, 222, 204) if sky == "day" else (8, 9, 22)
     SIL_D = (196, 176, 150) if sky == "day" else SIL
     R(64, 82, 144, 90, SIL, True)
@@ -156,16 +156,18 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
     R(132, 74, 144, 84, SIL, True)
     ELL(84, 66, 96, 78, SIL, True)                       # small dome
     R(89, 62, 91, 67, SIL, True)
-    R(116, 54, 124, 84, SIL_D, True)                      # minaret shaft
-    R(115, 52, 125, 55, SIL_D, True)
-    R(117, 47, 123, 52, SIL_D, True)
-    R(119, 42, 121, 47, SIL_D, True)
-    P(120, 40, SIL_D, True)
-    R(117, 62, 123, 63, (46, 140, 110) if sky == "day" else (26, 28, 72), True)  # shaft band
+    # Hassan Tower: a stocky square shaft, flat-topped because it was never finished, in red-brown
+    # sandstone by day, with its carved arched panels in three columns and three tiers
+    TOWER = (190, 128, 86) if sky == "day" else SIL
+    PANEL = (138, 88, 60) if sky == "day" else (18, 20, 48)
+    R(112, 52, 129, 84, TOWER, True)
+    for px in (114, 119, 124):
+        for py in (62, 69, 76):
+            P(px + 1, py, PANEL, True)
+            R(px, py + 1, px + 3, py + 5, PANEL, True)
     lit = (96, 80, 90) if sky == "day" else AMBER
-    for wx, wy in ((69, 79), (86, 76), (102, 81), (136, 78), (120, 70), (120, 76)):
+    for wx, wy in ((69, 79), (86, 76), (102, 81), (136, 78), (120, 66), (120, 73)):
         P(wx, wy, lit, True)
-    P(120, 57, lit, True)
     # palm
     PALM = (52, 96, 62) if sky == "day" else SIL
     R(70, 66, 72, 82, (110, 80, 50) if sky == "day" else SIL, True)
@@ -176,7 +178,7 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
     CV = Image.new("L", (W, H), 0)
     if weather:
         night = sky != "day"
-        skyline = {SIL, SIL_D}
+        skyline = {SIL, SIL_D, TOWER, PANEL}
 
 
         def paint(x, y, col, cover):
