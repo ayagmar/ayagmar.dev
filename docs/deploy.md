@@ -37,6 +37,41 @@ Both projects:
 
 Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` route, which `wrangler deploy` creates. The `ayagmar.dev` zone must be on the same Cloudflare account. If the deploy cannot create it, add it under the Worker's **Settings → Domains & Routes** instead.
 
+### www.ayagmar.dev
+
+`www` is not a Worker route. It is a DNS record and a redirect rule in the `ayagmar.dev` zone, set up in the dashboard and not by `wrangler deploy`:
+
+1. **DNS → Records:** an `AAAA` record named `www` with value `100::`, proxied (orange cloud). `100::` is a discard address, so the record has no origin; it exists only so Cloudflare answers for `www` and the rule below can run.
+2. **Rules → Redirect Rules:** one rule in the `http_request_dynamic_redirect` phase, enabled:
+   - When: `http.host eq "www.ayagmar.dev"`
+   - Then: dynamic redirect to `concat("https://ayagmar.dev", http.request.uri.path)`, status `301`, **preserve query string** on.
+
+The rule as an API payload (`PUT /zones/<zone id>/rulesets/phases/http_request_dynamic_redirect/entrypoint`). The `PUT` replaces every dynamic redirect rule in the zone; to add the rule alongside others, `POST /zones/<zone id>/rulesets/<ruleset id>/rules` with the single rule object:
+
+```json
+{
+  "rules": [
+    {
+      "description": "www.ayagmar.dev to ayagmar.dev",
+      "expression": "(http.host eq \"www.ayagmar.dev\")",
+      "action": "redirect",
+      "action_parameters": {
+        "from_value": {
+          "status_code": 301,
+          "preserve_query_string": true,
+          "target_url": {
+            "expression": "concat(\"https://ayagmar.dev\", http.request.uri.path)"
+          }
+        }
+      },
+      "enabled": true
+    }
+  ]
+}
+```
+
+Check it: `curl -sI 'https://www.ayagmar.dev/x?y=1'` answers `301` with `location: https://ayagmar.dev/x?y=1`, and the `http://` form answers the same `301` straight to the `https://` target, with no hop through `https://www`.
+
 ## D1 (signals)
 
 Both databases exist (created 2026-10-26 with `just signals-db-create`), and their ids are in the configs: `min7-signals` in `d1_databases` of `apps/signals/wrangler.jsonc`, `min7-signals-preview` in its `previews.d1_databases` and in `wrangler.preview-migrations.jsonc`. To recreate them on another account, run `just signals-db-create` and replace those ids. Every Preview shares `min7-signals-preview`; no Preview ever binds the production database (`scripts/workers-config.test.ts` checks this).
