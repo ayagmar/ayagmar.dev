@@ -723,13 +723,22 @@ time[data-ago] {
   vertical-align: 0.15em;
 }
 
-/* On /stats, the whole page's version, under the title. */
+/* On /stats, the whole page's version, under the title. It is one line on a wide screen; on a
+   phone it keeps room for three, because the fallback serif wraps it onto one more line than
+   Source Serif does, and the swap pushed every panel down (mobile CLS 0.048 in Lighthouse
+   against ADR 0017's 0.01). */
 .sample-banner {
   width: auto;
-  max-width: var(--measure);
   margin: 0 0 1rem;
   color: var(--muted);
   font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 39.99rem) {
+  .sample-banner {
+    min-height: 3lh;
+  }
 }
 
 /* ---------- post lists, tags, shipping ---------- */
