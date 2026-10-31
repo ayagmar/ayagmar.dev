@@ -1,6 +1,6 @@
 # 0033. Monkeytype personal bests
 
-Status: accepted, 2026-10-26. Amended 2026-10-31: pulled hourly, 2 requests an hour.
+Status: accepted, 2026-10-26. Amended 2026-10-31: pulled hourly, 2 requests an hour, and asked by `/stats` every 15 minutes.
 
 ## Context
 
@@ -71,7 +71,7 @@ Subrequests: 2 a pull, counted by `test/monkeytype.test.ts`. CPU, from `just sig
 
 ### The site: a live `/stats` panel
 
-The typing panel is built like its neighbours (ADR 0015): the build reads `/v1/monkeytype` in `api` mode and the `ok` fixture in `fixtures` mode (tape-labelled sample data, no request), and renders it as the first paint and the no-JavaScript page. `src/scripts/stats-live.ts` keeps it current through `live('monkeytype', …)` from `src/lib/live.ts`: asks on load if visible, then hourly while visible, one request at a time with the 5-second deadline, no cache-busting; only a valid, unflagged, fresh and not older answer replaces what is shown; the "Updated …" line ages and turns "May be out of date: updated …" past a day. `readMonkeytype` (`src/lib/typing.ts`) checks every slot as the contract does; `test/live.test.ts` holds it to the zod schema on the fixtures, the reject corpus and edge cases.
+The typing panel is built like its neighbours (ADR 0015): the build reads `/v1/monkeytype` in `api` mode and the `ok` fixture in `fixtures` mode (tape-labelled sample data, no request), and renders it as the first paint and the no-JavaScript page. `src/scripts/stats-live.ts` keeps it current through `live('monkeytype', …)` from `src/lib/live.ts`: asks on load if visible, then every 15 minutes while visible (hourly until 2026-10-31) and when the tab comes back after a minute, one request at a time with the 5-second deadline, no cache-busting; only a valid, unflagged, fresh and not older answer replaces what is shown; the "Updated …" line ages and turns "May be out of date: updated …" past a day. `readMonkeytype` (`src/lib/typing.ts`) checks every slot as the contract does; `test/live.test.ts` holds it to the zod schema on the fixtures, the reject corpus and edge cases.
 
 What it shows: the 60-second best as the headline ("104 wpm over 60 seconds at 92% accuracy, set 5 years ago"), or "No 60-second best yet." when there is none, never another length's; then one row per best there is ("15 seconds: 123 wpm, 95%, 4 years ago"), and the settings line. With bests at none of the eight lengths: "No personal bests at these settings yet."; with no snapshot at all: "No typing data yet." WPM and accuracy are rounded to whole numbers. Each day is a `<time datetime="2021-01-14" data-day>`: the build writes the date ("14 Jan 2021"), and the page's script rewrites it as a relative day, again each minute and whenever the tab comes back, whether or not a new answer arrived ("today", "yesterday", "12 days ago", "3 months ago", "5 years ago"), with the date in its title. The day counts on the reader's own calendar: the published date is a date, compared with the reader's date at that moment, never turned into an instant and moved into their time zone. A best dated 26 October is "yesterday" in Tokyo as soon as the 27th begins there, and still "today" in Los Angeles until the 26th ends there. The freshness line says when signals last fetched; the days say when each best was set.
 
@@ -82,7 +82,7 @@ Costs:
 | `/stats` script, gzip 9              | 2,973 B | 3,702 B                                            | 3,750 B (was 3,000 B; ADR 0017)       |
 | Live reads chunk (`live.*.js`)       | 1,363 B | 1,375 B                                            | 1,400 B (ADR 0017)                    |
 | Upstream requests (Monkeytype)       | 0       | 48 a day (8 until 2026-10-31)                      | 30 a minute, shared by the account    |
-| Browser requests to `/v1/monkeytype` | 0       | 1 on load, then 1 an hour per visible `/stats` tab | Workers Free 100,000 a day (ADR 0010) |
+| Browser requests to `/v1/monkeytype` | 0       | 1 on load, then 4 an hour per visible `/stats` tab | Workers Free 100,000 a day (ADR 0010) |
 
 The 729 B are the reader, the renderer, the words and the day formatting. The live-reads chunk grows 12 B: `day()` is exported for the reader's calendar, and `live()` takes a `relabel` hook that runs with `tick()`, so the days turn over on the minute timer and tab returns it already has. The home, `/uses`, listening-reads and agent-reads files that import it change only in its file name.
 

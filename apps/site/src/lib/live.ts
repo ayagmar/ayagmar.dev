@@ -24,13 +24,25 @@ export function instantMs(value: unknown, offset = false): number | undefined {
     : undefined;
 }
 
+/** How long a tab that comes back waits since its last request before asking again. */
+const returnMs = 60_000;
+
+/**
+ * Whether to ask again `sinceMs` after the last request. On a timer, once `everyMs` has
+ * passed; the minute timer may fire a little early, so one due within 5 s goes now. When the
+ * tab comes back (visibility, focus, back/forward cache), once `returnMs` has, or `everyMs` if
+ * shorter: a tab that slept shows what signals has now, not what it had when the tab hid.
+ */
+export const due = (sinceMs: number, everyMs: number, returned: boolean) =>
+  sinceMs >= (returned ? Math.min(everyMs, returnMs) : everyMs - 5_000);
+
 /**
  * Asks `endpoint` while the page is visible, one request at a time with a 5 s deadline that
- * covers the body: on load, then every `everyMs`. After each answer, every minute, and
- * whenever the tab comes back (visibility, focus, back/forward cache), `show(answer, now,
- * failed)` decides again what the page shows. A failed request (an error status, no answer in
- * time, not JSON) keeps the last answer and sets `failed` until one succeeds. Without an
- * endpoint (fixtures mode) it never asks, and `show` still runs.
+ * covers the body: on load, then every `everyMs`, and when the tab comes back once its last
+ * request is a minute old (`due`). After each answer, every minute, and whenever the tab comes
+ * back, `show(answer, now, failed)` decides again what the page shows. A failed request (an
+ * error status, no answer in time, not JSON) keeps the last answer and sets `failed` until one
+ * succeeds. Without an endpoint (fixtures mode) it never asks, and `show` still runs.
  */
 export function poll(
   endpoint: string | undefined,
@@ -38,15 +50,16 @@ export function poll(
   show: (answer: unknown, now: number, failed: boolean) => void
 ): void {
   let answer: unknown;
-  let asked = 0;
+  let asked: number | undefined;
   let pending = false;
   let failed = false;
 
-  function check() {
+  /** `returned` when the tab has just come back, rather than on load or the minute timer. */
+  function check(returned: boolean) {
     const now = Date.now();
     show(answer, now, failed);
-    // The minute timer may fire a little early; a request due within 5 s goes now.
-    if (!endpoint || pending || document.hidden || now - asked < everyMs - 5_000) return;
+    if (!endpoint || pending || document.hidden) return;
+    if (asked !== undefined && !due(now - asked, everyMs, returned)) return;
     asked = now;
     pending = true;
     fetch(endpoint, { signal: AbortSignal.timeout(5_000) })
@@ -61,11 +74,12 @@ export function poll(
       });
   }
 
-  check();
-  setInterval(check, 60_000);
-  document.addEventListener('visibilitychange', check);
-  window.addEventListener('focus', check);
-  window.addEventListener('pageshow', check);
+  const back = () => check(true);
+  check(false);
+  setInterval(() => check(false), 60_000);
+  document.addEventListener('visibilitychange', back);
+  window.addEventListener('focus', back);
+  window.addEventListener('pageshow', back);
 }
 
 const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });

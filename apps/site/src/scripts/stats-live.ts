@@ -1,7 +1,9 @@
 // /stats's listening, shipping, projects and typing panels, kept current in the browser (ADR 0015).
 // Each panel's HTML is the build's snapshot; a newer valid answer from signals replaces it,
 // rendered as the page renders it (src/pages/stats.astro), and every time on the page reads
-// relative to now. In fixtures mode no panel has an endpoint and nothing is requested.
+// relative to now. Each panel asks at its own pace while the page is visible, and when the tab
+// comes back once its last request is a minute old (src/lib/live.ts). In fixtures mode no panel
+// has an endpoint and nothing is requested.
 import { count, describeEvent, projectsSummary, repoName } from '../data/format.ts';
 import { dayName } from '../lib/history.ts';
 import { readListening, renderNowPlaying } from '../lib/listening.ts';
@@ -63,8 +65,9 @@ live('listening', minute, readListening, (panel, answer, now) => {
     );
 });
 
-// repo-pulse is pulled every 15 minutes.
-live('shipping', 15 * minute, readShipping, (panel, { data }) => {
+// repo-pulse is pulled every 15 minutes; asking every 5 keeps the page within 20 minutes of
+// the feed.
+live('shipping', 5 * minute, readShipping, (panel, { data }) => {
   const stars = starTotals(data);
   const time = (date: string) => {
     const element = h('time', dayName(date)) as HTMLTimeElement;
@@ -106,8 +109,8 @@ live('shipping', 15 * minute, readShipping, (panel, { data }) => {
     );
 });
 
-// GitHub and npm are pulled daily; a quarter hour is soon enough.
-live('projects', 15 * minute, readProjects, (panel, { data }) => {
+// GitHub and npm are pulled every 6 hours; asking every half hour is soon enough.
+live('projects', 30 * minute, readProjects, (panel, { data }) => {
   panel
     .querySelector('.projects-body')
     ?.replaceChildren(
@@ -123,11 +126,11 @@ function day(date: string) {
   return time;
 }
 
-// Monkeytype is pulled every 6 hours; asking hourly is soon enough (ADR 0033). Its days are
-// read relative to now on every tick, so they turn over at midnight with no new answer.
+// Monkeytype is pulled hourly; asking every quarter hour is soon enough (ADR 0033). Its days
+// are read relative to now on every tick, so they turn over at midnight with no new answer.
 live(
   'monkeytype',
-  60 * minute,
+  15 * minute,
   readMonkeytype,
   (panel, { data }) => {
     const lead = headline(data);

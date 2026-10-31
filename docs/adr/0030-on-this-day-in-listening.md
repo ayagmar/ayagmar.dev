@@ -1,6 +1,6 @@
 # 0030. On this day in listening
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: with a sixth pulled source (ADR 0033) the worst case at midnight publishes at 10 minutes 2.3 seconds, approved up to 11.
+Status: accepted, 2026-10-26. Amended 2026-10-26: with a sixth pulled source (ADR 0033) the worst case at midnight publishes at 10 minutes 2.3 seconds, approved up to 11. Amended 2026-10-31: a tab that comes back asks once its last request is a minute old (ADR 0015).
 
 ## Context
 
@@ -73,12 +73,12 @@ These are measurements, not a check that passed. The PR's review ran the same be
 | D1 writes                   | Per part a progress row and the attempt on the snapshot row; per pull one snapshot write and one delete: 24 rows a day now, at most about 200, plus one per failed try |
 | D1 reads                    | One progress row per part, besides the runner's list of 7 rows a minute                                                                                                |
 | D1 storage                  | One snapshot row and at most one progress row, each under 300 KB                                                                                                       |
-| Browser requests to signals | Per visible `/stats` tab: on load, then every 5 minutes while there is nothing for today, hourly once there is                                                         |
+| Browser requests to signals | Per visible `/stats` tab: on load, then every 5 minutes while there is nothing for today, hourly once there is, and on coming back after a minute                      |
 
 ### The site: `/stats`, in the browser only
 
 The build never reads the history, so a page built yesterday cannot show it. `stats.astro` puts a block at the end of the listening panel, `hidden` in the HTML: without JavaScript, in `fixtures` mode (local, CI, Previews: no endpoint attribute, no request), or in a browser that cannot work out the date in Rabat, it stays hidden. In `api` mode it carries `data-history-src="${SIGNALS_API_BASE}/v1/listening-history"`, and `src/scripts/history.ts`, the page's only script of its own:
-- Asks on load when the page is visible, then on a minute tick when due: every 5 minutes while there is nothing for today to show, hourly once there is. One request at a time, `AbortSignal.timeout(5000)`; an error status, a failure or the deadline drops the history, as the room's weather does (ADR 0029).
+- Asks on load when the page is visible, then on a minute tick when due: every 5 minutes while there is nothing for today to show, hourly once there is; and when the tab comes back, once the last request is a minute old (`due` in `src/lib/live.ts`, ADR 0015). One request at a time, `AbortSignal.timeout(5000)`; an error status, a failure or the deadline drops the history, as the room's weather does (ADR 0029).
 - Shows an answer only through `readHistory` (`src/lib/history.ts`): `source` `listening-history`, `version` 1, `stale` false, a readable `fetchedAt`, every value of its type and in the contract's range, and `describedDate` equal to today's date in Rabat by the browser's own tzdata, at the moment it checks. `test/history.test.ts` checks that `readHistory` and the contract agree on the whole corpus and every snapshot fixture.
 - Checks again at the start of the next date in Rabat (a timer set to that instant), on every minute tick, and on `visibilitychange`, `focus` and `pageshow`, so a tab that slept or came back from the back/forward cache hides yesterday's history at once.
 - Fails closed: the date comes from `Intl` with `timeZone: 'Africa/Casablanca'`, which throws in a browser without the zone; and a browser whose tzdata predates Morocco's 2026 change (still +01) would be an hour early at midnight, so the script makes no request there. Visitors in Auckland and Los Angeles see Rabat's date, not theirs.

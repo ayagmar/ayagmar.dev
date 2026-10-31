@@ -297,10 +297,9 @@ test('a stale answer keeps what is shown, ageing', async ({ page }) => {
   await expect(panel(page, 'shipping').locator('.shipping li')).toHaveCount(15);
 });
 
-// Catches polling a hidden tab, and a tab restored from the back/forward cache showing what it
-// showed hours ago without asking again.
-test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
-  await page.addInitScript(() => {
+/** Lets the test hide and show the page with `window.setHidden`. */
+const hideable = (page: Page) =>
+  page.addInitScript(() => {
     let hidden = false;
     Object.defineProperty(document, 'hidden', { get: () => hidden });
     Object.defineProperty(document, 'visibilityState', {
@@ -310,6 +309,11 @@ test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
       hidden = value;
     };
   });
+
+// Catches polling a hidden tab, and a tab restored from the back/forward cache showing what it
+// showed hours ago without asking again.
+test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
+  await hideable(page);
   const asked = await visit(page, noon, { shipping: envelope('shipping') });
   await expect(freshness(page, 'shipping')).toHaveText('Updated 1 minute ago');
   await page.evaluate(() => window.setHidden(true));
@@ -321,6 +325,30 @@ test('a tab hidden for hours asks again when it is shown', async ({ page }) => {
   });
   await expect.poll(() => asked.length).toBe(2);
   await expect(freshness(page, 'shipping')).toHaveText(/^Updated 3 hours ago/);
+});
+
+// Catches a tab that comes back showing what it had when it hid until the panel's next turn
+// (shipping asks every 5 minutes), and one that asks again on every return.
+test('a tab that comes back asks at once if its last request is a minute old', async ({ page }) => {
+  await hideable(page);
+  const asked = await visit(page, noon, { shipping: envelope('shipping') });
+  await expect(freshness(page, 'shipping')).toHaveText('Updated 1 minute ago');
+  const away = async (ms: number) => {
+    await page.evaluate(() => window.setHidden(true));
+    await page.clock.fastForward(ms);
+    await page.evaluate(() => {
+      window.setHidden(false);
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+  };
+  await away(30_000);
+  await page.waitForTimeout(300);
+  expect(asked).toHaveLength(1);
+  await away(60_000);
+  await expect.poll(() => asked.length).toBe(2);
+  await page.waitForTimeout(300);
+  expect(asked).toHaveLength(2);
 });
 
 declare global {
@@ -339,13 +367,15 @@ test('each panel asks at its own pace', async ({ page }) => {
   const counts = () =>
     sources.map((source) => asked.filter((url) => url.endsWith(`/${source}`)).length);
   await expect.poll(() => asked.length).toBe(4);
-  await page.clock.runFor(14 * 60_000);
-  expect(counts()).toEqual([15, 1, 1, 1]);
+  // Listening every minute, shipping every 5, typing every 15, projects every 30 (ADR 0015).
+  await page.clock.runFor(4 * 60_000);
+  expect(counts()).toEqual([5, 1, 1, 1]);
   await page.clock.runFor(60_000);
-  await expect.poll(counts).toEqual([16, 2, 2, 1]);
-  // Typing hourly (ADR 0033).
-  await page.clock.runFor(45 * 60_000);
-  await expect.poll(counts).toEqual([61, 5, 5, 2]);
+  await expect.poll(counts).toEqual([6, 2, 1, 1]);
+  await page.clock.runFor(10 * 60_000);
+  await expect.poll(counts).toEqual([16, 4, 1, 2]);
+  await page.clock.runFor(15 * 60_000);
+  await expect.poll(counts).toEqual([31, 7, 2, 3]);
 });
 
 // Catches a best's day that turns over only when a new answer is drawn: past the reader's
