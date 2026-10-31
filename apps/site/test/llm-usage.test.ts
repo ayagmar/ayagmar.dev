@@ -37,17 +37,19 @@ describe('tokens', () => {
 });
 
 describe('share', () => {
-  // Catches a sliver shown as 0%, and one agent shown as all of it while another has some.
+  // Catches a sliver shown as 0% (signals rounds shares to 4 decimals, so a few tokens arrive
+  // as 0), and one agent shown as all of it while another has some.
   it.each([
-    [0, '0%'],
-    [0.004, '<1%'],
-    [0.0099, '<1%'],
-    [0.01, '1%'],
-    [0.6498, '65%'],
-    [0.996, '99%'],
-    [1, '100%'],
-  ])('writes %f as %s', (fraction, words) => {
-    expect(share(fraction)).toBe(words);
+    [0, 0, '0%'],
+    [0, 1_400_000, '<1%'],
+    [0.004, 1_000, '<1%'],
+    [0.0099, 1_000, '<1%'],
+    [0.01, 1_000, '1%'],
+    [0.6498, 1_000, '65%'],
+    [0.996, 1_000, '99%'],
+    [1, 1_000, '100%'],
+  ])('writes %f of the tokens, %i of them, as %s', (fraction, count, words) => {
+    expect(share(fraction, count)).toBe(words);
   });
 });
 
@@ -58,7 +60,8 @@ describe('the panel', () => {
     expect(shown).toContain('Tokens 61.3M 16.4M');
     expect(shown).toContain('Agent hours 144 hours 60 hours');
     expect(shown).toContain('Claude Code 39.8M 65% Codex 15.3M 25% pi 6.2M 10%');
-    expect(shown).toContain('Streak on 26 Oct: 4 days, longest 23 days.');
+    expect(shown).toContain('Streak on 26 Oct: 4 days.');
+    expect(shown).toContain('Longest streak: 23 days.');
   });
 
   // Catches a dollar amount published before the owner decides to.

@@ -571,13 +571,13 @@ test.describe('LLM usage', () => {
     await expect(body(page).locator('.llm-agents li')).toHaveText([
       'Claude Code41.0B96%',
       'Codex1.8B4%',
-      'goose1.0K0%',
+      'goose1.0K<1%',
     ]);
     await expect(body(page).locator('tbody tr').first()).toHaveText('Tokens42.8B16.4M');
   });
 
   // Catches "this month" left on screen past midnight in Rabat by an open tab: the period goes,
-  // the year stays.
+  // the longest streak and the year stay.
   test('hides the period at midnight in Rabat while the tab is open', async ({ page }) => {
     await visit(page, '2026-10-26T23:58:00Z', {
       'llm-usage': envelope('llm-usage', { fetchedAt: '2026-10-26T23:50:00Z' }),
@@ -586,6 +586,7 @@ test.describe('LLM usage', () => {
     await expect(period(page)).toBeVisible();
     await page.clock.runFor(3 * 60_000);
     await expect(period(page)).toBeHidden();
+    await expect(body(page).getByText('Longest streak: 23 days.')).toBeVisible();
     await expect(body(page).getByRole('img')).toBeVisible();
   });
 });

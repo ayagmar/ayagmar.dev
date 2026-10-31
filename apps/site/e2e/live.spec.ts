@@ -178,6 +178,12 @@ for (const width of [320, 360, 1280]) {
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth
         )
       ).toBeLessThanOrEqual(0);
+      // Catches the agents' bars squeezed to nothing instead of overflowing.
+      if (path === '/stats') {
+        for (const bar of await page.locator('.llm-bar').all()) {
+          expect((await bar.boundingBox())?.width).toBeGreaterThanOrEqual(40);
+        }
+      }
       for (const colorScheme of ['light', 'dark'] as const) {
         await page.emulateMedia({ colorScheme });
         const results = await new AxeBuilder({ page })

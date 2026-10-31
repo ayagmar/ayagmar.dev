@@ -40,10 +40,11 @@ export function tokens(count: number): string {
 
 /**
  * An agent's share of the month's tokens: whole percents, `<1%` for a sliver, and never 100%
- * while another agent has any.
+ * while another agent has any. signals rounds shares to 4 decimals, so an agent with a few
+ * tokens can arrive with a share of 0: its tokens say it is a sliver, not nothing.
  */
-export function share(fraction: number): string {
-  if (fraction > 0 && fraction < 0.01) return '<1%';
+export function share(fraction: number, count: number): string {
+  if (count > 0 && fraction < 0.01) return '<1%';
   const percent = Math.round(fraction * 100);
   return `${fraction < 1 ? Math.min(percent, 99) : percent}%`;
 }
@@ -110,7 +111,8 @@ const plural = (count: number, one: string, many: string) =>
  * The panel's body for a snapshot taken at `fetchedAt`. The month, the last 7 days, the agents
  * and the current streak describe the date in Rabat the snapshot was taken, named in their
  * labels and carried in `data-rabat-date` so the page script can hide them once that date has
- * passed (src/scripts/stats-live.ts). The daily heatmap and the longest streak hold for good.
+ * passed (src/scripts/stats-live.ts). The longest streak and the daily heatmap hold for good, so
+ * they sit outside that block.
  */
 export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup[] {
   // Costs (`costUsd`, `cacheSavingsUsd`) are in the snapshot and checked, but not shown: the
@@ -169,7 +171,7 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
     el(
       'p',
       { class: 'llm-streak' },
-      `Streak on ${dayMonth.format(utcDate(date))}: ${plural(streak.currentDays, 'day', 'days')}, longest ${plural(streak.longestDays, 'day', 'days')}.`
+      `Streak on ${dayMonth.format(utcDate(date))}: ${plural(streak.currentDays, 'day', 'days')}.`
     ),
     el('h3', {}, 'Agents this month'),
     month.agents.length === 0
@@ -193,7 +195,7 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
                 el('rect', { width: String(Math.round(tokenShare * 1000) / 10), height: '1' })
               ),
               el('span', { class: 'llm-tokens' }, tokens(totalTokens)),
-              el('span', { class: 'llm-share' }, share(tokenShare))
+              el('span', { class: 'llm-share' }, share(tokenShare, totalTokens))
             )
           )
         ),
@@ -208,7 +210,12 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
       : [])
   );
 
-  if (days.length === 0) return [period];
+  const longest = el(
+    'p',
+    { class: 'llm-streak' },
+    `Longest streak: ${plural(streak.longestDays, 'day', 'days')}.`
+  );
+  if (days.length === 0) return [period, longest];
   const heat = heatmap(days, date);
   const summary =
     heat.activeDays === 0 || !heat.busiest?.tokens
@@ -216,32 +223,38 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
       : `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${fullDate.format(utcDate(heat.busiest.date))} with ${tokens(heat.busiest.tokens)}.`;
   return [
     period,
+    longest,
     el('h3', {}, 'Tokens per day'),
     el(
       'figure',
       { class: 'heat llm-heat' },
-      // Scrolls sideways on a narrow screen, starting at the latest week (base.css).
+      // Scrolls sideways on a narrow screen, starting at the latest week (stats.astro); the
+      // dates under the year scroll with it, so each stays under its own week.
       el(
         'div',
         { class: 'llm-heat-scroll', tabindex: '0' },
         el(
           'div',
-          { class: 'heat-cells', role: 'img', 'aria-label': summary },
-          ...heat.cells.map(({ date: day, tokens: count, level }) =>
-            el('i', {
-              'data-l': String(level),
-              ...(count === undefined
-                ? {}
-                : { title: `${dayMonth.format(utcDate(day))}: ${tokens(count)}` }),
-            })
+          { class: 'llm-heat-year' },
+          el(
+            'div',
+            { class: 'heat-cells', role: 'img', 'aria-label': summary },
+            ...heat.cells.map(({ date: day, tokens: count, level }) =>
+              el('i', {
+                'data-l': String(level),
+                ...(count === undefined
+                  ? {}
+                  : { title: `${dayMonth.format(utcDate(day))}: ${tokens(count)}` }),
+              })
+            )
+          ),
+          el(
+            'p',
+            { class: 'heat-cap' },
+            el('span', {}, fullDate.format(utcDate(heat.from))),
+            el('span', {}, fullDate.format(utcDate(heat.to)))
           )
         )
-      ),
-      el(
-        'figcaption',
-        { class: 'heat-cap' },
-        el('span', {}, fullDate.format(utcDate(heat.from))),
-        el('span', {}, fullDate.format(utcDate(heat.to)))
       )
     ),
   ];
