@@ -45,7 +45,12 @@
     },
     {
       "groupName": "astro",
-      "matchPackageNames": ["astro", "@astrojs/**"]
+      "matchPackageNames": ["astro", "@astrojs/**", "satteri"]
+    },
+    {
+      "description": "satteri stays on the minor @astrojs/markdown-satteri declares (^0.10.5), so the diagram plugin and Astro's Markdown processor share one copy and one set of plugin types. Raise the bound when @astrojs/markdown-satteri moves.",
+      "matchPackageNames": ["satteri"],
+      "allowedVersions": "<0.11.0"
     },
     {
       "groupName": "svelte",
