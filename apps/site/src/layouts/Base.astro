@@ -1,6 +1,7 @@
 ---
 import Search from '../components/Search.svelte';
 import ThemeSwitch from '../components/ThemeSwitch.astro';
+import mono from '../fonts/mono.woff2?url';
 import serifRoman from '../fonts/serif-roman.woff2?url';
 import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
 import { roomObjects } from '../lib/room.ts';
@@ -36,7 +37,10 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
+    {/* Both faces the page sets, so neither swaps in after the first paint and rewraps text
+         (CLS, ADR 0017). The display face is gone, so this is fewer bytes than before. */}
     <link rel="preload" href={serifRoman} as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href={mono} as="font" type="font/woff2" crossorigin>
     <title>{pageTitle}</title>
     <meta name="description" content={description}>
     <link rel="canonical" href={canonical}>
