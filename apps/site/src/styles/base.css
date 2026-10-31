@@ -760,13 +760,20 @@ time[data-ago] {
   vertical-align: 0.05em;
 }
 
-/* On /stats, the whole page's version, under the title. */
+/* On /stats, the whole page's version, under the title. It is one line on a wide screen; on a
+   phone it keeps room for three, because the fallback serif wraps it onto one more line than
+   Source Serif does, and the swap would push every panel down (CLS, ADR 0017). */
 .sample-banner {
   width: auto;
-  max-width: var(--measure);
   margin: 0 0 1.25rem;
   color: var(--muted);
   font: 400 0.9375rem / 1.55 var(--serif);
+}
+
+@media (max-width: 39.99rem) {
+  .sample-banner {
+    min-height: 3lh;
+  }
 }
 
 @media (min-width: 40rem) {
