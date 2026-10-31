@@ -136,13 +136,14 @@ describe('authentication', () => {
     });
   });
 
-  describe('trellis signature', () => {
+  // The window is whole seconds, whatever the fraction of the second the Worker's clock is at
+  // (ADR 0011). The clock is frozen at both ends of a second, so the test and the handler read the
+  // same instant and no second can roll over between their two reads.
+  describe.each([0, 999])('trellis signature, clock %i ms into a second', (ms) => {
     const signed = delivery(trellisOk);
-    // A frozen clock at the end of a second: the test and the handler read the same instant, so the
-    // 300 s window cannot shrink by the fraction of a second between their two reads.
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(Math.floor(Date.now() / 1000) * 1000 + 999);
+      vi.setSystemTime(Math.floor(Date.now() / 1000) * 1000 + ms);
     });
     afterEach(() => vi.useRealTimers());
     const cases = [
@@ -173,8 +174,8 @@ describe('authentication', () => {
       expect(await deliveryRows()).toEqual([]);
     });
 
-    it('accepts a timestamp 299 s old', async () => {
-      const timestamp = String(Number(nowSeconds()) - 299);
+    it.each([-300, -299, 299, 300])('accepts a timestamp %i s from now', async (skewSeconds) => {
+      const timestamp = String(Number(nowSeconds()) + skewSeconds);
       expect((await push('trellis', signed, { timestamp })).status).toBe(202);
     });
   });
