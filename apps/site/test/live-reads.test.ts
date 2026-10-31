@@ -6,7 +6,7 @@ import { desktopEnvelopeSchema, llmUsageEnvelopeSchema, staleAfterSeconds } from
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { desktopStaleAfterMs, readDesktop, uptime } from '../src/lib/desktop.ts';
-import { hours, readLlmUsage } from '../src/lib/llm-usage.ts';
+import { readLlmUsage } from '../src/lib/llm-usage.ts';
 
 const corpus = (source: string) =>
   (['accept', 'reject'] as const).flatMap((kind) => {
@@ -21,7 +21,7 @@ const minute = 60_000;
 const hour = 60 * minute;
 const day = 24 * hour;
 
-describe('agent hours and agents', () => {
+describe("this month's agents on /uses", () => {
   const taken = '2026-10-26T08:00:00.000Z';
   const envelope = (data: unknown, fields: object = {}) => ({
     source: 'llm-usage',
@@ -34,36 +34,26 @@ describe('agent hours and agents', () => {
   const ok = snapshotFixtures['llm-usage'].ok;
   const at = (iso: string) => Date.parse(iso);
 
-  // Catches the page showing hours the contract rejects (a negative or fractional value).
+  // Catches the page listing agents from an answer the contract rejects.
   it.each(corpus('llm-usage'))(
-    'shows hours from %s only if the contract accepts them',
+    'lists agents from %s only if the contract accepts it',
     (_f, body) => {
       const { fetchedAt, stale } = Object(body);
       const usage = readLlmUsage(body, Date.parse(String(fetchedAt)) + minute);
       const accepted = llmUsageEnvelopeSchema.safeParse(body).success && stale === false;
-      if (!accepted) expect(usage?.monthMs ?? usage?.weekMs).toBeUndefined();
-      const sent = Object(Object(body).data);
-      if (accepted && Object(sent.monthToDate).activeMs !== undefined) {
-        expect(usage?.monthMs).toBe(sent.monthToDate.activeMs);
-      }
+      if (!accepted || Object(body).data === null) expect(usage).toBeUndefined();
+      else expect(usage).toBeDefined();
     }
   );
 
-  // Catches a producer without hours shown as 0 hours, or a real 0 hidden.
-  it('tells hours not sent from zero hours', () => {
-    const minimal = readLlmUsage(envelope(snapshotFixtures['llm-usage'].minimal), at(taken));
-    expect(minimal).toBeDefined();
-    expect(minimal?.monthMs).toBeUndefined();
-    expect(minimal?.weekMs).toBeUndefined();
-    const zero = { ...ok, last7Days: { ...ok.last7Days, activeMs: 0 } };
-    expect(readLlmUsage(envelope(zero), at(taken))?.weekMs).toBe(0);
-    expect(hours(0)).toBe('0 hours');
-  });
-
-  // Catches "this month" shown for the previous month, or "last 7 days" a day off, after
-  // midnight in Rabat while the tab stays open.
-  it('shows the snapshot only on the date in Rabat it was taken', () => {
-    expect(readLlmUsage(envelope(ok), at('2026-10-26T23:59:59Z'))?.monthMs).toBeDefined();
+  // Catches "this month" shown for the previous month after midnight in Rabat while the tab
+  // stays open.
+  it('lists them only on the date in Rabat the snapshot was taken', () => {
+    expect(readLlmUsage(envelope(ok), at('2026-10-26T23:59:59Z'))?.agents).toEqual([
+      'Claude Code',
+      'Codex',
+      'pi',
+    ]);
     expect(readLlmUsage(envelope(ok), at('2026-10-27T00:00:00Z'))).toBeUndefined();
     const lastOfMonth = envelope(ok, { fetchedAt: '2026-10-31T22:00:00Z' });
     expect(readLlmUsage(lastOfMonth, at('2026-11-01T00:30:00Z'))).toBeUndefined();
@@ -88,19 +78,6 @@ describe('agent hours and agents', () => {
     ['without data', { data: null }],
   ])('shows nothing from an answer %s', (_case, fields) => {
     expect(readLlmUsage(envelope(ok, fields), at('2026-10-26T08:00:00Z'))).toBeUndefined();
-  });
-
-  it('lists the agents by name, as served, and drops a list it cannot read', () => {
-    expect(readLlmUsage(envelope(ok), at(taken))?.agents).toEqual(['Claude Code', 'Codex', 'pi']);
-    const broken = { ...ok, monthToDate: { ...ok.monthToDate, agents: [null] } };
-    expect(readLlmUsage(envelope(broken), at(taken))?.agents).toBeUndefined();
-  });
-
-  it('rounds hours for display only', () => {
-    expect(hours(517_889_547)).toBe('144 hours');
-    expect(hours(34_932_547)).toBe('9.7 hours');
-    expect(hours(3_600_000)).toBe('1 hour');
-    expect(hours(7 * 25 * hour)).toBe('175 hours');
   });
 });
 

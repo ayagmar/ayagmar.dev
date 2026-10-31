@@ -147,6 +147,9 @@ export const text = (value: unknown, max = Infinity): value is string =>
 /** A whole number from `min` up. */
 export const whole = (value: unknown, min = 0): value is number =>
   Number.isSafeInteger(value) && (value as number) >= min;
+/** A calendar date, `2026-10-24`. */
+export const calendarDate = (value: unknown) =>
+  typeof value === 'string' && value.length === 10 && instantMs(`${value}T00:00:00Z`) !== undefined;
 /** An array of at most `max` items, each passing `check`. */
 export const list = (value: unknown, max: number, check: (item: unknown) => boolean) =>
   Array.isArray(value) && value.length <= max && value.every(check);

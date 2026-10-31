@@ -2,7 +2,7 @@
 
 import { SIGNALS_API_BASE, SIGNALS_MODE } from 'astro:env/server';
 import { type Envelope, staleAfterSeconds } from '@min7/contracts';
-import { createReader, type PulledSource } from './reader.ts';
+import { createReader, type ReadSource } from './reader.ts';
 
 export const signalsMode = SIGNALS_MODE;
 
@@ -16,7 +16,7 @@ export const signals = createReader({ mode: signalsMode, apiBase: signalsApiBase
  * source, when the build's snapshot was taken, the source's stale threshold, and in api mode
  * the endpoint. In fixtures mode there is no endpoint and no request.
  */
-export const liveAttrs = (source: PulledSource, envelope: Envelope<unknown>) => ({
+export const liveAttrs = (source: ReadSource, envelope: Envelope<unknown>) => ({
   'data-live': source,
   'data-live-src': signalsMode === 'api' ? `${signalsApiBase}/v1/${source}` : undefined,
   'data-fetched-at': envelope.data === null ? undefined : (envelope.fetchedAt ?? undefined),

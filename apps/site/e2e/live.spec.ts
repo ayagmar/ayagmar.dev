@@ -1,5 +1,5 @@
-// The parts of /stats and /uses the browser reads from signals (ADR 0014, ADR 0032): agent
-// hours, the desktop facts and this month's agents. The e2e build runs in fixtures mode, where
+// The parts of /uses the browser reads from signals (ADR 0014, ADR 0032): the desktop facts and
+// this month's agents, and how /stats and /uses fit with them. The e2e build runs in fixtures mode, where
 // these pages never ask signals for anything. Each test below gives the blocks the API
 // endpoints, as an `api` mode build would, answers the API itself from the shared fixtures,
 // and fixes the browser's clock.
@@ -51,7 +51,6 @@ async function visit(
   await page.route(`**${path}`, async (route) => {
     const response = await route.fetch();
     const html = (await response.text())
-      .replace('class="agent-hours"', `class="agent-hours" data-llm-usage-src="${api}/llm-usage"`)
       .replace('class="agents-month"', `class="agents-month" data-llm-usage-src="${api}/llm-usage"`)
       .replace('class="desktop-facts"', `class="desktop-facts" data-desktop-src="${api}/desktop"`);
     await route.fulfill({ response, body: html });
@@ -67,57 +66,9 @@ async function visit(
   return outside;
 }
 
-const hoursBlock = (page: Page) => page.locator('.agent-hours');
 const live = (page: Page) => page.locator('.uses-live');
 const facts = (page: Page) => page.locator('.desktop-facts');
 const agents = (page: Page) => page.locator('.agents-month');
-
-test.describe('agent hours on /stats', () => {
-  // Catches the wrong period's number, hours shown with the wrong unit, or the explanation
-  // missing.
-  test('shows this month and the last 7 days, as of the snapshot', async ({ page }) => {
-    await visit(page, '/stats', noon, { 'llm-usage': llmUsage() });
-    await expect(hoursBlock(page)).toBeVisible();
-    await expect(hoursBlock(page).getByRole('heading')).toHaveText('Estimated agent hours');
-    await expect(hoursBlock(page).locator('.agent-hours-month dd')).toHaveText('144 hours');
-    await expect(hoursBlock(page).locator('.agent-hours-week dd')).toHaveText('60 hours');
-    await expect(hoursBlock(page)).toContainText('not my hours at the keyboard');
-    await expect(hoursBlock(page).locator('.agent-hours-as-of')).toHaveText('Updated 4 hours ago');
-    await expect(page.locator('.llm-usage-empty')).toBeHidden();
-  });
-
-  // Catches an old producer's push shown as 0 hours.
-  test('stays hidden when the snapshot has no hours', async ({ page }) => {
-    const outside = await visit(page, '/stats', noon, {
-      'llm-usage': llmUsage(snapshotFixtures['llm-usage'].minimal),
-    });
-    await expect.poll(() => outside.length).toBe(1);
-    await page.waitForTimeout(300);
-    await expect(hoursBlock(page)).toBeHidden();
-    await expect(page.locator('.llm-usage-empty')).toBeVisible();
-  });
-
-  // Catches "this month" left on screen past midnight in Rabat by an open tab.
-  test('hides the hours at midnight in Rabat while the tab is open', async ({ page }) => {
-    await visit(page, '/stats', '2026-10-26T23:58:00Z', { 'llm-usage': llmUsage() });
-    await expect(hoursBlock(page)).toBeVisible();
-    await page.clock.runFor(3 * minute);
-    await expect(hoursBlock(page)).toBeHidden();
-  });
-
-  for (const [name, answer] of [
-    ['a failed request', 'abort'],
-    ['an error status', { status: 500, contentType: 'application/json', body: '{}' }],
-    ['a stale snapshot', llmUsage(undefined, { stale: true })],
-    ['broken JSON', { status: 200, contentType: 'application/json', body: '{"source":' }],
-  ] as const) {
-    test(`shows nothing for ${name}`, async ({ page }) => {
-      await visit(page, '/stats', noon, { 'llm-usage': answer });
-      await page.waitForTimeout(300);
-      await expect(hoursBlock(page)).toBeHidden();
-    });
-  }
-});
 
 test.describe('/uses', () => {
   // Catches a value in the wrong row, or an uptime that is not from the reported boot.
@@ -218,13 +169,21 @@ for (const width of [320, 360, 1280]) {
     }) => {
       await page.setViewportSize({ width, height: 800 });
       await visit(page, path, noon, { desktop: desktop(), 'llm-usage': llmUsage() });
-      await expect(path === '/stats' ? hoursBlock(page) : live(page)).toBeVisible();
+      await expect(
+        path === '/stats' ? page.locator('[data-live="llm-usage"]') : live(page)
+      ).toBeVisible();
       if (path === '/uses') await expect(agents(page)).toBeVisible();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth
         )
       ).toBeLessThanOrEqual(0);
+      // Catches the agents' bars squeezed to nothing instead of overflowing.
+      if (path === '/stats') {
+        for (const bar of await page.locator('.llm-bar').all()) {
+          expect((await bar.boundingBox())?.width).toBeGreaterThanOrEqual(40);
+        }
+      }
       for (const colorScheme of ['light', 'dark'] as const) {
         await page.emulateMedia({ colorScheme });
         const results = await new AxeBuilder({ page })

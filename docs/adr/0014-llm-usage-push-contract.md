@@ -1,6 +1,6 @@
 # 0014. llm-usage push contract
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: estimated agent hours (`activeMs`), the producer's three calls in one reporting zone, and its delivery rules (ADR 0032).
+Status: accepted, 2026-10-26. Amended 2026-10-26: estimated agent hours (`activeMs`), the producer's three calls in one reporting zone, and its delivery rules (ADR 0032). Amended 2026-10-31: the LLM usage panel on `/stats` (tokens, agents, streaks, the year heatmap), built and refreshed like the other panels; the producer pushes hourly.
 
 ## Context
 
@@ -58,7 +58,9 @@ Days are local calendar days in Africa/Casablanca. A local day lasts 23, 24 or 2
 
 **Compatibility.** A producer without hours keeps working with the new Worker: its pushes are valid and show no hours. A new producer's push to a Worker from before this change is valid too, but that Worker strips the hours. Retrying an accepted delivery after the Worker is upgraded gets 200 and changes nothing, so hours appear with the next new delivery, not by replaying an old one. Current output with hours still validates against the frozen v1 consumer schemas (`llm-usage.output.json`, `push-llm-usage.output.json`), which are unchanged.
 
-**On `/stats`.** "Estimated agent hours" shows this month so far and the last 7 days, with: "Estimated from logged agent events with gaps capped at 5 minutes; overlapping sessions and machines count once. Includes overnight agents and laptop usage, not my hours at the keyboard." and the snapshot's age ("Updated 4 hours ago", with the exact time in the reader's zone as its title, ADR 0015). It is read by the browser (ADR 0015) and shown only on the date in Rabat the snapshot was taken, since after midnight its month and week would describe other periods; hours are rounded only for display (whole hours from 10 up, one decimal below). A snapshot without hours, or with any hours value out of range, shows no block. The daily values are published but not drawn yet.
+**On `/stats`.** The LLM usage panel shows, for the date in Rabat the snapshot was taken: tokens and estimated agent hours this month and in the last 7 days, each column named with its dates ("1–26 Oct", "20–26 Oct"); the current streak; and this month's agents, each with its share of the tokens as a bar, its tokens in short units (41.0B, 1.8B) and its share in whole percents, `<1%` for a sliver (any agent with tokens under 1%, including one whose share signals rounded to 0). Under them are the longest streak and a year of daily tokens as a heatmap, a column per week from Monday, the levels the quartiles of the days with tokens, described in text for screen readers. Hours are rounded only for display (whole hours from 10 up, one decimal below); hours not sent are left out, or "unknown" when only one period has them, never 0. With hours comes the note: "Agent hours are estimated from logged agent events with gaps capped at 5 minutes; overlapping sessions and machines count once. They include overnight agents and laptop usage, not my hours at the keyboard." Costs and cache savings are published by signals but not shown until the owner decides to.
+
+The build renders the panel from its snapshot and the browser replaces it with a newer current answer (ADR 0015), both from the same markup in `apps/site/src/lib/llm-usage-panel.ts`, with the freshness line of the other panels. Since the month, the week, the agents and the current streak describe the snapshot's date, the page script hides them once the date in Rabat has moved on, and in a browser that does not know Morocco's clock; the longest streak and the heatmap stay. Without JavaScript they stay, named with their dates.
 
 ### What signals publishes
 
@@ -66,7 +68,7 @@ Days are local calendar days in Africa/Casablanca. A local day lasts 23, 24 or 2
 
 ### Producer
 
-`producers/llm-usage.ts`, run by a systemd user timer every 6 hours ([docs/producers/llm-usage.md](../producers/llm-usage.md)). It runs three commands, all with `--timezone Africa/Casablanca` and the same default scope (every source, every machine, no filter):
+`producers/llm-usage.ts`, run by a systemd user timer every hour ([docs/producers/llm-usage.md](../producers/llm-usage.md)). It runs three commands, all with `--timezone Africa/Casablanca` and the same default scope (every source, every machine, no filter):
 1. `llm-usage summary --timezone Africa/Casablanca --json`, first. Its `timezone` must be Africa/Casablanca and `activity.to` must be the reporting date when collection started; its window `activity.from`–`activity.to` fixes the dates of the other two.
 2. `llm-usage daily --since <from> --until <to> --timezone Africa/Casablanca --json`, for the daily costs.
 3. `llm-usage trends --metric active-hours --since <from> --until <to> --timezone Africa/Casablanca --json`, for the hours.

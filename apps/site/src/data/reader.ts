@@ -5,7 +5,9 @@ import {
   type Envelope,
   isStale,
   type ListeningSnapshot,
+  type LlmUsageSnapshot,
   listeningEnvelopeSchema,
+  llmUsageEnvelopeSchema,
   type MonkeytypeSnapshot,
   monkeytypeEnvelopeSchema,
   type ProjectsSnapshot,
@@ -21,6 +23,7 @@ const envelopeSchemas = {
   shipping: shippingEnvelopeSchema,
   projects: projectsEnvelopeSchema,
   monkeytype: monkeytypeEnvelopeSchema,
+  'llm-usage': llmUsageEnvelopeSchema,
 };
 
 interface Snapshots {
@@ -28,12 +31,13 @@ interface Snapshots {
   shipping: ShippingSnapshot;
   projects: ProjectsSnapshot;
   monkeytype: MonkeytypeSnapshot;
+  'llm-usage': LlmUsageSnapshot;
 }
 
-/** Sources pulled by signals; the pushed ones (llm-usage, shelf) are read once they have schemas. */
-export type PulledSource = keyof Snapshots;
+/** Sources the build reads; shelf is read once it has a schema. */
+export type ReadSource = keyof Snapshots;
 
-export type SnapshotOf<Source extends PulledSource> = Snapshots[Source];
+export type SnapshotOf<Source extends ReadSource> = Snapshots[Source];
 
 type SignalsMode = 'fixtures' | 'api';
 
@@ -61,9 +65,9 @@ export const emptyEnvelope = <Source extends SourceId>(
 export function createReader(options: ReaderOptions) {
   const { mode, apiBase, timeoutMs = 5_000, now = () => new Date(), warn = console.warn } = options;
   // Several pages read the same source; each build fetches it once.
-  const reads = new Map<PulledSource, Promise<Envelope<unknown>>>();
+  const reads = new Map<ReadSource, Promise<Envelope<unknown>>>();
 
-  async function fromFixtures<Source extends PulledSource>(source: Source) {
+  async function fromFixtures<Source extends ReadSource>(source: Source) {
     const { fixturesCapturedAt, snapshotFixtures } = await import('@min7/contracts/fixtures');
     return envelopeSchemas[source].parse({
       source,
@@ -74,7 +78,7 @@ export function createReader(options: ReaderOptions) {
     });
   }
 
-  async function fromApi<Source extends PulledSource>(source: Source) {
+  async function fromApi<Source extends ReadSource>(source: Source) {
     const url = `${apiBase}/v1/${source}`;
     try {
       const response = await fetch(url, {
@@ -101,7 +105,7 @@ export function createReader(options: ReaderOptions) {
   }
 
   /** The latest snapshot of `source`, with `stale` recomputed for the time of the build. */
-  async function read<Source extends PulledSource>(
+  async function read<Source extends ReadSource>(
     source: Source
   ): Promise<Envelope<SnapshotOf<Source>, Source>> {
     let pending = reads.get(source);

@@ -31,10 +31,15 @@ const stampMarkup = (iso: string) => el('time', { datetime: iso, 'data-ago': '' 
 export const when = (iso: string, words = '') =>
   el('span', { class: 'when' }, `· ${words}`, stampMarkup(iso));
 
+// An SVG element must be created in its namespace, or the browser draws nothing.
+const svg = new Set(['svg', 'rect']);
+
 /** `markup` as a DOM node. */
 export function toNode(markup: Markup): Node {
   if (typeof markup === 'string') return document.createTextNode(markup);
-  const element = document.createElement(markup.tag);
+  const element = svg.has(markup.tag)
+    ? document.createElementNS('http://www.w3.org/2000/svg', markup.tag)
+    : document.createElement(markup.tag);
   for (const [name, value] of Object.entries(markup.attrs)) element.setAttribute(name, value);
   element.append(...markup.children.map(toNode));
   return element;

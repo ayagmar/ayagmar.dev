@@ -10,6 +10,7 @@ import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals
 import Base from '../layouts/Base.astro';
 import { dayName } from '../lib/history.ts';
 import { listeningBody } from '../lib/listening-panel.ts';
+import { llmUsagePanel } from '../lib/llm-usage-panel.ts';
 import { site } from '../lib/site.ts';
 import { starTotals, statsWords as words } from '../lib/stats.ts';
 import { bestRows, dayDate, headline, typingWords } from '../lib/typing.ts';
@@ -18,8 +19,8 @@ const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 const projects = await signals.read('projects');
 const typing = await signals.read('monkeytype');
-// Shelf: not wired yet, shown empty until its contract lands. LLM usage shows only its
-// agent hours so far, read by the browser (ADR 0015).
+const llmUsage = await signals.read('llm-usage');
+// Shelf: not wired yet, shown empty until its contract lands.
 const shelf = emptyEnvelope('shelf');
 
 const music = listening.data;
@@ -38,7 +39,7 @@ const bests = typing.data === null ? [] : bestRows(typing.data);
   ) : (
     <p class="caption">
       Numbers from my own tools, kept current by your browser while this page is open. On this day
-      and agent hours show only on the date in Rabat they describe.
+      and this month's LLM usage show only on the date in Rabat they describe.
     </p>
   )}
 
@@ -157,33 +158,21 @@ const bests = typing.data === null ? [] : bestRows(typing.data);
       <Freshness envelope={typing} />
     </section>
 
-    <section class="panel m-frame" aria-labelledby="llm-usage">
+    <section
+      class="panel m-frame"
+      aria-labelledby="llm-usage"
+      {...liveAttrs('llm-usage', llmUsage)}
+    >
       <h2 id="llm-usage">LLM usage</h2>
-      <p class="llm-usage-empty">No data yet.</p>
-      {/* Filled in, and shown, by src/scripts/agent-hours.ts (ADR 0014); hidden without it. */}
-      <div
-        class="agent-hours"
-        data-llm-usage-src={signalsMode === 'api' ? `${signalsApiBase}/v1/llm-usage` : undefined}
-        hidden
-      >
-        <h3>Estimated agent hours</h3>
-        <dl>
-          <div class="agent-hours-month">
-            <dt>This month so far</dt>
-            <dd></dd>
-          </div>
-          <div class="agent-hours-week">
-            <dt>Last 7 days</dt>
-            <dd></dd>
-          </div>
-        </dl>
-        <p>
-          Estimated from logged agent events with gaps capped at 5 minutes; overlapping sessions and
-          machines count once. Includes overnight agents and laptop usage, not my hours at the
-          keyboard.
-        </p>
-        <p class="freshness agent-hours-as-of"></p>
+      {/* The same markup the live script draws (src/lib/llm-usage-panel.ts, ADR 0014). */}
+      <div class="llm-usage-body">
+        {llmUsage.data === null || llmUsage.fetchedAt === null ? (
+          <p>No data yet.</p>
+        ) : (
+          <Markup nodes={llmUsagePanel(llmUsage.data, llmUsage.fetchedAt)} />
+        )}
       </div>
+      <Freshness envelope={llmUsage} />
     </section>
 
     <section class="panel m-wood" aria-labelledby="shelf">
@@ -196,6 +185,108 @@ const bests = typing.data === null ? [] : bestRows(typing.data);
 
 <script>
 import '../scripts/history.ts';
-import '../scripts/agent-hours.ts';
 import '../scripts/stats-live.ts';
 </script>
+
+<style is:global>
+/* The LLM usage panel. Global, not scoped: the live script redraws its body (src/lib/llm-usage-panel.ts). */
+.llm-totals {
+  display: table;
+  width: 100%;
+  margin-block: 1rem;
+}
+
+.llm-totals th,
+.llm-totals td {
+  padding-inline-end: 0.6rem;
+}
+
+.llm-totals thead th {
+  color: var(--fg-2);
+  font: 500 0.75rem var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.llm-range {
+  display: block;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.llm-totals tbody th {
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 25%, transparent);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.llm-totals td {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.llm-agents {
+  padding: 0;
+  list-style: none;
+}
+
+/* Name, bar, tokens and share on one line; the bar takes what is left, never less than 2.5rem,
+   and a long name wraps instead, at a space unless one word is wider than its column. */
+.llm-agents li {
+  display: grid;
+  grid-template-columns: minmax(0, 7.5rem) minmax(2.5rem, 1fr) 3.5rem 2.75rem;
+  gap: 0.5rem;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.llm-agent {
+  overflow-wrap: break-word;
+}
+
+.llm-bar {
+  width: 100%;
+  height: 0.5rem;
+  background: color-mix(in srgb, var(--fg) 18%, transparent);
+  fill: var(--accent);
+}
+
+.llm-tokens,
+.llm-share {
+  text-align: end;
+}
+
+.llm-note {
+  color: var(--fg-2);
+  font-size: 0.875rem;
+}
+
+/* A year of days, a column a week: 4px cells and 1px gaps fit 53 weeks in 264px, the panel's
+   width on a desktop. On a phone it scrolls, starting at the latest week: the scroller runs
+   right to left, the cells left to right. Contained, so the year's width does not widen the
+   panel. Its 371 cells cost more style and layout than the rest of the page (mobile TBT, ADR
+   0017); it sits below the fold, so the browser skips that work until it is near the screen,
+   holding its height meanwhile. */
+.llm-heat {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.4rem;
+}
+
+.llm-heat-scroll {
+  overflow-x: auto;
+  direction: rtl;
+  contain: inline-size;
+}
+
+/* As wide as its weeks need, so the scroller can reach every one; wider cells when it fits. */
+.llm-heat .heat-cells {
+  width: max-content;
+  min-width: 100%;
+  direction: ltr;
+  grid-template-columns: none;
+  grid-template-rows: repeat(7, auto);
+  grid-auto-columns: minmax(4px, 1fr);
+  grid-auto-flow: column;
+  gap: 1px;
+}
+</style>

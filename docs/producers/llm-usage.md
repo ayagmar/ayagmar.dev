@@ -40,7 +40,7 @@ journalctl --user -u min7-push-llm-usage.service -n 20 -o cat
 systemctl --user enable --now min7-push-llm-usage.timer
 ```
 
-A good run logs `{"producer":"llm-usage",...,"event":"delivered","status":202}`. The timer runs at 00:15, 06:15, 12:15 and 18:15 with up to 10 minutes of delay, and catches up after the machine was off (`Persistent=true`).
+A good run logs `{"producer":"llm-usage",...,"event":"delivered","status":202}`. The timer runs every hour at a quarter past, with up to 10 minutes of delay, and catches up after the machine was off (`Persistent=true`).
 
 To update, repeat the `install` lines and `daemon-reload`.
 

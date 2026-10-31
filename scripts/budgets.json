@@ -19,7 +19,7 @@
       {
         "name": "stats script",
         "file": "/_astro/stats.astro_astro_type_script_index_0_lang.*.js",
-        "bytes": 3800
+        "bytes": 5500
       },
       {
         "name": "uses script",
@@ -34,7 +34,7 @@
       {
         "name": "listening reads",
         "file": "/_astro/listening.*.js",
-        "bytes": 1100
+        "bytes": 1150
       },
       {
         "name": "agent reads",

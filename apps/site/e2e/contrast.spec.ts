@@ -1,3 +1,4 @@
+import type { Locator } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
 /** Contrast ratio of two `rgb()` strings as Chromium computes them. */
@@ -34,28 +35,35 @@ for (const colorScheme of ['light', 'dark'] as const) {
 
     // Catches a heat level fading back into the strip: a day with activity is a mark, and colour
     // is its only encoding. Each level must also stand apart from the one below it.
-    test('every shipping heat level is at least 3:1 against the strip and steps from the last', async ({
+    // Shipping's strip and the LLM usage year share the levels.
+    test('every heat level is at least 3:1 against the strip and steps from the last', async ({
       page,
     }) => {
       await page.goto('/stats');
-      const { strip, levels } = await page.locator('.heat').evaluate((heat) => {
-        const color = (level: number) => {
-          const probe = document.createElement('i');
-          probe.dataset.l = String(level);
-          heat.querySelector('.heat-cells')?.append(probe);
-          const value = getComputedStyle(probe).backgroundColor;
-          probe.remove();
-          return value;
-        };
-        return {
-          strip: getComputedStyle(heat).backgroundColor,
-          levels: [1, 2, 3, 4].map(color),
-        };
-      });
-      for (const level of levels) expect(contrast(level, strip)).toBeGreaterThanOrEqual(3);
-      for (const [i, level] of levels.slice(1).entries()) {
-        expect(contrast(level, levels[i] as string)).toBeGreaterThanOrEqual(1.3);
-      }
+      const heats = await page.locator('.heat').all();
+      expect(heats).toHaveLength(2);
+      for (const heat of heats) await check(heat);
     });
   });
+}
+
+async function check(heat: Locator) {
+  const { strip, levels } = await heat.evaluate((heat) => {
+    const color = (level: number) => {
+      const probe = document.createElement('i');
+      probe.dataset.l = String(level);
+      heat.querySelector('.heat-cells')?.append(probe);
+      const value = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return value;
+    };
+    return {
+      strip: getComputedStyle(heat).backgroundColor,
+      levels: [1, 2, 3, 4].map(color),
+    };
+  });
+  for (const level of levels) expect(contrast(level, strip)).toBeGreaterThanOrEqual(3);
+  for (const [i, level] of levels.slice(1).entries()) {
+    expect(contrast(level, levels[i] as string)).toBeGreaterThanOrEqual(1.3);
+  }
 }
