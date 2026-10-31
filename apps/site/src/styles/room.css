@@ -337,20 +337,18 @@
 }
 
 .intro {
-  margin: 1.5rem 0 0.25rem;
-  font-size: clamp(1.9rem, 1.2rem + 3.4vw, 3.4rem);
-  font-weight: 750;
-  line-height: 1.02;
+  margin: 3rem 0 0;
+  font-size: clamp(2rem, 1.4rem + 2.8vw, 3.25rem);
+  line-height: 1.05;
   letter-spacing: -0.03em;
 }
 
-/* The role, marked with the tile star that ends a post. */
+/* The role, marked with the tile star that ends a post: the page's one ornament. */
 .intro span {
   display: block;
-  margin-top: 0.5rem;
-  color: var(--lamp);
-  font-family: var(--serif);
-  font-size: 0.45em;
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.25rem);
   font-weight: 400;
   letter-spacing: 0;
 }
@@ -358,9 +356,9 @@
 .intro span::before {
   content: "";
   display: inline-block;
-  width: 0.7em;
-  height: 0.7em;
-  margin-inline-end: 0.5em;
+  width: 0.6em;
+  height: 0.6em;
+  margin-inline-end: 0.55em;
   background: var(--lamp);
   vertical-align: -0.05em;
   clip-path: polygon(
@@ -388,8 +386,8 @@
 .room-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 1rem;
-  margin: 1.25rem 0 0;
+  gap: 0 1.5rem;
+  margin: 2.5rem 0 0;
   padding: 0;
   list-style: none;
 }
@@ -416,22 +414,26 @@
   }
 }
 
+/* The section first, the object it sits on after it, quieter. */
 .room-list a {
-  display: block;
-  padding: 0.55rem 0 0.45rem;
+  display: flex;
+  flex-direction: column-reverse;
+  padding: 0.6rem 0;
   border-top: 1px solid var(--rule);
   color: var(--muted);
-  font: 500 0.75rem / 1.25 var(--mono);
+  font-size: 0.8125rem;
+  line-height: 1.35;
   text-decoration: none;
-  text-transform: lowercase;
 }
 
 /* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
 .room-list a span {
-  display: block;
   color: var(--text);
-  font: 400 1rem / 1.35 var(--serif);
-  text-transform: none;
+  font-size: 1rem;
+}
+
+.room-list a span::first-letter {
+  text-transform: uppercase;
 }
 
 .room-list a:hover {
@@ -449,7 +451,7 @@
   flex-wrap: wrap;
   gap: 0.25rem 1rem;
   align-items: baseline;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .panel-head h2 {
@@ -462,7 +464,8 @@
   min-height: 24px;
   margin-inline-start: auto;
   padding-block: 0.25rem;
-  font: 500 0.8125rem / 1.2 var(--mono);
+  color: var(--muted);
+  font-size: 0.9375rem;
   text-decoration: none;
 }
 
@@ -472,24 +475,24 @@
 }
 
 .panel-head a:hover {
-  text-decoration: underline;
+  color: var(--lamp);
 }
 
 .home-panels {
   display: grid;
-  gap: 0 1.25rem;
+  gap: 0 4rem;
   /* A long unbroken title or summary would set the grid track's minimum width. */
   overflow-wrap: anywhere;
 }
 
 .home-panels h2 {
-  font-size: clamp(1.5rem, 1.3rem + 1vw, 1.9rem);
+  font-size: 1.375rem;
 }
 
 .home-panels .posts li:first-child a {
-  font-size: clamp(1.7rem, 1.1rem + 2.4vw, 3rem);
-  font-weight: 750;
-  line-height: 1.04;
+  font-size: clamp(1.5rem, 1.2rem + 1.4vw, 2.125rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
 @media (min-width: 60rem) {
@@ -511,7 +514,7 @@
 .home-notes {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  gap: 0.75rem 1.5rem;
+  gap: 0.75rem 4rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -525,12 +528,14 @@
 .home-notes time {
   display: block;
   color: var(--fg-2);
-  font: 500 0.8125rem / 1.5 var(--mono);
+  font: 400 0.8125rem / 1.6 var(--mono);
 }
 
 .home-notes a {
   color: var(--fg);
-  font: 750 1.15rem / 1.25 var(--display);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.3;
   text-decoration: none;
   text-wrap: balance;
 }
@@ -542,23 +547,33 @@
 
 .home-projects {
   display: grid;
-  gap: 1rem;
   padding: 0;
   list-style: none;
 }
 
+.home-projects li {
+  padding-block: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.home-projects li:first-child {
+  padding-top: 0;
+}
+
 .home-projects a {
-  font: 600 1rem var(--mono);
+  color: var(--text);
+  font: 600 0.9375rem var(--mono);
   text-decoration: none;
 }
 
 .home-projects a:hover {
-  text-decoration: underline;
+  color: var(--lamp);
 }
 
 .home-projects p {
   margin: 0.15rem 0 0;
   max-width: 60ch;
+  color: var(--fg-2);
 }
 
 /* The record player: a turning record next to what is playing. */

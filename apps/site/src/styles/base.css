@@ -1,5 +1,5 @@
-/* The late-night room (ADR 0026), lit and set in windows (ADR 0034): one token layer for day
-   and night, mobile first.
+/* The late-night room (ADR 0026), quiet around it: the room is the only picture; the rest is
+   type, hairline rules and one accent, the lamp. One token layer for day and night, mobile first.
    Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
    It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
 
@@ -19,30 +19,6 @@
   font-display: swap;
 }
 
-/* The display face: the name, headings and big numbers. Never running text. One cut, soft and
-   a little wonky, at one optical size and one weight (750). */
-@font-face {
-  font-family: "min7 Display";
-  src: url("../fonts/display.woff2") format("woff2");
-  font-weight: 750;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* While the display face loads, headings show the serif roman (already loaded, so no second
-   download) scaled to Fraunces' width and set to its vertical metrics, so the swap moves nothing:
-   the page stays inside ADR 0017's CLS budget without a preload. */
-@font-face {
-  font-family: "min7 Display Fallback";
-  src: url("../fonts/serif-roman.woff2") format("woff2");
-  font-weight: 750;
-  font-style: normal;
-  size-adjust: 101.4%;
-  ascent-override: 97.8%;
-  descent-override: 25.5%;
-  line-gap-override: 0%;
-}
-
 @font-face {
   font-family: "JetBrains Mono";
   src: url("../fonts/mono.woff2") format("woff2");
@@ -54,20 +30,17 @@
 :root {
   color-scheme: light dark;
 
-  /* The room by lamplight: aubergine night and sunlit plaster, the amber lamp (links, time), the
-     screen's mint (projects), rose for what is not real. --line edges buttons, inputs and code;
-   --rule (below) is the quieter edge of windows and sections. */
-  --ground: light-dark(#efe3cb, #0d0a17);
-  --surface: light-dark(#e6d6b8, #191430);
-  --line: light-dark(#7f6b57, #716aa8);
-  --text: light-dark(#241a2c, #f6ead2);
-  --muted: light-dark(#4a3f4d, #b9b0c8);
-  --lamp: light-dark(#7a3a00, #ffb54a);
-  --glow: light-dark(#0b4f3c, #6ee7b0);
-  --rose: light-dark(#952f24, #ff8e7c);
-  --cyan: light-dark(#0b5f87, #5ad7ff);
-  /* The quiet edge of a window, the header and the footer. */
-  --rule: light-dark(#cdb993, #2e2746);
+  /* The room's two lights on a quiet ground: a warm paper white by day, ink at night. The lamp
+     is the one accent (links, the current page, the heat strip); rose only marks sample data.
+     --line edges inputs and code; --rule is the hairline between sections. */
+  --ground: light-dark(#f6f2ea, #0e0c13);
+  --surface: light-dark(#ece6db, #17141e);
+  --line: light-dark(#86796a, #6d6680);
+  --text: light-dark(#1c1820, #ebe5da);
+  --muted: light-dark(#5b5360, #a59eae);
+  --lamp: light-dark(#8a4300, #f2b45a);
+  --rose: light-dark(#9a3226, #f0907f);
+  --rule: light-dark(#ddd5c8, #26222e);
 
   /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
   --paper: light-dark(#fbf6ea, #efe3c6);
@@ -78,13 +51,7 @@
   --code-bg: #1f1b2e;
   --code-fg: #efe6d0;
 
-  /* A window is lit from its top left corner (--surface-hi) and falls off to its bottom right
-     (--surface-lo). */
-  --surface-hi: light-dark(#f6e9cb, #2e2038);
-  --surface-lo: light-dark(#e0cfae, #0f0c1f);
-
   --serif: "min7 Serif", Charter, "Iowan Old Style", Georgia, serif;
-  --display: "min7 Display", "min7 Display Fallback", var(--serif);
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --gutter: clamp(1rem, 0.5rem + 2.5vw, 2rem);
   --measure: 66ch;
@@ -100,7 +67,7 @@
 
   background: var(--ground);
   color: var(--fg);
-  font: 400 1.0625rem / 1.6 var(--serif);
+  font: 400 1.0625rem / 1.65 var(--serif);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -123,18 +90,7 @@ body {
   margin: 0;
   min-height: 100vh;
   overflow-wrap: break-word;
-  background:
-    radial-gradient(
-      ellipse 60rem 28rem at 78% -4rem,
-      light-dark(rgb(255 236 190 / 0.85), rgb(255 170 60 / 0.16)),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 40rem 40rem at -10% 30%,
-      light-dark(rgb(255 255 255 / 0.35), rgb(110 231 176 / 0.06)),
-      transparent 70%
-    ),
-    var(--ground);
+  background: var(--ground);
 }
 
 ::selection {
@@ -152,11 +108,12 @@ video {
 a {
   color: var(--accent);
   text-decoration-thickness: 1px;
-  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.22em;
 }
 
 a:hover {
-  text-decoration-thickness: 2px;
+  text-decoration-color: currentColor;
 }
 
 :focus-visible {
@@ -164,37 +121,31 @@ a:hover {
   outline-offset: 2px;
 }
 
+/* One family, a clear scale: the serif at 600 for headings, set tight. */
 h1,
 h2,
 h3 {
   margin: 1.6em 0 0.5em;
-  font-family: var(--display);
-  font-weight: 750;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   text-wrap: balance;
 }
 
 h1 {
-  margin-top: 0.5em;
-  font-size: clamp(2.2rem, 1.4rem + 3.6vw, 3.8rem);
-  font-weight: 750;
-  line-height: 1;
+  margin: 2.5rem 0 1rem;
+  font-size: clamp(2.125rem, 1.6rem + 2.4vw, 3.25rem);
+  line-height: 1.05;
   letter-spacing: -0.03em;
 }
 
 h2 {
-  font-size: 1.55rem;
+  font-size: 1.375rem;
 }
 
 h3 {
-  font-size: 1.2rem;
-}
-
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
+  font-size: 1.0625rem;
+  letter-spacing: 0;
 }
 
 p,
@@ -258,8 +209,8 @@ td {
 }
 
 th {
-  border-bottom: 2px solid var(--fg);
-  font-weight: 650;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
 }
 
 blockquote {
@@ -290,10 +241,10 @@ input {
 button,
 .button {
   border: 1px solid var(--line);
-  padding-inline: 0.6rem;
+  padding-inline: 0.7rem;
   background: transparent;
   color: var(--fg);
-  font: 500 0.8125rem / 1.2 var(--mono);
+  font: 500 0.9375rem / 1.2 var(--serif);
   cursor: pointer;
 }
 
@@ -325,13 +276,14 @@ input {
 }
 
 kbd {
-  padding: 0 0.25em;
-  border: 1px solid var(--line);
+  padding: 0 0.3em;
+  border: 1px solid var(--rule);
+  color: var(--muted);
   font-size: 0.75rem;
 }
 
 .wrap {
-  width: min(70rem, 100% - 2 * var(--gutter));
+  width: min(66rem, 100% - 2 * var(--gutter));
   margin-inline: auto;
 }
 
@@ -365,24 +317,31 @@ kbd {
 /* One row on phones: the wordmark, then Search and Menu. The nav and the theme switch are in a
    popover Menu opens (no script); from 52rem they join the row. */
 .site-header {
-  --header-h: 3.5rem;
+  --header-h: 3.75rem;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
   min-height: var(--header-h);
   padding-block: 0.5rem;
-  border-bottom: 1px solid var(--rule);
+}
+
+/* The header's tools are words, not boxes: the content is the loudest thing on the page. */
+.site-header button {
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.site-header button:hover {
+  border-color: transparent;
+  color: var(--text);
 }
 
 .wordmark {
   margin-inline-end: auto;
-  font: 700 1.6rem / 1 var(--mono);
-  letter-spacing: -0.03em;
+  color: var(--text);
+  font: 600 1.375rem / 1 var(--serif);
+  letter-spacing: -0.02em;
   text-decoration: none;
-}
-
-.wordmark span:first-child {
-  color: var(--glow);
 }
 
 .wordmark span:last-child {
@@ -430,21 +389,20 @@ kbd {
   display: block;
   min-height: 2.75rem;
   padding-block: 0.6rem;
-  color: var(--fg);
+  color: var(--muted);
   font-size: 1.1rem;
-  font-weight: 500;
   text-decoration: none;
 }
 
-/* The page you are on is underlined in the lamp's colour; the one under the pointer takes the
-   colour. */
+/* Links are muted; the page you are on is in the text colour over a hairline of lamp. */
 .site-header nav a:hover {
-  color: var(--lamp);
+  color: var(--text);
 }
 
 .site-header nav a[aria-current="page"] {
-  text-decoration: underline 2px var(--lamp);
-  text-underline-offset: 0.35em;
+  color: var(--text);
+  text-decoration: underline 1px var(--lamp);
+  text-underline-offset: 0.45em;
 }
 
 .site-tools {
@@ -455,7 +413,7 @@ kbd {
 
 /* The search island's link before it hydrates. */
 .site-tools astro-island > a {
-  font: 500 0.8125rem var(--mono);
+  font-size: 0.9375rem;
 }
 
 /* The keyboard hint is for a keyboard: not on phones or tablets. */
@@ -477,16 +435,19 @@ kbd {
 
 .theme-switch button {
   min-height: 2.25rem;
+  padding-inline: 0.4rem;
+  border: 0;
+  color: var(--muted);
 }
 
-.theme-switch button + button {
-  border-inline-start: 0;
+.theme-switch button:hover {
+  color: var(--text);
 }
 
 .theme-switch [aria-pressed="true"] {
-  background: var(--lamp);
-  border-color: var(--lamp);
-  color: var(--ground);
+  color: var(--text);
+  text-decoration: underline 1px var(--lamp);
+  text-underline-offset: 0.45em;
 }
 
 @media (min-width: 52rem) {
@@ -530,7 +491,7 @@ kbd {
     display: inline-block;
     min-height: 24px;
     padding-block: 0.25rem;
-    font-size: 1rem;
+    font-size: 0.9875rem;
   }
 
   .theme-switch button {
@@ -563,17 +524,17 @@ kbd {
   gap: 0.25rem 1.5rem;
   align-items: center;
   justify-content: space-between;
-  margin-block: 4rem 1.5rem;
-  padding-top: 1rem;
+  margin-block: 6rem 2rem;
+  padding-top: 1.25rem;
   border-top: 1px solid var(--rule);
   background: var(--ground);
   color: var(--muted);
-  font: 500 0.8125rem / 1.5 var(--mono);
+  font: 400 0.875rem / 1.5 var(--serif);
 }
 
 .site-footer a {
   color: var(--muted);
-  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-decoration: none;
 }
 
 .site-footer a:hover {
@@ -585,69 +546,34 @@ kbd {
   margin: 0;
 }
 
-.site-footer p::before {
-  content: "";
-  display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  margin-inline-end: 0.6rem;
-  background: var(--glow);
-  animation: blink 2s steps(2) infinite;
-}
-
 .site-footer .keys-open {
-  border-color: var(--rule);
+  padding-inline: 0;
+  border: 0;
   color: var(--muted);
+  font-size: inherit;
 }
 
-/* ---------- surfaces ---------- */
+.site-footer .keys-open:hover {
+  color: var(--lamp);
+}
 
-/* A panel is a window: a quiet title bar with a file name, one thin edge, no shadow. Every
-   window is the same lit surface; its object's colour is only the small square before the file
-   name (--dot) and the panel's links (--accent). The file name is CSS content, so it is not
-   read: the window's own heading is. */
+/* ---------- sections ---------- */
+
+/* A panel or a paper is a section of the page, not a box: a hairline above, its heading, and
+   room around it. The material classes (m-screen and the rest) only name the room's object it
+   belongs to; every link is the lamp. A section that holds the page's title has no rule. */
 .panel,
 .paper {
-  --dot: var(--lamp);
-  --title: "window.txt";
-  --bar: 1.75rem;
-  --bg: var(--surface);
-  --hi: var(--surface-hi);
-  --lo: var(--surface-lo);
-  position: relative;
-  margin-block: 1.25rem;
-  padding: calc(var(--bar) + 1.1rem) 1.1rem 1.25rem;
-  border: 1px solid var(--rule);
-  background: linear-gradient(160deg, var(--hi), var(--bg) 40%, var(--lo));
-  color: var(--fg);
+  margin-block: clamp(2.5rem, 1.5rem + 3vw, 4rem);
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
 }
 
-.panel::before,
-.paper::before {
-  content: var(--title);
-  position: absolute;
-  inset: 0 0 auto;
-  height: var(--bar);
-  padding-inline: 1.7rem 0.75rem;
-  overflow: hidden;
-  border-bottom: 1px solid var(--rule);
-  background: color-mix(in srgb, var(--fg) 4%, transparent);
-  color: var(--fg-2);
-  font: 500 0.75rem / calc(var(--bar) - 1px) var(--mono);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The window's colour: one small square before its file name. */
-.panel::after,
-.paper::after {
-  content: "";
-  position: absolute;
-  top: calc(var(--bar) / 2 - 0.25rem);
-  left: 0.75rem;
-  width: 0.5rem;
-  height: 0.5rem;
-  background: var(--dot);
+.panel:has(> h1),
+.paper:has(> h1) {
+  margin-top: 0;
+  padding-top: 2.5rem;
+  border-top: 0;
 }
 
 .panel > :first-child,
@@ -664,68 +590,6 @@ kbd {
 
 .panel h2 {
   margin-top: 0;
-}
-
-.m-screen {
-  --accent: var(--glow);
-  --dot: var(--glow);
-  --title: "projects.json";
-}
-
-.m-vinyl {
-  --dot: light-dark(#5a3f8a, #9d8cff);
-  --title: "listening.app";
-}
-
-.m-cork {
-  --title: "shipping.log";
-}
-
-.m-wood {
-  --dot: light-dark(#7a4a30, #d19a6a);
-  --title: "shelf.md";
-}
-
-.m-tea {
-  --accent: var(--glow);
-  --dot: var(--glow);
-  --title: "tea.txt";
-}
-
-.m-frame {
-  --dot: var(--cyan);
-  --title: "llm-usage.db";
-}
-
-/* The notebook: a window holding the writing. */
-.paper {
-  --fg: var(--text);
-  --fg-2: var(--muted);
-  --accent: var(--lamp);
-  --dot: var(--rose);
-  --title: "writing.md";
-}
-
-/* A page that names its windows sets data-file (ADR 0034). */
-.panel[data-file]::before,
-.paper[data-file]::before {
-  content: attr(data-file);
-}
-
-.t-about {
-  --title: "whoami.txt";
-}
-
-.t-cv {
-  --title: "cv.md";
-}
-
-.t-colophon {
-  --title: "colophon.txt";
-}
-
-.t-now {
-  --title: "now.md";
 }
 
 /* /now (ADR 0035): the items in the brewing window, then the stale notice and reply link. */
@@ -759,8 +623,7 @@ kbd {
 /* Comments under a post or note (ADR 0036). The giscus iframe is added by comments.ts on a press;
    the status line keeps two lines so loading, ready and failed do not move what follows. */
 .m-comments {
-  --title: "comments.txt";
-  margin-block-start: 2.5rem;
+  margin-block-start: 3rem;
 }
 
 .comments-actions {
@@ -808,12 +671,9 @@ kbd {
   padding-block: 0.25rem;
 }
 
-/* The 404 is a dialog box in the middle of the desk. */
 .t-error {
-  --dot: var(--rose);
-  --title: "error.txt";
   max-width: 34rem;
-  margin: 3rem auto;
+  margin-block: 4rem;
 }
 
 .caption,
@@ -822,7 +682,8 @@ kbd {
 .project-status,
 .search-projects {
   color: var(--fg-2);
-  font: 500 0.8125rem / 1.5 var(--mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 /* A time the page's script keeps relative to now (src/lib/live.ts) sits in a box as wide as
@@ -842,43 +703,33 @@ time[data-ago] {
   white-space: nowrap;
 }
 
-/* Fixtures mode (ADR 0015): sample numbers wear a rose tag, so a Preview is never read as
-   live. Rose is the colour of what is not real. */
+/* Fixtures mode (ADR 0015): sample numbers carry a rose dot and a quiet line, so a Preview is
+   never read as live. Rose is the colour of what is not real. */
 .sample {
   width: fit-content;
   margin-block: 1rem 0;
-  padding: 0 0.4rem;
-  border: 1px solid var(--rose);
   color: var(--rose);
-  font: 600 0.75rem / 1.6 var(--mono);
+  font: 400 0.875rem / 1.5 var(--serif);
 }
 
-/* On /stats, the whole page's version: a hatched rose banner under the title. */
+.sample::before {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-inline-end: 0.5rem;
+  border-radius: 50%;
+  background: var(--rose);
+  vertical-align: 0.15em;
+}
+
+/* On /stats, the whole page's version, under the title. */
 .sample-banner {
   width: auto;
-  margin: 0 0 1.5rem;
-  padding: 0.6rem 0.9rem;
-  border: 1px solid var(--rose);
-  background: repeating-linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--rose) 22%, transparent) 0 8px,
-    transparent 8px 16px
-  );
-  color: var(--text);
-  font: 600 0.9375rem / 1.5 var(--serif);
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.sample-banner a {
-  color: var(--lamp);
-}
-
-@media (min-width: 40rem) {
-  .panel,
-  .paper {
-    padding: calc(var(--bar) + 1.5rem) 1.9rem 1.9rem;
-  }
+  max-width: var(--measure);
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.9375rem;
 }
 
 /* ---------- post lists, tags, shipping ---------- */
@@ -889,8 +740,8 @@ time[data-ago] {
 }
 
 .posts li {
-  padding-block: 1rem;
-  border-bottom: 1px dashed color-mix(in srgb, var(--fg) 25%, transparent);
+  padding-block: 1.1rem;
+  border-bottom: 1px solid var(--rule);
 }
 
 .posts li:first-child {
@@ -904,10 +755,9 @@ time[data-ago] {
 .posts a {
   display: block;
   color: var(--fg);
-  font-family: var(--display);
-  font-size: 1.25rem;
-  font-weight: 750;
-  line-height: 1.2;
+  font-size: 1.1875rem;
+  font-weight: 600;
+  line-height: 1.3;
   text-decoration: none;
   text-wrap: balance;
 }
@@ -920,8 +770,8 @@ time[data-ago] {
 .posts time {
   display: block;
   margin-bottom: 0.2rem;
-  color: var(--accent);
-  font: 500 0.8125rem var(--mono);
+  color: var(--fg-2);
+  font: 400 0.8125rem var(--mono);
 }
 
 .posts strong {
@@ -947,62 +797,37 @@ time[data-ago] {
   content: "#";
 }
 
-/* Shipping as a git graph: a dashed rail with a square node for each event, the newest one
-   amber and blinking, the time in mint. */
+/* Shipping: what happened, newest first, each under its time, on hairline rows. */
 .shipping {
-  position: relative;
   margin: 0;
-  padding: 0 0 0 1.4rem;
+  padding: 0;
   list-style: none;
 }
 
-.shipping::before {
-  content: "";
-  position: absolute;
-  inset: 0.6rem auto 0.6rem 0.32rem;
-  width: 3px;
-  background: repeating-linear-gradient(180deg, var(--glow) 0 6px, transparent 6px 9px);
-  opacity: 0.7;
-}
-
 .shipping li {
-  position: relative;
-  padding-block: 0.5rem;
-  line-height: 1.4;
+  padding-block: 0.6rem;
+  border-bottom: 1px solid var(--rule);
+  line-height: 1.45;
 }
 
-.shipping li::before {
-  content: "";
-  position: absolute;
-  top: 0.9rem;
-  left: -1.4rem;
-  width: 0.75rem;
-  height: 0.75rem;
-  background: var(--glow);
-  box-shadow: 0 0 0 3px var(--bg);
-}
-
-.shipping li:first-child::before {
-  background: var(--lamp);
-  animation: blink 1.6s steps(2) infinite;
+.shipping li:first-child {
+  padding-top: 0;
 }
 
 .shipping time,
 .shipping time[data-ago] {
   display: block;
-  color: var(--glow);
-  font: 700 0.8125rem / 1.5 var(--mono);
+  color: var(--fg-2);
+  font: 400 0.8125rem / 1.6 var(--mono);
 }
 
 /* The last four weeks, a cell a day, in its own inset box above the rail. The box and the cells
    are opaque so each level can be held to 3:1 against it (WCAG 1.4.11): the levels are separate
    steps of lightness, not a fade of one colour. */
+/* The strip sits on the ground; its background is set so the contrast check can read it. */
 .heat {
-  --heat-bg: light-dark(#eadbbd, #1f140b);
-  margin: 0 0 1.2rem;
-  padding: 0.5rem;
-  border: 1px solid var(--rule);
-  background: var(--heat-bg);
+  margin: 0 0 1.5rem;
+  background: var(--ground);
 }
 
 .heat-cells {
@@ -1013,11 +838,11 @@ time[data-ago] {
 
 .heat i {
   aspect-ratio: 1;
-  background: light-dark(#ddcba9, #2c2015);
+  background: var(--rule);
 }
 
 .heat i[data-l="1"] {
-  background: light-dark(#a46a26, #8a5a22);
+  background: light-dark(#b07a3c, #8a5a22);
 }
 
 .heat i[data-l="2"] {
@@ -1035,9 +860,9 @@ time[data-ago] {
 .heat-cap {
   display: flex;
   justify-content: space-between;
-  margin-top: 0.3rem;
+  margin-top: 0.4rem;
   color: var(--fg-2);
-  font: 500 0.75rem var(--mono);
+  font-size: 0.8125rem;
 }
 
 /* ---------- the reader: a post or TIL notes on the room's ground (ADR 0026) ----------
@@ -1544,23 +1369,56 @@ main:has(.toc) .reader ~ .project-card {
   min-inline-size: 0;
 }
 
-/* The list on /projects is itself a window, so the window's padding stands. */
+/* /projects: one ruled row per project, the name beside its summary from 48rem. */
 .projects {
   display: grid;
-  gap: 1.25rem;
+  padding: 0;
   list-style: none;
 }
 
+.projects li {
+  display: grid;
+  gap: 0.25rem 2rem;
+  padding-block: 1.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+@media (min-width: 48rem) {
+  .projects li {
+    grid-template-columns: 15rem minmax(0, 1fr);
+  }
+
+  .projects li > :not(h2) {
+    grid-column: 2;
+  }
+
+  .projects h2 {
+    grid-row: span 2;
+  }
+}
+
+/* A project's name is its repository's: the code face, in the text colour. */
 .projects h2,
 .project h1,
 .project-card h2 a {
   font-family: var(--mono);
+  font-weight: 600;
   letter-spacing: -0.02em;
 }
 
 .projects h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.1rem;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.projects h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.projects h2 a:hover {
+  color: var(--lamp);
 }
 
 .projects p {
@@ -1568,7 +1426,6 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .project h1 {
-  color: var(--glow);
   font-size: clamp(1.75rem, 1.3rem + 2vw, 2.5rem);
 }
 
@@ -1609,8 +1466,8 @@ main:has(.toc) .reader ~ .project-card {
 
 .timeline h3 {
   margin: 0 0 0.15rem;
-  font-size: 1.05rem;
-  line-height: 1.3;
+  font-size: 1.0625rem;
+  line-height: 1.35;
 }
 
 .timeline p {
@@ -1620,7 +1477,7 @@ main:has(.toc) .reader ~ .project-card {
 
 .timeline time {
   font-family: var(--mono);
-  font-size: 0.85em;
+  font-size: 0.8em;
 }
 
 .timeline ul {
@@ -1633,9 +1490,9 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .lede {
-  max-width: 38ch;
-  font-size: clamp(1.2rem, 1.05rem + 0.8vw, 1.5rem);
-  line-height: 1.35;
+  max-width: 34ch;
+  font-size: clamp(1.1875rem, 1.05rem + 0.6vw, 1.4375rem);
+  line-height: 1.45;
 }
 
 /* /about: the note on the name, an aside rather than a second lede: under the summary on a
@@ -1647,6 +1504,7 @@ main:has(.toc) .reader ~ .project-card {
   border-inline-start: 1px solid var(--rule);
   color: var(--fg-2);
   font-size: 0.9375rem;
+  line-height: 1.6;
 }
 
 @media (min-width: 52rem) {
@@ -1670,29 +1528,42 @@ main:has(.toc) .reader ~ .project-card {
   }
 }
 
-/* The resume: experience and certifications side by side from 60rem, the rest under them. */
-.t-cv section + section {
-  margin-top: 2.25rem;
+/* The resume: each section a ruled row, its name in a column of its own from 52rem. */
+.t-cv {
+  margin-top: 4rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.t-cv section {
+  padding-block: 2rem;
+  border-top: 1px solid var(--rule);
 }
 
 .t-cv h2 {
-  margin: 0 0 1rem;
-  font-size: 1.35rem;
+  margin: 0 0 1.25rem;
+  font-size: 1.0625rem;
+  letter-spacing: 0;
 }
 
-@media (min-width: 60rem) {
-  .t-cv {
+.t-cv section > :last-child {
+  margin-bottom: 0;
+}
+
+@media (min-width: 52rem) {
+  .t-cv section {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0 3rem;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 0 2rem;
   }
 
-  .t-cv section + section {
-    margin-top: 0;
+  .t-cv h2 {
+    margin: 0;
   }
 
-  .t-cv section:nth-child(n + 3) {
-    margin-top: 2.25rem;
+  .t-cv section > :not(h2) {
+    grid-column: 2;
+    max-width: var(--measure);
   }
 }
 
@@ -1700,12 +1571,12 @@ main:has(.toc) .reader ~ .project-card {
 .stats-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 0 1.25rem;
+  gap: 0 4rem;
   align-items: start;
 }
 
 .stats-grid .panel {
-  margin-block: 0 1.25rem;
+  margin-block: 2rem 2.5rem;
 }
 
 @media (min-width: 60rem) {
@@ -1715,27 +1586,31 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .stats-grid h3 {
-  margin: 1.5rem 0 0.5rem;
-  font-size: 1.05rem;
+  margin: 2rem 0 0.5rem;
+  color: var(--fg-2);
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
 
 /* A stat: a small label, then its value, a little larger than the text and never broken. */
 .tiles {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem 2.5rem;
-  margin-block: 1.25rem;
+  gap: 0.75rem 3rem;
+  margin-block: 1.5rem;
 }
 
 .tiles dt,
 .bests dt {
   color: var(--fg-2);
-  font: 500 0.75rem / 1.5 var(--mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .tiles dd {
   margin: 0;
-  font: 750 1.6rem / 1.2 var(--display);
+  font: 500 1.75rem / 1.2 var(--mono);
+  letter-spacing: -0.03em;
   white-space: nowrap;
 }
 
@@ -1798,7 +1673,7 @@ main:has(.toc) .reader ~ .project-card {
   min-height: 24px;
   padding-block: 0.25rem;
   color: var(--accent);
-  font: 500 0.8125rem / 1.2 var(--mono);
+  font-size: 0.875rem;
   cursor: pointer;
 }
 
@@ -1828,9 +1703,9 @@ main:has(.toc) .reader ~ .project-card {
   flex-wrap: wrap;
   gap: 0 1rem;
   justify-content: space-between;
-  padding-block: 0.35rem;
+  padding-block: 0.45rem;
   border-bottom: 1px solid var(--rule);
-  font: 500 0.9375rem / 1.5 var(--mono);
+  font: 400 0.9375rem / 1.5 var(--mono);
 }
 
 .rows .row-value {
@@ -1863,8 +1738,9 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .stats-grid li::marker {
-  color: var(--lamp);
+  color: var(--fg-2);
   font-family: var(--mono);
+  font-size: 0.8125rem;
 }
 
 /* Agent hours: each row's pair sits in the list's grid; a hidden row (a value not sent)
@@ -1873,20 +1749,22 @@ main:has(.toc) .reader ~ .project-card {
   display: contents;
 }
 
-/* Links in long lists (tracks, artists, shipping events, projects): a faint underline, full on
-   hover, so ten rows of links do not read as a wall of underlines. */
+/* Links in long lists (tracks, artists, shipping events): a faint underline, full on hover, so
+   ten rows of links do not read as a wall of underlines. A name alone on its row (star counts)
+   needs none. */
+.now-playing a,
 .listening-body li a,
 .history li a,
-.shipping a,
-.rows a {
-  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+.shipping a {
+  text-decoration-color: color-mix(in srgb, currentColor 25%, transparent);
 }
 
-.listening-body li a:hover,
-.history li a:hover,
-.shipping a:hover,
+.rows a {
+  text-decoration: none;
+}
+
 .rows a:hover {
-  text-decoration-color: currentColor;
+  text-decoration: underline;
 }
 
 /* Track names as on home: an italic here loads the italic font, whose swap reflows the
@@ -1928,7 +1806,7 @@ dialog h2 {
 dialog label {
   flex-basis: 100%;
   color: var(--muted);
-  font: 500 0.8125rem var(--mono);
+  font-size: 0.875rem;
 }
 
 dialog input {
