@@ -1,7 +1,7 @@
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { pushFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../src/app.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import {
@@ -138,6 +138,13 @@ describe('authentication', () => {
 
   describe('trellis signature', () => {
     const signed = delivery(trellisOk);
+    // A frozen clock at the end of a second: the test and the handler read the same instant, so the
+    // 300 s window cannot shrink by the fraction of a second between their two reads.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Math.floor(Date.now() / 1000) * 1000 + 999);
+    });
+    afterEach(() => vi.useRealTimers());
     const cases = [
       ['no signature', { signature: '' }],
       ['a signature by another key', { hmacKey: 'k'.repeat(40) }],
