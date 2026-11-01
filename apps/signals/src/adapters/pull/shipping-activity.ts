@@ -145,7 +145,7 @@ const busiest = (a: Counts, b: Counts) => counts.reduce((sum, key) => sum + b[ke
  * largest of the two days' and its repositories' sum. When more than 50 repositories result,
  * the 50 busiest are listed. `reposTruncated` says the counts include repositories not listed.
  */
-export function mergeDay(
+function mergeDay(
   stored: ShippingActivityStoredDay,
   answer: ShippingActivityStoredDay
 ): ShippingActivityStoredDay {
