@@ -1,13 +1,23 @@
-// Link previews and icons: every built page names a 1200x630 PNG that the site serves, and the
-// icon files browsers and phones ask for by name are there, in the format their name promises.
+// Link previews and icons: every built page names a 1200x630 PNG at the origin that build is
+// served from, that build has it, and the icon files browsers and phones ask for by name are
+// there, in the format their name promises. The local Worker stands in for each origin: it
+// serves the same build, so a path it serves is a path that origin serves.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { APIRequestContext } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
 const builds = {
-  production: join(import.meta.dirname, '..', 'dist'),
-  drafts: join(import.meta.dirname, '..', 'node_modules', '.cache', 'preview'),
+  // Built outside Workers Builds, as CI and `just site-build` build: production's origin.
+  production: {
+    dir: join(import.meta.dirname, '..', 'dist'),
+    origin: 'https://ayagmar.dev',
+  },
+  // Built with WORKERS_CI_BRANCH=feat/e2e-preview (playwright.config.ts): that branch's Preview.
+  drafts: {
+    dir: join(import.meta.dirname, '..', 'node_modules', '.cache', 'preview'),
+    origin: 'https://feat-e2e-preview-min7-site.ayagmar.workers.dev',
+  },
 };
 
 /** A `<meta property=...>` value of a page, or undefined. */
@@ -17,7 +27,10 @@ const meta = (html: string, property: string) =>
 /** Width and height from a PNG's IHDR chunk. */
 const pngSize = (png: Buffer) => ({ width: png.readUInt32BE(16), height: png.readUInt32BE(20) });
 
-async function checkPreviews(dir: string, request: APIRequestContext) {
+async function checkPreviews(
+  { dir, origin }: { dir: string; origin: string },
+  request: APIRequestContext
+) {
   const pages = readdirSync(dir, { recursive: true, encoding: 'utf8' }).filter((file) =>
     file.endsWith('.html')
   );
@@ -26,12 +39,15 @@ async function checkPreviews(dir: string, request: APIRequestContext) {
   for (const page of pages) {
     const html = readFileSync(join(dir, page), 'utf8');
     const image = meta(html, 'og:image');
-    expect(image, `${page}: og:image`).toMatch(/^https:\/\/ayagmar\.dev\/og\/.+\.png$/);
+    const url = new URL(image ?? '', 'invalid:/');
+    expect(url.origin, `${page}: og:image ${image}`).toBe(origin);
+    expect(url.pathname, page).toMatch(/^\/og\/.+\.png$/);
+    expect(new URL(meta(html, 'og:url') ?? '', 'invalid:/').origin, `${page}: og:url`).toBe(origin);
     expect(meta(html, 'og:image:width'), page).toBe('1200');
     expect(meta(html, 'og:image:height'), page).toBe('630');
     expect(meta(html, 'og:image:alt'), page).toBeTruthy();
     expect(html, page).toContain('<meta name="twitter:card" content="summary_large_image">');
-    const path = new URL(image ?? '').pathname;
+    const path = url.pathname;
     images.set(path, [...(images.get(path) ?? []), page]);
   }
   for (const [path, from] of images) {
@@ -43,17 +59,18 @@ async function checkPreviews(dir: string, request: APIRequestContext) {
   return images;
 }
 
-test('every page names a link-preview image the site serves', async ({ request }) => {
+test('every page names a link-preview image production serves', async ({ request }) => {
   const images = await checkPreviews(builds.production, request);
   // Notes get their own; the rest share the room's.
   expect([...images.keys()]).toContain('/og/default.png');
   expect([...images.keys()].some((path) => path.startsWith('/og/til/'))).toBe(true);
 });
 
-test('every post names its own link-preview image @drafts', async ({ request }) => {
+// Catches a Preview pointing crawlers at production, which has no image for an unpublished post.
+test('a Preview names its own images, one per post @drafts', async ({ request }) => {
   const images = await checkPreviews(builds.drafts, request);
   expect([...images.keys()].filter((path) => path.startsWith('/og/writing/')).length).toBe(
-    readdirSync(join(builds.drafts, 'writing')).filter((file) => file.endsWith('.html')).length
+    readdirSync(join(builds.drafts.dir, 'writing')).filter((file) => file.endsWith('.html')).length
   );
 });
 

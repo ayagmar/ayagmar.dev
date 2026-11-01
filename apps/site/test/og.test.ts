@@ -1,6 +1,27 @@
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
+import { buildOrigin } from '../src/lib/og.ts';
 import { renderOgCard } from '../src/lib/og-card.ts';
+
+describe('link-preview origin', () => {
+  it('is production for main and for builds outside Workers Builds', () => {
+    expect(buildOrigin(undefined)).toBe('https://ayagmar.dev');
+    expect(buildOrigin('')).toBe('https://ayagmar.dev');
+    expect(buildOrigin('main')).toBe('https://ayagmar.dev');
+  });
+
+  // Branches whose Previews Cloudflare made (their links on pull requests #93 and #94).
+  it.each([
+    ['feat/icons-and-og', 'https://feat-icons-and-og-min7-site.ayagmar.workers.dev'],
+    ['renovate/renovate-44.x', 'https://renovate-renovate-44-x-min7-site.ayagmar.workers.dev'],
+  ])("is the Preview's URL for %s", (branch, origin) => {
+    expect(buildOrigin(branch)).toBe(origin);
+  });
+
+  it('is production when the Preview name cannot be one DNS label', () => {
+    expect(buildOrigin(`feat/${'a'.repeat(60)}`)).toBe('https://ayagmar.dev');
+  });
+});
 
 describe('link-preview card', () => {
   /** Whether every pixel of a rectangle of the card is the ground of its top-left corner. */
