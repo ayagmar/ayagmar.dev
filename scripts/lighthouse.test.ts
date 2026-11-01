@@ -130,6 +130,22 @@ describe('measured again', () => {
       regressed: ['lcp'],
     });
   });
+
+  // Mobile /stats on CI, the same page each time: 75, 83, 106, 109, 101 and 113 ms.
+  const overTbt = { over: ['tbt'] as Metric[], regressed: [] as Metric[] };
+  const tbtRuns = (tbt: number[]) => ({ base: [], head: tbt.map((t) => values({ tbt: t })) });
+
+  it('passes a TBT budget miss of 113 ms that a re-measure of head reads at about 80 ms', () => {
+    assert.deepEqual(decide(overTbt, tbtRuns([75, 83, 80]), 'mobile'), { over: [], regressed: [] });
+    // One more miss among the three is still noise: the median decides.
+    assert.deepEqual(decide(overTbt, tbtRuns([113, 83, 75]), 'mobile').over, []);
+  });
+
+  it('still fails a real 300 ms of TBT, and keeps every other budget miss as first read', () => {
+    assert.deepEqual(decide(overTbt, tbtRuns([300, 310, 295]), 'mobile').over, ['tbt']);
+    const first = { over: ['lcp', 'tbt'] as Metric[], regressed: [] as Metric[] };
+    assert.deepEqual(decide(first, tbtRuns([80, 80, 80]), 'mobile').over, ['lcp']);
+  });
 });
 
 describe('runs and pages', () => {
