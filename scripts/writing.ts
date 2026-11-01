@@ -343,6 +343,9 @@ Preview, once Workers Builds finishes: ${preview}`);
     return;
   }
 
+  // The draft's index entry before anything changes ("mode oid stage\tpath", or none), to put
+  // back exactly if the commit fails: a staged draft stays staged, an untracked one untracked.
+  const staged = /^(\d+) ([0-9a-f]+) 0\t/.exec(git('ls-files', '--stage', '--', file));
   writeFileSync(path, published(text));
   try {
     execFileSync('just', ['site-build'], { stdio: 'inherit' });
@@ -357,26 +360,46 @@ Preview, once Workers Builds finishes: ${preview}`);
   const startBranch = execFileSync('git', ['branch', '--show-current'], {
     encoding: 'utf8',
   }).trim();
+  let created = false;
   try {
     run('git', 'switch', '--quiet', '-c', branch);
+    created = true;
     run('git', 'add', '--', file);
     run('git', 'commit', '--quiet', '-m', message, '--', file);
   } catch {
-    // Nothing is committed: put the draft, the index and the branch back as they were.
-    writeFileSync(path, text);
-    const undo = [
-      ['reset', '--quiet', '--', file],
-      startBranch ? ['switch', '--quiet', startBranch] : ['switch', '--quiet', '--detach', start],
-      ['branch', '--quiet', '-D', branch],
-    ];
-    for (const args of undo)
+    // Nothing is committed: put the branch, the index entry and the draft back as they were.
+    const quiet = (...args: string[]) => execFileSync('git', args, { stdio: 'ignore' });
+    const notes: string[] = [];
+    if (created) {
       try {
-        execFileSync('git', args, { stdio: 'ignore' });
+        quiet(
+          ...(startBranch
+            ? ['switch', '--quiet', startBranch]
+            : ['switch', '--quiet', '--detach', start])
+        );
+        // Deletes the branch only while it still points where this run made it.
+        quiet('update-ref', '-d', `refs/heads/${branch}`, start);
       } catch {
-        // The step before failed earlier than this one needs (no branch yet, say).
+        notes.push(
+          `${branch} was left as it is; delete it with \`git branch -d ${branch}\` once you are off it.`
+        );
       }
+    } else
+      notes.push(
+        `${branch} could not be made (did something else just create it?) and was not touched.`
+      );
+    try {
+      if (staged)
+        quiet('update-index', '--add', '--cacheinfo', `${staged[1]},${staged[2]},${file}`);
+      else quiet('rm', '--cached', '--quiet', '--ignore-unmatch', '--', file);
+    } catch {
+      notes.push(`The index entry of ${file} could not be put back; check \`git status\`.`);
+    }
+    writeFileSync(path, text);
     throw new UsageError(
-      `The commit failed, so nothing was published: ${file} is a draft again on ${startBranch || start}.`
+      [`Committing failed, so nothing was published: ${file} is a draft again.`, ...notes].join(
+        '\n'
+      )
     );
   }
   const finish = (failed: string, steps: string[]) =>

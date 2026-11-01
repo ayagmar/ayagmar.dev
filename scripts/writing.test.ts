@@ -70,9 +70,13 @@ beforeEach(() => {
   origin = join(dir, 'origin.git');
   repo = join(dir, 'repo');
   mkdirSync(join(dir, 'bin'));
-  // The site build passes unless FAKE_BUILD_FAILS is set. gh is logged in and opens a PR unless
+  // The site build passes unless FAKE_BUILD_FAILS is set; with FAKE_BUILD_BRANCH it also makes
+  // that branch with a commit of its own, as another terminal might while it runs. gh is logged in and opens a PR unless
   // FAKE_PR_FAILS is set. xdg-open notes the URL it was given.
-  fake('just', '[ -z "$FAKE_BUILD_FAILS" ]');
+  fake(
+    'just',
+    '[ -z "$FAKE_BUILD_FAILS" ] || exit 1\n[ -z "$FAKE_BUILD_BRANCH" ] || git branch "$FAKE_BUILD_BRANCH" "$(git commit-tree -p HEAD -m other "HEAD^{tree}")"'
+  );
   fake(
     'gh',
     'case "$1 $2" in\n"auth status") ;;\n"pr create") [ -z "$FAKE_PR_FAILS" ] && echo https://github.com/ayagmar/min7/pull/7 ;;\n*) exit 2 ;;\nesac'
@@ -187,6 +191,35 @@ describe('publish', () => {
     assert.equal(read('content/writing/cache-reads.md'), draftPost);
     assert.equal(git(repo, 'branch', '--show-current'), 'main');
     assert.equal(git(repo, 'branch', '--list', 'content/*'), '');
+    assert.equal(git(repo, 'status', '--porcelain'), '?? content/writing/cache-reads.md');
+  });
+
+  it('puts back a staged draft exactly as it was staged when the commit fails', () => {
+    writeFileSync(
+      join(repo, 'content/writing/cache-reads.md'),
+      draftPost.replace('Body', 'Staged')
+    );
+    git(repo, 'add', 'content/writing/cache-reads.md');
+    writeFileSync(join(repo, 'content/writing/cache-reads.md'), draftPost);
+    const entry = git(repo, 'ls-files', '--stage', 'content/writing/cache-reads.md');
+    failingHook('pre-commit');
+    const { code, out } = cli(['publish', 'cache-reads']);
+    assert.equal(code, 1, out);
+    assert.equal(git(repo, 'ls-files', '--stage', 'content/writing/cache-reads.md'), entry);
+    assert.equal(read('content/writing/cache-reads.md'), draftPost);
+    assert.equal(git(repo, 'status', '--porcelain'), 'AM content/writing/cache-reads.md');
+    assert.equal(git(repo, 'branch', '--list', 'content/*'), '');
+  });
+
+  it('never deletes a branch something else made while the build ran', () => {
+    const { code, out } = cli(['publish', 'cache-reads'], {
+      FAKE_BUILD_BRANCH: 'content/cache-reads',
+    });
+    assert.equal(code, 1, out);
+    assert.match(out, /was not touched/);
+    assert.equal(git(repo, 'log', '-1', '--format=%s', 'content/cache-reads'), 'other');
+    assert.equal(git(repo, 'branch', '--show-current'), 'main');
+    assert.equal(read('content/writing/cache-reads.md'), draftPost);
     assert.equal(git(repo, 'status', '--porcelain'), '?? content/writing/cache-reads.md');
   });
 
