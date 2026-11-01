@@ -1,6 +1,6 @@
 # 0014. llm-usage push contract
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: estimated agent hours (`activeMs`), the producer's three calls in one reporting zone, and its delivery rules (ADR 0032). Amended 2026-10-31: the LLM usage panel on `/stats` (tokens, agents, streaks, the year heatmap), built and refreshed like the other panels; the producer pushes hourly.
+Status: accepted, 2026-10-26. Amended 2026-10-26: estimated agent hours (`activeMs`), the producer's three calls in one reporting zone, and its delivery rules (ADR 0032). Amended 2026-10-31: the LLM usage panel on `/stats` (tokens, agents, streaks, the year heatmap), built and refreshed like the other panels; the producer pushes hourly. Amended 2026-11-01: signals also keeps each accepted push's days as daily history, served by `/v1/days/llm-usage` (ADR 0038).
 
 ## Context
 

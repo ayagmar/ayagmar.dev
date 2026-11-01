@@ -59,3 +59,26 @@ If a value leaked, do steps 1 to 4 at once and skip waiting in step 2: after ste
 
 - `GET https://api.ayagmar.dev/v1/health`: deployed commit, and per source `lastSuccessAt`, `stale` and `lastErrorCode`.
 - Workers Logs: every log line is JSON with a `message` and a `code`. `push rejected` lines carry `producer`, `status` and `code`; `pull failed` lines carry `source` and `code`; `cron run` lines count pulls and deleted deliveries.
+
+## Rolling out daily history (ADR 0038)
+
+The `daily` table, the activity pull and `/v1/days` ship in signals; the strip reads them when the site is built. In this order:
+
+1. Apply the migration to production. `just signals-deploy` (what Workers Builds runs on `main`) applies it before deploying; to apply it alone:
+
+   ```sh
+   just signals-migrate-remote
+   ```
+
+   A failed migration stops the deploy. A Worker rollback does not roll D1 back, and needs not: the previous version never reads `daily`.
+2. Deploy signals (merge to `main`, or `just signals-deploy`).
+3. Check that the history has days. `upstream_not_found` for `shipping-activity` in `/v1/health` means repo-pulse does not serve `/public/activity` yet; wait for its deploy and the next hourly pull.
+
+   ```sh
+   curl -s https://api.ayagmar.dev/v1/health | jq '.sources[] | select(.source == "shipping-activity")'
+   curl -s 'https://api.ayagmar.dev/v1/days/shipping-activity?last=28' | jq '.data.days | length'
+   ```
+
+4. Rebuild the site once the count is above 0 (a merge to `main`, or a retry of the last site build in Workers Builds). A site built before that keeps the event-based strip until its next build.
+
+The llm-usage history fills with the next accepted push; `/v1/days/llm-usage?month=YYYY-MM` shows it.
