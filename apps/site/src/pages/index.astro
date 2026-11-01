@@ -4,6 +4,7 @@ import PostList from '../components/PostList.astro';
 import Sample from '../components/Sample.astro';
 import ShippingHeat from '../components/ShippingHeat.astro';
 import ShippingList from '../components/ShippingList.astro';
+import { shippingStrip } from '../data/format.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { getNotes, getPosts, getProjects } from '../lib/posts.ts';
@@ -20,6 +21,8 @@ const notes = posts.length === 0 ? (await getNotes()).slice(0, 3) : [];
 const projects = (await getProjects()).projects.slice(0, 5);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
+// The strip is drawn once, with the page: from the daily history, else from the events.
+const strip = shippingStrip(await signals.readDays('shipping-activity'), shipping, new Date());
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 ---
 
@@ -135,7 +138,7 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
           <p>Nothing to show yet.</p>
         ) : (
           <>
-            <ShippingHeat events={shipping.data?.events ?? []} />
+            {strip !== null && <ShippingHeat strip={strip} />}
             <ShippingList events={recentlyShipped} />
           </>
         )}

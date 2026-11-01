@@ -964,6 +964,13 @@ time[data-ago] {
   background: var(--rule);
 }
 
+.heat i[data-l="none"] {
+  /* A day with no record (ADR 0038): an outline, so it never reads as a quiet day. */
+  background: transparent;
+  outline: 1px solid var(--fg-2);
+  outline-offset: -1px;
+}
+
 .heat i[data-l="1"] {
   background: light-dark(#b07a3c, #8a5a22);
 }
@@ -982,6 +989,8 @@ time[data-ago] {
 
 .heat-cap {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
   justify-content: space-between;
   margin-top: 0.4rem;
   color: var(--fg-2);

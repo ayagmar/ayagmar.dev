@@ -69,7 +69,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 }
 
 async function check(heat: Locator) {
-  const { strip, levels } = await heat.evaluate((heat) => {
+  const { strip, levels, outline } = await heat.evaluate((heat) => {
     const color = (level: number) => {
       const probe = document.createElement('i');
       probe.dataset.l = String(level);
@@ -78,12 +78,16 @@ async function check(heat: Locator) {
       probe.remove();
       return value;
     };
+    const none = heat.querySelector('i[data-l="none"]');
     return {
       strip: getComputedStyle(heat).backgroundColor,
       levels: [1, 2, 3, 4].map(color),
+      outline: none === null ? null : getComputedStyle(none).outlineColor,
     };
   });
   for (const level of levels) expect(contrast(level, strip)).toBeGreaterThanOrEqual(3);
+  // A day with no record is an outline (ADR 0038); it too must be seen against the strip.
+  if (outline !== null) expect(contrast(outline, strip)).toBeGreaterThanOrEqual(3);
   for (const [i, level] of levels.slice(1).entries()) {
     expect(contrast(level, levels[i] as string)).toBeGreaterThanOrEqual(1.3);
   }
