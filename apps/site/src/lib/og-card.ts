@@ -30,12 +30,8 @@ const mono = file(srcDir, 'fonts/ttf/mono.ttf');
 const markup = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
-/**
- * The title, then a muted line in the text size, as one transparent PNG wrapped to the box.
- * One Pango layout for both, since sharp crops text to its ink: two images would sit apart by
- * whatever the title's descenders happen to be. The title is 54 px, down to 36 px if it overflows.
- */
-async function textBlock(title: string, line: string, size = 54): Promise<Buffer> {
+/** The text block at one title size, wrapped at words and, inside a word too long for a line, at characters. */
+async function renderText(title: string, line: string, size: number) {
   const { data, info } = await sharp({
     text: {
       text: `<span font="min7 Serif Semi-Bold ${size}" foreground="${text}">${markup(title)}</span>\n<span font="min7 Serif 14"> </span>\n<span font="min7 Serif 28" foreground="${muted}">${markup(line)}</span>`,
@@ -43,12 +39,41 @@ async function textBlock(title: string, line: string, size = 54): Promise<Buffer
       width: textBox.width,
       dpi: 72,
       rgba: true,
-      wrap: 'word',
+      wrap: 'word-char',
     },
   })
     .png()
     .toBuffer({ resolveWithObject: true });
-  return info.height > textBox.height && size > 36 ? textBlock(title, line, size - 6) : data;
+  return { data, fits: info.width <= textBox.width && info.height <= textBox.height };
+}
+
+const titleSizes = [54, 48, 42, 36];
+
+/**
+ * The title, then a muted line in the text size, as one transparent PNG that fits the text box.
+ * One Pango layout for both, since sharp crops text to its ink: two images would sit apart by
+ * whatever the title's descenders happen to be. The title is 54 px, down to 36 px; a title that
+ * still overflows at 36 px is cut at the longest prefix that fits, and ends in an ellipsis.
+ */
+async function textBlock(title: string, line: string): Promise<Buffer> {
+  for (const size of titleSizes) {
+    const block = await renderText(title, line, size);
+    if (block.fits) return block.data;
+  }
+  const min = titleSizes.at(-1) ?? 36;
+  // By code point, so a cut never splits a character in two.
+  const characters = [...title];
+  const cut = (length: number) => `${characters.slice(0, length).join('').trimEnd()}\u2026`;
+  // Binary search for the longest prefix that fits; the empty one is just the ellipsis.
+  let [low, high] = [0, characters.length - 1];
+  while (low < high) {
+    const middle = Math.ceil((low + high) / 2);
+    if ((await renderText(cut(middle), line, min)).fits) low = middle;
+    else high = middle - 1;
+  }
+  const block = await renderText(cut(low), line, min);
+  if (!block.fits) throw new Error(`og-card: "${line}" does not fit the card's text box`);
+  return block.data;
 }
 
 /**
@@ -62,10 +87,11 @@ async function pictureImage(art: string | undefined) {
       .toBuffer();
   }
   const viewWidth = Number(/viewBox="0 0 (\d+) /.exec(art)?.[1]);
-  // The page styles the ascii kind's text from base.css (.post-art text); a lone SVG needs it inline.
+  // The page styles the ascii kind's text from base.css (.post-art text); a lone SVG needs it
+  // inline, as the first child of the root element.
   const svg = art.replace(
-    '>',
-    '><style>text{font:10px "JetBrains Mono",monospace;white-space:pre}</style>'
+    /^<svg\b[^>]*>/,
+    (open) => `${open}<style>text{font:10px "JetBrains Mono",monospace;white-space:pre}</style>`
   );
   return sharp(Buffer.from(svg), { density: (72 * picture.width) / viewWidth })
     .resize(picture.width, picture.height, { kernel: 'nearest' })
