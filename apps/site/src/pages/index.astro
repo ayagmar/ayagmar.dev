@@ -1,4 +1,5 @@
 ---
+import { getEntry } from 'astro:content';
 import HomeShipping from '../components/HomeShipping.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
@@ -10,6 +11,7 @@ import { getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
 import { roomObjects } from '../lib/room.ts';
 import { site } from '../lib/site.ts';
+import { person, website } from '../lib/structured-data.ts';
 import { notePath } from '../lib/til.ts';
 import { isoDay } from '../lib/writing.ts';
 import '../styles/room.css';
@@ -20,12 +22,14 @@ const notes = posts.length === 0 ? (await getNotes()).slice(0, 3) : [];
 const projects = (await getProjects()).projects.slice(0, 5);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
+const about = await getEntry('about', 'about');
+if (about === undefined) throw new Error('content/about.json is missing');
 // The strip is drawn once, with the page: from the daily history, else from the events.
 const strip = shippingStrip(await signals.readDays('shipping-activity'), shipping, new Date());
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 ---
 
-<Base>
+<Base structuredData={[website(), person(about.data.identity)]}>
   {/* Its scripts read the API as the page loads; in fixtures mode they make no request. */}
   {signalsMode === 'api' && <link slot="head" rel="preconnect" href={signalsApiBase} crossorigin>}
   <section slot="room" class="room" aria-label="The room">

@@ -74,6 +74,23 @@ test('a Preview names its own images, one per post @drafts', async ({ request })
   );
 });
 
+// Catches the analytics gate opening outside production (src/lib/search.ts): a Preview or a CI
+// build would count visits, and postbuild would widen the CSP to match.
+for (const [name, details] of [
+  ['a CI build', {}],
+  ['a Preview', { tag: '@drafts' }],
+] as const) {
+  test(
+    `${name} loads no analytics beacon and its CSP allows none`,
+    details,
+    async ({ request }) => {
+      const response = await request.get('/');
+      expect(response.headers()['content-security-policy']).not.toContain('cloudflareinsights');
+      expect(await response.text()).not.toContain('cloudflareinsights');
+    }
+  );
+}
+
 test.describe('icons', () => {
   const cached = (headers: Record<string, string>) =>
     expect(headers['cache-control']).toMatch(/max-age=[1-9]/);

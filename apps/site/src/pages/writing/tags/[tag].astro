@@ -16,7 +16,14 @@ const { posts } = Astro.props;
 const feeds = feedPaths({ tag });
 ---
 
-<Base title={`Tagged ${tag}`} feed={{ tag }}>
+{/* A filtered copy of /writing with no text of its own: kept for readers and its feeds, out of
+     search results and the sitemap. */}
+<Base
+  title={`Tagged ${tag}`}
+  description={`Posts on min7 tagged ${tag}, newest first, with RSS and Atom feeds for the tag.`}
+  feed={{ tag }}
+  noindex
+>
   <div class="paper column">
     <h1>Tagged {tag}</h1>
     <PostList posts={posts} />

@@ -3,6 +3,8 @@ export const siteUrl = 'https://ayagmar.dev';
 
 export const site = {
   name: 'min7',
+  /** The home page's title; every other page is `<its title> | min7`. */
+  title: 'min7: Abdeslam Yassine Agmar, software engineer',
   author: 'Abdeslam Yassine Agmar',
   role: 'Software engineer',
   location: 'Morocco',

@@ -32,6 +32,11 @@ export interface Budgets {
      * already fetch from (the CSP's connect-src). Any resource from them still fails.
      */
     preconnect: string[];
+    /**
+     * Scripts from another origin a page may load with `<script src>`, by exact URL, and only
+     * that way: Cloudflare's Web Analytics beacon (ADR 0019). Not in the build, so not counted.
+     */
+    externalScripts: string[];
   };
   lighthouse: {
     runs: number;
@@ -243,6 +248,16 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     }
   };
 
+  /** Whether a script's src is, after a browser's normalization, one budgets.json allows. */
+  const externalScript = (src: string | undefined, from: string) => {
+    if (src === undefined) return false;
+    try {
+      return limits.externalScripts.includes(new URL(src, `${site}${from}`).href);
+    } catch {
+      return false;
+    }
+  };
+
   /** A stylesheet and what it pulls in (other stylesheets, images, fonts). */
   const cssClosure = (file: string, into: Set<string>) => {
     if (into.has(file)) return;
@@ -314,7 +329,10 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
           load(a.get(key), scripts);
         }
       } else if (element === 'script') {
-        if (jsTypes.has((a.get('type') ?? '').toLowerCase())) load(a.get('src'), scripts);
+        const src = a.get('src');
+        if (jsTypes.has((a.get('type') ?? '').toLowerCase()) && !externalScript(src, url)) {
+          load(src, scripts);
+        }
       } else if (element === 'link') {
         const rels = (a.get('rel') ?? '').toLowerCase().split(/\s+/);
         const fetching = rels.filter((rel) => fetchingRels.has(rel));

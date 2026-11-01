@@ -57,4 +57,4 @@ just publish title-of-the-post  # branch, commit, push, pull request
 
 ## Deploy
 
-Cloudflare Workers Builds deploys both Workers from `main` and builds a preview for each pull request. No Cloudflare token lives in GitHub. Setup and rollback are in [docs/deploy.md](docs/deploy.md).
+Cloudflare Workers Builds deploys both Workers from `main` and builds a preview for each pull request. No Cloudflare token lives in GitHub. Setup and rollback are in [docs/deploy.md](docs/deploy.md); what search engines read and the analytics, in [docs/seo.md](docs/seo.md).
