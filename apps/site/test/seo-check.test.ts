@@ -57,6 +57,23 @@ it('passes a site whose pages and sitemap agree', () => {
   expect(result.status).toBe(0);
 });
 
+// Catches two GitHub repos with the same description stopping production from deploying.
+it('only warns when project pages share a description, which comes from GitHub', () => {
+  const project = (slug: string) =>
+    page(`/projects/${slug}`, slug).replace(`About ${slug}`, 'A tool');
+  write({
+    'dist/projects/a.html': project('a'),
+    'dist/projects/b.html': project('b'),
+    'dist/sitemap-0.xml': sitemap(
+      '<loc>https://ayagmar.dev/projects/a</loc>',
+      '<loc>https://ayagmar.dev/projects/b</loc>'
+    ),
+  });
+  const result = run();
+  expect(result.status).toBe(0);
+  expect(result.stderr).toContain('warning: projects/b.html: same description as projects/a.html');
+});
+
 it('names every page and sitemap entry search engines would read wrong', () => {
   write({
     'dist/index.html': page('/', 'Home', '<link rel="canonical" href="https://ayagmar.dev/x">'),

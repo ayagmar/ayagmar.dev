@@ -16,7 +16,7 @@ What ayagmar.dev tells search engines, where each piece is set, and the dashboar
 | Search Console and Bing verification | `siteVerification` in `src/lib/search.ts`              | Empty renders nothing; a token renders `google-site-verification` or `msvalidate.01` on every page.                                                                                                                                          |
 | Cloudflare Web Analytics             | `cloudflareAnalytics` in `src/lib/search.ts`           | The beacon is on every page of production builds only (ADR 0019); the CSP and the budgets allow exactly its script and report origins (ADR 0017).                                                                                            |
 
-Every site build ends with `apps/site/scripts/seo-check.ts`, which fails the build when a page lacks exactly one canonical link, a title or a description, shares a title or description with another page, or has JSON-LD that does not parse or a node without `@type`; when a post or note has no `BlogPosting`; or when the sitemap lists a page that is missing, `noindex`, a draft, or under another canonical URL, or dates it differently from its JSON-LD.
+Every site build ends with `apps/site/scripts/seo-check.ts`, which fails the build when a page lacks exactly one canonical link, a title or a description, shares a title or description with another page, or has JSON-LD that does not parse or a node without `@type`; when a post or note has no `BlogPosting`; or when the sitemap lists a page that is missing, `noindex`, a draft, or under another canonical URL, or dates it differently from its JSON-LD. Two project pages with the same description only print a warning: that text comes from GitHub at build time, and a repo's description must not stop production deploying.
 
 ## robots.txt and Cloudflare
 
@@ -47,7 +47,7 @@ Sitemap: https://ayagmar.dev/sitemap-index.xml
 
 One ping to `api.indexnow.org` reaches every participating engine: Bing, Yandex, Seznam, Naver, Yep and Amazon ([indexnow.org](https://www.indexnow.org/faq), checked 2026-11-01). Google does not take part. Neither do Brave or DuckDuckGo, as far as indexnow.org lists. DuckDuckGo's results draw largely on Bing's index, so a ping reaches it through Bing. Brave runs its own index, so it finds pages by crawling, helped by the sitemap in robots.txt.
 
-`just site-deploy` (Workers Builds' deploy command) does it on every production deploy, with no secret: before `wrangler deploy` it saves the live sitemap, and after it pings the pages that are new, gone, or have a new `<lastmod>`. Pages without a `<lastmod>` (home, /stats and the others with live data) are pinged only when new. A failed ping logs a line and leaves the deploy green.
+`just site-deploy` (Workers Builds' deploy command) does it on every production deploy, with no secret: before `wrangler deploy` it saves the live sitemap, and after it pings the pages that are new, gone, or have a new `<lastmod>`. Pages without a `<lastmod>` (home, /stats and the others with live data) are pinged only when new. Neither step can fail or hold up the deploy: each request gives up after 5 seconds, and a failure only logs a line.
 
 By hand:
 

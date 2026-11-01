@@ -1,6 +1,7 @@
 // Runs after postbuild on a built site and fails it when what search engines read is wrong
 // (docs/seo.md): every page has exactly one canonical link, one non-empty title and one
-// non-empty description, none shared with another page; every JSON-LD block parses and each
+// non-empty description, none shared with another page (only a warning between project
+// pages, whose descriptions come from GitHub); every JSON-LD block parses and each
 // node has a @type; every post and TIL note page has a BlogPosting. The sitemap lists only
 // built, indexable pages under their canonical URL, dates articles as their JSON-LD does, and
 // never lists a draft.
@@ -44,8 +45,12 @@ for (const page of pages) {
       continue;
     }
     const other = seen[field].get(value);
-    if (other !== undefined) problems.push(`${page}: same ${field} as ${other}: ${value}`);
-    else seen[field].set(value, page);
+    if (other === undefined) seen[field].set(value, page);
+    else if (field === 'description' && [page, other].some((p) => p.startsWith('projects/'))) {
+      // A project's description comes from GitHub at build time (src/lib/projects.ts): two repos
+      // with the same one must not stop production deploying.
+      console.warn(`seo-check: warning: ${page}: same ${field} as ${other}: ${value}`);
+    } else problems.push(`${page}: same ${field} as ${other}: ${value}`);
   }
   let nodes: Record<string, unknown>[] = [];
   try {
