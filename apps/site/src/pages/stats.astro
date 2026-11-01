@@ -27,7 +27,10 @@ const music = listening.data;
 const featured = featuredProjects.map((project) => project.repo);
 ---
 
-<Base title="Stats">
+<Base
+  title="Stats"
+  description="Live numbers from Abdeslam Yassine Agmar's week: listening, projects, typing, shipping and LLM usage."
+>
   <h1>Stats</h1>
   {signalsMode === 'fixtures' ? (
     <p class="sample sample-banner">

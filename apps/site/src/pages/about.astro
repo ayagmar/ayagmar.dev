@@ -3,6 +3,7 @@ import { getEntry } from 'astro:content';
 import { formatMonth } from '../data/about.ts';
 import Base from '../layouts/Base.astro';
 import { nowPage, site } from '../lib/site.ts';
+import { person, profilePage, website } from '../lib/structured-data.ts';
 
 // content/about.json, validated by the collection schema in content.config.ts.
 const entry = await getEntry('about', 'about');
@@ -23,7 +24,11 @@ const span = (start: string, end: string | null) => ({
 });
 ---
 
-<Base title="About">
+<Base
+  title="About"
+  description={about.summary}
+  structuredData={[website(), person(identity), profilePage('/about')]}
+>
   <div class="column">
     <header class="panel m-tea t-about">
       <h1>{identity.name}</h1>

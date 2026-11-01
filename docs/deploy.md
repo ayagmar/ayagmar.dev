@@ -35,6 +35,8 @@ Both projects:
 | Build watch paths, include           | `apps/signals/*`, `packages/contracts/*`, `scripts/bootstrap.sh`, `justfile`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `.node-version` |
 | Build watch paths, exclude           | none                                                                                                                                                                         |
 
+After a production deploy, `just site-deploy` pings IndexNow with the pages that changed, with no secret and without failing the deploy if the ping does ([docs/seo.md](seo.md)).
+
 Custom domains: each `wrangler.jsonc` declares its domain as a `custom_domain` route, which `wrangler deploy` creates. The `ayagmar.dev` zone must be on the same Cloudflare account. If the deploy cannot create it, add it under the Worker's **Settings → Domains & Routes** instead.
 
 ### www.ayagmar.dev

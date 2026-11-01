@@ -9,7 +9,8 @@ import Base from '../../layouts/Base.astro';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { noteOgImage } from '../../lib/og.ts';
 import { getNotes } from '../../lib/posts.ts';
-import { noteSummary } from '../../lib/til.ts';
+import { blogPosting, breadcrumbs } from '../../lib/structured-data.ts';
+import { notePath, noteSummary } from '../../lib/til.ts';
 
 export const getStaticPaths = (async () =>
   (await getNotes()).map((note) => ({
@@ -20,14 +21,21 @@ export const getStaticPaths = (async () =>
 const { note } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(note);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
+const { title, date, tags, draft } = note.data;
+const description = noteSummary(note);
+const image = noteOgImage(note.id, title);
+const path = notePath(note.id);
+const structuredData = [
+  blogPosting({ path, title, description, published: date, tags, image: image.path }),
+  breadcrumbs([
+    { name: 'TIL', path: '/til' },
+    { name: title, path },
+  ]),
+];
 ---
 
-<Base
-  title={note.data.title}
-  description={noteSummary(note)}
-  feed={{ til: true }}
-  image={noteOgImage(note.id, note.data.title)}
->
+{/* A draft is only built for Previews (ADR 0028), and stays out of search there too. */}
+<Base {title} {description} feed={{ til: true }} {image} {structuredData} noindex={draft}>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
     <!-- Search shows this as the result's title, so a note reads "TIL: ..." (ADR 0028). -->
