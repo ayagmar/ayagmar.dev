@@ -154,10 +154,12 @@ const decode = (value: string) =>
     .replaceAll('&gt;', '>')
     .replaceAll('&amp;', '&');
 
+/** A tag's attributes by lowercased name; a repeated name keeps its first value, as browsers do. */
 function attributes(source: string): Map<string, string> {
   const out = new Map<string, string>();
   for (const [, name = '', ...values] of source.matchAll(attribute)) {
-    out.set(name.toLowerCase(), decode(values.find((v) => v !== undefined) ?? ''));
+    const key = name.toLowerCase();
+    if (!out.has(key)) out.set(key, decode(values.find((v) => v !== undefined) ?? ''));
   }
   return out;
 }

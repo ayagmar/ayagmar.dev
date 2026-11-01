@@ -261,13 +261,19 @@ describe('external origins', () => {
           '<link rel="preconnect" href="https://other.example.com" crossorigin>',
           '<link rel="preconnect preload" href="https://api.example.com/v1/a" as="fetch">',
           '<link rel="stylesheet" href="https://api.example.com/a.css">',
+          // A repeated attribute: browsers keep the first, so these are a stylesheet and a
+          // preconnect to another origin.
+          '<link rel="stylesheet" rel="preconnect" href="https://api.example.com/b.css">',
+          '<link rel="preconnect" href="https://dup.example.com" href="https://api.example.com">',
         ].join('')
       ),
     });
     const found = problems().flatMap((p) => /loads (\S+) from another origin/.exec(p)?.[1] ?? []);
     assert.deepEqual(found.sort(), [
       'https://api.example.com/a.css',
+      'https://api.example.com/b.css',
       'https://api.example.com/v1/a',
+      'https://dup.example.com/',
       'https://other.example.com/',
     ]);
   });
