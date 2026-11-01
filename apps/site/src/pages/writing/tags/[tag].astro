@@ -17,7 +17,7 @@ const feeds = feedPaths({ tag });
 ---
 
 <Base title={`Tagged ${tag}`} feed={{ tag }}>
-  <div class="paper">
+  <div class="paper column">
     <h1>Tagged {tag}</h1>
     <PostList posts={posts} />
     <p class="caption">
