@@ -68,6 +68,21 @@ describe('writing frontmatter', () => {
       'art.palette: must be one of night, lamp, screen, zellige, wood',
     ],
     [
+      'receipts ending before they start',
+      { receipts: { from: new Date('2026-10-20'), to: new Date('2026-10-12') } },
+      'receipts.to: must not be before from',
+    ],
+    [
+      'receipts without an end',
+      { receipts: { from: new Date('2026-10-12') } },
+      'receipts.to: must be a date like 2026-10-26',
+    ],
+    [
+      'receipts naming a repository without its owner',
+      { receipts: { from: '2026-10-12', to: '2026-10-20', repos: ['runnerd'] } },
+      'receipts.repos.0: must be a repository like "owner/name"',
+    ],
+    [
       'fractional art seed',
       { art: { kind: 'dither', seed: 1.5 } },
       expect.stringMatching(/^art\.seed: /),

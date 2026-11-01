@@ -97,6 +97,7 @@ import listeningHistorySnapshotSingleItem from '../fixtures/listening-history/sn
 import listeningHistorySnapshotTies from '../fixtures/listening-history/snapshot/ties.json' with {
   type: 'json',
 };
+import llmUsageDaysOk from '../fixtures/llm-usage/days/ok.json' with { type: 'json' };
 import llmUsagePushMinimal from '../fixtures/llm-usage/push/accept/minimal.json' with {
   type: 'json',
 };
@@ -386,5 +387,8 @@ export const pushFixtures = {
 export const daysFixtures = {
   'shipping-activity': {
     ok: shippingActivityDaysOk,
+  },
+  'llm-usage': {
+    ok: llmUsageDaysOk,
   },
 } as const;

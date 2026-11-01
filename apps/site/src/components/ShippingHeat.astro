@@ -1,5 +1,6 @@
 ---
 import type { ShippingStrip } from '../data/format.ts';
+import { dayPath } from '../lib/days.ts';
 
 interface Props {
   /** From `shippingStrip` (src/data/format.ts): drawn once, with the page (ADR 0038). */
@@ -11,14 +12,32 @@ const range = strip.from === strip.to ? strip.from : `${strip.from} to ${strip.t
 const gaps = strip.gaps ? ' Outlined days have no record.' : '';
 ---
 
-<figure class="heat">
-  <div
+<figure class="heat ship-heat">
+  {/* A list of the days, oldest first; a day with a page is a link to it. */}
+  <ol
     class="heat-cells"
-    role="img"
     aria-label={`Shipping activity from ${range}: ${strip.busy} ${strip.busy === 1 ? 'day' : 'days'} with something shipped.${gaps} Counted up to ${strip.countedAt}, drawn when this page was built.`}
   >
-    {strip.cells.map((cell) => <i data-l={cell.level ?? 'none'}></i>)}
-  </div>
+    {strip.cells.map((cell) => {
+      const square = <i data-l={cell.level ?? 'none'}></i>;
+      const label = <span class="sr-only">{cell.label}</span>;
+      return (
+        <li>
+          {cell.page ? (
+            <a href={dayPath(cell.date)}>
+              {square}
+              {label}
+            </a>
+          ) : (
+            <>
+              {square}
+              {label}
+            </>
+          )}
+        </li>
+      );
+    })}
+  </ol>
   <figcaption class="heat-cap">
     <span>One square a day, {range}{strip.gaps ? '; outlined days have no record' : ''}</span>
     <span>Counted up to {strip.countedAt}</span>

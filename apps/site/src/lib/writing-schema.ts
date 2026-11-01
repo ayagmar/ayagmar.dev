@@ -1,3 +1,4 @@
+import { repoFullNamePattern } from '@min7/contracts';
 import { z } from 'astro/zod';
 import { artKinds, artPalettes } from './art.ts';
 import { projectSlug } from './project-schema.ts';
@@ -22,6 +23,24 @@ export const day = z.union([z.date(), z.iso.date().transform((text) => new Date(
   error: dateMessage,
 });
 
+/**
+ * A post's receipt range: the history between `from` and `to`, both included, counted in
+ * `repos` (`owner/name`), else in the post's projects, else everywhere.
+ */
+const receipts = z
+  .strictObject({
+    from: day,
+    to: day,
+    repos: z
+      .array(z.string().regex(repoFullNamePattern, 'must be a repository like "owner/name"'), {
+        error: 'must be a list of repositories',
+      })
+      .min(1, 'must name a repository, or be left out')
+      .refine((repos) => new Set(repos).size === repos.length, 'must not repeat a repository')
+      .optional(),
+  })
+  .refine((range) => range.to >= range.from, { path: ['to'], message: 'must not be before from' });
+
 /** The tag vocabulary posts and TIL notes share: lowercase slugs, none twice. */
 export const tagList = z
   .array(z.string().regex(slug, slugMessage), { error: 'must be a list of tags' })
@@ -44,6 +63,8 @@ export const writingSchema = z
       .refine((slugs) => new Set(slugs).size === slugs.length, 'must not repeat a project')
       .default([]),
     art: art.optional(),
+    /** The days the post's receipt counts (src/lib/days.ts); no receipt without it. */
+    receipts: receipts.optional(),
   })
   .refine((post) => post.updated === undefined || post.updated >= post.date, {
     path: ['updated'],

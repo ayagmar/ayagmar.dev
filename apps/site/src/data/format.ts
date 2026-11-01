@@ -64,6 +64,10 @@ const dayMs = 24 * 60 * 60 * 1000;
 interface StripCell {
   date: string;
   level: 0 | 1 | 2 | 3 | 4 | null;
+  /** What the square says to a screen reader: `26 Oct: 3 pushes, merges and releases`. */
+  label: string;
+  /** Whether the date has a day page (src/lib/days.ts), which the square then links to. */
+  page: boolean;
 }
 
 /** What the shipping strip draws and says, computed once for every page that shows it. */
@@ -105,13 +109,25 @@ const level = (shipped: number): 0 | 1 | 2 | 3 | 4 =>
 function strip(
   end: string,
   shipped: (date: string) => number | null,
-  countedAt: string
+  countedAt: string,
+  pages: ReadonlySet<string>
 ): ShippingStrip | null {
   const last = Date.parse(`${end}T00:00:00Z`);
   const cells = Array.from({ length: 28 }, (_, i): StripCell => {
     const date = new Date(last - (27 - i) * dayMs).toISOString().slice(0, 10);
     const count = shipped(date);
-    return { date, level: count === null ? null : level(count) };
+    const what =
+      count === null
+        ? 'no record'
+        : count === 0
+          ? 'nothing shipped'
+          : plural(count, 'push, merge or release', 'pushes, merges and releases');
+    return {
+      date,
+      level: count === null ? null : level(count),
+      label: `${dayLabel.format(Date.parse(date))}: ${what}`,
+      page: pages.has(date),
+    };
   });
   const recorded = cells.filter((cell) => cell.level !== null);
   const first = recorded[0];
@@ -132,18 +148,24 @@ function strip(
  * a recorded day in the last 28: those days are drawn, the others outlined, and the counts are
  * as of the history's `fetchedAt`. Otherwise from the events in the shipping snapshot, which
  * cover only the days from the oldest event's to the snapshot's own, ending on `now`'s day.
- * Null when neither has a day to draw.
+ * Null when neither has a day to draw. A square links to its date's page when `pages` has it.
  */
 export function shippingStrip(
   history: Envelope<ShippingActivityDays>,
   shipping: Envelope<Pick<ShippingSnapshot, 'events'>>,
-  now: Date
+  now: Date,
+  pages: ReadonlySet<string>
 ): ShippingStrip | null {
   if (history.data !== null && history.fetchedAt !== null) {
     const days = new Map(
       history.data.days.map((day) => [day.date, day.pushes + day.merges + day.releases])
     );
-    const fromHistory = strip(history.data.to, (date) => days.get(date) ?? null, history.fetchedAt);
+    const fromHistory = strip(
+      history.data.to,
+      (date) => days.get(date) ?? null,
+      history.fetchedAt,
+      pages
+    );
     if (fromHistory !== null) return fromHistory;
   }
   const events = shipping.data?.events ?? [];
@@ -159,6 +181,7 @@ export function shippingStrip(
   return strip(
     utcDay(now.toISOString()),
     (date) => (date < firstDay || date > lastDay ? null : (counts.get(date) ?? 0)),
-    shipping.fetchedAt
+    shipping.fetchedAt,
+    pages
   );
 }

@@ -9,6 +9,7 @@ import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals
 import Base from '../layouts/Base.astro';
 import { listeningBody } from '../lib/listening-panel.ts';
 import { llmUsagePanel } from '../lib/llm-usage-panel.ts';
+import { getDays } from '../lib/posts.ts';
 import { site } from '../lib/site.ts';
 import { statsWords as words } from '../lib/stats.ts';
 import { projectsBody, shippingBody, typingBody } from '../lib/stats-panels.ts';
@@ -17,7 +18,12 @@ import { typingWords } from '../lib/typing.ts';
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 // Drawn once, with the page (ADR 0038); the live script redraws only the list under it.
-const strip = shippingStrip(await signals.readDays('shipping-activity'), shipping, new Date());
+const strip = shippingStrip(
+  await signals.readDays('shipping-activity'),
+  shipping,
+  new Date(),
+  (await getDays()).dates
+);
 const projects = await signals.read('projects');
 const typing = await signals.read('monkeytype');
 const llmUsage = await signals.read('llm-usage');

@@ -8,21 +8,35 @@ import ReplyByEmail from '../../components/ReplyByEmail.astro';
 import Toc from '../../components/Toc.astro';
 import Base from '../../layouts/Base.astro';
 import { renderArt } from '../../lib/art.ts';
+import { postReceipt, projectRepos } from '../../lib/days.ts';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { postOgImage } from '../../lib/og.ts';
-import { getPosts, getProjects } from '../../lib/posts.ts';
+import { getDays, getPosts, getProjects } from '../../lib/posts.ts';
 import { morePostsAbout } from '../../lib/projects.ts';
 import { blogPosting, breadcrumbs } from '../../lib/structured-data.ts';
-import { postPath } from '../../lib/writing.ts';
+import { isoDay, postPath } from '../../lib/writing.ts';
 
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
   const { projects, envelope } = await getProjects();
+  const { history } = await getDays();
   return posts.map((post) => ({
     params: { slug: post.id },
     props: {
       post,
       envelope,
+      receipt:
+        post.data.receipts === undefined
+          ? null
+          : postReceipt(
+              history,
+              {
+                from: isoDay(post.data.receipts.from),
+                to: isoDay(post.data.receipts.to),
+                repos: post.data.receipts.repos,
+              },
+              projectRepos(post.data.projects)
+            ),
       // In the post's own order, which is the order the author listed them.
       cards: post.data.projects.flatMap((slug) => {
         const project = projects.find((candidate) => candidate.slug === slug);
@@ -34,7 +48,7 @@ export const getStaticPaths = (async () => {
   }));
 }) satisfies GetStaticPaths;
 
-const { post, envelope, cards } = Astro.props;
+const { post, envelope, cards, receipt } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(post);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
 const { title, summary, art, date, updated, tags, draft } = post.data;
@@ -61,7 +75,7 @@ const structuredData = [
 <Base {title} description={summary} {image} {structuredData} noindex={draft}>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
-    <PostHeader post={post}>
+    <PostHeader post={post} receipt={receipt}>
       {art !== undefined && <Fragment slot="art" set:html={renderArt(post.id, art)} />}
     </PostHeader>
     <Toc headings={headings} />

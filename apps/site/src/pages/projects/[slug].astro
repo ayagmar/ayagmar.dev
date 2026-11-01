@@ -6,8 +6,9 @@ import PostList from '../../components/PostList.astro';
 import ProjectLinks from '../../components/ProjectLinks.astro';
 import ProjectStats from '../../components/ProjectStats.astro';
 import Base from '../../layouts/Base.astro';
+import { projectReceipt } from '../../lib/days.ts';
 import { feedPaths } from '../../lib/feed.ts';
-import { getPosts, getProjects } from '../../lib/posts.ts';
+import { getDays, getPosts, getProjects } from '../../lib/posts.ts';
 import { postsAbout, projectPath } from '../../lib/projects.ts';
 import { site } from '../../lib/site.ts';
 import { breadcrumbs } from '../../lib/structured-data.ts';
@@ -15,13 +16,19 @@ import { breadcrumbs } from '../../lib/structured-data.ts';
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
   const { projects, envelope } = await getProjects();
+  const { history } = await getDays();
   return projects.map((project) => ({
     params: { slug: project.slug },
-    props: { project, envelope, posts: postsAbout(posts, project.slug) },
+    props: {
+      project,
+      envelope,
+      posts: postsAbout(posts, project.slug),
+      receipt: projectReceipt(history, project.repo),
+    },
   }));
 }) satisfies GetStaticPaths;
 
-const { project, envelope, posts } = Astro.props;
+const { project, envelope, posts, receipt } = Astro.props;
 const { Content } =
   project.file === undefined ? { Content: undefined } : await render(project.file);
 const feeds = feedPaths({ project: project.slug });
@@ -53,6 +60,7 @@ const feeds = feedPaths({ project: project.slug });
     )}
     <h2>Numbers</h2>
     <ProjectStats project={project} />
+    {receipt !== null && <p class="receipt">{receipt}</p>}
     {project.live !== null && <Freshness envelope={envelope} />}
     <h2>Links</h2>
     <ProjectLinks project={project} />

@@ -34,7 +34,7 @@ for (const path of ['/', '/stats']) {
       'One square a day, 12 Oct to 26 Oct; outlined days have no record' +
         'Counted up to 26 Oct, 09:00 UTC'
     );
-    await expect(strip.getByRole('img')).toHaveAccessibleName(
+    await expect(strip.getByRole('list')).toHaveAccessibleName(
       /^Shipping activity from 12 Oct to 26 Oct: \d+ days with something shipped\. Outlined days have no record\. Counted up to 26 Oct, 09:00 UTC, drawn when this page was built\.$/
     );
   });

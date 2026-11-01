@@ -2,6 +2,7 @@ import {
   type DailySource,
   dailySources,
   dailyZones,
+  daysFirstMonth,
   daysLast,
   featuredProjects,
   githubOwner,
@@ -19,8 +20,6 @@ import { D1SnapshotStore } from '../../storage/d1.ts';
 import { readDays } from '../../storage/daily.ts';
 import { serveEnvelope } from './snapshot.ts';
 
-/** The earliest month served: llm-usage's first push reaches 53 weeks back from late 2026. */
-const firstMonth = '2025-01';
 /** The path of every series; any other answers the JSON 404. */
 const seriesPath = `/:series{${dailySources.join('|')}}`;
 const dayMs = 24 * 60 * 60 * 1000;
@@ -58,7 +57,7 @@ function block(series: DailySource, query: URLSearchParams, now: number) {
     return { key: `last=${daysLast}&to=${to}`, from, to, until: nextDayStart(series, to) };
   }
   if (month === null || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return null;
-  if (month < firstMonth || month > today(series, now).slice(0, 7)) return null;
+  if (month < daysFirstMonth || month > today(series, now).slice(0, 7)) return null;
   const [year = 0, index = 0] = month.split('-').map(Number);
   const to = utcDate(Date.UTC(year, index, 0));
   return { key: `month=${month}`, from: `${month}-01`, to, until: undefined };

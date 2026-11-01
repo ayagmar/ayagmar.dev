@@ -13,9 +13,11 @@ interface Props {
   };
   /** Tags link to their writing page; a note's tags have none, so they are plain text. */
   linkTags?: boolean;
+  /** The post's receipt line (src/lib/days.ts), when its frontmatter gives a range. */
+  receipt?: string | null;
 }
 
-const { post, linkTags = true } = Astro.props;
+const { post, linkTags = true, receipt = null } = Astro.props;
 const { title, date, updated, tags, draft, projects = [] } = post.data;
 // The `art` slot holds per-post art (ADR 0027); without it the header has no figure. Search
 // skips it: the ascii kind is text.
@@ -62,6 +64,11 @@ const hasArt = Astro.slots.has('art');
           </li>
         ))}
       </ul>
+    )}
+    {receipt !== null && (
+      <p class="receipt" data-pagefind-ignore>
+        {receipt}
+      </p>
     )}
   </div>
 </header>
