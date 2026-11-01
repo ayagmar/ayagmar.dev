@@ -15,6 +15,7 @@ const limits = {
   fonts: 204_800,
   onDemand: ['/pagefind/pagefind.js'],
   allowances: [{ name: 'theme switch', file: '/_astro/theme.*.js', bytes: 1024 }],
+  externalScripts: ['https://beacon.example.com/b.js'],
 };
 
 /** Bytes gzip cannot shrink, the same on every run. */
@@ -246,6 +247,31 @@ describe('external origins', () => {
       'https://img.example.com/a.png',
       'https://set.example.com/a.png',
       'https://upper.example.com/a.png',
+    ]);
+  });
+
+  // Catches the allowance growing into a way to load anything else from the beacon's origin, or
+  // the beacon's URL by any other element.
+  it('allows only a <script src> of the exact URL budgets.json lists', () => {
+    write({
+      'index.html': page(
+        [
+          '<script type="module" src="https://beacon.example.com/b.js" data-cf-beacon="{}"></script>',
+          '<script defer src="https://beacon.example.com/other.js"></script>',
+          '<script src="https://beacon.example.com/b.js?v=2"></script>',
+          '<img src="https://beacon.example.com/b.js" width="1" height="1" alt="">',
+          // A repeated attribute: browsers keep the first, so this loads another origin.
+          '<script src="https://evil.example.com/x.js" src="https://beacon.example.com/b.js"></script>',
+        ].join(''),
+        '<link rel="preload" as="script" href="https://beacon.example.com/b.js">'
+      ),
+    });
+    const found = problems().flatMap((p) => /loads (\S+) from another origin/.exec(p)?.[1] ?? []);
+    assert.deepEqual(found.sort(), [
+      'https://beacon.example.com/b.js',
+      'https://beacon.example.com/b.js?v=2',
+      'https://beacon.example.com/other.js',
+      'https://evil.example.com/x.js',
     ]);
   });
 

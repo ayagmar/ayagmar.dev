@@ -1,4 +1,4 @@
-# Search engines
+# Search engines and analytics
 
 What ayagmar.dev tells search engines, where each piece is set, and the dashboard steps that live outside the repo.
 
@@ -14,6 +14,7 @@ What ayagmar.dev tells search engines, where each piece is set, and the dashboar
 | robots.txt                           | `src/pages/robots.txt.ts`                              | Lets every crawler in and names the sitemap. See below for what Cloudflare adds.                                                                                                                                                             |
 | IndexNow key                         | `indexNowKey` in `src/lib/search.ts`                   | Served at `/<key>.txt`. Public by design.                                                                                                                                                                                                    |
 | Search Console and Bing verification | `siteVerification` in `src/lib/search.ts`              | Empty renders nothing; a token renders `google-site-verification` or `msvalidate.01` on every page.                                                                                                                                          |
+| Cloudflare Web Analytics             | `cloudflareAnalytics` in `src/lib/search.ts`           | The beacon is on every page of production builds only (ADR 0019); the CSP and the budgets allow exactly its script and report origins (ADR 0017).                                                                                            |
 
 Every site build ends with `apps/site/scripts/seo-check.ts`, which fails the build when a page lacks exactly one canonical link, a title or a description, shares a title or description with another page, or has JSON-LD that does not parse or a node without `@type`; when a post or note has no `BlogPosting`; or when the sitemap lists a page that is missing, `noindex`, a draft, or under another canonical URL, or dates it differently from its JSON-LD.
 
@@ -56,3 +57,7 @@ just indexnow https://ayagmar.dev/writing/a    # just these
 ```
 
 If Cloudflare's **Crawler Hints** is on for the zone, Cloudflare also sends IndexNow pings when cached content changes; the two do not conflict.
+
+## Cloudflare Web Analytics
+
+Set to **Enable with JS Snippet installation** in the dashboard: automatic injection never reached the HTML the Worker serves. The page renders the snippet itself, on production builds only, with the token from `src/lib/search.ts`. Numbers appear under **Analytics & Logs → Web Analytics**. To turn it off, empty the token: the beacon, its CSP origins and the colophon's sentence about it all go with it.

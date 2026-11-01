@@ -1,3 +1,4 @@
+import { cloudflareAnalytics } from './search.ts';
 import { comments } from './site.ts';
 
 /** Sources the site may load from besides itself: the signals read API, and giscus's frame. */
@@ -6,17 +7,28 @@ const apiOrigin = 'https://api.ayagmar.dev';
 /**
  * The site's Content-Security-Policy. Inline scripts and styles Astro emits are allowed by
  * hash only; 'wasm-unsafe-eval' lets Pagefind compile its WebAssembly, and its search runs in
- * a same-origin worker (`/pagefind/pagefind-worker.js`).
+ * a same-origin worker (`/pagefind/pagefind-worker.js`). With `analytics`, the build's pages
+ * load Cloudflare's Web Analytics beacon, which may then report to Cloudflare, and nothing more.
  */
-export function contentSecurityPolicy(hashes: { scripts: string[]; styles: string[] }): string {
+export function contentSecurityPolicy(policy: {
+  scripts: string[];
+  styles: string[];
+  analytics?: boolean;
+}): string {
   const quoted = (list: string[]) => list.map((hash) => `'${hash}'`);
+  const beacon = policy.analytics
+    ? {
+        script: [new URL(cloudflareAnalytics.script).origin],
+        connect: [cloudflareAnalytics.reportOrigin],
+      }
+    : { script: [], connect: [] };
   return [
     "default-src 'none'",
-    ["script-src 'self' 'wasm-unsafe-eval'", ...quoted(hashes.scripts)].join(' '),
-    ["style-src 'self'", ...quoted(hashes.styles)].join(' '),
+    ["script-src 'self' 'wasm-unsafe-eval'", ...beacon.script, ...quoted(policy.scripts)].join(' '),
+    ["style-src 'self'", ...quoted(policy.styles)].join(' '),
     "img-src 'self'",
     "font-src 'self'",
-    `connect-src 'self' ${apiOrigin}`,
+    ["connect-src 'self'", apiOrigin, ...beacon.connect].join(' '),
     `frame-src ${comments.origin}`,
     "worker-src 'self'",
     "manifest-src 'self'",

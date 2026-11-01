@@ -5,6 +5,7 @@
     "pageWeight": 153600,
     "fonts": 204800,
     "onDemand": ["/pagefind/pagefind.js"],
+    "externalScripts": ["https://static.cloudflareinsights.com/beacon.min.js"],
     "allowances": [
       {
         "name": "theme switch",

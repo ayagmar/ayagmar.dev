@@ -27,6 +27,11 @@ export interface Budgets {
      * `file` is a URL path where `*` stands for any characters but `/`, such as a build hash.
      */
     allowances: { name: string; file: string; bytes: number }[];
+    /**
+     * Scripts from another origin a page may load with `<script src>`, by exact URL, and only
+     * that way: Cloudflare's Web Analytics beacon (ADR 0019). Not in the build, so not counted.
+     */
+    externalScripts: string[];
   };
   lighthouse: {
     runs: number;
@@ -149,10 +154,12 @@ const decode = (value: string) =>
     .replaceAll('&gt;', '>')
     .replaceAll('&amp;', '&');
 
+/** A tag's attributes by lowercased name; a repeated name keeps its first value, as browsers do. */
 function attributes(source: string): Map<string, string> {
   const out = new Map<string, string>();
   for (const [, name = '', ...values] of source.matchAll(attribute)) {
-    out.set(name.toLowerCase(), decode(values.find((v) => v !== undefined) ?? ''));
+    const key = name.toLowerCase();
+    if (!out.has(key)) out.set(key, decode(values.find((v) => v !== undefined) ?? ''));
   }
   return out;
 }
@@ -226,6 +233,16 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     return found;
   };
 
+  /** Whether a script's src is, after a browser's normalization, one budgets.json allows. */
+  const externalScript = (src: string | undefined, from: string) => {
+    if (src === undefined) return false;
+    try {
+      return limits.externalScripts.includes(new URL(src, `${site}${from}`).href);
+    } catch {
+      return false;
+    }
+  };
+
   /** A stylesheet and what it pulls in (other stylesheets, images, fonts). */
   const cssClosure = (file: string, into: Set<string>) => {
     if (into.has(file)) return;
@@ -297,7 +314,10 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
           load(a.get(key), scripts);
         }
       } else if (element === 'script') {
-        if (jsTypes.has((a.get('type') ?? '').toLowerCase())) load(a.get('src'), scripts);
+        const src = a.get('src');
+        if (jsTypes.has((a.get('type') ?? '').toLowerCase()) && !externalScript(src, url)) {
+          load(src, scripts);
+        }
       } else if (element === 'link') {
         const rels = (a.get('rel') ?? '').toLowerCase().split(/\s+/);
         if (rels.some((rel) => fetchingRels.has(rel))) {

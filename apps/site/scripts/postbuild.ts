@@ -3,7 +3,8 @@
 // exactly what Astro itself emits (the island runtime, its hydration directives and the island
 // style). Any other inline <script> or <style>, such as raw HTML in a Markdown post, fails the
 // build instead of being hashed into the policy. A `type="application/ld+json"` block is data a
-// browser never runs, so it needs no hash, but it must parse as JSON.
+// browser never runs, so it needs no hash, but it must parse as JSON. The policy allows
+// Cloudflare Web Analytics only when a page loads its beacon (production builds).
 // Usage: node scripts/postbuild.ts [dist]
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -15,6 +16,7 @@ import only from 'astro/runtime/client/only.prebuilt.js';
 import visible from 'astro/runtime/client/visible.prebuilt.js';
 import island from 'astro/runtime/server/astro-island.prebuilt.js';
 import { ISLAND_STYLES } from 'astro/runtime/server/astro-island-styles.js';
+import { cloudflareAnalytics } from '../src/lib/search.ts';
 import {
   contentSecurityPolicy,
   renderHeadersFile,
@@ -65,9 +67,14 @@ function* elements(html: string): Generator<{
 
 const hashes = { script: new Set<string>(), style: new Set<string>() };
 const rejected: string[] = [];
+let analytics = false;
 for (const file of pages) {
   for (const { kind, body, type, src } of elements(readFileSync(join(dist, file), 'utf8'))) {
-    if (kind === 'script' && src !== undefined) continue;
+    if (kind === 'script' && src !== undefined) {
+      // Attribute values are HTML-escaped; the beacon's URL has nothing to escape.
+      analytics ||= src === cloudflareAnalytics.script;
+      continue;
+    }
     if (kind === 'script' && type === 'application/ld+json') {
       try {
         JSON.parse(body);
@@ -95,6 +102,7 @@ if (rejected.length > 0) {
 const csp = contentSecurityPolicy({
   scripts: [...hashes.script].sort(),
   styles: [...hashes.style].sort(),
+  analytics,
 });
 writeFileSync(join(dist, '_headers'), renderHeadersFile(securityHeaders(csp)));
 console.log(`postbuild: wrote _headers (CSP ${csp.length} characters)`);

@@ -7,7 +7,7 @@ import serifRoman from '../fonts/serif-roman.woff2?url';
 import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
 import { buildOrigin, defaultOgImage, type OgImage, ogSize } from '../lib/og.ts';
 import { roomObjects } from '../lib/room.ts';
-import { siteVerification } from '../lib/search.ts';
+import { analyticsToken, cloudflareAnalytics, siteVerification } from '../lib/search.ts';
 import { nav, nowPage, publicPath, site } from '../lib/site.ts';
 import { jsonLd, type StructuredData } from '../lib/structured-data.ts';
 import themeScript from '../scripts/theme.js?url&no-inline';
@@ -39,6 +39,7 @@ const current = publicPath(Astro.url.pathname);
 const canonical = new URL(current, Astro.site);
 // The canonical URL stays production; a link preview points where this build is served.
 const origin = buildOrigin(WORKERS_CI_BRANCH);
+const beaconToken = analyticsToken(WORKERS_CI_BRANCH);
 const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => ({
   ...feedPaths(scope),
   label: feedScope(scope).title,
@@ -101,6 +102,15 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
     <link rel="sitemap" href="/sitemap-index.xml">
     {structuredData.length > 0 && (
       <script is:inline type="application/ld+json" set:html={jsonLd(structuredData)} />
+    )}
+    {/* Cloudflare Web Analytics, production only (src/lib/search.ts, ADR 0019). */}
+    {beaconToken !== undefined && (
+      <script
+        is:inline
+        type="module"
+        src={cloudflareAnalytics.script}
+        data-cf-beacon={JSON.stringify({ token: beaconToken })}
+      />
     )}
     <slot name="head" />
     <!-- Blocking on purpose: puts the stored theme on <html> before the first paint (ADR 0026). -->
@@ -171,7 +181,7 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
       </form>
     </dialog>
     <footer class="site-footer wrap">
-      <p>{site.name}: static pages, no tracking.</p>
+      <p>{site.name}: static pages, no cookies.</p>
       <ul>
         <li><a href={feedPaths().rss}>RSS</a></li>
         <li><a href={feedPaths().atom}>Atom</a></li>

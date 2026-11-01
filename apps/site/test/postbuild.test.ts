@@ -91,6 +91,25 @@ describe('postbuild CSP', () => {
     expect(bad.stderr).toContain('writing/b.html: JSON-LD that does not parse');
   });
 
+  // Catches Previews and local builds allowing Cloudflare's origins, or production missing them
+  // so the beacon is blocked.
+  it("allows Cloudflare's beacon and its reports only in a build whose pages load it", () => {
+    const csp = () =>
+      /Content-Security-Policy: (.*)/.exec(readFileSync(join(dist, '_headers'), 'utf8'))?.[1];
+    build({ 'index.html': page('') });
+    expect(csp()).not.toContain('cloudflareinsights');
+
+    const beacon =
+      '<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;:&quot;t&quot;}"></script>';
+    build({ 'index.html': page(beacon) });
+    expect(csp()).toContain(
+      "script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com "
+    );
+    expect(csp()).toContain(
+      "connect-src 'self' https://api.ayagmar.dev https://cloudflareinsights.com;"
+    );
+  });
+
   it('still rejects inline scripts that only pretend to load a src', () => {
     for (const script of [
       '<script data-note="src=/x.js">fetch("/x")</script>',
