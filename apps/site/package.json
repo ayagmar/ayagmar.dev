@@ -20,6 +20,7 @@
     "@types/node": "catalog:",
     "msw": "catalog:",
     "pagefind": "1.5.2",
+    "sharp": "0.35.5",
     "svelte-check": "4.7.7",
     "typescript": "catalog:",
     "vitest": "catalog:",

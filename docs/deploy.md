@@ -13,7 +13,7 @@ Both projects:
 - **Node.js:** read from `.node-version`. Do not set `NODE_VERSION`.
 - **pnpm:** read from `packageManager` in `package.json`. Do not set `PNPM_VERSION`.
 - **Dependencies:** installed by Workers Builds from `pnpm-lock.yaml`. Leave `SKIP_DEPENDENCY_INSTALL` unset.
-- **Build variables:** none. The commit SHA comes from `WORKERS_CI_COMMIT_SHA`, which Workers Builds sets. The site build reads the signals API when `WORKERS_CI_BRANCH` is `main` and the shared fixtures for every other branch (ADR 0015).
+- **Build variables:** none. The commit SHA comes from `WORKERS_CI_COMMIT_SHA`, which Workers Builds sets. The site build reads the signals API when `WORKERS_CI_BRANCH` is `main` and the shared fixtures for every other branch (ADR 0015). On any other branch, the site's link previews (`og:image`, `og:url`) point at that branch's Preview URL (ADR 0027).
 
 ### Site (`min7-site`, ayagmar.dev)
 

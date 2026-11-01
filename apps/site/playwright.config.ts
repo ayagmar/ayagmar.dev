@@ -5,6 +5,9 @@ const port = 8790;
 // carry the @drafts tag and run there; til-preview.spec.ts runs there whole.
 const previewPort = 8791;
 const previewDir = 'node_modules/.cache/preview';
+// Built as Workers Builds builds a branch, so its link previews point at that branch's Preview
+// (e2e/previews.spec.ts).
+const previewBranch = 'feat/e2e-preview';
 
 export default defineConfig({
   testDir: 'e2e',
@@ -42,7 +45,7 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
-      command: `just site-build-preview && pnpm exec wrangler dev --assets ${previewDir} --port ${previewPort} --ip 127.0.0.1 --log-level warn`,
+      command: `WORKERS_CI_BRANCH=${previewBranch} just site-build-preview && pnpm exec wrangler dev --assets ${previewDir} --port ${previewPort} --ip 127.0.0.1 --log-level warn`,
       url: `http://127.0.0.1:${previewPort}/index.txt`,
       reuseExistingServer: false,
       timeout: 180_000,

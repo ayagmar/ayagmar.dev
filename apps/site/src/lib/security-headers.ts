@@ -51,6 +51,11 @@ export function renderHeadersFile(headers: Record<string, string>): string {
     ...Object.entries(headers).map(([name, value]) => `  ${name}: ${value}`),
     '/_astro/*',
     '  Cache-Control: public, max-age=31536000, immutable',
+    // Fixed names that crawlers and browsers ask for (src/lib/og.ts): a day, then revalidate.
+    ...['/og/*', '/favicon.ico', '/favicon.svg', '/apple-touch-icon.png'].flatMap((path) => [
+      path,
+      '  Cache-Control: public, max-age=86400',
+    ]),
     '',
   ];
   const tooLong = lines.find((line) => line.length >= maxHeaderLine);

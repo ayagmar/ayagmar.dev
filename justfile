@@ -201,7 +201,8 @@ site-build-preview:
     {{ site }} pagefind --site node_modules/.cache/preview --quiet
     {{ site }} node scripts/postbuild.ts node_modules/.cache/preview
 
-# Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026)
+# Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026),
+# and the TrueType copies in src/fonts/ttf the link-preview images draw with (ADR 0027)
 fonts:
     cd apps/site && uv run --no-project --with fonttools==4.67.0 --with brotli==1.2.1 python scripts/fonts.py
 
