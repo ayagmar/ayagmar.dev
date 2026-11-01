@@ -1,6 +1,6 @@
 # 0034. Lit windows
 
-Status: accepted, 2026-10-26. Amends ADR 0026 where it changes the room's visual system, and ADR 0029 (overcast). Amended 2026-10-31: quieter windows and stats (below); it replaces the window chrome, bar colours, status bar, sample tag, big numbers and heat caption described above.
+Status: superseded by [ADR 0037](0037-quiet-room.md), 2026-11-01, except the overcast layer, the heat strip's data and the /stats layout, which stand. Accepted 2026-10-26. Amends ADR 0026 where it changes the room's visual system, and ADR 0029 (overcast). Amended 2026-10-31: quieter windows and stats (below); it replaces the window chrome, bar colours, status bar, sample tag, big numbers and heat caption described above.
 
 ## Context
 

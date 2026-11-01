@@ -6,7 +6,6 @@ import PostHeader from '../../components/PostHeader.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import ReplyByEmail from '../../components/ReplyByEmail.astro';
 import Toc from '../../components/Toc.astro';
-import display from '../../fonts/display.woff2?url';
 import Base from '../../layouts/Base.astro';
 import { renderArt } from '../../lib/art.ts';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
@@ -39,8 +38,6 @@ const { title, summary, art } = post.data;
 ---
 
 <Base title={title} description={summary}>
-  {/* A title this large rewraps if the display face swaps in late (CLS, ADR 0034). */}
-  <link slot="head" rel="preload" href={display} as="font" type="font/woff2" crossorigin>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
     <PostHeader post={post}>

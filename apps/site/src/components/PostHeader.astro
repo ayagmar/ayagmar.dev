@@ -13,11 +13,9 @@ interface Props {
   };
   /** Tags link to their writing page; a note's tags have none, so they are plain text. */
   linkTags?: boolean;
-  /** The folder the file bar shows the file in: `writing` for posts, `til` for notes. */
-  folder?: 'writing' | 'til';
 }
 
-const { post, linkTags = true, folder = 'writing' } = Astro.props;
+const { post, linkTags = true } = Astro.props;
 const { title, date, updated, tags, draft, projects = [] } = post.data;
 // The `art` slot holds per-post art (ADR 0027); without it the header has no figure. Search
 // skips it: the ascii kind is text.
@@ -25,12 +23,6 @@ const hasArt = Astro.slots.has('art');
 ---
 
 <header class="post-header">
-  <!-- A file bar over the post, as on a desktop: where it lives and how long it is. Decoration
-       with real text, so search leaves it out. -->
-  <p class="filebar" data-pagefind-ignore>
-    <span>~/{folder}/{post.id}.md</span>
-    {post.body !== undefined && <span>{readingMinutes(post.body)} min read</span>}
-  </p>
   {hasArt && (
     <figure class="post-art" data-pagefind-ignore>
       <slot name="art" />
@@ -51,6 +43,8 @@ const hasArt = Astro.slots.has('art');
         </>
       )}
     </p>
+    {/* How long it is, from the Markdown's word count; search leaves it out. */}
+    {post.body !== undefined && <p data-pagefind-ignore>{readingMinutes(post.body)} min read</p>}
     {tags.length > 0 && (
       <ul class="tags" aria-label="Tags">
         {tags.map((tag) => (

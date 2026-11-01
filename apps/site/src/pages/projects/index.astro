@@ -8,20 +8,22 @@ const { projects } = await getProjects();
 ---
 
 <Base title="Projects">
-  <h1>Projects</h1>
-  <p class="caption">What is on the monitor: tools I build and keep running.</p>
-  <ul class="projects panel m-screen">
-    {projects.map((project) => (
-      <li id={project.slug}>
-        <h2>
-          <a href={projectPath(project.slug)}>{project.slug}</a>
-        </h2>
-        {project.summary !== null && <p>{project.summary}</p>}
-        <p class="project-post-count">
-          {postCount(postsAbout(posts, project.slug).length)}
-          {project.status !== null && <>, {project.status}</>}
-        </p>
-      </li>
-    ))}
-  </ul>
+  <div class="column">
+    <h1>Projects</h1>
+    <p class="caption">What is on the monitor: tools I build and keep running.</p>
+    <ul class="projects panel m-screen">
+      {projects.map((project) => (
+        <li id={project.slug}>
+          <h2>
+            <a href={projectPath(project.slug)}>{project.slug}</a>
+          </h2>
+          {project.summary !== null && <p>{project.summary}</p>}
+          <p class="project-post-count">
+            {postCount(postsAbout(posts, project.slug).length)}
+            {project.status !== null && <>, {project.status}</>}
+          </p>
+        </li>
+      ))}
+    </ul>
+  </div>
 </Base>

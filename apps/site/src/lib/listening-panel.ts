@@ -1,13 +1,14 @@
 /**
  * The body of /stats's listening panel, under the now-playing line: the week's scrobbles, the
- * recent tracks (five, the rest folded) and the top artists, each track and artist a link to its Last.fm page. The
+ * recent tracks as a log (five, the rest folded) and the top artists, each track and artist a
+ * link to its Last.fm page. The
  * build renders it (src/pages/stats.astro) and so does a live answer (src/scripts/stats-live.ts).
  */
 import type { ListeningSnapshot } from '@min7/contracts';
 import { count } from '../data/format.ts';
 import { artistUrl } from './lastfm.ts';
 import { trackBy } from './listening.ts';
-import { el, type Markup, when } from './markup.ts';
+import { el, type Markup, stampMarkup } from './markup.ts';
 import { weekCount, statsWords as words } from './stats.ts';
 import { capped } from './stats-panels.ts';
 
@@ -24,9 +25,15 @@ export function listeningBody({ scrobbles, recent, topArtists }: ListeningSnapsh
       ? [el('p', {}, words.noRecent)]
       : capped(
           'ol',
-          {},
+          { class: 'log' },
           recent.map((item) =>
-            el('li', {}, ...trackBy(item.track, item.artist, item.url), ' ', when(item.playedAt))
+            el(
+              'li',
+              {},
+              stampMarkup(item.playedAt),
+              ' ',
+              el('span', {}, ...trackBy(item.track, item.artist, item.url))
+            )
           ),
           5,
           (rest) => (rest === 1 ? '1 more track' : `${rest} more tracks`)

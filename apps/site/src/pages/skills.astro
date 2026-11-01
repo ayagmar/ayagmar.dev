@@ -29,7 +29,7 @@ const repoUrl = `https://github.com/${source.repo}`;
   title="Skills"
   description={`${skills.length} Agent Skills by Abdeslam Yassine Agmar: what each does, how to install it, and how it did on its evals.`}
 >
-  <div data-pagefind-body>
+  <div class="column" data-pagefind-body>
     <span hidden data-pagefind-meta="title">Skills</span>
     <header class="intro">
       <h1>Skills</h1>
@@ -136,23 +136,18 @@ const repoUrl = `https://github.com/${source.repo}`;
 </Base>
 
 <style>
-.intro > p {
-  max-width: var(--measure);
-}
-
 .intro h1 {
-  margin-bottom: 0.25em;
+  margin-bottom: 0.5em;
 }
 
 .note,
-.blurb,
 .credit,
 .detail,
 .version,
 .badges,
 .links,
 summary {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -171,6 +166,7 @@ summary {
   padding: 0.55rem 0.75rem;
   width: fit-content;
   max-width: 100%;
+  border-radius: calc(2 * var(--radius));
   background: var(--code-bg);
   color: var(--code-fg);
   line-height: 1.5;
@@ -178,52 +174,43 @@ summary {
 }
 
 .shelf {
-  margin-block: 2.5rem 0;
+  margin-block: 3rem 0;
 }
 
 .shelf h2 {
   margin: 0;
-  font-size: 1.35rem;
 }
 
 .blurb {
-  margin: 0.15rem 0 1rem;
+  margin: 0.15rem 0 1.25rem;
   color: var(--fg-2);
 }
 
-/* Each skill is a small window on the shelf: its name in the title bar (ADR 0034). */
+/* Each skill is a quiet row: its name with its version muted on the right, what it does, then
+   one line of facts and links. */
 .jars {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-  gap: 1rem;
-  padding: 0;
   margin: 0;
+  padding: 0;
   list-style: none;
 }
 
 .jar {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  min-width: 0;
+  padding-block: 1rem;
+  border-top: 1px solid var(--rule);
   overflow-wrap: anywhere;
-  border: 1px solid var(--rule);
-  background: var(--surface);
   scroll-margin-top: 1rem;
 }
 
 .label {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   align-items: baseline;
   justify-content: space-between;
-  padding: 0.4rem 0.8rem;
-  border-bottom: 1px solid var(--rule);
-  background: color-mix(in srgb, var(--fg) 4%, transparent);
 }
 
 .label h3 {
   margin: 0;
-  font: 600 0.8125rem / 1.3 var(--mono);
+  font: 600 0.9375rem / 1.5 var(--mono);
   text-wrap: auto;
 }
 
@@ -231,49 +218,55 @@ summary {
   flex: none;
   color: var(--fg-2);
   font-family: var(--mono);
+  font-size: 0.8125rem;
 }
 
 .contents {
-  display: grid;
-  gap: 0.5rem;
-  align-content: start;
-  padding: 0.8rem 0.8rem 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  align-items: baseline;
+  margin-top: 0.25rem;
 }
 
-.contents p {
+.contents > * {
   margin: 0;
 }
 
+.summary,
+.credit,
+details {
+  flex-basis: 100%;
+}
+
 .summary {
-  font-size: 0.975rem;
-  line-height: 1.5;
+  margin-bottom: 0.35rem;
+}
+
+.credit {
+  order: 1;
+  color: var(--fg-2);
+}
+
+details {
+  order: 2;
 }
 
 .badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0 1rem;
   color: var(--fg-2);
-  font-family: var(--mono);
 }
 
-.badges span {
-  padding: 0 0.4rem;
-  border: 1px solid var(--rule);
-}
-
+/* The eval ratio is data; the licence and "needs Node" are labels. */
 .badges .mark {
-  border-color: var(--glow);
-  color: var(--glow);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
 }
 
 .badges .mark.short {
-  border-color: var(--rose);
   color: var(--rose);
-}
-
-.credit {
-  color: var(--fg-2);
 }
 
 .links {
@@ -289,19 +282,13 @@ summary {
   padding-block: 0.25rem;
 }
 
-details {
-  margin-block-start: 0.1rem;
-}
-
 summary {
+  width: fit-content;
   color: var(--fg-2);
   cursor: pointer;
 }
 
-summary:hover {
-  color: var(--fg);
-}
-
+summary:hover,
 details[open] summary {
   color: var(--fg);
 }

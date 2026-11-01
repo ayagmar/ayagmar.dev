@@ -13,6 +13,7 @@ import {
   pagePaths,
   readLhr,
   regressions,
+  shifts,
 } from './lighthouse.ts';
 
 const values = (over: Partial<Record<string, number>> = {}) => ({
@@ -151,6 +152,25 @@ describe('runs and pages', () => {
     assert.equal(readLhr(lhr), null);
     const { runtimeError: _, ...loaded } = lhr;
     assert.throws(() => readLhr(loaded), /no performance in the result/);
+  });
+
+  // Catches a CLS failure on the runner that names nothing, or a crash on a result without the
+  // audit, which would hide the real budget failure behind a script error.
+  it('names what moved, worst first, and nothing when the audit is missing', () => {
+    const item = (score: number, node: object) => ({ score, node });
+    const lhr = {
+      requestedUrl: 'http://x/stats',
+      categories: {},
+      audits: {
+        'layout-shifts': {
+          details: {
+            items: [item(0.0479, { selector: 'div.stats-grid' }), item(0.0004, { snippet: '<p>' })],
+          },
+        },
+      },
+    };
+    assert.deepEqual(shifts(lhr), ['0.0479 div.stats-grid', '0.0004 <p>']);
+    assert.deepEqual(shifts({ ...lhr, audits: {} }), []);
   });
 
   it('measures the largest post and project page, so a heavy one cannot hide behind a light one', () => {
