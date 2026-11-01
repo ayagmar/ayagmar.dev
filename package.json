@@ -6,7 +6,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
     "@types/node": "catalog:",
-    "knip": "6.43.0",
+    "knip": "6.44.0",
     "typescript": "catalog:",
     "yaml": "2.9.1"
   }
