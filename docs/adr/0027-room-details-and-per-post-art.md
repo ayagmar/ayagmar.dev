@@ -1,6 +1,6 @@
 # 0027. Room details and per-post art
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco. Amended 2026-10-26: the now-playing island became a page script shared with /stats (ADR 0015); the record's rules below hold, and a hung request now ends after a 5 s deadline.
+Status: accepted, 2026-10-26. Amended 2026-11-01: a post's art also draws its link-preview image (see Link previews below). Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco. Amended 2026-10-26: the now-playing island became a page script shared with /stats (ADR 0015); the record's rules below hold, and a hung request now ends after a 5 s deadline.
 
 ## Context
 
@@ -76,6 +76,10 @@ A post may set `art: { kind, seed, palette }` in its frontmatter (`writing-schem
 Sizes: dither about 4 KB gzip, ascii and pattern about 0.5 KB.
 
 The three placeholder posts carry one kind each, so e2e and axe see all three in both themes. They are drafts, so those tests run on the build that shows drafts.
+
+### Link previews
+
+Every page names a 1200x630 PNG as `og:image`, with its size, a text alternative and `twitter:card` `summary_large_image` (`Base.astro`, paths and alternatives in `src/lib/og.ts`). Astro endpoints draw them at build time with sharp (`src/lib/og-card.ts`), so no page ships code for them: a post's card is its art at ten times its size, or the night room at twice its size when it has none, with the title in the serif and "min7 · Writing" under it on the night ground; a TIL note's is the room with its title; every other page shares `/og/default.png`, the room with the site's name and description. sharp's FreeType reads no WOFF2, so `just fonts` also writes TrueType copies of the roman and the mono to `src/fonts/ttf/` for the build; they never reach a page. The same endpoints write `/favicon.ico` (16 and 32 px) and `/apple-touch-icon.png` (180 px, opaque) from `public/favicon.svg`, a lit arched window in the lamp's amber on the night ground. `_headers` gives these fixed names a day's cache. `e2e/previews.spec.ts` checks that every built page's image is served at its size, and the icons' formats.
 
 ### The CSP and the build
 

@@ -4,6 +4,7 @@ import ThemeSwitch from '../components/ThemeSwitch.astro';
 import mono from '../fonts/mono.woff2?url';
 import serifRoman from '../fonts/serif-roman.woff2?url';
 import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
+import { defaultOgImage, type OgImage, ogSize } from '../lib/og.ts';
 import { roomObjects } from '../lib/room.ts';
 import { nav, nowPage, publicPath, site } from '../lib/site.ts';
 import themeScript from '../scripts/theme.js?url&no-inline';
@@ -14,9 +15,11 @@ interface Props {
   description?: string;
   /** Adds discovery links for this tag's or project's feeds next to the site-wide ones. */
   feed?: FeedScope;
+  /** The link-preview image; pages without their own share the room's (src/lib/og.ts). */
+  image?: OgImage;
 }
 
-const { title, description = site.description, feed } = Astro.props;
+const { title, description = site.description, feed, image = defaultOgImage } = Astro.props;
 const pageTitle = title === undefined ? site.name : `${title} | ${site.name}`;
 const current = publicPath(Astro.url.pathname);
 const canonical = new URL(current, Astro.site);
@@ -44,6 +47,20 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
     <title>{pageTitle}</title>
     <meta name="description" content={description}>
     <link rel="canonical" href={canonical}>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content={site.name}>
+    <meta property="og:title" content={title ?? site.name}>
+    <meta property="og:description" content={description}>
+    <meta property="og:url" content={canonical}>
+    <meta property="og:image" content={new URL(image.path, Astro.site)}>
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content={String(ogSize.width)}>
+    <meta property="og:image:height" content={String(ogSize.height)}>
+    <meta property="og:image:alt" content={image.alt}>
+    <meta name="twitter:card" content="summary_large_image">
     {feeds.map((feed) => (
       <>
         <link

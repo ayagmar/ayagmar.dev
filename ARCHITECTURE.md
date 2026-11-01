@@ -64,61 +64,62 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 
 ## Where things live
 
-| Concern                                                                   | Place                                                                                                                    |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Source ids, stale thresholds, envelope, `isStale`                         | `packages/contracts/src/{sources,envelope}.ts`                                                                           |
-| Snapshot and push schemas (one file per source)                           | `packages/contracts/src/snapshots/`, `src/push/`                                                                         |
-| JSON Schema for producers and consumers                                   | `packages/contracts/schema/*.{input,output}.json`, written by `just contracts-schema`                                    |
-| Payload corpus checked by zod and JSON Schema; frozen v1 consumer schemas | `packages/contracts/corpus/<schema>/{accept,reject}/`, `packages/contracts/test/frozen/v1/`                              |
-| Featured projects (slug, repo, npm package), shared by site and signals   | `packages/contracts/src/projects.ts`                                                                                     |
-| Test fixtures                                                             | `packages/contracts/fixtures/<upstream>/raw/`, `fixtures/<source>/snapshot/`, registered in `src/fixtures.ts`            |
-| Push bodies (corpus and Worker test fixtures in one)                      | `packages/contracts/fixtures/<producer>/push/{accept,reject}/`                                                           |
-| MSW handlers built from the fixtures (tests only)                         | `packages/contracts/src/testing.ts` (`@min7/contracts/testing`)                                                          |
-| Producer guides, push secrets and rotation                                | `docs/producers/`, `docs/operations.md`                                                                                  |
-| Producers on the owner's machine: delivery, llm-usage, desktop (ADR 0032) | `producers/*.ts`, systemd units in `producers/systemd/`                                                                  |
-| Pull adapter interface and registry                                       | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                                                       |
-| Pull adapters, bounded upstream reads, `PullError`                        | `apps/signals/src/adapters/pull/`                                                                                        |
-| Snapshot storage interface and its D1 implementation                      | `apps/signals/src/storage/{types,d1}.ts`, schema in `apps/signals/migrations/`                                           |
-| Push admission (replay, interval, ordering in one D1 batch)               | `apps/signals/src/storage/admission.ts`                                                                                  |
-| Push intake: body cap, auth order, projection per producer                | `apps/signals/src/intake/`                                                                                               |
-| Public labels for habit and agent ids                                     | `apps/signals/src/intake/public-labels.ts`                                                                               |
-| Token and HMAC checks, CORS, structured logs                              | `apps/signals/src/security/`                                                                                             |
-| Cron runner (one due adapter per run, delivery cleanup)                   | `apps/signals/src/cron/run.ts`                                                                                           |
-| Read API routes (one file per route), edge cache                          | `apps/signals/src/routes/v1/`, `routes/v1/snapshot.ts`                                                                   |
-| Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                                             |
-| Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                                                    |
-| Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                                                       |
-| TIL notes: schema, model, summary, page and feeds (ADR 0028)              | `apps/site/src/lib/{til-schema,til}.ts`, `src/pages/til/`, `src/components/TilNote.astro`                                |
-| Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025)                                                  |
-| RSS and Atom (one model, two renderers; writing and TIL)                  | `apps/site/src/lib/feed.ts`                                                                                              |
-| Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                                    |
-| Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                                         |
-| Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                            |
-| Build-time snapshot reader (`fixtures` or `api` mode)                     | `apps/site/src/data/`                                                                                                    |
-| Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/live.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{now-playing,stats-live}.ts`        |
-| Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/markup.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                      |
-| Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                      |
-| Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                              |
-| Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                              |
-| About page data, its schema                                               | `content/about.json`, `apps/site/src/data/about.ts`                                                                      |
-| Skills shelf: data, schema, sync script, page (ADR 0031)                  | `content/skills.json`, `apps/site/src/lib/{skills-schema,skills}.ts`, `src/pages/skills.astro`, `scripts/skills-sync.ts` |
-| Design tokens, type, panels, both themes (ADR 0026)                       | `apps/site/src/styles/base.css`, fonts in `src/fonts/` (built by `scripts/fonts.py`)                                     |
-| Theme switch (blocking script in `<head>`)                                | `apps/site/src/scripts/theme.js`, `src/components/ThemeSwitch.astro`                                                     |
-| Home page room: scene, hotspots, list                                     | `apps/site/src/lib/room.ts`, `src/styles/room.css`, `src/assets/room-*.png` (drawn by `scripts/scene.py`)                |
-| Room clock: sun, moon, Rabat time (ADR 0027)                              | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/window-*.png`                                             |
-| Weather in the window: code table, art (ADR 0029)                         | `apps/site/src/lib/weather.ts`, `src/scripts/room.ts`, `src/assets/weather-*.png`                                        |
-| On this day: Rabat dates, history check (ADR 0030)                        | `packages/contracts/src/rabat.ts`, `apps/site/src/lib/history.ts`, `src/scripts/history.ts`                              |
-| Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,llm-usage,llm-usage-panel,stats-panels,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`  |
-| /uses page data, its schema (ADR 0032)                                    | `content/uses.json`, `apps/site/src/data/uses.ts`, `apps/site/src/pages/uses.astro`                                      |
-| Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                               |
-| Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`                    |
-| Commands                                                                  | `justfile`                                                                                                               |
-| Decisions                                                                 | `docs/adr/`                                                                                                              |
+| Concern                                                                   | Place                                                                                                                         |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Source ids, stale thresholds, envelope, `isStale`                         | `packages/contracts/src/{sources,envelope}.ts`                                                                                |
+| Snapshot and push schemas (one file per source)                           | `packages/contracts/src/snapshots/`, `src/push/`                                                                              |
+| JSON Schema for producers and consumers                                   | `packages/contracts/schema/*.{input,output}.json`, written by `just contracts-schema`                                         |
+| Payload corpus checked by zod and JSON Schema; frozen v1 consumer schemas | `packages/contracts/corpus/<schema>/{accept,reject}/`, `packages/contracts/test/frozen/v1/`                                   |
+| Featured projects (slug, repo, npm package), shared by site and signals   | `packages/contracts/src/projects.ts`                                                                                          |
+| Test fixtures                                                             | `packages/contracts/fixtures/<upstream>/raw/`, `fixtures/<source>/snapshot/`, registered in `src/fixtures.ts`                 |
+| Push bodies (corpus and Worker test fixtures in one)                      | `packages/contracts/fixtures/<producer>/push/{accept,reject}/`                                                                |
+| MSW handlers built from the fixtures (tests only)                         | `packages/contracts/src/testing.ts` (`@min7/contracts/testing`)                                                               |
+| Producer guides, push secrets and rotation                                | `docs/producers/`, `docs/operations.md`                                                                                       |
+| Producers on the owner's machine: delivery, llm-usage, desktop (ADR 0032) | `producers/*.ts`, systemd units in `producers/systemd/`                                                                       |
+| Pull adapter interface and registry                                       | `apps/signals/src/adapters/types.ts`, `src/adapters/pull/index.ts`                                                            |
+| Pull adapters, bounded upstream reads, `PullError`                        | `apps/signals/src/adapters/pull/`                                                                                             |
+| Snapshot storage interface and its D1 implementation                      | `apps/signals/src/storage/{types,d1}.ts`, schema in `apps/signals/migrations/`                                                |
+| Push admission (replay, interval, ordering in one D1 batch)               | `apps/signals/src/storage/admission.ts`                                                                                       |
+| Push intake: body cap, auth order, projection per producer                | `apps/signals/src/intake/`                                                                                                    |
+| Public labels for habit and agent ids                                     | `apps/signals/src/intake/public-labels.ts`                                                                                    |
+| Token and HMAC checks, CORS, structured logs                              | `apps/signals/src/security/`                                                                                                  |
+| Cron runner (one due adapter per run, delivery cleanup)                   | `apps/signals/src/cron/run.ts`                                                                                                |
+| Read API routes (one file per route), edge cache                          | `apps/signals/src/routes/v1/`, `routes/v1/snapshot.ts`                                                                        |
+| Error responses (JSON 404, generic 500)                                   | `apps/signals/src/errors.ts`                                                                                                  |
+| Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                                                         |
+| Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                                                            |
+| TIL notes: schema, model, summary, page and feeds (ADR 0028)              | `apps/site/src/lib/{til-schema,til}.ts`, `src/pages/til/`, `src/components/TilNote.astro`                                     |
+| Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025)                                                       |
+| RSS and Atom (one model, two renderers; writing and TIL)                  | `apps/site/src/lib/feed.ts`                                                                                                   |
+| Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                                         |
+| Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                                              |
+| Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                                 |
+| Build-time snapshot reader (`fixtures` or `api` mode)                     | `apps/site/src/data/`                                                                                                         |
+| Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/live.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{now-playing,stats-live}.ts`             |
+| Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/markup.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                           |
+| Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                           |
+| Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                                   |
+| Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                                   |
+| About page data, its schema                                               | `content/about.json`, `apps/site/src/data/about.ts`                                                                           |
+| Skills shelf: data, schema, sync script, page (ADR 0031)                  | `content/skills.json`, `apps/site/src/lib/{skills-schema,skills}.ts`, `src/pages/skills.astro`, `scripts/skills-sync.ts`      |
+| Design tokens, type, panels, both themes (ADR 0026)                       | `apps/site/src/styles/base.css`, fonts in `src/fonts/` (built by `scripts/fonts.py`)                                          |
+| Theme switch (blocking script in `<head>`)                                | `apps/site/src/scripts/theme.js`, `src/components/ThemeSwitch.astro`                                                          |
+| Home page room: scene, hotspots, list                                     | `apps/site/src/lib/room.ts`, `src/styles/room.css`, `src/assets/room-*.png` (drawn by `scripts/scene.py`)                     |
+| Room clock: sun, moon, Rabat time (ADR 0027)                              | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/window-*.png`                                                  |
+| Weather in the window: code table, art (ADR 0029)                         | `apps/site/src/lib/weather.ts`, `src/scripts/room.ts`, `src/assets/weather-*.png`                                             |
+| On this day: Rabat dates, history check (ADR 0030)                        | `packages/contracts/src/rabat.ts`, `apps/site/src/lib/history.ts`, `src/scripts/history.ts`                                   |
+| Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,llm-usage,llm-usage-panel,stats-panels,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`       |
+| /uses page data, its schema (ADR 0032)                                    | `content/uses.json`, `apps/site/src/data/uses.ts`, `apps/site/src/pages/uses.astro`                                           |
+| Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                                    |
+| Favicon, touch icon and link-preview images (ADR 0027)                    | `apps/site/public/favicon.svg`, `src/lib/{og,og-card}.ts`, `src/pages/og/`, `src/pages/{favicon.ico,apple-touch-icon.png}.ts` |
+| Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`                         |
+| Commands                                                                  | `justfile`                                                                                                                    |
+| Decisions                                                                 | `docs/adr/`                                                                                                                   |
 
 ## Site build
 
 `just site-build` runs these steps:
-1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
+1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt`, the sitemap, the icons and a link-preview PNG for each post and note plus one for every other page.
 2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post and note bodies) into `dist/pagefind/`.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
