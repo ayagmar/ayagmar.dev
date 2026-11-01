@@ -12,6 +12,8 @@ import { siteUrl } from '../src/lib/site.ts';
 import { type Entries, sitemapEntries } from '../src/lib/sitemap.ts';
 
 const endpoint = 'https://api.indexnow.org/indexnow';
+// Per request: the snapshot runs before the deploy, so a slow site must not hold it up.
+const timeout = 5_000;
 const dist = join(import.meta.dirname, '..', 'dist');
 
 /**
@@ -28,7 +30,7 @@ export function changedUrls(before: Entries, after: Entries): string[] {
 }
 
 async function text(url: string): Promise<string> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+  const response = await fetch(url, { signal: AbortSignal.timeout(timeout) });
   if (!response.ok) throw new Error(`${url} answered ${response.status}`);
   return response.text();
 }
@@ -67,7 +69,7 @@ async function ping(urls: string[]): Promise<void> {
       keyLocation: `${siteUrl}/${indexNowKey}.txt`,
       urlList: urls,
     }),
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(timeout),
   });
   // 200 and 202 both mean received; 202 while the key file is still being checked.
   if (response.status !== 200 && response.status !== 202) {

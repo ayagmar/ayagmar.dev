@@ -231,9 +231,10 @@ scene:
 site-serve:
     {{ site }} wrangler dev --port 8790
 
-# Site: deploy the built site to production, then tell IndexNow which pages changed (docs/seo.md)
+# Site: deploy the built site to production, then tell IndexNow which pages changed (docs/seo.md).
+# Only wrangler deploy can fail it: the IndexNow steps are best effort.
 site-deploy:
-    before="$(mktemp)"; trap 'rm -f "$before"' EXIT; {{ site }} node scripts/indexnow.ts snapshot "$before"; {{ site }} wrangler deploy --message "{{ commit_sha }}"; {{ site }} node scripts/indexnow.ts deployed "$before"
+    before="$(mktemp)"; trap 'rm -f "$before"' EXIT; {{ site }} node scripts/indexnow.ts snapshot "$before" || true; {{ site }} wrangler deploy --message "{{ commit_sha }}"; {{ site }} node scripts/indexnow.ts deployed "$before" || true
 
 # Site: ping IndexNow (Bing, Yandex, Seznam, Naver, Yep) with these URLs, or every URL in the live sitemap
 [positional-arguments]
