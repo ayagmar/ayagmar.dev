@@ -5,15 +5,24 @@
 //   publish <slug> [--dry-run]             set draft: false and today's date, build, open a PR
 // It works on the git checkout of the current directory.
 import { execFileSync, spawn } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  readdirSync,
+  readFileSync,
+  readlinkSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
 import { connect } from 'node:net';
 import { join } from 'node:path';
 import { buildOrigin } from '../apps/site/src/lib/og.ts';
+import { siteUrl } from '../apps/site/src/lib/site.ts';
 
 const kinds = { post: { dir: 'writing' }, til: { dir: 'til' } } as const;
 type Kind = keyof typeof kinds;
 
-const devPort = 4321;
+// Astro's dev port; tests point it at a port of their own so they never touch the host's 4321.
+const devPort = Number(process.env.MIN7_TEST_DEV_PORT || 4321);
 const devOrigin = `http://localhost:${devPort}`;
 
 class UsageError extends Error {}
@@ -76,6 +85,10 @@ function drafts(): string[] {
 function listening(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = connect({ host: 'localhost', port });
+    socket.setTimeout(1000, () => {
+      socket.destroy();
+      resolve(false);
+    });
     socket.once('connect', () => {
       socket.destroy();
       resolve(true);
@@ -95,16 +108,91 @@ const openInBrowser = (url: string) =>
   launch(['xdg-open'], url, `Could not open a browser; open ${url}`);
 
 /**
+ * Splits a command line into words the way a shell would, honouring quotes and backslashes, but
+ * runs nothing: `$(...)`, backticks and variables stay literal text.
+ */
+function shellWords(line: string): string[] {
+  const words: string[] = [];
+  let word: string | undefined;
+  let quote: "'" | '"' | undefined;
+  for (let i = 0; i < line.length; i++) {
+    const char = line.charAt(i);
+    if (quote === "'") {
+      if (char === "'") quote = undefined;
+      else word += char;
+    } else if (quote === '"') {
+      if (char === '"') quote = undefined;
+      else if (char === '\\' && '"\\$`'.includes(line.charAt(i + 1))) word += line.charAt(++i);
+      else word += char;
+    } else if (/\s/.test(char)) {
+      if (word !== undefined) words.push(word);
+      word = undefined;
+    } else {
+      word ??= '';
+      if (char === "'" || char === '"') quote = char;
+      else if (char === '\\') word += line.charAt(++i);
+      else word += char;
+    }
+  }
+  if (quote) throw new UsageError(`Unclosed ${quote} in the editor command: ${line}`);
+  if (word !== undefined) words.push(word);
+  return words;
+}
+
+/**
  * Opens `path` in $VISUAL, else $EDITOR, without its --wait (-w) so the dev server starts at once.
  * A terminal editor would share the terminal with the server, so it suits only a GUI editor.
  */
 function openInEditor(path: string) {
-  const editor = (process.env.VISUAL || process.env.EDITOR || '')
-    .split(/\s+/)
-    .filter((word) => word !== '' && word !== '--wait' && word !== '-w');
+  const editor = shellWords(process.env.VISUAL || process.env.EDITOR || '').filter(
+    (word) => word !== '--wait' && word !== '-w'
+  );
   const [command, ...args] = editor;
   if (command === undefined) console.log(`Edit ${path}`);
   else launch([command, ...args], path, `Could not start ${command}; edit ${path}`);
+}
+
+/** The pid of the process listening on TCP `port`, read from /proc (Linux), if it is the user's. */
+function listenerPid(port: number): number | undefined {
+  const hex = `:${port.toString(16).toUpperCase().padStart(4, '0')}`;
+  const sockets = new Set<string>();
+  for (const table of ['/proc/net/tcp', '/proc/net/tcp6']) {
+    if (!existsSync(table)) continue;
+    for (const line of readFileSync(table, 'utf8').split('\n').slice(1)) {
+      // sl local_address rem_address st ... inode; st 0A is LISTEN.
+      const fields = line.trim().split(/\s+/);
+      if (fields[1]?.endsWith(hex) && fields[3] === '0A' && fields[9])
+        sockets.add(`socket:[${fields[9]}]`);
+    }
+  }
+  if (sockets.size === 0) return undefined;
+  for (const pid of readdirSync('/proc').filter((name) => /^\d+$/.test(name))) {
+    try {
+      for (const fd of readdirSync(`/proc/${pid}/fd`))
+        if (sockets.has(readlinkSync(`/proc/${pid}/fd/${fd}`))) return Number(pid);
+    } catch {
+      // Another user's process, or one that just exited.
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Whether the server on `port` is this checkout's dev server with drafts shown: a process whose
+ * working directory is inside this checkout and that started with PUBLIC_SHOW_DRAFTS=1.
+ */
+function checkServer(port: number): 'drafts' | 'no-drafts' | 'unknown' {
+  const pid = listenerPid(port);
+  if (pid === undefined) return 'unknown';
+  try {
+    const cwd = realpathSync(`/proc/${pid}/cwd`);
+    const base = realpathSync(root());
+    if (cwd !== base && !cwd.startsWith(`${base}/`)) return 'unknown';
+    const env = readFileSync(`/proc/${pid}/environ`, 'utf8').split('\0');
+    return env.includes('PUBLIC_SHOW_DRAFTS=1') ? 'drafts' : 'no-drafts';
+  } catch {
+    return 'unknown';
+  }
 }
 
 /**
@@ -117,7 +205,7 @@ async function serveDrafts(paths: string[], open?: string) {
     if (!open) return;
     // A running server picks up a new file within a second or so; until then the page is a 404.
     for (let tries = 0; tries < 20; tries++) {
-      const status = await fetch(`${devOrigin}${open}`).then(
+      const status = await fetch(`${devOrigin}${open}`, { signal: AbortSignal.timeout(1000) }).then(
         (response) => response.status,
         () => 0
       );
@@ -127,9 +215,16 @@ async function serveDrafts(paths: string[], open?: string) {
     openInBrowser(`${devOrigin}${open}`);
   };
   if (await listening(devPort)) {
-    console.log(
-      `A dev server is already on ${devOrigin}. If a draft is missing, it hides drafts: stop it and run \`just drafts\`.`
-    );
+    const server = checkServer(devPort);
+    if (server === 'no-drafts')
+      throw new UsageError(
+        `This checkout's dev server on ${devOrigin} hides drafts. Stop it (Ctrl-C, or \`pnpm --filter @min7/site exec astro dev stop\`) and run \`just drafts\`.`
+      );
+    if (server === 'unknown')
+      throw new UsageError(
+        `Port ${devPort} is taken by something other than this checkout's dev server with drafts (another project or worktree?). Stop it and run \`just drafts\`.`
+      );
+    console.log(`Using this checkout's dev server on ${devOrigin}.`);
     await announce();
     return;
   }
@@ -184,6 +279,18 @@ function published(text: string): string {
   return `---\n${next.join('\n')}\n---\n${body}`;
 }
 
+/**
+ * The branch a slug is published on: `content/<slug>`, the slug cut short (never ending in a
+ * hyphen) when the Preview's name would not fit one DNS label, so it still gets a Preview URL.
+ */
+function publishBranch(slug: string): string {
+  for (let length = slug.length; length > 0; length--) {
+    const branch = `content/${slug.slice(0, length).replace(/-+$/, '')}`;
+    if (buildOrigin(branch) !== siteUrl) return branch;
+  }
+  throw new UsageError(`No Preview URL fits a branch for ${slug}.`);
+}
+
 function publish(slug: string, dryRun: boolean) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
     throw new UsageError(`"${slug}" is not a slug; pass the file name without .md.`);
@@ -210,7 +317,13 @@ function publish(slug: string, dryRun: boolean) {
       'HEAD is not origin/main. Switch to main and pull first: git switch main && git pull --ff-only'
     );
 
-  const branch = `content/${slug}`;
+  try {
+    execFileSync('gh', ['auth', 'status'], { stdio: 'ignore' });
+  } catch {
+    throw new UsageError('gh is missing or not logged in; run `gh auth login` first.');
+  }
+
+  const branch = publishBranch(slug);
   if (
     git('branch', '--list', branch) !== '' ||
     git('ls-remote', '--heads', 'origin', branch) !== ''
@@ -240,26 +353,63 @@ Preview, once Workers Builds finishes: ${preview}`);
     );
   }
   const run = (cmd: string, ...args: string[]) => execFileSync(cmd, args, { stdio: 'inherit' });
-  run('git', 'switch', '--quiet', '-c', branch);
-  run('git', 'add', '--', file);
-  run('git', 'commit', '--quiet', '-m', message, '--', file);
-  run('git', 'push', '--quiet', '-u', 'origin', branch);
-  const pr = execFileSync(
-    'gh',
-    [
-      'pr',
-      'create',
-      '--base',
-      'main',
-      '--head',
-      branch,
-      '--title',
-      message,
-      '--body',
-      `Publishes \`${file}\` at \`${pagePath(kind, slug)}\`. \`just site-build\` passed with it.`,
-    ],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }
-  ).trim();
+  const start = git('rev-parse', 'HEAD');
+  const startBranch = execFileSync('git', ['branch', '--show-current'], {
+    encoding: 'utf8',
+  }).trim();
+  try {
+    run('git', 'switch', '--quiet', '-c', branch);
+    run('git', 'add', '--', file);
+    run('git', 'commit', '--quiet', '-m', message, '--', file);
+  } catch {
+    // Nothing is committed: put the draft, the index and the branch back as they were.
+    writeFileSync(path, text);
+    const undo = [
+      ['reset', '--quiet', '--', file],
+      startBranch ? ['switch', '--quiet', startBranch] : ['switch', '--quiet', '--detach', start],
+      ['branch', '--quiet', '-D', branch],
+    ];
+    for (const args of undo)
+      try {
+        execFileSync('git', args, { stdio: 'ignore' });
+      } catch {
+        // The step before failed earlier than this one needs (no branch yet, say).
+      }
+    throw new UsageError(
+      `The commit failed, so nothing was published: ${file} is a draft again on ${startBranch || start}.`
+    );
+  }
+  const finish = (failed: string, steps: string[]) =>
+    new UsageError(`${failed} The commit "${message}" is on ${branch}. To finish:
+${steps.map((step) => `  ${step}`).join('\n')}
+Preview, once Workers Builds finishes: ${preview}`);
+  const prCommand = `gh pr create --base main --head ${branch} --fill`;
+  try {
+    run('git', 'push', '--quiet', '-u', 'origin', branch);
+  } catch {
+    throw finish('The push failed.', [`git push -u origin ${branch}`, prCommand]);
+  }
+  let pr: string;
+  try {
+    pr = execFileSync(
+      'gh',
+      [
+        'pr',
+        'create',
+        '--base',
+        'main',
+        '--head',
+        branch,
+        '--title',
+        message,
+        '--body',
+        `Publishes \`${file}\` at \`${pagePath(kind, slug)}\`. \`just site-build\` passed with it.`,
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }
+    ).trim();
+  } catch {
+    throw finish(`Pushed ${branch}, but opening the pull request failed.`, [prCommand]);
+  }
   console.log(`Pull request: ${pr}
 Preview, once Workers Builds finishes (the PR gets a comment with it): ${preview}
 You are on ${branch}; push more commits there to change the PR. Merging it publishes the ${kind}.`);
