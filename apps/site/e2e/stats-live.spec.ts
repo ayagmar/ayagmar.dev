@@ -436,19 +436,24 @@ test('each panel asks at its own pace', async ({ page }) => {
     monkeytype: envelope('monkeytype'),
     'llm-usage': envelope('llm-usage'),
   });
+  let answered = 0;
+  page.on('requestfinished', (request) => {
+    if (request.url().startsWith(api)) answered++;
+  });
   const counts = () =>
     sources.map((source) => asked.filter((url) => url.endsWith(`/${source}`)).length);
+  // Listening every minute, shipping every 5, projects every 30, typing and LLM usage every 15
+  // (ADR 0015), in the order of `sources`: asked on load, then at each multiple of its pace.
+  const paces = [1, 5, 30, 15, 15];
   await expect.poll(() => asked.length).toBe(5);
-  // Listening every minute, shipping every 5, typing and LLM usage every 15, projects every 30
-  // (ADR 0015).
-  await page.clock.runFor(4 * 60_000);
-  expect(counts()).toEqual([5, 1, 1, 1, 1]);
-  await page.clock.runFor(60_000);
-  await expect.poll(counts).toEqual([6, 2, 1, 1, 1]);
-  await page.clock.runFor(10 * 60_000);
-  await expect.poll(counts).toEqual([16, 4, 1, 2, 2]);
-  await page.clock.runFor(15 * 60_000);
-  await expect.poll(counts).toEqual([31, 7, 2, 3, 3]);
+  // A minute at a time, each minute's answers in before the next. The clock fires its timers in
+  // the page back to back, so a 15-minute jump can reach the next minute while an answer is still
+  // on its way, and the panel rightly skips a minute while its request is pending.
+  for (let minute = 1; minute <= 30; minute++) {
+    await expect.poll(() => answered).toBe(asked.length);
+    await page.clock.runFor(60_000);
+    await expect.poll(counts).toEqual(paces.map((pace) => Math.floor(minute / pace) + 1));
+  }
 });
 
 // Catches a best's day that turns over only when a new answer is drawn: past the reader's
