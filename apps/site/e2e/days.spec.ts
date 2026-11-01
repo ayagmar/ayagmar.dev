@@ -21,9 +21,7 @@ test('a square of the shipping strip opens its day, and back returns to the stri
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
   const shipped = page.getByRole('region', { name: 'Shipped' });
   await expect(shipped.getByText('Counted over the UTC day.')).toBeVisible();
-  await expect(shipped.locator('.day-total')).toHaveText(
-    '12 merges · 19 commits in 4 pushes · 3 stars'
-  );
+  await expect(shipped.locator('.day-total')).toHaveText('12 merges · 19 commits in 4 pushes');
   const agents = page.getByRole('region', { name: 'Agent usage' });
   await expect(
     agents.getByText('Counted over the day in Rabat (Africa/Casablanca).')

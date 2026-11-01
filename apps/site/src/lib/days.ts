@@ -66,13 +66,13 @@ function range(from: string, to: string): string {
   return `${start}–${short(to)}`;
 }
 
-/** What shipped, `2 merges · 5 commits in 1 push · 1 release · 3 stars`; empty for nothing. */
-function shipped({ merges, commits, pushes, releases, stars }: Counts): string {
+/** What shipped, `2 merges · 5 commits in 1 push · 1 release`; empty for nothing. Stars are
+ * attention, not shipping, as on the strip. */
+function shipped({ merges, commits, pushes, releases }: Counts): string {
   return [
     merges > 0 && plural(merges, 'merge', 'merges'),
     pushes > 0 && `${plural(commits, 'commit', 'commits')} in ${plural(pushes, 'push', 'pushes')}`,
     releases > 0 && plural(releases, 'release', 'releases'),
-    stars > 0 && plural(stars, 'star', 'stars'),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -125,7 +125,11 @@ export const dayZones = {
   usage: 'Counted over the day in Rabat (Africa/Casablanca).',
 } as const;
 
-function shippingSection(day: ShippingActivityDay | undefined): ShippingSection {
+/** Said in place of a section whose series could not be read whole at build time. */
+const unread = (what: string) => `${what} history could not be read when this page was built.`;
+
+function shippingSection(day: ShippingActivityDay | undefined, loaded: boolean): ShippingSection {
+  if (!loaded) return { empty: unread('Shipping') };
   if (day === undefined) return { empty: 'No shipping recorded for this date.' };
   const total = shipped(day);
   if (total === '') return { empty: 'Nothing shipped.' };
@@ -141,7 +145,8 @@ function shippingSection(day: ShippingActivityDay | undefined): ShippingSection 
   };
 }
 
-function usageSection(day: LlmUsageDay | undefined): UsageSection {
+function usageSection(day: LlmUsageDay | undefined, loaded: boolean): UsageSection {
+  if (!loaded) return { empty: unread('Agent usage') };
   if (day === undefined) return { empty: 'No agent usage recorded for this date.' };
   if (day.totalTokens === 0 && !day.activeMs) return { empty: 'No agent use.' };
   return {
@@ -170,8 +175,8 @@ export function dayPages(history: History, published: readonly Published[]): Day
       date,
       title,
       description: `What shipped, how much the coding agents ran, and what was published on ${title}.`,
-      shipping: shippingSection(shippingDays.get(date)),
-      usage: usageSection(usageDays.get(date)),
+      shipping: shippingSection(shippingDays.get(date), history.shipping !== null),
+      usage: usageSection(usageDays.get(date), history.usage !== null),
       published: published.filter((entry) => entry.date === date),
       previous: link(dates[index - 1]),
       next: link(dates[index + 1]),

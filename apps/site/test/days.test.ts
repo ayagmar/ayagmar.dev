@@ -47,6 +47,8 @@ const history: History = {
     shipped('2026-10-24', [repo(runnerd, { merges: 2, pushes: 1, commits: 4 })]),
     shipped('2026-10-25', [repo(ccdesk, { merges: 1, releases: 1, stars: 3 })], { merges: 5 }),
     shipped('2026-10-26', []),
+    // Starred, nothing pushed: the strip calls it nothing shipped, so must the page.
+    shipped('2026-10-28', [repo(runnerd, { stars: 2 })]),
   ],
   // Work after midnight in Rabat on the 27th: still the 26th in UTC, never moved there.
   usage: [used('2026-10-25', 2_000_000, 3_600_000), used('2026-10-27', 640_000)],
@@ -62,18 +64,20 @@ describe('dayPages', () => {
       '2026-10-25',
       '2026-10-26',
       '2026-10-27',
+      '2026-10-28',
     ]);
-    const [first, both, quiet, rabatOnly] = pages;
+    const [first, both, quiet, rabatOnly, starred] = pages;
     expect(first?.previous).toBeNull();
     expect(first?.next).toEqual({ path: '/day/2026-10-25', title: '25 October 2026' });
-    expect(rabatOnly?.next).toBeNull();
+    expect(starred?.next).toBeNull();
+    expect(starred?.shipping).toEqual({ empty: 'Nothing shipped.' });
 
     expect(both).toMatchObject({
       title: '25 October 2026',
       shipping: {
         empty: null,
-        total: '6 merges · 1 release · 3 stars',
-        repos: [{ repo: ccdesk, counts: '1 merge · 1 release · 3 stars' }],
+        total: '6 merges · 1 release',
+        repos: [{ repo: ccdesk, counts: '1 merge · 1 release' }],
         unnamed: 'Some of it was in repositories not named here.',
       },
       usage: { empty: null, tokens: '2.0M tokens', time: '1 hour of agent time, estimated' },
@@ -99,8 +103,8 @@ describe('dayPages', () => {
     expect(rest).toEqual([]);
     expect(page).toMatchObject({
       date: '2026-09-14',
-      shipping: { empty: 'No shipping recorded for this date.' },
-      usage: { empty: 'No agent usage recorded for this date.' },
+      shipping: { empty: 'Shipping history could not be read when this page was built.' },
+      usage: { empty: 'Agent usage history could not be read when this page was built.' },
       published: [post],
       previous: null,
       next: null,
