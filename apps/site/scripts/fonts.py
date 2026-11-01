@@ -28,12 +28,6 @@ RELEASES = {
         "https://github.com/JetBrains/JetBrainsMono/releases/download/v2.304/JetBrainsMono-2.304.zip",
         "6f6376c6ed2960ea8a963cd7387ec9d76e3f629125bc33d1fdcd7eb7012f7bbf",
     ),
-    # Fraunces: the latest tagged release (1.000, 2020) predates the variable font the site uses,
-    # so this is upstream's latest commit (2025-10-21, font version 1.003). A bare TTF, not a zip.
-    "display": (
-        "https://raw.githubusercontent.com/undercasetype/Fraunces/7ccdec31c6028118dce3e47fe864e3744460371d/fonts/variable/Fraunces%5BSOFT,WONK,opsz,wght%5D.ttf",
-        "0776a870a0856b296e11639505ac0cf9be5e7800bb1849dfa21a1bd182455fc0",
-    ),
 }
 
 # Basic Latin, Latin-1 (accented names, no-break space, middle dot, guillemets), and the
@@ -56,16 +50,7 @@ FONTS = [
     ("serif-roman.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Roman.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("serif-italic.woff2", "serif", "source-serif-4.005_Desktop/VAR/SourceSerif4Variable-Italic.ttf", {"wght": (400, 700), "opsz": 16}, "min7 Serif"),
     ("mono.woff2", "mono", "fonts/variable/JetBrainsMono[wght].ttf", {"wght": (400, 700)}, None),
-    # The name, headings and big numbers; never running text. Pinned to the soft, wonky cut at one
-    # optical size, so no axis stays: one weight, 750.
-    ("display.woff2", "display", None, {"wght": 750, "opsz": 48, "SOFT": 100, "WONK": 1}, None),
 ]
-# Headings are letters, digits and punctuation: no symbols, arrows or Latin-1 signs, which cost 4 KB.
-DISPLAY_UNICODES = [
-    *range(0x20, 0x7F), 0xA0, 0xA9, 0xB7, 0xD7, *range(0xC0, 0x100),
-    0x2013, 0x2014, 0x2018, 0x2019, 0x201C, 0x201D, 0x2026, 0x2192, 0x2212,
-]
-DISPLAY_FEATURES = ["kern", "liga", "ccmp", "locl", "mark", "mkmk"]
 FEATURES = ["kern", "liga", "calt", "onum", "lnum", "tnum", "pnum", "frac", "sups", "subs", "ccmp", "locl", "mark", "mkmk", "case"]
 
 
@@ -87,18 +72,14 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     total = 0
     for out, name, member, limits, family in FONTS:
-        data = release(name)
-        if member is not None:
-            data = zipfile.ZipFile(io.BytesIO(data)).read(member)
+        data = zipfile.ZipFile(io.BytesIO(release(name))).read(member)
         font = TTFont(io.BytesIO(data), lazy=False)
         options = subset.Options()
-        # Headings and numerals need kerning and ligatures, not the text face's small caps, fractions
-        # or figure styles.
-        options.layout_features = DISPLAY_FEATURES if out == "display.woff2" else FEATURES
+        options.layout_features = FEATURES
         options.name_IDs = [0, 1, 2, 3, 4, 5, 6, 13, 14]
         options.notdef_outline = True
         subsetter = subset.Subsetter(options)
-        subsetter.populate(unicodes=DISPLAY_UNICODES if out == "display.woff2" else UNICODES)
+        subsetter.populate(unicodes=UNICODES)
         subsetter.subset(font)
         font = instancer.instantiateVariableFont(font, limits)
         if family is not None:
