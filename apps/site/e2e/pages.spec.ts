@@ -10,7 +10,12 @@ const viewports = [
 // Every page in the sitemap, and on the drafts build the pages that show or list a post: while
 // every post is a draft, production has none of them.
 const checked = [
-  ...[...pages, notFoundPath].map((path) => ({ path, title: path, details: {} })),
+  // Day pages are noindex, so not in the sitemap: one stands for them all.
+  ...[...pages, '/day/2026-10-25', notFoundPath].map((path) => ({
+    path,
+    title: path,
+    details: {},
+  })),
   ...[
     '/',
     '/writing',

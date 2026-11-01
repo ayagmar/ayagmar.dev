@@ -23,6 +23,9 @@ export const dailyZones = {
   'llm-usage': rabatTimeZone,
 } as const satisfies Record<DailySource, string>;
 
+/** The earliest `?month=` served: llm-usage's first push reaches 53 weeks back from late 2026. */
+export const daysFirstMonth = '2025-01';
+
 /** `?last=` takes only this many days: the strips' length. */
 export const daysLast = 28;
 

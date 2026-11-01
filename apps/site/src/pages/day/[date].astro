@@ -1,0 +1,93 @@
+---
+import type { GetStaticPaths } from 'astro';
+import Sample from '../../components/Sample.astro';
+import { repoName } from '../../data/format.ts';
+import Base from '../../layouts/Base.astro';
+import { dayZones } from '../../lib/days.ts';
+import { getDays } from '../../lib/posts.ts';
+
+// A page per date with a recorded day or something published (src/lib/days.ts). They are thin,
+// so they stay out of search and the sitemap (docs/seo.md).
+export const getStaticPaths = (async () => {
+  const { pages } = await getDays();
+  return pages.map((day) => ({ params: { date: day.date }, props: { day } }));
+}) satisfies GetStaticPaths;
+
+const { day } = Astro.props;
+const { shipping, usage } = day;
+---
+
+<Base title={day.title} description={day.description} noindex>
+  <article class="column day">
+    <h1><time datetime={day.date}>{day.title}</time></h1>
+    <p class="caption">What shipped, how much the coding agents ran, and what was published.</p>
+
+    <section aria-labelledby="day-shipped">
+      <h2 id="day-shipped">Shipped</h2>
+      <p class="day-zone">{dayZones.shipping}</p>
+      {shipping.empty !== null ? (
+        <p>{shipping.empty}</p>
+      ) : (
+        <>
+          <p class="day-total">{shipping.total}</p>
+          {shipping.repos.length > 0 && (
+            <ul class="log day-repos">
+              {shipping.repos.map((entry) => (
+                <li>
+                  <a class="repo" href={entry.href}>
+                    {repoName(entry.repo)}
+                  </a>{' '}
+                  <span>{entry.counts}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          {shipping.unnamed !== null && <p class="caption">{shipping.unnamed}</p>}
+        </>
+      )}
+    </section>
+
+    <section aria-labelledby="day-agents">
+      <h2 id="day-agents">Agent usage</h2>
+      <p class="day-zone">{dayZones.usage}</p>
+      {usage.empty !== null ? (
+        <p>{usage.empty}</p>
+      ) : (
+        <p class="day-total">
+          {usage.tokens}
+          {usage.time !== null && ` · ${usage.time}`}
+        </p>
+      )}
+    </section>
+
+    <section aria-labelledby="day-published">
+      <h2 id="day-published">Published</h2>
+      {day.published.length === 0 ? (
+        <p>Nothing published.</p>
+      ) : (
+        <ul class="log">
+          {day.published.map((entry) => (
+            <li>
+              {entry.kind}: <a href={entry.path}>{entry.title}</a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <Sample />
+
+    <nav class="day-nav" aria-label="Other days">
+      {day.previous !== null && (
+        <a href={day.previous.path} rel="prev">
+          ← {day.previous.title}
+        </a>
+      )}
+      {day.next !== null && (
+        <a href={day.next.path} rel="next">
+          {day.next.title} →
+        </a>
+      )}
+    </nav>
+  </article>
+</Base>

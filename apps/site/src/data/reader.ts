@@ -3,6 +3,8 @@
 // envelope (`data: null`), so a page renders its empty state and the build goes on.
 import {
   type DailySource,
+  dailyZones,
+  daysFirstMonth,
   daysLast,
   type Envelope,
   isStale,
@@ -23,6 +25,7 @@ import {
   shippingEnvelopeSchema,
   staleAfterSeconds,
 } from '@min7/contracts';
+import { rabatDate } from '@min7/contracts/rabat';
 
 const envelopeSchemas = {
   listening: listeningEnvelopeSchema,
@@ -48,6 +51,24 @@ const daysSchemas = {
 interface DaysBlocks {
   'shipping-activity': ShippingActivityDays;
   'llm-usage': LlmUsageDays;
+}
+
+/** A day of `series`' history, as `/v1/days/<series>` serves it. */
+export type DayOf<Series extends DailySource> = DaysBlocks[Series]['days'][number];
+
+/** Every month `/v1/days` serves for `series` at `now`: from the first to the current one there. */
+function historyMonths(series: DailySource, now: Date): string[] {
+  const current = (
+    dailyZones[series] === 'UTC' ? now.toISOString() : rabatDate(now.getTime())
+  ).slice(0, 7);
+  const months: string[] = [];
+  let [year = 0, month = 0] = daysFirstMonth.split('-').map(Number);
+  for (let name = daysFirstMonth; name <= current; ) {
+    months.push(name);
+    [year, month] = month === 12 ? [year + 1, 1] : [year, month + 1];
+    name = `${year}-${String(month).padStart(2, '0')}`;
+  }
+  return months;
 }
 
 /** Sources the build reads; shelf is read once it has a schema. */
@@ -178,5 +199,57 @@ export function createReader(options: ReaderOptions) {
     };
   }
 
-  return { read, readDays };
+  /** The `?month=` block of `series` from the fixtures: their days in that month. */
+  async function monthFromFixtures(series: DailySource, month: string) {
+    const { fixturesCapturedAt, daysFixtures } = await import('@min7/contracts/fixtures');
+    const block = daysFixtures[series].ok;
+    const [year = 0, index = 0] = month.split('-').map(Number);
+    return daysSchemas[series].parse({
+      source: series,
+      version: 1,
+      fetchedAt: fixturesCapturedAt,
+      stale: false,
+      data: {
+        zone: block.zone,
+        from: `${month}-01`,
+        to: new Date(Date.UTC(year, index, 0)).toISOString().slice(0, 10),
+        days: block.days.filter((day) => day.date.startsWith(`${month}-`)),
+      },
+    }) as Envelope<unknown>;
+  }
+
+  const histories = new Map<DailySource, Promise<{ days: unknown[] } | null>>();
+
+  /**
+   * All of `series`' daily history (ADR 0038), for the day pages and receipts: one
+   * `?month=YYYY-MM` block for each month signals serves, read once per build, the days oldest
+   * first. Null unless every block came back with data: a month that failed to load would make
+   * every count over it look smaller than it was.
+   */
+  async function readHistory<Series extends DailySource>(
+    series: Series
+  ): Promise<{ days: DayOf<Series>[] } | null> {
+    let pending = histories.get(series);
+    if (pending === undefined) {
+      pending = Promise.all(
+        historyMonths(series, now()).map((month) =>
+          mode === 'fixtures'
+            ? monthFromFixtures(series, month)
+            : fromApi(series, `${apiBase}/v1/days/${series}?month=${month}`, daysSchemas[series])
+        )
+      ).then((blocks) => {
+        const days: unknown[] = [];
+        for (const { data } of blocks) {
+          if (data === null) return null;
+          days.push(...(data as { days: unknown[] }).days);
+        }
+        return { days };
+      });
+      histories.set(series, pending);
+    }
+    // Each block was read with `series`' own schema.
+    return (await pending) as { days: DayOf<Series>[] } | null;
+  }
+
+  return { read, readDays, readHistory };
 }

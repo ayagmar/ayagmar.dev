@@ -964,6 +964,37 @@ time[data-ago] {
   background: var(--rule);
 }
 
+/* The shipping strip is a list of days, a square each, a link when the day has a page. A link
+   is a target at least 24px from the next (WCAG 2.5.8), so the 28 days stay one row only where
+   that fits, and fold into two rows of 14, or four of 7, where it does not. */
+.ship-heat {
+  container-type: inline-size;
+}
+
+.ship-heat .heat-cells {
+  grid-template-columns: repeat(7, minmax(0, 1.5rem));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container (min-width: 334px) {
+  .ship-heat .heat-cells {
+    grid-template-columns: repeat(14, 1fr);
+  }
+}
+
+@container (min-width: 670px) {
+  .ship-heat .heat-cells {
+    grid-template-columns: repeat(28, 1fr);
+  }
+}
+
+.ship-heat a,
+.ship-heat i {
+  display: block;
+}
+
 .heat i[data-l="none"] {
   /* A day with no record (ADR 0038): an outline, so it never reads as a quiet day. */
   background: transparent;
@@ -995,6 +1026,34 @@ time[data-ago] {
   margin-top: 0.4rem;
   color: var(--fg-2);
   font-size: 0.8125rem;
+}
+
+/* A day page (src/pages/day/[date].astro): each series under the calendar it counts in. */
+.day-zone,
+.receipt {
+  color: var(--fg-2);
+  font: 400 0.8125rem / 1.6 var(--mono);
+}
+
+.day-total {
+  font: 500 0.875rem / 1.6 var(--mono);
+}
+
+/* A repository's name and its counts on one line, wrapping only between them. */
+.day-repos li {
+  display: block;
+}
+
+.day-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  justify-content: space-between;
+  margin-top: 2.5rem;
+}
+
+.day-nav a[rel="next"] {
+  margin-left: auto;
 }
 
 /* ---------- the reader: a post or TIL notes on the room's ground (ADR 0026) ----------

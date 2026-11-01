@@ -7,7 +7,7 @@ import Sample from '../components/Sample.astro';
 import { shippingStrip } from '../data/format.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
-import { getNotes, getPosts, getProjects } from '../lib/posts.ts';
+import { getDays, getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
 import { roomObjects } from '../lib/room.ts';
 import { site } from '../lib/site.ts';
@@ -25,7 +25,12 @@ const shipping = await signals.read('shipping');
 const about = await getEntry('about', 'about');
 if (about === undefined) throw new Error('content/about.json is missing');
 // The strip is drawn once, with the page: from the daily history, else from the events.
-const strip = shippingStrip(await signals.readDays('shipping-activity'), shipping, new Date());
+const strip = shippingStrip(
+  await signals.readDays('shipping-activity'),
+  shipping,
+  new Date(),
+  (await getDays()).dates
+);
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 ---
 

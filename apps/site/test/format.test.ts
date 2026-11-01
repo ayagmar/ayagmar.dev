@@ -30,6 +30,7 @@ describe('shippingStrip', () => {
     data: daysFixtures['shipping-activity'].ok,
   });
   const noHistory = { ...history, fetchedAt: null, data: null };
+  const noPages = new Set<string>();
   const event = (type: 'push' | 'merge' | 'stars', at: string) =>
     ({ type, at }) as ShippingSnapshot['events'][number];
   const shipping = (fetchedAt: string, events: ShippingSnapshot['events']) => ({
@@ -49,7 +50,7 @@ describe('shippingStrip', () => {
   // Catches days before history began drawn as quiet days, a strip that ends on the build day
   // instead of the history's last day, and stars counted as shipping.
   it('draws the history, outlining the days before it began', () => {
-    const strip = shippingStrip(history, events, now);
+    const strip = shippingStrip(history, events, now, noPages);
     expect(strip?.cells).toHaveLength(28);
     expect(strip?.cells[0]?.date).toBe('2026-09-29');
     expect(strip?.cells.at(-1)?.date).toBe('2026-10-26');
@@ -70,7 +71,7 @@ describe('shippingStrip', () => {
   // was taken before the build, so only the days between the oldest event's and the
   // snapshot's are known. Catches the days after a stale snapshot drawn as quiet.
   it('falls back to the events, only over the days they cover', () => {
-    const strip = shippingStrip(noHistory, events, now);
+    const strip = shippingStrip(noHistory, events, now, noPages);
     const level = (date: string) => strip?.cells.find((cell) => cell.date === date)?.level;
     expect(strip?.cells.at(-1)?.date).toBe('2026-11-01');
     expect(level('2026-10-19')).toBeNull();
@@ -89,8 +90,8 @@ describe('shippingStrip', () => {
 
   it('falls back when the history has no day in the strip, and draws nothing without either', () => {
     const empty = { ...history, data: history.data && { ...history.data, days: [] } };
-    expect(shippingStrip(empty, events, now)?.from).toBe('20 Oct');
-    expect(shippingStrip(noHistory, shipping('2026-10-29T10:00:00Z', []), now)).toBeNull();
+    expect(shippingStrip(empty, events, now, noPages)?.from).toBe('20 Oct');
+    expect(shippingStrip(noHistory, shipping('2026-10-29T10:00:00Z', []), now, noPages)).toBeNull();
   });
 
   // Catches the home page hiding a usable strip because the unrelated event feed failed or is
@@ -99,7 +100,7 @@ describe('shippingStrip', () => {
     ['failed', { ...shipping('2026-10-29T10:00:00Z', []), fetchedAt: null, data: null }],
     ['empty', shipping('2026-10-29T10:00:00Z', [])],
   ])('is drawn on the home page when the event feed is %s', async (_, feed) => {
-    const strip = shippingStrip(history, feed, now);
+    const strip = shippingStrip(history, feed, now, noPages);
     const container = await AstroContainer.create();
     const html = await container.renderToString(HomeShipping, {
       props: { strip, events: feed.data?.events ?? [] },

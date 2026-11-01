@@ -180,6 +180,52 @@ describe('daily history (ADR 0038)', () => {
   });
 });
 
+describe('whole history (ADR 0038)', () => {
+  const days = daysFixtures['shipping-activity'].ok.days;
+  const monthBlock = (month: string) => ({
+    source: 'shipping-activity',
+    version: 1,
+    fetchedAt: '2026-10-26T08:55:00.000Z',
+    stale: false,
+    data: {
+      zone: 'UTC',
+      from: `${month}-01`,
+      to: `${month}-28`,
+      days: days.filter((day) => day.date.startsWith(`${month}-`)),
+    },
+  });
+
+  // Catches receipts counted over a history with a month missing: one block that failed makes
+  // the series unknown, never a shorter one. Also a read past the current month, which the
+  // route refuses, or before the first it serves.
+  it('reads every month signals serves, and nothing when one of them fails', async () => {
+    const asked: string[] = [];
+    let failing: string | null = null;
+    server.use(
+      http.get(`${apiBase}/v1/days/shipping-activity`, ({ request }) => {
+        const month = new URL(request.url).searchParams.get('month') ?? '';
+        asked.push(month);
+        return month === failing
+          ? HttpResponse.json({ error: 'unavailable' }, { status: 503 })
+          : HttpResponse.json(monthBlock(month));
+      })
+    );
+    const options = { apiBase, now: () => now, warn: () => {} };
+    const whole = await createReader({ ...options, mode: 'api' }).readHistory('shipping-activity');
+    expect(asked.toSorted()).toEqual([
+      ...Array.from({ length: 12 }, (_, i) => `2025-${String(i + 1).padStart(2, '0')}`),
+      ...Array.from({ length: 10 }, (_, i) => `2026-${String(i + 1).padStart(2, '0')}`),
+    ]);
+    expect(whole?.days).toEqual(days);
+
+    failing = '2025-06';
+    const partial = await createReader({ ...options, mode: 'api' }).readHistory(
+      'shipping-activity'
+    );
+    expect(partial).toBeNull();
+  });
+});
+
 describe('fixtures mode', () => {
   // Fixtures mode builds the public Previews; e2e checks the pages label it as sample data.
   it('serves the ok fixtures, dated when they were captured', async () => {

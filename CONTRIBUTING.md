@@ -20,6 +20,7 @@ Frontmatter:
 | `draft`    | no       | `true` keeps the post out of production builds. Defaults to `false`. |
 | `projects` | no       | Slugs of the featured projects the post is about, like `[runnerd]`.  |
 | `art`      | no       | Art above the title; see below. Posts without it get none.           |
+| `receipts` | no       | The days the post's receipt line counts; see below.                  |
 
 Any other field fails the build, so a typo such as `sumary:` does not pass silently. The error names the file and the field.
 
@@ -30,6 +31,14 @@ art: { kind: dither, palette: night, seed: 2 }
 ```
 
 `kind` is `ascii`, `dither` or `pattern`. `palette` is `night` (the default), `lamp`, `screen`, `zellige` or `wood`. `seed` is a whole number, 0 by default; change it until you like the picture. The same post and seed always give the same picture.
+
+`receipts` puts one line under the post's header with what the daily history recorded over a range of days, both ends included: PRs merged, commits, agent tokens and the days with any of them.
+
+```yaml
+receipts: { from: 2026-10-12, to: 2026-10-26, repos: [ayagmar/runnerd] }
+```
+
+`from` and `to` are `YYYY-MM-DD`, `to` not before `from`. `repos` (`owner/name`, optional) picks the repositories whose merges and commits count; without it the post's `projects` count, and without those every repository. Agent tokens are never per repository, so they always count all of that day's use. Shipping counts UTC days and agent usage days in Rabat, each from its own history. A series with no record in the range is left out rather than shown as 0, and the line says when some days in the range have no record. Without `receipts` there is no line; the range is never guessed.
 
 "Last updated" comes from `updated` in the frontmatter. Deriving it from git history is not done yet.
 
