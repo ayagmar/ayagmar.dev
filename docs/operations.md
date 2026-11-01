@@ -64,13 +64,13 @@ If a value leaked, do steps 1 to 4 at once and skip waiting in step 2: after ste
 
 The `daily` table, the activity pull and `/v1/days` ship in signals; the strip reads them when the site is built. In this order:
 
-1. Apply the migration to production. `just signals-deploy` (what Workers Builds runs on `main`) applies it before deploying; to apply it alone:
+1. Apply the migrations to production. `just signals-deploy` (what Workers Builds runs on `main`) applies them before deploying; to apply them alone:
 
    ```sh
    just signals-migrate-remote
    ```
 
-   It adds the `daily` table and a nullable `snapshots.write_id` column. A failed migration stops the deploy. A Worker rollback does not roll D1 back, and needs not: the previous version never reads either.
+   `0004_daily.sql` adds the `daily` table and `0005_snapshot_write_id.sql` a nullable `snapshots.write_id` column. The shared preview database needs 0005 too before a preview's activity pull can store (`just signals-migrate-preview`). A failed migration stops the deploy. A Worker rollback does not roll D1 back, and needs not: the previous version never reads either.
 2. Deploy signals (merge to `main`, or `just signals-deploy`).
 3. Check that the history has days. `upstream_not_found` for `shipping-activity` in `/v1/health` means repo-pulse does not serve `/public/activity` yet; wait for its deploy and the next hourly pull. `upstream_incomplete` is retried every 2 minutes.
 
