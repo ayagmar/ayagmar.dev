@@ -27,6 +27,11 @@ export interface Budgets {
      * `file` is a URL path where `*` stands for any characters but `/`, such as a build hash.
      */
     allowances: { name: string; file: string; bytes: number }[];
+    /**
+     * Origins a page may `<link rel="preconnect">` to, and only that: the read API its scripts
+     * already fetch from (the CSP's connect-src). Any resource from them still fails.
+     */
+    preconnect: string[];
   };
   lighthouse: {
     runs: number;
@@ -149,10 +154,12 @@ const decode = (value: string) =>
     .replaceAll('&gt;', '>')
     .replaceAll('&amp;', '&');
 
+/** A tag's attributes by lowercased name; a repeated name keeps its first value, as browsers do. */
 function attributes(source: string): Map<string, string> {
   const out = new Map<string, string>();
   for (const [, name = '', ...values] of source.matchAll(attribute)) {
-    out.set(name.toLowerCase(), decode(values.find((v) => v !== undefined) ?? ''));
+    const key = name.toLowerCase();
+    if (!out.has(key)) out.set(key, decode(values.find((v) => v !== undefined) ?? ''));
   }
   return out;
 }
@@ -224,6 +231,16 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     const found = candidates.find((file) => existsSync(join(dist, file)));
     if (!found) problems.push(`${where}: references ${url}, which is not in the build`);
     return found;
+  };
+
+  /** Whether a link only opens a connection to an origin budgets.json lets pages preconnect to. */
+  const preconnectOnly = (rels: string[], href: string | undefined, from: string) => {
+    if (href === undefined || rels.some((rel) => rel !== 'preconnect')) return false;
+    try {
+      return limits.preconnect.includes(new URL(href, `${site}${from}`).origin);
+    } catch {
+      return false;
+    }
   };
 
   /** A stylesheet and what it pulls in (other stylesheets, images, fonts). */
@@ -300,7 +317,8 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
         if (jsTypes.has((a.get('type') ?? '').toLowerCase())) load(a.get('src'), scripts);
       } else if (element === 'link') {
         const rels = (a.get('rel') ?? '').toLowerCase().split(/\s+/);
-        if (rels.some((rel) => fetchingRels.has(rel))) {
+        const fetching = rels.filter((rel) => fetchingRels.has(rel));
+        if (fetching.length > 0 && !preconnectOnly(fetching, a.get('href'), url)) {
           load(a.get('href'), rels.includes('modulepreload') ? scripts : resources);
         }
       } else if (['use', 'image', 'feimage'].includes(element)) {

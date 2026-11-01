@@ -14,6 +14,8 @@ const api = (source: string) =>
 ---
 
 <Base title="Uses">
+  {/* Its scripts read the API as the page loads; in fixtures mode they make no request. */}
+  {signalsMode === 'api' && <link slot="head" rel="preconnect" href={signalsApiBase} crossorigin>}
   <div class="column">
     <h1>Uses</h1>
     <p class="caption">{uses.intro}</p>

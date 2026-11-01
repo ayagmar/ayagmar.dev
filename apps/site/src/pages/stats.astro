@@ -28,6 +28,8 @@ const featured = featuredProjects.map((project) => project.repo);
 ---
 
 <Base title="Stats">
+  {/* Its scripts read the API as the page loads; in fixtures mode they make no request. */}
+  {signalsMode === 'api' && <link slot="head" rel="preconnect" href={signalsApiBase} crossorigin>}
   <h1>Stats</h1>
   {signalsMode === 'fixtures' ? (
     <p class="sample sample-banner">
