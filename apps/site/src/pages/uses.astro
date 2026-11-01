@@ -119,8 +119,11 @@ const api = (source: string) =>
   color: var(--fg-2);
 }
 
-.uses-detail {
-  text-align: end;
+/* Right-aligned only where it fits beside its name; under it on a phone, flush left. */
+@media (min-width: 30rem) {
+  .uses-detail {
+    text-align: end;
+  }
 }
 
 .uses dl > div:not([hidden]) {
