@@ -120,9 +120,24 @@ knip:
 boundaries:
     node scripts/check-boundaries.ts
 
-# Start a new draft post: just post "Title of the post"
-post title:
-    node scripts/new-post.ts {{ quote(title) }}
+# Start a draft post, open it in $VISUAL/$EDITOR and the browser: just post "Title" [--no-open]
+[positional-arguments]
+post +args:
+    node scripts/writing.ts new post "$@"
+
+# Start a draft TIL note the same way: just til "Title" [--no-open]
+[positional-arguments]
+til +args:
+    node scripts/writing.ts new til "$@"
+
+# Dev server with drafts shown, printing the URL of each draft post and note
+drafts:
+    node scripts/writing.ts drafts
+
+# Publish a draft on its own branch and open the PR (never merges): just publish <slug> [--dry-run]
+[positional-arguments]
+publish +args:
+    node scripts/writing.ts publish "$@"
 
 # Write packages/contracts/schema/*.json from the zod schemas
 contracts-schema:

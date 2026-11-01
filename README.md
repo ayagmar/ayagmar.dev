@@ -44,10 +44,12 @@ just lighthouse --profile desktop   # after a build: Lighthouse per page (ADR 00
 ## Write a post
 
 ```sh
-just post "Title of the post"
+just post "Title of the post"   # or: just til "Title of the note"
+just drafts                     # read every draft at http://localhost:4321
+just publish title-of-the-post  # branch, commit, push, pull request
 ```
 
-This creates `content/writing/title-of-the-post.md` with `draft: true`. Write it, set `draft: false` when it is ready, and open a pull request. [CONTRIBUTING.md](CONTRIBUTING.md) has the full flow and the frontmatter fields.
+`just post` writes `content/writing/title-of-the-post.md` as a draft, opens it in your editor and its page in the browser, which reloads as you type. `just publish` takes it live through a pull request; merging it deploys. [CONTRIBUTING.md](CONTRIBUTING.md) has the details and the frontmatter fields.
 
 ## Edit the about page
 
