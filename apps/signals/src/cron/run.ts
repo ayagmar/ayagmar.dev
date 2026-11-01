@@ -4,7 +4,7 @@ import type { PullAdapter } from '../adapters/types.ts';
 import { logEvent } from '../security/log.ts';
 import { deleteDeliveriesBefore } from '../storage/admission.ts';
 import { D1SnapshotStore } from '../storage/d1.ts';
-import type { SnapshotStore } from '../storage/types.ts';
+import type { SnapshotStore, SourceStatus } from '../storage/types.ts';
 
 /** An upstream call that takes longer than this is abandoned and recorded as `timeout`. */
 const fetchTimeoutMs = 20_000;
@@ -37,10 +37,18 @@ function retryAt(error: unknown): number | undefined {
   return typeof at === 'number' && Number.isFinite(at) ? at : undefined;
 }
 
-async function pull(adapter: PullAdapter, env: Env, store: SnapshotStore): Promise<void> {
+async function pull(
+  adapter: PullAdapter,
+  env: Env,
+  store: SnapshotStore,
+  previous: SourceStatus | undefined
+): Promise<void> {
+  // Recorded first: Workers ends a run over its CPU limit without running the catch below, and
+  // a pull with no attempt recorded would be the most overdue at every run after (ADR 0038).
+  await store.recordAttempt(adapter.id, new Date().toISOString());
   let stage = 'fetch_failed';
   try {
-    const raw = await adapter.fetch(env, AbortSignal.timeout(fetchTimeoutMs));
+    const raw = await adapter.fetch(env, AbortSignal.timeout(fetchTimeoutMs), previous);
     stage = 'normalize_failed';
     const snapshot = adapter.normalize(raw);
     const history = adapter.history?.(snapshot);
@@ -96,7 +104,7 @@ export async function runScheduled(
       next = { adapter, overdueMs };
     }
   }
-  if (next) await pull(next.adapter, env, store);
+  if (next) await pull(next.adapter, env, store, statuses.get(next.adapter.id));
 
   const deleted = await deleteDeliveriesBefore(env.DB, scheduledTime - deliveryRetentionMs, {
     batchSize: 500,

@@ -142,6 +142,20 @@ export class D1SnapshotStore implements SnapshotStore {
     ]);
   }
 
+  /**
+   * Records that a pull began, changing nothing else: a run cut off before it records how the
+   * pull ended (the CPU limit) leaves this, so the source is not due again at once.
+   */
+  async recordAttempt(source: SourceId, at: string): Promise<void> {
+    await this.db
+      .prepare(
+        `INSERT INTO snapshots (source, last_attempt_at) VALUES (?1, ?2)
+         ON CONFLICT (source) DO UPDATE SET last_attempt_at = excluded.last_attempt_at`
+      )
+      .bind(source, Date.parse(at))
+      .run();
+  }
+
   /** Records a failed pull, with the upstream's `Retry-After` time if it gave one. */
   async recordFailure(
     source: SourceId,

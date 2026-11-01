@@ -12,6 +12,7 @@ import {
 import { rabatDate, rabatDayStart } from '@min7/contracts/rabat';
 import { D1SnapshotStore } from '../../storage/d1.ts';
 import type { DailyRow } from '../../storage/daily.ts';
+import type { SourceStatus } from '../../storage/types.ts';
 import type { HistoryAdapter, StoredHistory } from '../types.ts';
 import { checkSnapshot, getJson, PullError, parseBody, type UpstreamResponse } from './http.ts';
 
@@ -208,6 +209,16 @@ function merge(pull: ShippingActivityPull, stored: StoredHistory) {
 
 const utcDate = (time: number) => new Date(time).toISOString().slice(0, 10);
 
+/**
+ * Whether the last attempt recorded neither a failure nor a success: the run was cut off. An
+ * attempt that stored nothing because its answer was not newer looks the same; it only makes
+ * the next pull a 35-day one.
+ */
+const endedSilently = (status: SourceStatus | undefined) =>
+  status?.lastAttemptAt != null &&
+  status.lastErrorCode === null &&
+  (status.lastSuccessAt === null || Date.parse(status.lastSuccessAt) < status.lastAttemptAt);
+
 const isIncomplete = ({ status, body }: UpstreamResponse) =>
   status === 200 && isRecord(body) && body.complete === false;
 
@@ -227,13 +238,15 @@ export const shippingActivity: HistoryAdapter<UpstreamResponse, ShippingActivity
 
   /**
    * The whole 400 days on the first pull of a UTC date, and the last 35 on the others, which
-   * cost less CPU to check and merge (ADR 0038). An incomplete answer is asked for once more
-   * at once, while repo-pulse's visibility gate is warm.
+   * cost less CPU to check and merge (ADR 0038); 35 too after a pull that ended without
+   * recording how, as one cut off by the CPU limit does, so the series still advances. An
+   * incomplete answer is asked for once more at once, while repo-pulse's gate is warm.
    */
-  async fetch(env, signal) {
+  async fetch(env, signal, previous) {
     const stored = await new D1SnapshotStore(env.DB).get('shipping-activity');
     const fullOn = (stored?.snapshot as { fullOn?: unknown } | null | undefined)?.fullOn;
-    const days = fullOn === utcDate(Date.now()) ? activityRecentDays : activityMaxDays;
+    const whole = fullOn !== utcDate(Date.now()) && !endedSilently(previous);
+    const days = whole ? activityMaxDays : activityRecentDays;
     const url = `${activityUrl}?days=${days}`;
     const answer = await getJson(url, { signal, maxBytes });
     return isIncomplete(answer) ? getJson(url, { signal, maxBytes }) : answer;

@@ -183,6 +183,26 @@ describe('the activity pull', () => {
   // pull that never asks for the whole window again, or always does.
   it('asks for the whole 400 days once a UTC date, and for 35 days otherwise', async () => {
     const asked: string[] = [];
+    const record = http.get(activityUrl, ({ request }) => {
+      asked.push(new URL(request.url).searchParams.get('days') ?? '');
+    });
+    network.use(record, ...upstreamHandlers());
+    await pullAt(capturedAt);
+    answer(later('2026-10-26T09:55:00.000Z', () => {}));
+    network.use(record);
+    await pullAt(capturedAt + hour);
+    await pullAt(Date.parse('2026-10-27T00:20:00Z'));
+
+    expect(asked).toEqual(['400', '35', '400']);
+  });
+
+  // A run cut off by the CPU limit records its attempt and nothing else. Catches a series that
+  // asks for 400 days after every such run, and so never advances if the 400 days are too many.
+  it.each([
+    ['ended without a word', undefined, '35'],
+    ['failed with a code', 'store_failed', '400'],
+  ])('asks the next date for 35 days after a pull that %s', async (_case, code, days) => {
+    const asked: string[] = [];
     network.use(
       http.get(activityUrl, ({ request }) => {
         asked.push(new URL(request.url).searchParams.get('days') ?? '');
@@ -190,10 +210,15 @@ describe('the activity pull', () => {
       ...upstreamHandlers()
     );
     await pullAt(capturedAt);
-    await pullAt(capturedAt + hour);
-    await pullAt(Date.parse('2026-10-27T00:20:00Z'));
+    const nextDate = Date.parse('2026-10-27T01:00:00Z');
+    const store = new D1SnapshotStore(env.DB);
+    await store.recordAttempt('shipping-activity', new Date(nextDate).toISOString());
+    if (code !== undefined) {
+      await store.recordFailure('shipping-activity', code, new Date(nextDate).toISOString());
+    }
 
-    expect(asked).toEqual(['400', '35', '400']);
+    await pullAt(nextDate + hour);
+    expect(asked).toEqual(['400', days]);
   });
 
   it.each([

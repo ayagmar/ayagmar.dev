@@ -254,6 +254,36 @@ describe('scheduled', () => {
     }
   );
 
+  // Workers ends a run over its CPU limit without running its catch. Here recording the
+  // failure fails instead. Catches a pull left with no attempt recorded, which would be the
+  // most overdue at every run after and starve every other source (ADR 0038).
+  it('does not pick a pull again within its interval after a run that recorded nothing', async () => {
+    const cut = adapter('shipping-activity', 3600, async () => {
+      throw new Error('cut off');
+    });
+    const weather = adapter('weather', 900);
+    for (const event of ['INSERT', 'UPDATE OF last_error_code']) {
+      await env.DB.exec(
+        `CREATE TRIGGER "cut ${event}" BEFORE ${event} ON snapshots WHEN NEW.last_error_code IS NOT NULL BEGIN SELECT RAISE(ABORT, 'cut'); END`
+      );
+    }
+    const start = Date.now();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      for (let run = 0; run <= 60; run++) {
+        vi.setSystemTime(start + run * minute);
+        await runScheduled(env, [cut, weather], start + run * minute).catch(() => {});
+      }
+    } finally {
+      vi.useRealTimers();
+      await env.DB.exec('DROP TRIGGER "cut INSERT"');
+      await env.DB.exec('DROP TRIGGER "cut UPDATE OF last_error_code"');
+    }
+    // Tried at the first run and again an hour later; weather every 15 minutes in between.
+    expect(cut.calls).toBe(2);
+    expect(weather.calls).toBeGreaterThanOrEqual(4);
+  });
+
   it('records a failure as a code, keeps the last good snapshot and never logs the message', async () => {
     const start = Date.now();
     await runScheduled(env, [adapter('projects', 60)], start);

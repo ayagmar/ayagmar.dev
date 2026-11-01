@@ -35,7 +35,8 @@ export interface PullAdapter<Raw = unknown, Snapshot = unknown> {
    * `intervalSeconds` after its last attempt. Only called once the source has been tried.
    */
   dueAt?(status: SourceStatus, now: number): number;
-  fetch(env: Env, signal: AbortSignal): Promise<Raw>;
+  /** `previous` is the source's status before this run, or undefined if never tried. */
+  fetch(env: Env, signal: AbortSignal, previous?: SourceStatus): Promise<Raw>;
   normalize(raw: Raw): Snapshot;
   /**
    * For a source that keeps daily history (ADR 0038): what to store from the normalized pull.
