@@ -4,6 +4,7 @@ import { listeningHistory } from './listening-history.ts';
 import { monkeytype } from './monkeytype.ts';
 import { projects } from './projects.ts';
 import { shipping } from './shipping.ts';
+import { shippingActivity } from './shipping-activity.ts';
 import { weather } from './weather.ts';
 
 export { PullError, type PullErrorCode } from './http.ts';
@@ -19,4 +20,5 @@ export const pullAdapters: PullAdapter[] = [
   weather,
   listeningHistory,
   monkeytype,
+  shippingActivity,
 ];

@@ -1,4 +1,5 @@
-import { type SourceId, sourceIdSchema } from '@min7/contracts';
+import { type DailySource, type SourceId, sourceIdSchema } from '@min7/contracts';
+import { type DailyRow, pullDaysStatement } from './daily.ts';
 import type { SnapshotStore, SourceStatus, StoredSnapshot } from './types.ts';
 
 type StatusRow = {
@@ -71,6 +72,42 @@ export class D1SnapshotStore implements SnapshotStore {
       )
       .bind(source, JSON.stringify(snapshot), at, Date.parse(at))
       .run();
+  }
+
+  /**
+   * Stores a pull whose upstream dates its answer, with the days it carries, in one batch
+   * (ADR 0038): the snapshot only if no answer dated `fetchedAt` or later is stored, the days
+   * only if the snapshot is this answer, and the attempt either way. An older answer, from a
+   * slow or overlapping pull, is a pull that succeeded and changed nothing.
+   */
+  async putDated(
+    source: DailySource,
+    snapshot: unknown,
+    fetchedAt: string,
+    days: readonly DailyRow[],
+    attemptAt: string
+  ): Promise<void> {
+    const at = utc(fetchedAt);
+    const attempt = utc(attemptAt);
+    await this.db.batch([
+      this.db
+        .prepare(
+          `INSERT INTO snapshots (source, json, fetched_at, last_success_at, last_error_code, last_attempt_at)
+           VALUES (?1, ?2, ?3, ?4, NULL, ?5)
+           ON CONFLICT (source) DO UPDATE SET
+             json = excluded.json, fetched_at = excluded.fetched_at,
+             last_success_at = excluded.last_success_at
+           WHERE snapshots.fetched_at IS NULL OR snapshots.fetched_at < excluded.fetched_at`
+        )
+        .bind(source, JSON.stringify(snapshot), at, attempt, Date.parse(attempt)),
+      pullDaysStatement(this.db, source, days, at, attempt),
+      this.db
+        .prepare(
+          `UPDATE snapshots SET last_attempt_at = ?2, last_error_code = NULL, retry_after_at = NULL
+           WHERE source = ?1`
+        )
+        .bind(source, Date.parse(attempt)),
+    ]);
   }
 
   /** Records a failed pull, with the upstream's `Retry-After` time if it gave one. */

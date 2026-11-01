@@ -3,11 +3,11 @@ import { z } from 'zod';
 /** The GitHub account whose repositories the site shows. */
 export const githubOwner = 'ayagmar';
 
+/** `owner/name` of a GitHub repository, for code that checks it without zod. */
+export const repoFullNamePattern = /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/;
+
 /** `owner/name` of a GitHub repository. */
-export const repoFullNameSchema = z
-  .string()
-  .max(140)
-  .regex(/^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/);
+export const repoFullNameSchema = z.string().max(140).regex(repoFullNamePattern);
 
 /** An npm package name, scoped or not. */
 export const npmPackageNameSchema = z

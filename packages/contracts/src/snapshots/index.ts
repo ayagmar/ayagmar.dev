@@ -7,4 +7,5 @@ export * from './monkeytype.ts';
 export * from './projects.ts';
 export * from './shelf.ts';
 export * from './shipping.ts';
+export * from './shipping-activity.ts';
 export * from './weather.ts';

@@ -5,6 +5,7 @@ import { rawFixtures } from '@min7/contracts/fixtures';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { listeningHistory } from '../src/adapters/pull/listening-history.ts';
 import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
+import { shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
 import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 
@@ -144,6 +145,43 @@ function monkeytypeAnswers(): Answers {
   ]);
 }
 
+/**
+ * repo-pulse's activity for the 400 days ending today (ADR 0038), every day recorded and
+ * `repos` repositories active on each, so every day is a row to write.
+ */
+function activityAnswers(repos: number): Answers {
+  const today = Math.floor(Date.now() / 86_400_000);
+  const days = Array.from({ length: 400 }, (_, i) => {
+    const list = Array.from({ length: repos }, (_, r) => ({
+      repo: `ayagmar/repository-${String(r).padStart(2, '0')}`,
+      pushes: 2,
+      commits: 7,
+      merges: 3,
+      releases: (i + r) % 9 === 0 ? 1 : 0,
+      stars: r % 3,
+    }));
+    const sum = (key: 'pushes' | 'commits' | 'merges' | 'releases' | 'stars') =>
+      list.reduce((total, repo) => total + repo[key], 0);
+    return {
+      date: new Date((today - 399 + i) * 86_400_000).toISOString().slice(0, 10),
+      pushes: sum('pushes'),
+      commits: sum('commits'),
+      merges: sum('merges'),
+      releases: sum('releases'),
+      stars: sum('stars'),
+      repos: list,
+      reposTruncated: false,
+    };
+  });
+  const body = {
+    generatedAt: new Date().toISOString(),
+    since: days[0]?.date ?? null,
+    complete: true,
+    days,
+  };
+  return new Map([['activity', JSON.stringify(body)]]);
+}
+
 /** What earlier invocations of a pull saved: `read` of the date's years, each summarized. */
 const progress = (years: number, read: number, name = 'Track') => {
   const today = dateAt(Date.now() / 1000);
@@ -165,7 +203,13 @@ const progress = (years: number, read: number, name = 'Track') => {
 
 const scenarios: Record<
   string,
-  { adapter?: PullAdapter; answers: () => Answers; seed?: () => ReturnType<typeof progress> }
+  {
+    adapter?: PullAdapter;
+    answers: () => Answers;
+    seed?: () => ReturnType<typeof progress>;
+    /** Keep the history between runs, so a warm run finds every day already stored. */
+    keepDaily?: boolean;
+  }
 > = {
   // A cron invocation with no adapter due: what every scenario's number is measured against.
   baseline: { answers: () => new Map() },
@@ -180,6 +224,16 @@ const scenarios: Record<
       ]),
   },
   'monkeytype-max': { adapter: monkeytype, answers: monkeytypeAnswers },
+  // The activity pull with every one of its 400 days new: three repositories a day (a busy
+  // year for this account), and twelve, near the adapter's 512 KiB body cap.
+  activity: { adapter: shippingActivity, answers: () => activityAnswers(3) },
+  'activity-max': { adapter: shippingActivity, answers: () => activityAnswers(12) },
+  // The usual hourly pull: the same 400 days, all already stored, so D1 changes nothing.
+  'activity-unchanged': {
+    adapter: shippingActivity,
+    answers: () => activityAnswers(3),
+    keepDaily: true,
+  },
   // A pull's first invocation for the account today (three years): registration, then the
   // newest year's page, at 100 scrobbles (the real days had 29 to 99), and progress saved.
   'history-first': { adapter: listeningHistory, answers: () => historyAnswers(3, 100) },
@@ -202,6 +256,10 @@ let prepared: Answers | undefined;
 
 async function answer(request: Request): Promise<Response> {
   const url = new URL(request.url);
+  if (url.host === 'repo-pulse.ayagmar.workers.dev') {
+    const body = prepared?.get('activity');
+    return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
+  }
   if (url.host === 'api.monkeytype.com') {
     const body = prepared?.get(`monkeytype ${url.searchParams.get('mode')}`);
     return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
@@ -232,6 +290,7 @@ export default {
       await env.DB.batch([
         env.DB.prepare('DELETE FROM snapshots'),
         env.DB.prepare('DELETE FROM pull_progress'),
+        ...(scenario.keepDaily ? [] : [env.DB.prepare('DELETE FROM daily')]),
       ]);
       const seed = scenario.seed?.();
       if (seed !== undefined) {

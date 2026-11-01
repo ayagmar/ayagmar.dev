@@ -12,6 +12,7 @@ import { PullError } from '../src/adapters/pull/index.ts';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { projects } from '../src/adapters/pull/projects.ts';
 import { shipping } from '../src/adapters/pull/shipping.ts';
+import { shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
 import { weather } from '../src/adapters/pull/weather.ts';
 
 const network = setupNetwork();
@@ -126,6 +127,7 @@ describe('pull adapter fetch', () => {
 
     expect(await counted(() => listening.fetch(withSecrets, signal()))).toBe(4);
     expect(await counted(() => shipping.fetch(env, signal()))).toBe(1);
+    expect(await counted(() => shippingActivity.fetch(env, signal()))).toBe(1);
     expect(await counted(() => weather.fetch(env, signal()))).toBe(1);
     expect((await counted(() => projects.fetch(env, signal()))) * 2).toBeLessThanOrEqual(50);
   });

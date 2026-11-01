@@ -159,6 +159,24 @@ import repoPulseRawMalformed from '../fixtures/repo-pulse/raw/malformed.json' wi
 import repoPulseRawMissing from '../fixtures/repo-pulse/raw/missing.json' with { type: 'json' };
 import repoPulseRawOk from '../fixtures/repo-pulse/raw/ok.json' with { type: 'json' };
 import repoPulseRawPartial from '../fixtures/repo-pulse/raw/partial.json' with { type: 'json' };
+import repoPulseActivityRawIncomplete from '../fixtures/repo-pulse-activity/raw/incomplete.json' with {
+  type: 'json',
+};
+import repoPulseActivityRawMalformed from '../fixtures/repo-pulse-activity/raw/malformed.json' with {
+  type: 'json',
+};
+import repoPulseActivityRawMissing from '../fixtures/repo-pulse-activity/raw/missing.json' with {
+  type: 'json',
+};
+import repoPulseActivityRawOk from '../fixtures/repo-pulse-activity/raw/ok.json' with {
+  type: 'json',
+};
+import repoPulseActivityRawSinceNull from '../fixtures/repo-pulse-activity/raw/since-null.json' with {
+  type: 'json',
+};
+import repoPulseActivityRawUnavailable from '../fixtures/repo-pulse-activity/raw/unavailable.json' with {
+  type: 'json',
+};
 import shelfSnapshotMinimal from '../fixtures/shelf/snapshot/minimal.json' with { type: 'json' };
 import shelfSnapshotOk from '../fixtures/shelf/snapshot/ok.json' with { type: 'json' };
 import shelfSnapshotSensitiveFields from '../fixtures/shelf/snapshot/sensitive-fields.json' with {
@@ -167,6 +185,15 @@ import shelfSnapshotSensitiveFields from '../fixtures/shelf/snapshot/sensitive-f
 import shippingSnapshotEmpty from '../fixtures/shipping/snapshot/empty.json' with { type: 'json' };
 import shippingSnapshotOk from '../fixtures/shipping/snapshot/ok.json' with { type: 'json' };
 import shippingSnapshotPartial from '../fixtures/shipping/snapshot/partial.json' with {
+  type: 'json',
+};
+import shippingActivityDaysOk from '../fixtures/shipping-activity/days/ok.json' with {
+  type: 'json',
+};
+import shippingActivitySnapshotOk from '../fixtures/shipping-activity/snapshot/ok.json' with {
+  type: 'json',
+};
+import shippingActivitySnapshotSinceNull from '../fixtures/shipping-activity/snapshot/since-null.json' with {
   type: 'json',
 };
 import trellisPushMinimal from '../fixtures/trellis/push/accept/minimal.json' with { type: 'json' };
@@ -260,6 +287,14 @@ export const rawFixtures = {
     ok: repoPulseRawOk,
     partial: repoPulseRawPartial,
   },
+  'repo-pulse-activity': {
+    incomplete: repoPulseActivityRawIncomplete,
+    malformed: repoPulseActivityRawMalformed,
+    missing: repoPulseActivityRawMissing,
+    ok: repoPulseActivityRawOk,
+    'since-null': repoPulseActivityRawSinceNull,
+    unavailable: repoPulseActivityRawUnavailable,
+  },
 } as const;
 
 /** Normalized snapshots, as `/v1/<source>` serves them in `data`. */
@@ -312,6 +347,10 @@ export const snapshotFixtures = {
     ok: shippingSnapshotOk,
     partial: shippingSnapshotPartial,
   },
+  'shipping-activity': {
+    ok: shippingActivitySnapshotOk,
+    'since-null': shippingActivitySnapshotSinceNull,
+  },
   weather: {
     clear: weatherSnapshotClear,
     fog: weatherSnapshotFog,
@@ -340,5 +379,12 @@ export const pushFixtures = {
     minimal: trellisPushMinimal,
     ok: trellisPushOk,
     'sensitive-fields': trellisPushSensitiveFields,
+  },
+} as const;
+
+/** Daily history blocks, as `/v1/days/<series>?last=28` serves them in `data` (ADR 0038). */
+export const daysFixtures = {
+  'shipping-activity': {
+    ok: shippingActivityDaysOk,
   },
 } as const;

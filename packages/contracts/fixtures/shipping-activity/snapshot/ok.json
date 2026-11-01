@@ -1,0 +1,11 @@
+{
+  "since": "2026-10-12",
+  "repos": [
+    "ayagmar/ayagmar.dev",
+    "ayagmar/ccdesk",
+    "ayagmar/llm-usage-metrics",
+    "ayagmar/pi-mobile",
+    "ayagmar/repo-pulse",
+    "ayagmar/runnerd"
+  ]
+}

@@ -42,6 +42,7 @@ const durationMs: Partial<Record<SourceId, number>> = {
   'listening-history': 800,
   // Two requests, one after the other.
   monkeytype: 1000,
+  'shipping-activity': 900,
 };
 
 /**
@@ -184,11 +185,13 @@ describe('scheduled', () => {
       // up to the end of the two days: the daily one too, so each is tried more than once.
       expect(runs[0], id).toBeLessThan(pullAdapters.length);
       expect(runs.length, id).toBeGreaterThan(1);
-      const limit = id === 'listening' ? 5 : intervalSeconds / 60 + 5;
+      // The activity pull also waits out the first 15 minutes of a date in Rabat (ADR 0038).
+      const limit =
+        id === 'listening' ? 5 : intervalSeconds / 60 + (id === 'shipping-activity' ? 20 : 5);
       const [first = 0, ...later] = gaps.get(id) ?? [];
-      // At startup listening waits while each of the other five sources is tried once (ADR
-      // 0033): measured 6 minutes, then at most 3.
-      expect(first, id).toBeLessThanOrEqual(id === 'listening' ? 6 : limit);
+      // At startup listening waits while each of the other six sources is tried once (ADR
+      // 0038): measured 7 minutes, then at most 3.
+      expect(first, id).toBeLessThanOrEqual(id === 'listening' ? 7 : limit);
       expect(Math.max(...later), id).toBeLessThanOrEqual(limit);
       expect(run - (runs.at(-1) ?? 0), `${id} at the end`).toBeLessThanOrEqual(limit);
     }
@@ -243,7 +246,8 @@ describe('scheduled', () => {
         vi.useRealTimers();
       }
       // Measured 10 minutes 2.3 seconds with six sources (ADR 0033), 9 minutes 2.3 seconds
-      // with five: the history waits one more minute while Monkeytype is pulled.
+      // with five: the history waits one more minute while Monkeytype is pulled. The seventh,
+      // the activity pull, waits out these minutes (ADR 0038), so it adds none.
       expect((history.published[0] ?? Number.POSITIVE_INFINITY) - midnight).toBeLessThanOrEqual(
         10 * minute + 2_300
       );

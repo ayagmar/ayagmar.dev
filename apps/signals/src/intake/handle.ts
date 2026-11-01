@@ -152,6 +152,7 @@ export async function handlePush<Push extends { deliveryId: string; sentAt: stri
     fetchedAt: utc(sentAt),
     receivedAt,
     minIntervalMs: minPushIntervalSeconds * 1000,
+    ...(producer.historySince === undefined ? {} : { historySince: producer.historySince(push) }),
   });
 
   switch (result.outcome) {
