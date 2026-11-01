@@ -64,7 +64,7 @@ zod without its compiled fast path, as in workerd, took 3 to 4 ms warm and about
 
 ## Consequences
 
-- The strip shows only days signals has recorded. On the first builds after this ships, most of the 28 are outlined: repo-pulse began recording in late October 2026 and cannot seed older days.
+- The strip shows only days signals has recorded. repo-pulse began recording on 3 October 2026 and cannot seed older days, so from the first successful pull the 28 days are covered; a day or month before 3 October has no record.
 - History is as good as repo-pulse's `complete` flag and visibility gate: a day stored from a complete answer is never lowered later.
 - The rollout has an order (docs/operations.md): migrate, deploy signals, check the route has days, then rebuild the site. A site built before the route answers keeps the event fallback until its next build.
 - Rows are never deleted. Removing a series, or a day, is a migration or a manual D1 statement.
