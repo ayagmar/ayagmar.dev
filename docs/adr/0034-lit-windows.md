@@ -1,6 +1,6 @@
 # 0034. Lit windows
 
-Status: accepted, 2026-10-26. Amends ADR 0026 where it changes the room's visual system, and ADR 0029 (overcast). Amended 2026-10-31: quieter windows and stats (below); it replaces the window chrome, bar colours, status bar, sample tag, big numbers and heat caption described above.
+Status: superseded by [ADR 0037](0037-quiet-room.md), 2026-11-01, except the overcast layer, the heat strip's data and the /stats layout, which stand. Accepted 2026-10-26. Amends ADR 0026 where it changes the room's visual system, and ADR 0029 (overcast). Amended 2026-10-31: quieter windows and stats (below); it replaces the window chrome, bar colours, status bar, sample tag, big numbers and heat caption described above.
 
 ## Context
 
@@ -66,16 +66,3 @@ The owner found the site read as sloppy rather than as a polished, minimal devel
 - **Home and about.** The room's list never leaves one object alone on a row: two columns on a phone (the odd one spans the row), four on a tablet, one row from 60 rem. The name lost its full stop. Before the first published post, the Writing window lists the latest TIL notes. /about sets the note on the name beside the summary from 52 rem, and the resume in two columns from 60 rem.
 
 **Contrast.** Computed on the three stops of the window gradient in both themes: body text at least 10.9:1 by day and 12.8:1 at night, muted text (file names included) 6.5:1 and 7.3:1, the lamp 5.6:1 and 8.7:1, mint 6.2:1 and 9.9:1, rose 5.1:1 and 6.8:1. `--line`, the edge of inputs, buttons, `kbd`, the Menu and the dialogs, is `#7f6b57` by day and `#716aa8` at night: at least 3.5:1 against the ground and the surface in both themes, so a text field's border meets WCAG 1.4.11 (`e2e/contrast.spec.ts` checks the search input). The Menu and the dialogs also cast a soft shadow, since they sit over the page.
-
-## Amendment, 2026-10-31: quiet room (design option A, draft)
-
-The owner still found the site generic and cartoony after the quiet windows. The critique named the window chrome on every block, Fraunces' soft heavy cut, mono used for labels and buttons, seven hues with no meaning, murky gradients, dense underlines and a boxed header. This option keeps the room as the only picture and makes the rest editorial:
-
-- **No windows.** `.panel` and `.paper` are sections: a 1 px `--rule` above, the heading, and space. No title bar, file name, coloured square, fill or gradient. The section that holds a page's title has no rule. The /skills entries and /projects rows are ruled lists.
-- **One family for headings.** Fraunces is no longer used or preloaded; headings are Source Serif at 600 with tight tracking (h1 2.1 to 3.25 rem, h2 1.375 rem). Home loads two fonts, the serif roman and the mono (`e2e/room.spec.ts`). Both faces are now preloaded, the mono as well as the serif roman: in CI's mobile Lighthouse the mono swapped in after the first paint and moved /stats' listening list (CLS 0.048 to 0.08 against 0.01; the job now logs the moved elements), and the display face it replaces cost more bytes.
-- **Mono for data only:** dates, numbers, repository names and code. Buttons, the footer, captions, labels and section links are the serif.
-- **One accent.** Links, the current page and the heat strip are the lamp. Mint, violet, cyan and brown are gone; rose marks sample data as a dot and a line, not a tag or a hatched banner.
-- **Flat ground.** No radial glows; day is a paper white `#f6f2ea`, night an ink `#0e0c13`. On the ground, muted text is 6.6:1 by day and 7.5:1 at night, the lamp 6.5:1 and 10.6:1, rose 6.6:1 and 8.3:1; `--line` stays at least 3.3:1 against the ground and the dialog surface.
-- **Header and footer as words.** Search, Menu and the theme switch have no borders; the current page and the chosen theme are text over a 1 px lamp underline. The footer is one muted serif line, with no blinking square.
-- **Lists.** Links in long lists (tracks, artists, shipping events) keep a faint underline; a repository name alone on its row has none until hovered. Shipping is a ruled list under each time, not a git graph.
-- **About.** The resume is ruled rows with the section name in its own column from 52 rem.
