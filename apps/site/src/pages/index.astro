@@ -1,9 +1,8 @@
 ---
+import HomeShipping from '../components/HomeShipping.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
 import Sample from '../components/Sample.astro';
-import ShippingHeat from '../components/ShippingHeat.astro';
-import ShippingList from '../components/ShippingList.astro';
 import { shippingStrip } from '../data/format.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
@@ -134,15 +133,8 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
           <h2 id="shipping">Shipping</h2>
           <a href="/stats#shipping">More</a>
         </div>
-        {recentlyShipped.length === 0 ? (
-          <p>Nothing to show yet.</p>
-        ) : (
-          <>
-            {strip !== null && <ShippingHeat strip={strip} />}
-            <ShippingList events={recentlyShipped} />
-          </>
-        )}
-        {shipping.data !== null && <Sample />}
+        <HomeShipping strip={strip} events={recentlyShipped} />
+        {(shipping.data !== null || strip !== null) && <Sample />}
       </section>
     </div>
   </div>

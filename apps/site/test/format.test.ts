@@ -1,6 +1,8 @@
 import { type ShippingSnapshot, shippingActivityDaysEnvelopeSchema } from '@min7/contracts';
 import { daysFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
+import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, expect, it } from 'vitest';
+import HomeShipping from '../src/components/HomeShipping.astro';
 import { projectsSummary, shippingStrip } from '../src/data/format.ts';
 
 describe('projectsSummary', () => {
@@ -89,5 +91,21 @@ describe('shippingStrip', () => {
     const empty = { ...history, data: history.data && { ...history.data, days: [] } };
     expect(shippingStrip(empty, events, now)?.from).toBe('20 Oct');
     expect(shippingStrip(noHistory, shipping('2026-10-29T10:00:00Z', []), now)).toBeNull();
+  });
+
+  // Catches the home page hiding a usable strip because the unrelated event feed failed or is
+  // empty: the strip has its own source, only the list says it has nothing.
+  it.each([
+    ['failed', { ...shipping('2026-10-29T10:00:00Z', []), fetchedAt: null, data: null }],
+    ['empty', shipping('2026-10-29T10:00:00Z', [])],
+  ])('is drawn on the home page when the event feed is %s', async (_, feed) => {
+    const strip = shippingStrip(history, feed, now);
+    const container = await AstroContainer.create();
+    const html = await container.renderToString(HomeShipping, {
+      props: { strip, events: feed.data?.events ?? [] },
+    });
+    expect(html).toContain('One square a day, 12 Oct to 26 Oct');
+    expect(html.match(/<i data-l=/g)).toHaveLength(28);
+    expect(html).toContain('Nothing to show yet.');
   });
 });
