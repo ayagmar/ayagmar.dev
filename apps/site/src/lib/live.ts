@@ -79,10 +79,23 @@ export function poll(
   setInterval(() => check(false), 60_000);
   document.addEventListener('visibilitychange', back);
   window.addEventListener('focus', back);
-  window.addEventListener('pageshow', back);
+  // Only a page restored from the back/forward cache: the first load's pageshow follows the
+  // check above, and redrawing every panel again then cost mobile TBT (ADR 0017).
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) back();
+  });
 }
 
+// Formatters are made once: making one per call, as toLocaleString does, cost /stats most of
+// its script time on load (mobile TBT, ADR 0017).
 const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+const dayMonth = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
+const dayMonthYear = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+const exact = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 /** Days since the epoch of `time`'s calendar date in the reader's own time zone. */
 export const day = (time: number) => {
   const date = new Date(time);
@@ -102,12 +115,9 @@ export function ago(time: number, now: number): string {
   const days = day(now) - day(time);
   if (days < 1 || minutes < 360) return relative.format(-Math.floor(minutes / 60), 'hour');
   if (days < 7) return relative.format(-days, 'day');
-  const date = new Date(time);
-  return date.toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: date.getFullYear() === new Date(now).getFullYear() ? undefined : 'numeric',
-  });
+  return (
+    new Date(time).getFullYear() === new Date(now).getFullYear() ? dayMonth : dayMonthYear
+  ).format(time);
 }
 
 /**
@@ -129,11 +139,22 @@ export function tick(now: number): void {
   for (const time of document.querySelectorAll<HTMLTimeElement>('time[data-ago]')) {
     const at = Date.parse(time.dateTime);
     time.textContent = ago(at, now);
-    time.title = new Date(at).toLocaleString(undefined, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
+    time.title = exact.format(at);
   }
+}
+
+let ticking = false;
+/**
+ * `tick` once the current task's other work is done: the panels of a page all check on load and
+ * on every timer, and each would rewrite every time on the page (mobile TBT, ADR 0017).
+ */
+function tickSoon(): void {
+  if (ticking) return;
+  ticking = true;
+  queueMicrotask(() => {
+    ticking = false;
+    tick(Date.now());
+  });
 }
 
 /** The words before a source's update time, which ends the line: `Updated 3 minutes ago`. */
@@ -234,7 +255,7 @@ export function live<Data>(
         freshness.hidden = false;
       }
     }
-    tick(time);
+    tickSoon();
     relabel?.(time);
   });
 }
