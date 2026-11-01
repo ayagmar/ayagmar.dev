@@ -15,7 +15,7 @@ brewing:
   note: An MCP server that lets AI agents see and drive a niri Wayland desktop. Early.
   url: https://github.com/ayagmar/niri-computer-use
 - name: this site
-  note: The lit-windows redesign of min7 has just shipped.
+  note: The quiet-room redesign of min7 has just shipped.
 
 ---
 
