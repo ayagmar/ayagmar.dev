@@ -46,8 +46,11 @@ async function start(everyMs: number) {
 /** The tab comes back: shown again, then the events a browser sends for it. */
 async function comeBack(...events: string[]) {
   hidden = false;
-  for (const name of events)
-    (name === 'visibilitychange' ? page : tab).dispatchEvent(new Event(name));
+  for (const name of events) {
+    // A pageshow that brings a tab back restores it from the back/forward cache.
+    const event = Object.assign(new Event(name), { persisted: name === 'pageshow' });
+    (name === 'visibilitychange' ? page : tab).dispatchEvent(event);
+  }
   await vi.advanceTimersByTimeAsync(0);
 }
 
@@ -88,6 +91,15 @@ describe('a live panel', () => {
     vi.setSystemTime(Date.now() + 3 * 60 * minute);
     await comeBack('pageshow');
     expect(asked).toBe(2);
+  });
+
+  // Catches every panel drawn twice on load: the first load's pageshow (not persisted) follows
+  // the first check, and a second pass over the page there cost /stats its mobile TBT budget.
+  it('does not show again for the pageshow of the first load', async () => {
+    await start(minute);
+    tab.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: false }));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(shown).toHaveLength(2);
   });
 
   // Catches requests piling up behind one that hangs.
