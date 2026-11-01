@@ -22,6 +22,7 @@ export interface UpstreamCases {
   github?: Cases<'github'>;
   npm?: Cases<'npm'>;
   repoPulse?: Cases<'repo-pulse'>;
+  repoPulseActivity?: Cases<'repo-pulse-activity'>;
   openMeteo?: Cases<'open-meteo'>;
   monkeytype?: Cases<'monkeytype'>;
 }
@@ -42,6 +43,7 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
     rawFixtures.github[cases.github ?? 'ok'];
   const npm: Record<string, Recorded> = rawFixtures.npm[cases.npm ?? 'ok'];
   const repoPulse: Recorded = rawFixtures['repo-pulse'][cases.repoPulse ?? 'ok'];
+  const activity: Recorded = rawFixtures['repo-pulse-activity'][cases.repoPulseActivity ?? 'ok'];
   const openMeteo: Recorded = rawFixtures['open-meteo'][cases.openMeteo ?? 'ok'];
   const monkeytype: Record<string, Recorded> = rawFixtures.monkeytype[cases.monkeytype ?? 'ok'];
 
@@ -87,6 +89,18 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
       return reply(npm[decodeURIComponent(new URL(request.url).pathname.slice(prefix.length))]);
     }),
     http.get('https://repo-pulse.ayagmar.workers.dev/public/feed', () => reply(repoPulse)),
+    // Daily activity (ADR 0038): answered only for exactly `?days=400`, or `?days=35` with the
+    // case's last 35 days.
+    http.get('https://repo-pulse.ayagmar.workers.dev/public/activity', ({ request }) => {
+      const query = new URL(request.url).searchParams;
+      const days = query.size === 1 ? query.get('days') : null;
+      if (days === '400') return reply(activity);
+      if (days !== '35') return HttpResponse.error();
+      const body = activity?.body as { days?: unknown } | null | undefined;
+      return Array.isArray(body?.days)
+        ? reply({ status: activity?.status ?? 200, body: { ...body, days: body.days.slice(-35) } })
+        : reply(activity);
+    }),
     http.get('https://api.open-meteo.com/v1/forecast', () => reply(openMeteo)),
     // Monkeytype (ADR 0033): answered only with an ApeKey and for exactly `?mode=time` or
     // `?mode=words`; the answer the case has none for (not asked) fails.

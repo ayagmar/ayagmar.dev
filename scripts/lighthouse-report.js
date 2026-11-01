@@ -35,9 +35,9 @@ export const profiles = /** @type {const} */ (['mobile', 'desktop']);
  * @typedef {{ page: string, profile: 'mobile' | 'desktop', head: Values, base: Values | null,
  *   over: Metric[], regressed: Metric[], remeasured: { base: Values | null, head: Values } | null }} Result
  * `remeasured`: the page looked regressed against `base`, so base and head were measured again in
- * turn on the same runner, and `regressed` is decided on those numbers; or its CLS was over
- * budget, so head was measured again (base only if it also looked regressed), and the CLS entry
- * in `over` is decided on that head.
+ * turn on the same runner, and `regressed` is decided on those numbers; or its CLS or TBT was
+ * over budget, so head was measured again (base only if it also looked regressed), and those
+ * entries in `over` are decided on that head.
  * @typedef {{ version: 2, runs: number, results: Result[] }} Metrics
  */
 
@@ -51,6 +51,13 @@ export const metrics = {
   cls: { label: 'CLS', max: 10, format: (n) => n.toFixed(3) },
 };
 const metricKeys = /** @type {Metric[]} */ (Object.keys(metrics));
+
+/**
+ * The budgets whose miss is measured again on head and decided on that median (ADR 0017): both
+ * read noise around their limits on unchanged pages. Every other budget is decided on the first.
+ * @type {readonly Metric[]}
+ */
+export const remeasuredBudgets = ['cls', 'tbt'];
 
 /** @param {unknown} value */
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -223,7 +230,7 @@ export function render(m) {
     ...(m.results.some((r) => r.remeasured)
       ? [
           '',
-          'A page that looked regressed, or was over its CLS budget, has a second row, _re-measured_: measured again on the same runner, base and head one run of each in turn (head alone for CLS). That row decides the regression and the CLS budget; the other budgets are judged on the first.',
+          'A page that looked regressed, or was over its CLS or TBT budget, has a second row, _re-measured_: measured again on the same runner, base and head one run of each in turn (head alone for a budget). That row decides the regression and the CLS and TBT budgets; the other budgets are judged on the first.',
         ]
       : []),
   ];
@@ -243,12 +250,14 @@ export function render(m) {
       const again = r.remeasured;
       /**
        * Each mark on the row whose numbers decided it: a regression on the re-measured row when
-       * the base was measured again, the CLS budget there when the page was, the rest on the first.
+       * the base was measured again, the CLS and TBT budgets there when the page was, the rest on
+       * the first.
        * @param {Metric} k
        * @param {boolean} remeasuredRow
        */
       const flags = (k, remeasuredRow) => {
-        const over = r.over.includes(k) && (k === 'cls' && !!again) === remeasuredRow;
+        const over =
+          r.over.includes(k) && (remeasuredBudgets.includes(k) && !!again) === remeasuredRow;
         const regressed = r.regressed.includes(k) && !!again?.base === remeasuredRow;
         return `${over ? ' ✗' : ''}${regressed ? ' ▲' : ''}`;
       };

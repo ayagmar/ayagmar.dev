@@ -6,6 +6,7 @@ import { diagrams } from './src/lib/markdown/diagrams.ts';
 import { scopeIds } from './src/lib/markdown/scope-ids.ts';
 import { scrollable } from './src/lib/markdown/scrollable.ts';
 import { siteUrl } from './src/lib/site.ts';
+import { sitemapFromPages } from './src/lib/sitemap.ts';
 
 export default defineConfig({
   site: siteUrl,
@@ -25,7 +26,8 @@ export default defineConfig({
     syntaxHighlight: false,
     processor: satteri({ hastPlugins: [scopeIds, diagrams, scrollable] }),
   },
-  integrations: [svelte(), sitemap()],
+  // sitemapFromPages edits what sitemap() wrote, so it comes after it.
+  integrations: [svelte(), sitemap(), sitemapFromPages()],
   // Never inline a script or asset into the page: the CSP has no `data:` and allows no inline
   // script except Astro's own (ADR 0019), so the home page's room script stays a file (ADR 0027).
   vite: { build: { assetsInlineLimit: 0 } },

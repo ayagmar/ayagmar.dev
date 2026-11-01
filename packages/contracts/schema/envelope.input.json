@@ -13,7 +13,8 @@
         "weather",
         "listening-history",
         "desktop",
-        "monkeytype"
+        "monkeytype",
+        "shipping-activity"
       ]
     },
     "version": {

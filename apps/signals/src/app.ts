@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import type { AppEnv } from './env.ts';
 import { notFound, onError } from './errors.ts';
+import { days } from './routes/v1/days.ts';
 import { desktop } from './routes/v1/desktop.ts';
 import { health } from './routes/v1/health.ts';
 import { listening } from './routes/v1/listening.ts';
@@ -24,6 +25,7 @@ export const app = new Hono<AppEnv>()
   .route('/v1/listening-history', listeningHistory)
   .route('/v1/desktop', desktop)
   .route('/v1/monkeytype', monkeytype)
+  .route('/v1/days', days)
   .route('/v1/push', push)
   .notFound(notFound)
   .onError(onError);

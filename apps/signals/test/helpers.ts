@@ -1,5 +1,5 @@
 import { env, exports } from 'cloudflare:workers';
-import { type ProducerId, sourceIds } from '@min7/contracts';
+import { dailySources, type ProducerId, sourceIds } from '@min7/contracts';
 
 const origin = 'https://api.ayagmar.dev';
 
@@ -83,6 +83,26 @@ export async function clearState() {
     env.DB.prepare('DELETE FROM snapshots'),
     env.DB.prepare('DELETE FROM push_deliveries'),
     env.DB.prepare('DELETE FROM pull_progress'),
+    env.DB.prepare('DELETE FROM daily'),
   ]);
   await Promise.all(sourceIds.map((source) => caches.default.delete(`${origin}/v1/${source}`)));
+  // Daily history is cached per series and block (ADR 0038): each month, and the last 28 days
+  // under the date they end on, for the dates the tests set and the real clock's.
+  const day = 24 * 60 * 60_000;
+  const months = Array.from({ length: 36 }, (_, i) =>
+    new Date(Date.UTC(2025, i, 1)).toISOString().slice(0, 7)
+  );
+  const ends = [
+    ...Array.from({ length: 61 }, (_, i) => Date.UTC(2026, 9, 1) + i * day),
+    Date.now() - day,
+    Date.now(),
+    Date.now() + day,
+  ].map((time) => new Date(time).toISOString().slice(0, 10));
+  await Promise.all(
+    dailySources.flatMap((series) =>
+      [...months.map((month) => `month=${month}`), ...ends.map((to) => `last=28&to=${to}`)].map(
+        (block) => caches.default.delete(`${origin}/v1/days/${series}?${block}`)
+      )
+    )
+  );
 }

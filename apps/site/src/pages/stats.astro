@@ -4,6 +4,7 @@ import Freshness from '../components/Freshness.astro';
 import Markup from '../components/Markup.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import ShippingHeat from '../components/ShippingHeat.astro';
+import { shippingStrip } from '../data/format.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { listeningBody } from '../lib/listening-panel.ts';
@@ -15,6 +16,8 @@ import { typingWords } from '../lib/typing.ts';
 
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
+// Drawn once, with the page (ADR 0038); the live script redraws only the list under it.
+const strip = shippingStrip(await signals.readDays('shipping-activity'), shipping, new Date());
 const projects = await signals.read('projects');
 const typing = await signals.read('monkeytype');
 const llmUsage = await signals.read('llm-usage');
@@ -27,7 +30,10 @@ const music = listening.data;
 const featured = featuredProjects.map((project) => project.repo);
 ---
 
-<Base title="Stats">
+<Base
+  title="Stats"
+  description="Live numbers from Abdeslam Yassine Agmar's week: listening, projects, typing, shipping and LLM usage."
+>
   {/* Its scripts read the API as the page loads; in fixtures mode they make no request. */}
   {signalsMode === 'api' && <link slot="head" rel="preconnect" href={signalsApiBase} crossorigin>}
   <h1>Stats</h1>
@@ -116,9 +122,7 @@ const featured = featuredProjects.map((project) => project.repo);
       >
         <h2 id="shipping">Shipping</h2>
         {/* Built once: the live script redraws only the list under it (ADR 0034). */}
-        {shipping.data !== null && shipping.data.events.length > 0 && (
-          <ShippingHeat events={shipping.data.events} />
-        )}
+        {strip !== null && <ShippingHeat strip={strip} />}
         <div class="shipping-body">
           {shipping.data === null ? (
             <p>{words.noShipping}</p>

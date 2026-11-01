@@ -1,0 +1,19 @@
+{
+  "source": "llm-usage",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:55:00.000Z",
+  "stale": false,
+  "data": {
+    "zone": "UTC",
+    "from": "2026-10-01",
+    "to": "2026-10-31",
+    "days": [
+      {
+        "date": "2026-10-25",
+        "costUsd": 5.55,
+        "totalTokens": 2040000,
+        "activeMs": 7200000
+      }
+    ]
+  }
+}

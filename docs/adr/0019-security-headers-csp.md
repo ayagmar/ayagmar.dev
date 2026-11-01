@@ -1,6 +1,6 @@
 # 0019. Security headers and Content-Security-Policy
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. Amended 2026-11-01: the owner approved Cloudflare Web Analytics, so a production build's policy allows its beacon and its reports (see Amendments). Amended 2026-11-01: JSON-LD blocks need no hash but must parse.
 
 ## Context
 
@@ -23,6 +23,18 @@ Details:
 - Shiki is off because its `style=""` attributes violate `style-src` (ADR 0004).
 
 Playwright runs every page against `wrangler dev` and fails on any `securitypolicyviolation` event or CSP console error, and asserts the headers on HTML, `index.txt`, a 404 and the terminal response.
+
+## Amendment, 2026-11-01: structured data
+
+Structured data (`<script type="application/ld+json">`, docs/seo.md) is data a browser never runs, so `script-src` does not apply and it needs no hash. `postbuild.ts` accepts such a block only if its body parses as JSON, and fails the build otherwise. Its text escapes `<`, so a title cannot end the element.
+
+## Amendment, 2026-11-01: Cloudflare Web Analytics
+
+The owner wants visit counts and approved Cloudflare Web Analytics for them: Cloudflare's own beacon, which sets no cookies and no local storage, on a site Cloudflare already serves. Its automatic injection never reached the HTML the Worker serves, so the page includes the beacon itself.
+
+- Only production gets it: `Base.astro` renders `<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":…}'>` when Workers Builds builds `main` (`WORKERS_CI_BRANCH`) and the token in `src/lib/search.ts` is set. The token is public. Previews, local builds and the e2e builds have no beacon and count nothing.
+- `postbuild.ts` adds `https://static.cloudflareinsights.com` to `script-src` and `https://cloudflareinsights.com` (where the beacon posts its report) to `connect-src` only when a built page loads that exact script, so every other build keeps the policy above. No `unsafe-inline`: the beacon is an external file, and its settings are a data attribute.
+- ADR 0017's budget allows the beacon by its exact URL, and only as a `<script src>`.
 
 ## Consequences
 

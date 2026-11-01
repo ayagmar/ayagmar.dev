@@ -1,17 +1,29 @@
 ---
-import { COMMIT_SHA } from 'astro:env/server';
+import { COMMIT_SHA, WORKERS_CI_BRANCH } from 'astro:env/server';
 import Base from '../layouts/Base.astro';
+import { analyticsToken } from '../lib/search.ts';
 
 const repo = 'https://github.com/ayagmar/ayagmar.dev';
 const isCommit = /^[0-9a-f]{40}$/.test(COMMIT_SHA);
+const analytics = analyticsToken(WORKERS_CI_BRANCH) !== undefined;
 ---
 
-<Base title="Colophon">
+<Base
+  title="Colophon"
+  description="How min7 is built and served: Astro, Svelte, Cloudflare Workers and Pagefind, and the commit this build came from."
+>
   <div class="paper column t-colophon">
     <h1>Colophon</h1>
     <p>
-      Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No tracking, no
-      cookies, no third-party scripts.
+      Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No cookies.
+      {analytics ? (
+        <>
+          Visits are counted by Cloudflare Web Analytics, the one third-party script, which uses no
+          cookies or local storage.
+        </>
+      ) : (
+        <>No tracking, no third-party scripts.</>
+      )}
     </p>
     <p>
       Comments under posts and notes are GitHub Discussions, shown by{' '}

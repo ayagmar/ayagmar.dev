@@ -4,7 +4,7 @@
 // page does not answer 200 and otherwise writes one result per run. Chromium is never started.
 // A page's file sets what the stand-in measures: `lcp:N` its LCP (400 ms otherwise), `drift`
 // adds 40 ms for every run of a drifting page before it (a runner slowing down), `cls:a,b,...`
-// the CLS of its successive runs (the last repeats; 0 otherwise), `crash` makes
+// and `tbt:a,b,...` the CLS and TBT of its successive runs (the last repeats; 0 otherwise), `crash` makes
 // Lighthouse crash on it as NO_NAVSTART does; a `crash-once` file next to the stand-in makes
 // the next collect crash. Each measured URL is appended to `calls.log` there.
 import assert from 'node:assert/strict';
@@ -69,11 +69,15 @@ for (const url of urls) {
   for (let run = 0; run < runs; run++) {
     appendFileSync(join(here, 'calls.log'), new URL(url).pathname + '\\n');
     let lcp = Number(/lcp:(\\d+)/.exec(body)?.[1] ?? 400);
-    const clsList = (/cls:([\\d.,]+)/.exec(body)?.[1] ?? '0').split(',').map(Number);
-    const seen = join(here, 'cls-count-' + new URL(url).pathname.replaceAll('/', '_'));
-    const clsRun = existsSync(seen) ? Number(readFileSync(seen, 'utf8')) : 0;
-    writeFileSync(seen, String(clsRun + 1));
-    const cls = clsList[Math.min(clsRun, clsList.length - 1)];
+    const seen = join(here, 'run-count-' + new URL(url).pathname.replaceAll('/', '_'));
+    const pageRun = existsSync(seen) ? Number(readFileSync(seen, 'utf8')) : 0;
+    writeFileSync(seen, String(pageRun + 1));
+    const series = (name) => {
+      const list = (new RegExp(name + ':([\\\\d.,]+)').exec(body)?.[1] ?? '0').split(',').map(Number);
+      return list[Math.min(pageRun, list.length - 1)];
+    };
+    const cls = series('cls');
+    const tbt = series('tbt');
     if (body.includes('drift')) {
       const counter = join(here, 'drift-count');
       const count = existsSync(counter) ? Number(readFileSync(counter, 'utf8')) : 0;
@@ -85,7 +89,7 @@ for (const url of urls) {
       categories: { performance: { score: 1 }, accessibility: { score: 1 }, 'best-practices': { score: 1 } },
       audits: {
         'largest-contentful-paint': { numericValue: lcp },
-        'total-blocking-time': { numericValue: 0 },
+        'total-blocking-time': { numericValue: tbt },
         'cumulative-layout-shift': { numericValue: cls },
       },
     };
@@ -234,7 +238,10 @@ const metricsFile = () =>
       head: { lcp: number };
       over: string[];
       regressed: string[];
-      remeasured: { base: { lcp: number } | null; head: { lcp: number; cls: number } } | null;
+      remeasured: {
+        base: { lcp: number } | null;
+        head: { lcp: number; cls: number; tbt: number };
+      } | null;
     }[];
   };
 const row = (page: string) => metricsFile().results.find((r) => r.page === page);
@@ -312,6 +319,30 @@ it('measures head alone again for a CLS budget miss, and fails only a miss that 
   assert.equal(shifted.status, 1);
   assert.match(shifted.stderr, /writing \(desktop\): cls 0\.0515 over budget, re-measured/);
   assert.deepEqual(row('writing')?.over, ['cls']);
+});
+
+it('measures head alone again for a TBT budget miss, and fails only a miss that repeats', () => {
+  const head = (stats: string) => {
+    rmSync(join(dir, 'head'), { recursive: true, force: true });
+    site('head', { ...pages, 'stats.html': stats }, true);
+    return spawnSync(
+      process.execPath,
+      [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
+      { cwd: dir, encoding: 'utf8', env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/x' } }
+    );
+  };
+  // /stats on CI after #94: 113, 109 and 106 ms on the first runs, then 75 to 83 ms.
+  const noise = head('tbt:113,109,106,78,83,80');
+  assert.equal(noise.status, 0, noise.stderr);
+  assert.deepEqual(row('stats')?.over, []);
+  assert.equal(row('stats')?.remeasured?.head.tbt, 80);
+  assert.equal(row('stats')?.remeasured?.base, null);
+  assert.deepEqual(calls().slice(24), Array(3).fill('/stats'));
+
+  const blocked = head('tbt:300,310,295');
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /stats \(desktop\): tbt 295 over budget, re-measured/);
+  assert.deepEqual(row('stats')?.over, ['tbt']);
 });
 
 it('runs a crashed lhci collect once more, and fails with its error when it crashes again', () => {

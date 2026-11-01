@@ -1,8 +1,10 @@
+import { isDailySource } from '@min7/contracts';
+import { PullError } from '../adapters/pull/http.ts';
 import type { PullAdapter } from '../adapters/types.ts';
 import { logEvent } from '../security/log.ts';
 import { deleteDeliveriesBefore } from '../storage/admission.ts';
 import { D1SnapshotStore } from '../storage/d1.ts';
-import type { SnapshotStore } from '../storage/types.ts';
+import type { SnapshotStore, SourceStatus } from '../storage/types.ts';
 
 /** An upstream call that takes longer than this is abandoned and recorded as `timeout`. */
 const fetchTimeoutMs = 20_000;
@@ -13,6 +15,9 @@ const fetchTimeoutMs = 20_000;
 const scheduleSlackMs = 30_000;
 /** Deliveries older than this are forgotten; ADR 0011 explains why that is safe. */
 const deliveryRetentionMs = 7 * 24 * 60 * 60 * 1000;
+
+/** An upstream's own date for its answer may run this far ahead of the Worker's clock. */
+const maxAheadMs = 5 * 60_000;
 
 const errorCodePattern = /^[a-z][a-z0-9_]{0,63}$/;
 
@@ -32,14 +37,33 @@ function retryAt(error: unknown): number | undefined {
   return typeof at === 'number' && Number.isFinite(at) ? at : undefined;
 }
 
-async function pull(adapter: PullAdapter, env: Env, store: SnapshotStore): Promise<void> {
+async function pull(
+  adapter: PullAdapter,
+  env: Env,
+  store: SnapshotStore,
+  previous: SourceStatus | undefined
+): Promise<void> {
+  // Recorded first: Workers ends a run over its CPU limit without running the catch below, and
+  // a pull with no attempt recorded would be the most overdue at every run after (ADR 0038).
+  await store.recordAttempt(adapter.id, new Date().toISOString());
   let stage = 'fetch_failed';
   try {
-    const raw = await adapter.fetch(env, AbortSignal.timeout(fetchTimeoutMs));
+    const raw = await adapter.fetch(env, AbortSignal.timeout(fetchTimeoutMs), previous);
     stage = 'normalize_failed';
     const snapshot = adapter.normalize(raw);
+    const history = adapter.history?.(snapshot);
+    if (history === undefined) {
+      stage = 'store_failed';
+      await store.put(adapter.id, snapshot, new Date().toISOString());
+      return;
+    }
+    // An answer dated in the future would outrank every real one after it (ADR 0038).
+    const now = Date.now();
+    if (!isDailySource(adapter.id) || !(Date.parse(history.fetchedAt) <= now + maxAheadMs)) {
+      throw new PullError('upstream_malformed');
+    }
     stage = 'store_failed';
-    await store.put(adapter.id, snapshot, new Date().toISOString());
+    await store.putDated(adapter.id, history, new Date(now).toISOString());
   } catch (error) {
     const code = errorCode(error, stage);
     // A pull spread over several invocations that read its part (ADR 0030) did not fail.
@@ -80,7 +104,7 @@ export async function runScheduled(
       next = { adapter, overdueMs };
     }
   }
-  if (next) await pull(next.adapter, env, store);
+  if (next) await pull(next.adapter, env, store, statuses.get(next.adapter.id));
 
   const deleted = await deleteDeliveriesBefore(env.DB, scheduledTime - deliveryRetentionMs, {
     batchSize: 500,

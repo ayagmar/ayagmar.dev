@@ -77,6 +77,39 @@ describe('postbuild CSP', () => {
     expect(result.status).toBe(0);
   });
 
+  // Structured data is data a browser never runs: it needs no hash, but a block that does not
+  // parse would be ignored by search engines, so it fails the build.
+  it('accepts JSON-LD that parses, without widening the policy, and rejects one that does not', () => {
+    const ld = (body: string) => page(`<script type="application/ld+json">${body}</script>`);
+    const ok = build({ 'writing/a.html': ld('{"@type":"BlogPosting","headline":"a \\u003c b"}') });
+    expect(ok.stderr).toBe('');
+    const csp = readFileSync(join(dist, '_headers'), 'utf8');
+    expect(csp.match(/'sha256-/g)).toHaveLength(3);
+
+    const bad = build({ 'writing/b.html': ld('{"@type": "BlogPosting",}') });
+    expect(bad.status).toBe(1);
+    expect(bad.stderr).toContain('writing/b.html: JSON-LD that does not parse');
+  });
+
+  // Catches Previews and local builds allowing Cloudflare's origins, or production missing them
+  // so the beacon is blocked.
+  it("allows Cloudflare's beacon and its reports only in a build whose pages load it", () => {
+    const csp = () =>
+      /Content-Security-Policy: (.*)/.exec(readFileSync(join(dist, '_headers'), 'utf8'))?.[1];
+    build({ 'index.html': page('') });
+    expect(csp()).not.toContain('cloudflareinsights');
+
+    const beacon =
+      '<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon="{&quot;token&quot;:&quot;t&quot;}"></script>';
+    build({ 'index.html': page(beacon) });
+    expect(csp()).toContain(
+      "script-src 'self' 'wasm-unsafe-eval' https://static.cloudflareinsights.com "
+    );
+    expect(csp()).toContain(
+      "connect-src 'self' https://api.ayagmar.dev https://cloudflareinsights.com;"
+    );
+  });
+
   it('still rejects inline scripts that only pretend to load a src', () => {
     for (const script of [
       '<script data-note="src=/x.js">fetch("/x")</script>',

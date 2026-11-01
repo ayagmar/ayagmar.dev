@@ -12,6 +12,8 @@ import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { postOgImage } from '../../lib/og.ts';
 import { getPosts, getProjects } from '../../lib/posts.ts';
 import { morePostsAbout } from '../../lib/projects.ts';
+import { blogPosting, breadcrumbs } from '../../lib/structured-data.ts';
+import { postPath } from '../../lib/writing.ts';
 
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
@@ -35,10 +37,28 @@ export const getStaticPaths = (async () => {
 const { post, envelope, cards } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(post);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
-const { title, summary, art } = post.data;
+const { title, summary, art, date, updated, tags, draft } = post.data;
+const image = postOgImage(post.id, title, art !== undefined);
+const path = postPath(post.id);
+const structuredData = [
+  blogPosting({
+    path,
+    title,
+    description: summary,
+    published: date,
+    modified: updated,
+    tags,
+    image: image.path,
+  }),
+  breadcrumbs([
+    { name: 'Writing', path: '/writing' },
+    { name: title, path },
+  ]),
+];
 ---
 
-<Base title={title} description={summary} image={postOgImage(post.id, title, art !== undefined)}>
+{/* A draft is only built for Previews (ADR 0028), and stays out of search there too. */}
+<Base {title} description={summary} {image} {structuredData} noindex={draft}>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
     <PostHeader post={post}>

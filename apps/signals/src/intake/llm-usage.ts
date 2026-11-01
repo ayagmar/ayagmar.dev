@@ -57,12 +57,31 @@ function projectLlmUsage({ payload }: LlmUsagePush): LlmUsageSnapshot {
   };
 }
 
+/** Days of a push kept as history once the series has a row: its newest 35 (ADR 0038). */
+const historyDays = 35;
+
+/**
+ * The first date of the push's newest 35, so an accepted push rewrites at most 35 history
+ * rows; the first one writes all of its days. Days before stay as they were stored: a day long
+ * over only changes if the producer lost its logs, and history keeps what it had.
+ */
+function historySince({ payload }: LlmUsagePush): string {
+  const newest = payload.days
+    .map(({ date }) => date)
+    .sort()
+    .at(-1);
+  if (newest === undefined) return '9999-12-31';
+  const start = Date.parse(`${newest}T00:00:00Z`) - (historyDays - 1) * 24 * 60 * 60 * 1000;
+  return new Date(start).toISOString().slice(0, 10);
+}
+
 export const llmUsageProducer: Producer<LlmUsagePush> = {
   id: 'llm-usage',
   source: 'llm-usage',
   schema: llmUsagePushSchema,
   snapshotSchema: llmUsageSnapshotSchema,
   project: projectLlmUsage,
+  historySince,
   tokens: (env) => [env.PUSH_TOKEN_LLM_USAGE, env.PUSH_TOKEN_LLM_USAGE_NEXT],
   signingKeys: null,
 };

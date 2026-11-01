@@ -11,6 +11,7 @@ export const sourceIds = [
   'listening-history',
   'desktop',
   'monkeytype',
+  'shipping-activity',
 ] as const;
 
 export const sourceIdSchema = z.enum(sourceIds);
@@ -42,4 +43,7 @@ export const staleAfterSeconds: Readonly<Record<SourceId, number>> = {
   // Monkeytype pulled hourly; stale after a day of failed pulls (ADR 0033). Personal bests
   // stay true for years, so this is about the pull, never about when a best was set.
   monkeytype: 24 * 60 * 60,
+  // repo-pulse daily activity pulled hourly (ADR 0038); `fetchedAt` is when repo-pulse built
+  // the answer.
+  'shipping-activity': 6 * 60 * 60,
 };

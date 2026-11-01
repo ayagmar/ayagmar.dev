@@ -32,10 +32,15 @@ test('diagrams add no script, no inline style and are fully styled by /diagrams.
   const html = await (await request.get(post)).text();
   expect(html).not.toMatch(/\sstyle=/);
 
+  // Structured data is data a browser never runs, and differs from page to page.
   const scripts = (path: string) =>
     page
       .goto(path)
-      .then(() => page.locator('script').evaluateAll((all) => all.map((s) => s.outerHTML).sort()));
+      .then(() =>
+        page
+          .locator('script:not([type="application/ld+json"])')
+          .evaluateAll((all) => all.map((s) => s.outerHTML).sort())
+      );
   // Same scripts as a page without diagrams: Astro's search island and the click handler of the
   // comments window (ADR 0036) a post carries and /about does not.
   const comments = /Comments\.astro_astro_type_script/;

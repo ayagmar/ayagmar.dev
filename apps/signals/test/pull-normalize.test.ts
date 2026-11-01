@@ -1,6 +1,7 @@
 // Every normalizer against every shared fixture case. A case with a snapshot fixture must
 // normalize to exactly that snapshot (so no field outside the contract leaks through and
 // none goes missing); a case without one must fail with a PullError of the listed code.
+import { repoPulseActivityDaySchema } from '@min7/contracts';
 import { rawFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { PullError, type PullErrorCode } from '../src/adapters/pull/index.ts';
@@ -8,6 +9,7 @@ import { listening, weekStart } from '../src/adapters/pull/listening.ts';
 import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
 import { type ProjectsRaw, projects } from '../src/adapters/pull/projects.ts';
 import { shipping } from '../src/adapters/pull/shipping.ts';
+import { readActivityDay, shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
 import { weather } from '../src/adapters/pull/weather.ts';
 
 type Expected = { snapshot: unknown } | { error: PullErrorCode };
@@ -71,6 +73,92 @@ describe('shipping (repo-pulse)', () => {
 
   it.each(Object.entries(rawFixtures['repo-pulse']))('normalizes the %s case', (name, raw) => {
     check(() => shipping.normalize(raw), expected[name as keyof typeof expected]);
+  });
+});
+
+describe('shipping-activity (repo-pulse daily activity)', () => {
+  const expected: Record<keyof (typeof rawFixtures)['repo-pulse-activity'], Expected> = {
+    ok: { snapshot: snapshotFixtures['shipping-activity'].ok },
+    // Nothing recorded yet: a success that keeps no day.
+    'since-null': { snapshot: snapshotFixtures['shipping-activity']['since-null'] },
+    // The visibility gate left a repository unresolved: retried at the next run (ADR 0038).
+    incomplete: { error: 'upstream_incomplete' },
+    unavailable: { error: 'upstream_http_error' },
+    malformed: { error: 'upstream_malformed' },
+    missing: { error: 'upstream_not_found' },
+  };
+
+  it.each(Object.entries(rawFixtures['repo-pulse-activity']))(
+    'normalizes the %s case',
+    (name, raw) => {
+      check(
+        () =>
+          shippingActivity
+            .history(shippingActivity.normalize(raw))
+            .merge({ snapshot: null, days: new Map() }).snapshot,
+        expected[name as keyof typeof expected]
+      );
+    }
+  );
+});
+
+// The adapter reads each day by hand, since zod in workerd is too slow for 400 of them. Catches
+// a reader that stores what the contract refuses, or refuses what it accepts: every day of the
+// fixtures, and cases at the edge of each check, against the contract's own schema.
+describe('the activity day reader', () => {
+  const day = {
+    date: '2026-10-25',
+    pushes: 4,
+    commits: 19,
+    merges: 12,
+    releases: 0,
+    stars: 3,
+    repos: [
+      { repo: 'ayagmar/ayagmar.dev', pushes: 4, commits: 19, merges: 12, releases: 0, stars: 3 },
+    ],
+    reposTruncated: false,
+  };
+  const repo = (change: object) => ({ ...day, repos: [{ ...day.repos[0], ...change }] });
+  const edges: Record<string, unknown> = {
+    'an unknown key': { ...day, reviews: 3 },
+    'a repository with an unknown key': repo({ forks: 1 }),
+    '30 February': { ...day, date: '2026-02-30' },
+    'a leap day': { ...day, date: '2028-02-29' },
+    'a date with a time': { ...day, date: '2026-10-25T00:00:00Z' },
+    'a negative count': { ...day, merges: -1 },
+    'a fraction': { ...day, merges: 1.5 },
+    'a count as a string': { ...day, merges: '12' },
+    'a count of 1,000,000': { ...day, merges: 1_000_000 },
+    'a count over 1,000,000': { ...day, merges: 1_000_001 },
+    'a missing count': { ...day, stars: undefined },
+    'reposTruncated missing': { ...day, reposTruncated: undefined },
+    'reposTruncated as a string': { ...day, reposTruncated: 'false' },
+    'a repository name only': { ...day, repos: ['ayagmar/ayagmar.dev'] },
+    'a repository without an owner': repo({ repo: 'ayagmar.dev' }),
+    'a repository name of 101 characters': repo({ repo: `ayagmar/${'x'.repeat(101)}` }),
+    'a repository with a negative count': repo({ stars: -1 }),
+    '50 repositories': { ...day, repos: Array.from({ length: 50 }, () => day.repos[0]) },
+    '51 repositories': { ...day, repos: Array.from({ length: 51 }, () => day.repos[0]) },
+    'repos not a list': { ...day, repos: {} },
+    'a list': [day],
+    null: null,
+  };
+  const days = Object.values(rawFixtures['repo-pulse-activity']).flatMap((raw) =>
+    Array.isArray((raw.body as { days?: unknown })?.days)
+      ? ((raw.body as { days: unknown[] }).days as unknown[])
+      : []
+  );
+
+  const agrees = (value: unknown) => {
+    const parsed = repoPulseActivityDaySchema.safeParse(value);
+    expect(readActivityDay(value)).toEqual(parsed.success ? parsed.data : null);
+  };
+
+  it.each(Object.entries(edges))('agrees with the contract on %s', (_case, value) => agrees(value));
+
+  it('agrees with the contract on every day of the fixtures', () => {
+    expect(days.length).toBeGreaterThan(400);
+    for (const value of days) agrees(value);
   });
 });
 

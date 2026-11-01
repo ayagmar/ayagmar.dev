@@ -1,6 +1,6 @@
 # 0030. On this day in listening
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: with a sixth pulled source (ADR 0033) the worst case at midnight publishes at 10 minutes 2.3 seconds, approved up to 11. Amended 2026-10-31: a tab that comes back asks once its last request is a minute old (ADR 0015), and each year's most played track and artist link to Last.fm.
+Status: accepted, 2026-10-26. Amended 2026-10-26: with a sixth pulled source (ADR 0033) the worst case at midnight publishes at 10 minutes 2.3 seconds, approved up to 11. Amended 2026-10-31: a tab that comes back asks once its last request is a minute old (ADR 0015), and each year's most played track and artist link to Last.fm. Amended 2026-11-01: a seventh pulled source, `shipping-activity` (ADR 0038), waits out the first 15 minutes of each date, so the worst case stays at 10 minutes 2.3 seconds.
 
 ## Context
 

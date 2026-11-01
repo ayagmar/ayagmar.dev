@@ -8,8 +8,9 @@ import ProjectStats from '../../components/ProjectStats.astro';
 import Base from '../../layouts/Base.astro';
 import { feedPaths } from '../../lib/feed.ts';
 import { getPosts, getProjects } from '../../lib/posts.ts';
-import { postsAbout } from '../../lib/projects.ts';
+import { postsAbout, projectPath } from '../../lib/projects.ts';
 import { site } from '../../lib/site.ts';
+import { breadcrumbs } from '../../lib/structured-data.ts';
 
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
@@ -30,6 +31,12 @@ const feeds = feedPaths({ project: project.slug });
   title={project.slug}
   description={project.summary ?? `${project.slug}, a project by ${site.author}.`}
   feed={{ project: project.slug }}
+  structuredData={[
+    breadcrumbs([
+      { name: 'Projects', path: '/projects' },
+      { name: project.slug, path: projectPath(project.slug) },
+    ]),
+  ]}
 >
   <article class="project column">
     <header class="panel m-screen">

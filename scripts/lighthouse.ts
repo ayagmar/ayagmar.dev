@@ -3,7 +3,7 @@
 // pages in scripts/budgets.json for each profile, takes the median of the runs, and fails when
 // a head page is over budget or regressed against the base beyond the noise allowance. A page
 // that looks regressed is measured again, base and head in turn, and the regression stands only
-// if it holds on those numbers; a page over its CLS budget is measured again on head alone. Writes
+// if it holds on those numbers; a page over its CLS or TBT budget is measured again on head alone. Writes
 // the metrics artifact (scripts/lighthouse-report.js has its schema) either way.
 // Chromium comes from CHROME_PATH (`just lighthouse` sets it to Playwright's).
 // A base cache file holds the base's medians by URL path, so a base measured once (CI keys the
@@ -28,7 +28,14 @@ import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { budgets } from './budgets.ts';
 import { freePort } from './free-port.ts';
-import { pages as knownPages, metrics, profiles, render, validate } from './lighthouse-report.js';
+import {
+  pages as knownPages,
+  metrics,
+  profiles,
+  remeasuredBudgets,
+  render,
+  validate,
+} from './lighthouse-report.js';
 
 type Profile = (typeof profiles)[number];
 export type Metric = keyof typeof metrics;
@@ -301,8 +308,8 @@ function remeasure(
 
 /**
  * What stands after a re-measure of a page, from what the first numbers said: regressions on
- * the base's medians against the head's (when the base was measured again), and the CLS budget
- * on the head's median. Every other budget keeps its first verdict.
+ * the base's medians against the head's (when the base was measured again), and the CLS and TBT
+ * budgets on the head's median. Every other budget keeps its first verdict.
  */
 export function decide(
   first: { over: Metric[]; regressed: Metric[] },
@@ -312,7 +319,7 @@ export function decide(
   const head = medians(runs.head);
   const stillOver = overBudget(head, profile);
   return {
-    over: first.over.filter((key) => key !== 'cls' || stillOver.includes('cls')),
+    over: first.over.filter((key) => !remeasuredBudgets.includes(key) || stillOver.includes(key)),
     regressed:
       runs.base.length > 0 ? regressions(head, medians(runs.base), profile) : first.regressed,
   };
@@ -498,10 +505,13 @@ async function main() {
       }
       // A base measured on another runner, or minutes earlier, can sit a simulated round trip
       // or two below what this runner reads now, so a regression decides only against a base
-      // measured beside the head. CLS reads a third-decimal shift now and then on an unchanged
-      // page, so its budget decides on head measured again. Other budgets are not measured again.
+      // measured beside the head. CLS reads a third-decimal shift and mobile TBT tens of ms now
+      // and then on an unchanged page, so their budgets decide on head measured again. Other
+      // budgets are not measured again.
       const regressedRows = rows.filter((row) => row.regressed.length > 0);
-      const suspects = rows.filter((row) => row.regressed.length > 0 || row.over.includes('cls'));
+      const suspects = rows.filter(
+        (row) => row.regressed.length > 0 || row.over.some((key) => remeasuredBudgets.includes(key))
+      );
       if (suspects.length > 0) {
         const names = suspects.map((row) => row.page);
         const pathsOf = (list: typeof rows) =>
@@ -546,7 +556,9 @@ async function main() {
         const again = row.remeasured;
         for (const key of row.over) {
           const [value, note] =
-            key === 'cls' && again ? [again.head.cls, ', re-measured'] : [row.head[key], ''];
+            remeasuredBudgets.includes(key) && again
+              ? [again.head[key], ', re-measured']
+              : [row.head[key], ''];
           problems.push(`${row.page} (${profile}): ${key} ${value} over budget${note}`);
         }
         const [b, h] = again?.base ? [again.base, again.head] : [row.base as Values, row.head];

@@ -13,6 +13,8 @@ export type PullErrorCode =
   | 'upstream_http_error'
   | 'upstream_error'
   | 'upstream_malformed'
+  /** The upstream said its answer is incomplete (repo-pulse's `complete: false`, ADR 0038). */
+  | 'upstream_incomplete'
   /** More past years than one history snapshot holds (ADR 0030). */
   | 'over_budget'
   /** The date in Rabat changed while the pull ran, so its answers would mix two dates. */

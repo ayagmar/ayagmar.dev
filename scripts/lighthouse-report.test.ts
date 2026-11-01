@@ -140,6 +140,31 @@ describe('validate and render', () => {
     );
   });
 
+  it('marks a TBT budget miss on the row of the head measured again, which decided it', () => {
+    const once = (tbt: number) =>
+      render(
+        validate(
+          text((a) => {
+            a.results.splice(1, 1);
+            Object.assign(a.results[0] ?? {}, {
+              head: values({ tbt: 113 }),
+              over: tbt > 100 ? ['tbt'] : [],
+              remeasured: { base: null, head: values({ tbt }) },
+            });
+          })
+        )
+      );
+    assert.match(
+      once(80),
+      /\| Home \| .* \| 20 ms → 113 ms \| .*\n\| Home, re-measured \| .* \| 80 ms \| /
+    );
+    assert.match(once(80), /Every page is within budget/);
+    assert.match(
+      once(295),
+      /\| Home \| .* \| 20 ms → 113 ms \| .*\n\| Home, re-measured \| .* \| 295 ms ✗ \| /
+    );
+  });
+
   it('says so when everything passes', () => {
     const body = render(validate(text((a) => a.results.splice(1, 1))));
     assert.match(body, /Every page is within budget and no metric regressed\./);

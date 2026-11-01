@@ -1,27 +1,26 @@
 ---
-import type { ShippingEvent } from '@min7/contracts';
-import { heatLevels, heatRange } from '../data/format.ts';
+import type { ShippingStrip } from '../data/format.ts';
 
 interface Props {
-  /** Every event in the snapshot, not only the ones listed next to it. */
-  events: readonly Pick<ShippingEvent, 'at'>[];
+  /** From `shippingStrip` (src/data/format.ts): drawn once, with the page (ADR 0038). */
+  strip: ShippingStrip;
 }
 
-const { events } = Astro.props;
-// The strip is drawn once, with the page: its last day is the day of the build.
-const now = new Date();
-const levels = heatLevels(events, now);
-const { from, to } = heatRange(now, levels.length);
-const busy = levels.filter((level) => level > 0).length;
+const { strip } = Astro.props;
+const range = strip.from === strip.to ? strip.from : `${strip.from} to ${strip.to}`;
+const gaps = strip.gaps ? ' Outlined days have no record.' : '';
 ---
 
 <figure class="heat">
   <div
     class="heat-cells"
     role="img"
-    aria-label={`Shipping activity from ${from} to ${to}, as of this build: ${busy} days with something shipped.`}
+    aria-label={`Shipping activity from ${range}: ${strip.busy} ${strip.busy === 1 ? 'day' : 'days'} with something shipped.${gaps} Counted up to ${strip.countedAt}, drawn when this page was built.`}
   >
-    {levels.map((level) => <i data-l={level}></i>)}
+    {strip.cells.map((cell) => <i data-l={cell.level ?? 'none'}></i>)}
   </div>
-  <figcaption class="heat-cap">One square a day, {from} to {to}</figcaption>
+  <figcaption class="heat-cap">
+    <span>One square a day, {range}{strip.gaps ? '; outlined days have no record' : ''}</span>
+    <span>Counted up to {strip.countedAt}</span>
+  </figcaption>
 </figure>

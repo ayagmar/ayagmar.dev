@@ -4,27 +4,29 @@ import type { AppEnv } from '../../env.ts';
 import { methodNotAllowed } from '../../errors.ts';
 import { preflight, withCors } from '../../security/cors.ts';
 import { D1SnapshotStore } from '../../storage/d1.ts';
-import type { StoredSnapshot } from '../../storage/types.ts';
 
 /** Longest a snapshot response is cached, at the edge and in the browser. */
 const maxCacheSeconds = 60;
 /** Unix ms after which the cached copy must not be served; kept out of client responses. */
 const expiresHeader = 'X-Min7-Expires-At';
 
-function envelopeFor(
-  source: SourceId,
-  stored: StoredSnapshot | null,
-  now: number
-): Envelope<unknown> {
-  const fetchedAt = stored?.fetchedAt ?? null;
-  return {
-    source,
-    version: 1,
-    fetchedAt,
-    stale: isStale(fetchedAt, staleAfterSeconds[source], new Date(now)),
-    data: stored?.snapshot ?? null,
-  };
+/** What an envelope is built from: when its data was true, and the data, null until then. */
+export interface EnvelopeSource {
+  fetchedAt: string | null;
+  data: unknown;
 }
+
+const envelopeFor = (
+  source: SourceId,
+  { fetchedAt, data }: EnvelopeSource,
+  now: number
+): Envelope<unknown> => ({
+  source,
+  version: 1,
+  fetchedAt,
+  stale: isStale(fetchedAt, staleAfterSeconds[source], new Date(now)),
+  data,
+});
 
 /**
  * Seconds the envelope may be reused: never past the moment `stale` flips to true, so a
@@ -46,10 +48,19 @@ function forClient(copy: Response, now: number, origin: string | undefined): Res
   return withCors(response, origin);
 }
 
-async function serveSnapshot(c: Context<AppEnv>, source: SourceId): Promise<Response> {
-  const url = new URL(c.req.url);
-  // One cache entry per source: no query string, method or origin in the key.
-  const key = new Request(`${url.origin}${url.pathname}`);
+/**
+ * Serves `source`'s envelope from the edge cache under `path` (no query string, method or
+ * origin in the key), or builds it from `read` and caches it, never past `until` (Unix ms)
+ * when given.
+ */
+export async function serveEnvelope(
+  c: Context<AppEnv>,
+  source: SourceId,
+  path: string,
+  until: number | undefined,
+  read: () => Promise<EnvelopeSource>
+): Promise<Response> {
+  const key = new Request(`${new URL(c.req.url).origin}${path}`);
   const cache = caches.default;
   const origin = c.req.header('origin');
 
@@ -60,11 +71,14 @@ async function serveSnapshot(c: Context<AppEnv>, source: SourceId): Promise<Resp
     return forClient(cached, Date.now(), origin);
   }
 
-  const stored = await new D1SnapshotStore(c.env.DB).get(source);
+  const stored = await read();
   // Read after D1 answers, so a slow read cannot produce an envelope that is already wrong.
   const now = Date.now();
   const envelope = envelopeFor(source, stored, now);
-  const ttl = cacheSeconds(source, envelope.fetchedAt, now);
+  const ttl = Math.min(
+    cacheSeconds(source, envelope.fetchedAt, now),
+    until === undefined ? maxCacheSeconds : Math.max(0, Math.floor((until - now) / 1000))
+  );
   const copy = new Response(JSON.stringify(envelope), {
     headers: {
       'Content-Type': 'application/json',
@@ -79,6 +93,11 @@ async function serveSnapshot(c: Context<AppEnv>, source: SourceId): Promise<Resp
 /** `GET /v1/<source>`: the source's envelope. HEAD is answered from GET without a body. */
 export const snapshotRoute = (source: SourceId) =>
   new Hono<AppEnv>()
-    .get('/', (c) => serveSnapshot(c, source))
+    .get('/', (c) =>
+      serveEnvelope(c, source, new URL(c.req.url).pathname, undefined, async () => {
+        const stored = await new D1SnapshotStore(c.env.DB).get(source);
+        return { fetchedAt: stored?.fetchedAt ?? null, data: stored?.snapshot ?? null };
+      })
+    )
     .options('/', (c) => preflight(c.req.header('origin')))
     .all('/', methodNotAllowed('GET, HEAD, OPTIONS'));

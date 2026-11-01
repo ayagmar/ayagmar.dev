@@ -8,7 +8,10 @@ const posts = await getPosts();
 const tags = [...postsByTag(posts).keys()];
 ---
 
-<Base title="Writing">
+<Base
+  title="Writing"
+  description="Posts by Abdeslam Yassine Agmar on software engineering, tooling and the desktop, newest first."
+>
   <div class="paper column">
     <h1>Writing</h1>
     <PostList posts={posts} />

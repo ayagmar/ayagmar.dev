@@ -203,11 +203,12 @@ skills-sync *args:
 site-dev:
     {{ site }} astro dev
 
-# Site: static build, search index, headers
+# Site: static build, search index, headers, then what search engines read (docs/seo.md)
 site-build:
     COMMIT_SHA={{ commit_sha }} SIGNALS_MODE={{ signals_mode }} {{ site }} astro build
     {{ site }} pagefind --site dist --quiet
     {{ site }} node scripts/postbuild.ts
+    {{ site }} node scripts/seo-check.ts
 
 # Site: the same build with drafts shown, in apps/site/node_modules/.cache/preview, for the e2e
 # checks that need a post or note while they are drafts (ADR 0028, the @drafts tests)
@@ -215,6 +216,7 @@ site-build-preview:
     PUBLIC_SHOW_DRAFTS=1 COMMIT_SHA={{ commit_sha }} SIGNALS_MODE=fixtures {{ site }} astro build --outDir node_modules/.cache/preview
     {{ site }} pagefind --site node_modules/.cache/preview --quiet
     {{ site }} node scripts/postbuild.ts node_modules/.cache/preview
+    {{ site }} node scripts/seo-check.ts node_modules/.cache/preview
 
 # Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026),
 # and the TrueType copies in src/fonts/ttf the link-preview images draw with (ADR 0027)
@@ -229,9 +231,15 @@ scene:
 site-serve:
     {{ site }} wrangler dev --port 8790
 
-# Site: deploy the built site to production
+# Site: deploy the built site to production, then tell IndexNow which pages changed (docs/seo.md).
+# Only wrangler deploy can fail it: the IndexNow steps are best effort.
 site-deploy:
-    {{ site }} wrangler deploy --message "{{ commit_sha }}"
+    before="$(mktemp)"; trap 'rm -f "$before"' EXIT; {{ site }} node scripts/indexnow.ts snapshot "$before" || true; {{ site }} wrangler deploy --message "{{ commit_sha }}"; {{ site }} node scripts/indexnow.ts deployed "$before" || true
+
+# Site: ping IndexNow (Bing, Yandex, Seznam, Naver, Yep) with these URLs, or every URL in the live sitemap
+[positional-arguments]
+indexnow *urls:
+    {{ site }} node scripts/indexnow.ts ping "$@"
 
 # Site: upload the built site as a Preview (pull requests)
 site-preview:

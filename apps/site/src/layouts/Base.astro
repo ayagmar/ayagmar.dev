@@ -7,7 +7,9 @@ import serifRoman from '../fonts/serif-roman.woff2?url';
 import { type FeedScope, feedPaths, feedScope } from '../lib/feed.ts';
 import { buildOrigin, defaultOgImage, type OgImage, ogSize } from '../lib/og.ts';
 import { roomObjects } from '../lib/room.ts';
+import { analyticsToken, cloudflareAnalytics, siteVerification } from '../lib/search.ts';
 import { nav, nowPage, publicPath, site } from '../lib/site.ts';
+import { jsonLd, type StructuredData } from '../lib/structured-data.ts';
 import themeScript from '../scripts/theme.js?url&no-inline';
 import '../styles/base.css';
 
@@ -18,14 +20,26 @@ interface Props {
   feed?: FeedScope;
   /** The link-preview image; pages without their own share the room's (src/lib/og.ts). */
   image?: OgImage;
+  /** schema.org nodes about this page (src/lib/structured-data.ts). */
+  structuredData?: StructuredData[];
+  /** Keeps the page out of search results and the sitemap (src/lib/sitemap.ts). */
+  noindex?: boolean;
 }
 
-const { title, description = site.description, feed, image = defaultOgImage } = Astro.props;
-const pageTitle = title === undefined ? site.name : `${title} | ${site.name}`;
+const {
+  title,
+  description = site.description,
+  feed,
+  image = defaultOgImage,
+  structuredData = [],
+  noindex = false,
+} = Astro.props;
+const pageTitle = title === undefined ? site.title : `${title} | ${site.name}`;
 const current = publicPath(Astro.url.pathname);
 const canonical = new URL(current, Astro.site);
 // The canonical URL stays production; a link preview points where this build is served.
 const origin = buildOrigin(WORKERS_CI_BRANCH);
+const beaconToken = analyticsToken(WORKERS_CI_BRANCH);
 const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => ({
   ...feedPaths(scope),
   label: feedScope(scope).title,
@@ -50,12 +64,17 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
     <title>{pageTitle}</title>
     <meta name="description" content={description}>
     <link rel="canonical" href={canonical}>
+    {noindex && <meta name="robots" content="noindex">}
+    {siteVerification.google !== '' && (
+      <meta name="google-site-verification" content={siteVerification.google}>
+    )}
+    {siteVerification.bing !== '' && <meta name="msvalidate.01" content={siteVerification.bing}>}
     <link rel="icon" href="/favicon.ico" sizes="32x32">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content={site.name}>
-    <meta property="og:title" content={title ?? site.name}>
+    <meta property="og:title" content={title ?? site.title}>
     <meta property="og:description" content={description}>
     <meta property="og:url" content={new URL(current, origin)}>
     <meta property="og:image" content={new URL(image.path, origin)}>
@@ -81,6 +100,18 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
       </>
     ))}
     <link rel="sitemap" href="/sitemap-index.xml">
+    {structuredData.length > 0 && (
+      <script is:inline type="application/ld+json" set:html={jsonLd(structuredData)} />
+    )}
+    {/* Cloudflare Web Analytics, production only (src/lib/search.ts, ADR 0019). */}
+    {beaconToken !== undefined && (
+      <script
+        is:inline
+        type="module"
+        src={cloudflareAnalytics.script}
+        data-cf-beacon={JSON.stringify({ token: beaconToken })}
+      />
+    )}
     <slot name="head" />
     <!-- Blocking on purpose: puts the stored theme on <html> before the first paint (ADR 0026). -->
     <script is:inline src={themeScript}></script>
@@ -152,7 +183,7 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
       </form>
     </dialog>
     <footer class="site-footer wrap">
-      <p>{site.name}: static pages, no tracking.</p>
+      <p>{site.name}: static pages, no cookies.</p>
       <ul>
         <li><a href={feedPaths().rss}>RSS</a></li>
         <li><a href={feedPaths().atom}>Atom</a></li>

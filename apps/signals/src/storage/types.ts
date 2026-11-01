@@ -1,4 +1,5 @@
-import type { SourceId } from '@min7/contracts';
+import type { DailySource, SourceId } from '@min7/contracts';
+import type { PullHistory } from '../adapters/types.ts';
 
 /** What signals knows about a source's freshness, without the snapshot itself. */
 export interface SourceStatus {
@@ -30,5 +31,9 @@ export interface SnapshotStore {
   get(source: SourceId): Promise<StoredSnapshot | null>;
   list(): Promise<SourceStatus[]>;
   put(source: SourceId, snapshot: unknown, fetchedAt: string): Promise<void>;
+  /** A dated pull and its days, only over an older one (ADR 0038). */
+  putDated(source: DailySource, history: PullHistory, attemptAt: string): Promise<void>;
   recordFailure(source: SourceId, code: string, at: string, retryAfterAt?: number): Promise<void>;
+  /** Records that a pull of `source` began at `at`, before it does any work. */
+  recordAttempt(source: SourceId, at: string): Promise<void>;
 }
