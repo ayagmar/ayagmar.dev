@@ -5,6 +5,7 @@
     "pageWeight": 153600,
     "fonts": 204800,
     "onDemand": ["/pagefind/pagefind.js"],
+    "preconnect": ["https://api.ayagmar.dev"],
     "externalScripts": ["https://static.cloudflareinsights.com/beacon.min.js"],
     "allowances": [
       {

@@ -28,6 +28,11 @@ export interface Budgets {
      */
     allowances: { name: string; file: string; bytes: number }[];
     /**
+     * Origins a page may `<link rel="preconnect">` to, and only that: the read API its scripts
+     * already fetch from (the CSP's connect-src). Any resource from them still fails.
+     */
+    preconnect: string[];
+    /**
      * Scripts from another origin a page may load with `<script src>`, by exact URL, and only
      * that way: Cloudflare's Web Analytics beacon (ADR 0019). Not in the build, so not counted.
      */
@@ -233,6 +238,16 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     return found;
   };
 
+  /** Whether a link only opens a connection to an origin budgets.json lets pages preconnect to. */
+  const preconnectOnly = (rels: string[], href: string | undefined, from: string) => {
+    if (href === undefined || rels.some((rel) => rel !== 'preconnect')) return false;
+    try {
+      return limits.preconnect.includes(new URL(href, `${site}${from}`).origin);
+    } catch {
+      return false;
+    }
+  };
+
   /** Whether a script's src is, after a browser's normalization, one budgets.json allows. */
   const externalScript = (src: string | undefined, from: string) => {
     if (src === undefined) return false;
@@ -320,7 +335,8 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
         }
       } else if (element === 'link') {
         const rels = (a.get('rel') ?? '').toLowerCase().split(/\s+/);
-        if (rels.some((rel) => fetchingRels.has(rel))) {
+        const fetching = rels.filter((rel) => fetchingRels.has(rel));
+        if (fetching.length > 0 && !preconnectOnly(fetching, a.get('href'), url)) {
           load(a.get('href'), rels.includes('modulepreload') ? scripts : resources);
         }
       } else if (['use', 'image', 'feimage'].includes(element)) {
