@@ -1,5 +1,5 @@
 import type { DailySource, SourceId } from '@min7/contracts';
-import type { DailyRow } from './daily.ts';
+import type { PullHistory } from '../adapters/types.ts';
 
 /** What signals knows about a source's freshness, without the snapshot itself. */
 export interface SourceStatus {
@@ -31,13 +31,7 @@ export interface SnapshotStore {
   get(source: SourceId): Promise<StoredSnapshot | null>;
   list(): Promise<SourceStatus[]>;
   put(source: SourceId, snapshot: unknown, fetchedAt: string): Promise<void>;
-  /** A dated pull and its days, never over a later-dated one (ADR 0038). */
-  putDated(
-    source: DailySource,
-    snapshot: unknown,
-    fetchedAt: string,
-    days: readonly DailyRow[],
-    attemptAt: string
-  ): Promise<void>;
+  /** A dated pull and its days, only over an older one (ADR 0038). */
+  putDated(source: DailySource, history: PullHistory, attemptAt: string): Promise<void>;
   recordFailure(source: SourceId, code: string, at: string, retryAfterAt?: number): Promise<void>;
 }

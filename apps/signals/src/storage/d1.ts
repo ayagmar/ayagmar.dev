@@ -1,5 +1,6 @@
 import { type DailySource, type SourceId, sourceIdSchema } from '@min7/contracts';
-import { type DailyRow, pullDaysStatement } from './daily.ts';
+import type { PullHistory } from '../adapters/types.ts';
+import { pullDaysStatement } from './daily.ts';
 import type { SnapshotStore, SourceStatus, StoredSnapshot } from './types.ts';
 
 type StatusRow = {
@@ -75,32 +76,63 @@ export class D1SnapshotStore implements SnapshotStore {
   }
 
   /**
-   * Stores a pull whose upstream dates its answer, with the days it carries, in one batch
-   * (ADR 0038): the snapshot only if no answer dated `fetchedAt` or later is stored, the days
-   * only if the snapshot is this answer, and the attempt either way. An older answer, from a
-   * slow or overlapping pull, is a pull that succeeded and changed nothing.
+   * Stores a pull whose upstream dates its answer, with its days (ADR 0038). If the stored
+   * answer is older (or there is none), the pull's `merge` combines it with what is stored, and
+   * one batch writes the snapshot, the days that changed and the attempt. The snapshot write
+   * is taken only if the snapshot row is still the one read, and the days only if it was taken,
+   * so a write prepared from a state stored over meanwhile changes nothing; the next pull
+   * brings its news again. An answer no newer than the stored one, an equally dated one
+   * included (the first stored wins), is a pull that succeeded and changed nothing.
    */
-  async putDated(
-    source: DailySource,
-    snapshot: unknown,
-    fetchedAt: string,
-    days: readonly DailyRow[],
-    attemptAt: string
-  ): Promise<void> {
-    const at = utc(fetchedAt);
+  async putDated(source: DailySource, history: PullHistory, attemptAt: string): Promise<void> {
+    const at = utc(history.fetchedAt);
     const attempt = utc(attemptAt);
-    await this.db.batch([
+    const [snapshot, days] = await this.db.batch([
       this.db
-        .prepare(
-          `INSERT INTO snapshots (source, json, fetched_at, last_success_at, last_error_code, last_attempt_at)
-           VALUES (?1, ?2, ?3, ?4, NULL, ?5)
-           ON CONFLICT (source) DO UPDATE SET
-             json = excluded.json, fetched_at = excluded.fetched_at,
-             last_success_at = excluded.last_success_at
-           WHERE snapshots.fetched_at IS NULL OR snapshots.fetched_at < excluded.fetched_at`
-        )
-        .bind(source, JSON.stringify(snapshot), at, attempt, Date.parse(attempt)),
-      pullDaysStatement(this.db, source, days, at, attempt),
+        .prepare('SELECT json, fetched_at, write_id FROM snapshots WHERE source = ?')
+        .bind(source),
+      this.db
+        .prepare('SELECT day, json FROM daily WHERE source = ? AND day >= ? AND day <= ?')
+        .bind(source, history.dates?.from ?? '', history.dates?.to ?? ''),
+    ]);
+    const row = snapshot?.results[0] as
+      | { json: string | null; fetched_at: string | null; write_id: string | null }
+      | undefined;
+    const write: D1PreparedStatement[] = [];
+    if (row?.fetched_at == null || row.fetched_at < at) {
+      const stored = (days?.results ?? []) as { day: string; json: string }[];
+      const merged = history.merge({
+        snapshot: row?.json == null ? null : JSON.parse(row.json),
+        days: new Map(stored.map(({ day, json }) => [day, json])),
+      });
+      const writeId = crypto.randomUUID();
+      write.push(
+        this.db
+          .prepare(
+            `INSERT INTO snapshots (source, json, fetched_at, last_success_at, last_error_code, last_attempt_at, write_id)
+             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6)
+             ON CONFLICT (source) DO UPDATE SET
+               json = excluded.json, fetched_at = excluded.fetched_at,
+               last_success_at = excluded.last_success_at, write_id = excluded.write_id
+             WHERE snapshots.write_id IS ?7
+               AND (snapshots.fetched_at IS NULL OR snapshots.fetched_at < excluded.fetched_at)`
+          )
+          .bind(
+            source,
+            JSON.stringify(merged.snapshot),
+            at,
+            attempt,
+            Date.parse(attempt),
+            writeId,
+            row?.write_id ?? null
+          )
+      );
+      if (merged.days.length > 0) {
+        write.push(pullDaysStatement(this.db, source, merged.days, writeId, at, attempt));
+      }
+    }
+    await this.db.batch([
+      ...write,
       this.db
         .prepare(
           `UPDATE snapshots SET last_attempt_at = ?2, last_error_code = NULL, retry_after_at = NULL

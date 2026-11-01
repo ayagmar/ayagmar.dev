@@ -32,7 +32,10 @@ const allScenarios = [
   'monkeytype-max',
   'activity',
   'activity-max',
-  'activity-unchanged',
+  'activity-daily',
+  'activity-daily-max',
+  'activity-hourly',
+  'activity-hourly-max',
 ];
 const scenarios = process.argv.length > 2 ? process.argv.slice(2) : allScenarios;
 

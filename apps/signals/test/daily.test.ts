@@ -1,5 +1,5 @@
 // Daily history (ADR 0038): the activity pull through the cron, `/v1/days`, the llm-usage push's
-// days, and the rule for a day over generated sequences of pulls, failures and interruptions.
+// days, and the merge rule over generated sequences of pulls, failures and interruptions.
 import { env } from 'cloudflare:workers';
 import {
   type LlmUsageDay,
@@ -8,6 +8,7 @@ import {
   shippingActivityDaysEnvelopeSchema,
 } from '@min7/contracts';
 import { daysFixtures, pushFixtures, rawFixtures } from '@min7/contracts/fixtures';
+import { rabatDayStart } from '@min7/contracts/rabat';
 import { upstreamHandlers } from '@min7/contracts/testing';
 import { setupNetwork } from '@msw/cloudflare';
 import { HttpResponse, http } from 'msw';
@@ -15,7 +16,16 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import { admitPush } from '../src/storage/admission.ts';
-import { clearState, delivery, fetchApi, forgetLastPush, push } from './helpers.ts';
+import { D1SnapshotStore } from '../src/storage/d1.ts';
+import {
+  clearState,
+  delivery,
+  deliveryRows,
+  fetchApi,
+  forgetLastPush,
+  push,
+  snapshotRow,
+} from './helpers.ts';
 
 const network = setupNetwork();
 network.configure({ onUnhandledFrame: 'error' });
@@ -40,9 +50,41 @@ async function pullAt(at: number) {
   await runScheduled(env, [shippingActivity], at);
 }
 
-/** Answers the activity route with `body` (HTTP 200). */
-const answer = (body: unknown) =>
-  network.use(http.get(activityUrl, () => HttpResponse.json(body as object)));
+/** Answers the activity route with `body` (HTTP 200), cut to the days asked for. */
+const answer = (body: RepoPulseActivity) =>
+  network.use(
+    http.get(activityUrl, ({ request }) => {
+      const asked = Number(new URL(request.url).searchParams.get('days'));
+      return HttpResponse.json({ ...body, days: body.days.slice(-asked) });
+    })
+  );
+
+/** Counts the requests to the activity route, still answered by the handlers in place. */
+function countRequests() {
+  const seen = { count: 0 };
+  network.use(
+    http.get(activityUrl, () => {
+      seen.count += 1;
+    })
+  );
+  return seen;
+}
+
+/** Fails every insert into `table` while `run` runs, as if the isolate were cut off there. */
+async function failingInserts(table: 'daily' | 'snapshots', run: () => Promise<unknown>) {
+  const when = table === 'snapshots' ? 'WHEN NEW.json IS NOT NULL' : '';
+  await env.DB.exec(
+    `CREATE TRIGGER cut BEFORE INSERT ON ${table} ${when} BEGIN SELECT RAISE(ABORT, 'cut'); END`
+  );
+  try {
+    return await run();
+  } finally {
+    await env.DB.exec('DROP TRIGGER cut');
+  }
+}
+
+const counts = ['pushes', 'commits', 'merges', 'releases', 'stars'] as const;
+type ActivityDay = RepoPulseActivity['days'][number];
 
 const copy = <T>(value: T): T => structuredClone(value);
 
@@ -60,10 +102,52 @@ const health = async () =>
     )
   ).sources.find((s) => s.source === 'shipping-activity');
 
+const storedSnapshot = async () => {
+  const row = await snapshotRow('shipping-activity');
+  return {
+    fetchedAt: row?.fetched_at ?? null,
+    json: row?.json == null ? null : JSON.parse(row.json),
+  };
+};
+
 const days = async (series: string, query: string) => {
   const response = await fetchApi(`/v1/days/${series}?${query}`);
   return { response, body: await response.json<{ fetchedAt: string | null; data: unknown }>() };
 };
+
+type ServedDay = {
+  date: string;
+  pushes: number;
+  commits: number;
+  merges: number;
+  repos: { repo: string; commits: number; merges: number }[];
+  reposComplete: boolean;
+};
+const servedOctober = async () =>
+  ((await days('shipping-activity', 'month=2026-10')).body.data as { days: ServedDay[] }).days;
+
+/** `okAnswer` dated `generatedAt`, with `change` applied to it. */
+function later(generatedAt: string, change: (body: RepoPulseActivity) => void) {
+  const body = copy(okAnswer);
+  body.generatedAt = generatedAt;
+  change(body);
+  return body;
+}
+
+/** The day of `body` dated `date`. */
+function dayOf(body: RepoPulseActivity, date: string): ActivityDay {
+  const day = body.days.find((d) => d.date === date);
+  if (day === undefined) throw new Error(`no ${date} in the answer`);
+  return day;
+}
+
+/** Adds `by` to a count of `repo` on `day`, and to the day's total. */
+function add(day: ActivityDay, repo: string, key: (typeof counts)[number], by: number) {
+  const entry = day.repos.find((r) => r.repo === repo);
+  if (entry === undefined) throw new Error(`no ${repo} on ${day.date}`);
+  entry[key] += by;
+  day[key] += by;
+}
 
 describe('the activity pull', () => {
   it('stores the days from `since` on and serves them as the site reads them', async () => {
@@ -95,6 +179,23 @@ describe('the activity pull', () => {
     expect((await days('shipping-activity', 'last=28')).body.data).toMatchObject({ days: [] });
   });
 
+  // The first pull of a UTC date asks for 400 days, the others for 35 (ADR 0038). Catches a
+  // pull that never asks for the whole window again, or always does.
+  it('asks for the whole 400 days once a UTC date, and for 35 days otherwise', async () => {
+    const asked: string[] = [];
+    network.use(
+      http.get(activityUrl, ({ request }) => {
+        asked.push(new URL(request.url).searchParams.get('days') ?? '');
+      }),
+      ...upstreamHandlers()
+    );
+    await pullAt(capturedAt);
+    await pullAt(capturedAt + hour);
+    await pullAt(Date.parse('2026-10-27T00:20:00Z'));
+
+    expect(asked).toEqual(['400', '35', '400']);
+  });
+
   it.each([
     ['missing', 'upstream_not_found'],
     ['unavailable', 'upstream_http_error'],
@@ -103,19 +204,49 @@ describe('the activity pull', () => {
   ] as const)('keeps what it had when the answer is %s (%s)', async (name, code) => {
     network.use(...upstreamHandlers());
     await pullAt(capturedAt);
-    const before = await rows();
+    const before = { rows: await rows(), snapshot: await storedSnapshot() };
 
     network.use(...upstreamHandlers({ repoPulseActivity: name }));
     await pullAt(capturedAt + 2 * hour);
 
-    expect(await rows()).toEqual(before);
+    expect({ rows: await rows(), snapshot: await storedSnapshot() }).toEqual(before);
     expect((await health())?.lastErrorCode).toBe(code);
-    expect((await days('shipping-activity', 'last=28')).body.fetchedAt).toBe(
-      '2026-10-26T08:55:00.000Z'
-    );
   });
 
-  // An answer that is not the whole window would leave holes or misplaced days in history.
+  // repo-pulse's visibility gate answers `complete: false` when cold and stays warm 60 seconds.
+  // Catches a pull that waits an hour, cold again, and so never completes.
+  it('asks again at once after an incomplete answer, and stores the complete one', async () => {
+    let calls = 0;
+    network.use(
+      http.get(activityUrl, () => {
+        calls += 1;
+        return calls === 1 ? HttpResponse.json({ ...okAnswer, complete: false }) : undefined;
+      }),
+      ...upstreamHandlers()
+    );
+    await pullAt(capturedAt);
+
+    expect(calls).toBe(2);
+    expect(await rows()).toHaveLength(15);
+    expect((await health())?.lastErrorCode).toBeNull();
+  });
+
+  it('tries again two minutes after a second incomplete answer, not an hour', async () => {
+    answer({ ...okAnswer, complete: false });
+    await pullAt(capturedAt);
+    expect((await health())?.lastErrorCode).toBe('upstream_incomplete');
+
+    network.resetHandlers();
+    network.use(...upstreamHandlers());
+    const seen = countRequests();
+    await pullAt(capturedAt + 60_000);
+    expect(seen.count).toBe(0);
+    await pullAt(capturedAt + 2 * 60_000);
+    expect(seen.count).toBe(1);
+    expect(await rows()).toHaveLength(15);
+  });
+
+  // An answer that is not a whole window would leave holes or misplaced days in history.
   const broken: [string, (body: RepoPulseActivity) => void][] = [
     ['a day missing', (body) => body.days.splice(200, 1)],
     ['one date twice', (body) => Object.assign(body.days[399] ?? {}, { date: '2026-10-25' })],
@@ -130,10 +261,29 @@ describe('the activity pull', () => {
   it.each(broken)('refuses an answer with %s, storing nothing', async (_case, breakIt) => {
     const body = copy(okAnswer);
     breakIt(body);
-    answer(body);
+    network.use(http.get(activityUrl, () => HttpResponse.json(body)));
     await pullAt(capturedAt);
 
     expect(await rows()).toEqual([]);
+    expect((await health())?.lastErrorCode).toBe('upstream_malformed');
+  });
+
+  // `since` is when repo-pulse began recording: an answer whose days contradict it is not
+  // trusted, and the last good snapshot and history stay as they were.
+  it.each([
+    ['a `since` after its last day', (body: RepoPulseActivity) => (body.since = '2026-10-27')],
+    ['activity before `since`', (body: RepoPulseActivity) => (body.since = '2026-10-14')],
+    ['activity and no `since`', (body: RepoPulseActivity) => (body.since = null)],
+  ])('refuses an answer with %s, keeping what it had', async (_case, breakIt) => {
+    network.use(...upstreamHandlers());
+    await pullAt(capturedAt);
+    const before = { rows: await rows(), snapshot: await storedSnapshot() };
+
+    network.resetHandlers();
+    answer(later('2026-10-26T10:00:00.000Z', breakIt));
+    await pullAt(capturedAt + 2 * hour);
+
+    expect({ rows: await rows(), snapshot: await storedSnapshot() }).toEqual(before);
     expect((await health())?.lastErrorCode).toBe('upstream_malformed');
   });
 
@@ -146,57 +296,151 @@ describe('the activity pull', () => {
   });
 
   it('keeps the newer answer when an older one arrives after it', async () => {
-    const newer = copy(okAnswer);
-    newer.generatedAt = '2026-10-26T10:00:00.000Z';
-    const today = newer.days[399];
-    const repo = today?.repos[0];
-    if (today === undefined || repo === undefined) throw new Error('fixture');
-    today.pushes += 5;
-    repo.pushes += 5;
-    answer(newer);
+    answer(
+      later('2026-10-26T10:00:00.000Z', (body) =>
+        add(dayOf(body, '2026-10-26'), 'ayagmar/ccdesk', 'pushes', 5)
+      )
+    );
     await pullAt(Date.parse('2026-10-26T10:01:00Z'));
-    const stored = await rows();
+    const before = { rows: await rows(), snapshot: await storedSnapshot() };
 
     network.resetHandlers();
     network.use(...upstreamHandlers());
     await pullAt(Date.parse('2026-10-26T11:30:00Z'));
 
-    expect(await rows()).toEqual(stored);
+    expect({ rows: await rows(), snapshot: await storedSnapshot() }).toEqual(before);
     expect((await health())?.lastErrorCode).toBeNull();
-    expect((await days('shipping-activity', 'last=28')).body.fetchedAt).toBe(
-      '2026-10-26T10:00:00.000Z'
-    );
   });
 
-  it('never lowers a day, and stops naming a repository repo-pulse no longer shows', async () => {
+  // Two answers dated alike: the first stored wins whole, snapshot and days together.
+  it('keeps the first of two answers with the same date, days and snapshot alike', async () => {
+    network.use(...upstreamHandlers());
+    await pullAt(capturedAt);
+    const before = { rows: await rows(), snapshot: await storedSnapshot() };
+
+    network.resetHandlers();
+    answer(
+      later(okAnswer.generatedAt, (body) => {
+        add(dayOf(body, '2026-10-26'), 'ayagmar/ccdesk', 'merges', 9);
+        for (const day of body.days)
+          day.repos = day.repos.filter((r) => r.repo !== 'ayagmar/runnerd');
+        for (const date of ['2026-10-21', '2026-10-22']) {
+          const day = dayOf(body, date);
+          for (const key of counts) day[key] = day.repos.reduce((sum, r) => sum + r[key], 0);
+        }
+      })
+    );
+    await pullAt(capturedAt + 2 * hour);
+
+    expect({ rows: await rows(), snapshot: await storedSnapshot() }).toEqual(before);
+  });
+
+  // A repository made private drops out of repo-pulse's answers, counts and all, while another
+  // has late activity on the same day. Catches the hidden repository's counts lost, the late
+  // activity refused because the day looks smaller, or the hidden name still served.
+  it('keeps a hidden repository’s counts unnamed and adds late activity on the same day', async () => {
     network.use(...upstreamHandlers());
     await pullAt(capturedAt);
     const hidden = 'ayagmar/repo-pulse';
-    const withIt = okAnswer.days.find((day) => day.repos.some((r) => r.repo === hidden));
-    if (withIt === undefined) throw new Error('fixture');
+    const date = '2026-10-22';
+    const before = dayOf(okAnswer, date);
 
-    // Made private: gone from every day of the next answer, its counts with it.
-    const later = copy(okAnswer);
-    later.generatedAt = '2026-10-26T10:55:00.000Z';
-    for (const day of later.days) {
-      const gone = day.repos.filter((r) => r.repo === hidden);
-      day.repos = day.repos.filter((r) => r.repo !== hidden);
-      for (const key of ['pushes', 'commits', 'merges', 'releases', 'stars'] as const) {
-        day[key] -= gone.reduce((sum, r) => sum + r[key], 0);
+    const next = later('2026-10-26T10:55:00.000Z', (body) => {
+      for (const day of body.days) {
+        const gone = day.repos.filter((r) => r.repo === hidden);
+        day.repos = day.repos.filter((r) => r.repo !== hidden);
+        for (const key of counts) day[key] -= gone.reduce((sum, r) => sum + r[key], 0);
       }
-    }
+      add(dayOf(body, date), 'ayagmar/runnerd', 'merges', 5);
+    });
     network.resetHandlers();
-    answer(later);
+    answer(next);
+    // The second pull of the UTC date asks for 35 days.
     await pullAt(Date.parse('2026-10-26T11:00:00Z'));
 
-    const block = (await days('shipping-activity', 'month=2026-10')).body.data as {
-      days: { date: string; pushes: number; repos: { repo: string }[]; reposComplete: boolean }[];
-    };
-    const served = block.days.find((day) => day.date === withIt.date);
-    expect(served?.pushes).toBe(withIt.pushes);
-    expect(served?.repos.map((r) => r.repo)).not.toContain(hidden);
+    const served = (await servedOctober()).find((day) => day.date === date);
+    expect(served?.pushes).toBe(before.pushes);
+    expect(served?.merges).toBe(before.merges + 5);
+    expect(served?.repos.find((r) => r.repo === 'ayagmar/runnerd')?.merges).toBe(
+      (before.repos.find((r) => r.repo === 'ayagmar/runnerd')?.merges ?? 0) + 5
+    );
     expect(served?.reposComplete).toBe(false);
-    expect(JSON.stringify(block)).not.toContain(hidden);
+    expect(JSON.stringify(await servedOctober())).not.toContain(hidden);
+  });
+
+  // Catches a day judged by one total: fewer commits must not refuse more merges, and must not
+  // lower the commits stored.
+  it('keeps each count of each repository at the most any answer gave', async () => {
+    network.use(...upstreamHandlers());
+    await pullAt(capturedAt);
+    const date = '2026-10-25';
+    const repo = 'ayagmar/ayagmar.dev';
+    const before = dayOf(okAnswer, date);
+    const beforeRepo = before.repos.find((r) => r.repo === repo);
+
+    network.resetHandlers();
+    answer(
+      later('2026-10-26T10:55:00.000Z', (body) => {
+        add(dayOf(body, date), repo, 'commits', -3);
+        add(dayOf(body, date), repo, 'merges', 1);
+      })
+    );
+    await pullAt(Date.parse('2026-10-26T11:00:00Z'));
+
+    const served = (await servedOctober()).find((day) => day.date === date);
+    expect(served).toMatchObject({ commits: before.commits, merges: before.merges + 1 });
+    expect(served?.repos.find((r) => r.repo === repo)).toMatchObject({
+      commits: beforeRepo?.commits,
+      merges: (beforeRepo?.merges ?? 0) + 1,
+    });
+    expect(served?.reposComplete).toBe(true);
+  });
+
+  // Two pulls that read what is stored before either writes: the second must not write days
+  // merged with the state the first replaced, which would lose the first's counts.
+  it('drops a write prepared from a state stored over meanwhile', async () => {
+    const store = new D1SnapshotStore(env.DB);
+    const date = '2026-10-26';
+    const pull = (body: RepoPulseActivity) =>
+      store.putDated(
+        'shipping-activity',
+        shippingActivity.history(shippingActivity.normalize({ status: 200, body })),
+        new Date(capturedAt + 3 * hour).toISOString()
+      );
+    const first = later('2026-10-26T10:00:00.000Z', (body) =>
+      add(dayOf(body, date), 'ayagmar/ccdesk', 'merges', 5)
+    );
+    const second = later('2026-10-26T11:00:00.000Z', (body) =>
+      add(dayOf(body, date), 'ayagmar/ccdesk', 'commits', 7)
+    );
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(capturedAt + 3 * hour);
+    await Promise.all([pull(first), pull(second)]);
+
+    // The first read first, so the second either wrote after it, from what it stored, or was
+    // dropped; never written from the state before it.
+    const day = (await servedOctober()).find((d) => d.date === date);
+    const base = dayOf(okAnswer, date);
+    if ((await storedSnapshot()).fetchedAt === first.generatedAt) {
+      expect(day).toMatchObject({ merges: base.merges + 5, commits: base.commits });
+    } else {
+      expect(day).toMatchObject({ merges: base.merges + 5, commits: base.commits + 7 });
+    }
+  });
+
+  // Catches a snapshot written without its days: a failure after the snapshot statement must
+  // undo the whole batch, and the same answer must store whole on the next try.
+  it('stores nothing when writing a day fails, and the same answer whole on the next try', async () => {
+    network.use(...upstreamHandlers());
+    await failingInserts('daily', () => pullAt(capturedAt));
+
+    expect(await rows()).toEqual([]);
+    expect((await storedSnapshot()).json).toBeNull();
+    expect((await health())?.lastErrorCode).toBe('store_failed');
+
+    await pullAt(capturedAt + hour);
+    expect(await rows()).toHaveLength(15);
+    expect((await storedSnapshot()).fetchedAt).toBe('2026-10-26T08:55:00.000Z');
   });
 });
 
@@ -235,6 +479,34 @@ describe('GET /v1/days', () => {
       stale: true,
       data: null,
     });
+  });
+
+  // A copy of the last 28 days cached just before midnight in the series' zone must not be
+  // served after it: a site built then would draw yesterday's window.
+  it.each([
+    ['shipping-activity', 'UTC', Date.parse('2026-10-27T00:00:00Z'), '2026-10-27'],
+    ['llm-usage', 'Rabat', rabatDayStart('2026-10-27') * 1000, '2026-10-27'],
+  ])('moves the last 28 days of %s at midnight (%s)', async (series, _zone, midnight, today) => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(capturedAt);
+    if (series === 'llm-usage') await push('llm-usage', delivery(pushFixtures['llm-usage'].ok));
+    else {
+      network.use(...upstreamHandlers());
+      await pullAt(capturedAt);
+    }
+
+    vi.setSystemTime(midnight - 10_000);
+    const before = await days(series, 'last=28');
+    expect((before.body.data as { to: string }).to).toBe('2026-10-26');
+    expect(before.response.headers.get('cache-control')).toBe('public, max-age=10');
+    // The copy is cached by now, and still served within the day.
+    vi.setSystemTime(midnight - 5_000);
+    expect((await days(series, 'last=28')).response.headers.get('cache-control')).toBe(
+      'public, max-age=5'
+    );
+
+    vi.setSystemTime(midnight + 1_000);
+    expect(((await days(series, 'last=28')).body.data as { to: string }).to).toBe(today);
   });
 });
 
@@ -279,6 +551,19 @@ describe('llm-usage days from a push', () => {
     expect((await push('llm-usage', withDays(bigger, { sentAt: older }))).status).toBe(409);
 
     expect(await rows('llm-usage')).toEqual(stored);
+  });
+
+  // Catches a delivery admitted without its days: a failure after the delivery and snapshot
+  // statements must undo the batch, so the producer's retry of the same delivery is accepted.
+  it('admits nothing when writing a day fails, and the same delivery on retry', async () => {
+    const body = delivery(ok);
+    const failed = (await failingInserts('daily', () => push('llm-usage', body))) as Response;
+    expect(failed.status).toBe(500);
+    expect(await deliveryRows()).toEqual([]);
+    expect(await snapshotRow('llm-usage')).toBeNull();
+
+    expect((await push('llm-usage', body)).status).toBe(202);
+    expect(await month()).toEqual(ok.payload.days);
   });
 
   // Two deliveries with one id and different bodies both pass the lookup before either is
@@ -347,15 +632,23 @@ describe('llm-usage days from a push', () => {
   });
 });
 
-// The rule for a day, against a plain model, over generated sequences of answers newer and
-// older than what is stored, with moving `since`, failed fetches and batches that fail half
-// way. Catches a delayed older answer winning, a day lowered, a day before `since` written,
-// or a failure leaving part of an answer behind.
+// The merge, against a plain model, over generated sequences: answers newer, older and as old
+// as what is stored, whole and 35-day windows, moving `since`, repositories that come and go,
+// failed fetches, and batches cut before the snapshot or after it. The model keeps, for each
+// day and repository, the most each count has been in any answer stored, and the snapshot of
+// the newest answer stored. Catches a delayed or equally dated answer winning, a count lowered,
+// a day before `since` written, a hidden name kept, or a failure leaving part of an answer.
 describe('history over generated sequences', () => {
-  const repos = ['ayagmar/a', 'ayagmar/b', 'ayagmar/c'];
+  const names = ['ayagmar/a', 'ayagmar/b', 'ayagmar/c'];
   const sinces = ['2026-10-14', '2026-10-18', '2026-10-22'];
   const recent = Array.from({ length: 10 }, (_, i) => `2026-10-${17 + i}`);
-  type Stored = { json: string; size: number; token: string };
+  type Counts = Record<(typeof counts)[number], number>;
+  type Model = {
+    token: string | null;
+    snapshot: { since: string | null; repos: string[]; fullOn: string | null } | null;
+    /** Per day, per repository, the most of each count; and the token that last changed it. */
+    days: Map<string, { repos: Map<string, Counts>; token: string }>;
+  };
 
   /** A seeded generator, so a failing sequence can be replayed. */
   const random = (seed: number) => () => {
@@ -370,29 +663,77 @@ describe('history over generated sequences', () => {
     body.generatedAt = generatedAt;
     body.since = since;
     for (const day of body.days) {
-      day.repos = !recent.includes(day.date)
-        ? []
-        : repos
-            .filter(() => next() < 0.5)
-            .map((repo) => {
-              const n = () => Math.floor(next() * 3);
-              return { repo, pushes: n(), commits: n(), merges: n(), releases: n(), stars: n() };
-            });
-      for (const key of ['pushes', 'commits', 'merges', 'releases', 'stars'] as const) {
-        day[key] = day.repos.reduce((sum, r) => sum + r[key], 0);
-      }
+      day.repos =
+        !recent.includes(day.date) || day.date < since
+          ? []
+          : names
+              .filter(() => next() < 0.5)
+              .map((repo) => {
+                const n = () => Math.floor(next() * 3);
+                return { repo, pushes: n(), commits: n(), merges: n(), releases: n(), stars: n() };
+              });
+      for (const key of counts) day[key] = day.repos.reduce((sum, r) => sum + r[key], 0);
       day.reposTruncated = false;
     }
     return body;
   }
 
-  const size = (day: RepoPulseActivity['days'][number]) =>
-    day.pushes + day.commits + day.merges + day.releases + day.stars;
+  /** The stored JSON the model gives for a day. */
+  function dayJson(repos: Map<string, Counts>) {
+    const listed = [...repos.entries()]
+      .sort(([a], [b]) => (a < b ? -1 : 1))
+      .map(([repo, c]) => ({ repo, ...c }));
+    const total = Object.fromEntries(
+      counts.map((key) => [key, listed.reduce((sum, r) => sum + r[key], 0)])
+    );
+    return { ...total, repos: listed, reposTruncated: false };
+  }
 
-  it.each([1, 2, 3])('keeps the rule for seed %i', { timeout: 60_000 }, async (seed) => {
+  /** What storing `days` of `body` would make of `model`. */
+  function stored(model: Model, body: RepoPulseActivity, days: ActivityDay[]): Model {
+    const since = body.since ?? '9999-12-31';
+    const recorded = days.filter((day) => day.date >= since);
+    const named = new Set(recorded.flatMap((day) => day.repos.map((r) => r.repo)));
+    const after: Model['days'] = new Map();
+    const gone = new Set<string>();
+    for (const [date, day] of model.days)
+      after.set(date, { repos: new Map(day.repos), token: day.token });
+    for (const day of recorded) {
+      const old = after.get(day.date);
+      for (const repo of old?.repos.keys() ?? []) if (!named.has(repo)) gone.add(repo);
+      const repos = new Map(old?.repos ?? []);
+      for (const { repo, ...c } of day.repos) {
+        const was = repos.get(repo);
+        repos.set(
+          repo,
+          was === undefined
+            ? c
+            : (Object.fromEntries(counts.map((k) => [k, Math.max(was[k], c[k])])) as Counts)
+        );
+      }
+      const changed =
+        old === undefined || JSON.stringify(dayJson(repos)) !== JSON.stringify(dayJson(old.repos));
+      after.set(day.date, { repos, token: changed ? body.generatedAt : (old?.token ?? '') });
+    }
+    const whole = days.length === 400;
+    const kept = whole ? [] : (model.snapshot?.repos ?? []).filter((repo) => !gone.has(repo));
+    return {
+      token: body.generatedAt,
+      snapshot: {
+        since: body.since,
+        repos: [...new Set([...kept, ...named])].sort(),
+        fullOn: whole ? '2026-10-26' : (model.snapshot?.fullOn ?? null),
+      },
+      days: after,
+    };
+  }
+
+  const changesRows = (a: Model, b: Model) =>
+    [...b.days].some(([date, day]) => a.days.get(date)?.token !== day.token);
+
+  it.each([1, 2, 3])('keeps the model for seed %i', { timeout: 60_000 }, async (seed) => {
     const next = random(seed);
-    const model = new Map<string, Stored>();
-    let seriesToken = '';
+    let model: Model = { token: null, snapshot: null, days: new Map() };
     let clock = Date.parse('2026-10-26T12:00:00Z');
 
     for (let step = 0; step < 60; step++) {
@@ -403,46 +744,41 @@ describe('history over generated sequences', () => {
       ).toISOString();
       const since = sinces[Math.floor(next() * sinces.length)] ?? '2026-10-14';
       const body = generated(next, token, since);
-      const interrupted = roll >= 0.7 && roll < 0.8;
+      const asked =
+        model.snapshot?.fullOn === new Date(clock).toISOString().slice(0, 10) ? 35 : 400;
+      const cut =
+        roll >= 0.7 && roll < 0.75 ? 'snapshots' : roll >= 0.75 && roll < 0.8 ? 'daily' : null;
 
       if (roll < 0.15) answer({ ...body, complete: false });
       else if (roll < 0.25) network.use(http.get(activityUrl, () => HttpResponse.error()));
-      else if (roll < 0.3) answer({ ...body, days: body.days.slice(1) });
-      else answer(body);
-      if (interrupted) {
-        // The batch fails at its first statement, as if the isolate were cut off mid-write.
-        await env.DB.exec(
-          "CREATE TRIGGER interrupt BEFORE INSERT ON snapshots WHEN NEW.json IS NOT NULL BEGIN SELECT RAISE(ABORT, 'cut'); END"
-        );
-      }
-      await pullAt(clock);
-      if (interrupted) await env.DB.exec('DROP TRIGGER interrupt');
+      else if (roll < 0.3) {
+        const short = { ...body, days: body.days.slice(1) };
+        network.use(http.get(activityUrl, () => HttpResponse.json(short)));
+      } else answer(body);
+      if (cut === null) await pullAt(clock);
+      else await failingInserts(cut, () => pullAt(clock));
       network.resetHandlers();
 
-      const stored = roll >= 0.3 && !interrupted && token >= seriesToken;
-      if (stored) {
-        seriesToken = token;
-        for (const day of body.days) {
-          if (day.date < since) continue;
-          const { date, ...data } = day;
-          const json = JSON.stringify(data);
-          const old = model.get(date);
-          if (old === undefined || (old.json !== json && size(day) >= old.size)) {
-            model.set(date, { json, size: size(day), token });
-          }
-        }
+      if (roll >= 0.3 && (model.token === null || token > model.token)) {
+        const after = stored(model, body, body.days.slice(-asked));
+        const failed = cut === 'snapshots' || (cut === 'daily' && changesRows(model, after));
+        if (!failed) model = after;
       }
 
-      const actual = await rows();
+      const label = `seed ${seed} step ${step}`;
       expect(
-        actual.map((row) => [row.day, JSON.parse(row.json), row.fetched_at]),
-        `seed ${seed} step ${step}`
+        (await rows()).map((row) => [row.day, JSON.parse(row.json), row.fetched_at]),
+        label
       ).toEqual(
-        [...model.entries()]
+        [...model.days.entries()]
           .sort(([a], [b]) => (a < b ? -1 : 1))
-          .map(([day, { json, token: at }]) => [day, JSON.parse(json), at])
+          .map(([day, { repos, token: at }]) => [day, dayJson(repos), at])
       );
+      expect(await storedSnapshot(), label).toEqual({
+        fetchedAt: model.token ?? null,
+        json: model.snapshot,
+      });
     }
-    expect(model.size).toBeGreaterThan(0);
+    expect(model.days.size).toBeGreaterThan(0);
   });
 });

@@ -10,7 +10,7 @@ import {
   type ShippingActivitySnapshot,
   type ShippingActivityStoredDay,
 } from '@min7/contracts';
-import { rabatDate } from '@min7/contracts/rabat';
+import { nextDate, rabatDate, rabatDayStart } from '@min7/contracts/rabat';
 import { type Context, Hono } from 'hono';
 import type { AppEnv } from '../../env.ts';
 import { methodNotAllowed, notFound } from '../../errors.ts';
@@ -31,6 +31,14 @@ const utcDate = (time: number) => new Date(time).toISOString().slice(0, 10);
 const today = (series: DailySource, now: number) =>
   dailyZones[series] === 'UTC' ? utcDate(now) : rabatDate(now);
 
+/** Unix ms when the day after `date` begins in the series' zone. */
+function nextDayStart(series: DailySource, date: string): number {
+  const next = nextDate(date);
+  return dailyZones[series] === 'UTC'
+    ? Date.parse(`${next}T00:00:00Z`)
+    : rabatDayStart(next) * 1000;
+}
+
 /**
  * The block a query names, or null: exactly one of `?month=YYYY-MM` (a calendar month from
  * 2025-01 to the current one in the series' zone) or `?last=28` (the 28 days ending today
@@ -43,15 +51,17 @@ function block(series: DailySource, query: URLSearchParams, now: number) {
   if ((month === null) === (last === null)) return null;
   if (last !== null) {
     if (last !== String(daysLast)) return null;
+    // The block moves at midnight in the series' zone: its end date is part of its cache key,
+    // and no copy outlives the day (ADR 0038).
     const to = today(series, now);
     const from = utcDate(Date.parse(`${to}T00:00:00Z`) - (daysLast - 1) * dayMs);
-    return { key: `last=${daysLast}`, from, to };
+    return { key: `last=${daysLast}&to=${to}`, from, to, until: nextDayStart(series, to) };
   }
   if (month === null || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return null;
   if (month < firstMonth || month > today(series, now).slice(0, 7)) return null;
   const [year = 0, index = 0] = month.split('-').map(Number);
   const to = utcDate(Date.UTC(year, index, 0));
-  return { key: `month=${month}`, from: `${month}-01`, to };
+  return { key: `month=${month}`, from: `${month}-01`, to, until: undefined };
 }
 
 /**
@@ -77,7 +87,8 @@ async function serveDays(c: Context<AppEnv>, series: DailySource): Promise<Respo
   if (range === null) {
     return c.json({ error: 'invalid_query' }, 400, { 'Cache-Control': 'no-store' });
   }
-  return serveEnvelope(c, series, `/v1/days/${series}?${range.key}`, async () => {
+  const path = `/v1/days/${series}?${range.key}`;
+  return serveEnvelope(c, series, path, range.until, async () => {
     const stored = await new D1SnapshotStore(c.env.DB).get(series);
     if (stored?.snapshot == null) return { fetchedAt: null, data: null };
     const rows = await readDays(c.env.DB, series, range.from, range.to);

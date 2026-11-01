@@ -50,12 +50,14 @@ function forClient(copy: Response, now: number, origin: string | undefined): Res
 
 /**
  * Serves `source`'s envelope from the edge cache under `path` (no query string, method or
- * origin in the key), or builds it from `read` and caches it.
+ * origin in the key), or builds it from `read` and caches it, never past `until` (Unix ms)
+ * when given.
  */
 export async function serveEnvelope(
   c: Context<AppEnv>,
   source: SourceId,
   path: string,
+  until: number | undefined,
   read: () => Promise<EnvelopeSource>
 ): Promise<Response> {
   const key = new Request(`${new URL(c.req.url).origin}${path}`);
@@ -73,7 +75,10 @@ export async function serveEnvelope(
   // Read after D1 answers, so a slow read cannot produce an envelope that is already wrong.
   const now = Date.now();
   const envelope = envelopeFor(source, stored, now);
-  const ttl = cacheSeconds(source, envelope.fetchedAt, now);
+  const ttl = Math.min(
+    cacheSeconds(source, envelope.fetchedAt, now),
+    until === undefined ? maxCacheSeconds : Math.max(0, Math.floor((until - now) / 1000))
+  );
   const copy = new Response(JSON.stringify(envelope), {
     headers: {
       'Content-Type': 'application/json',
@@ -89,7 +94,7 @@ export async function serveEnvelope(
 export const snapshotRoute = (source: SourceId) =>
   new Hono<AppEnv>()
     .get('/', (c) =>
-      serveEnvelope(c, source, new URL(c.req.url).pathname, async () => {
+      serveEnvelope(c, source, new URL(c.req.url).pathname, undefined, async () => {
         const stored = await new D1SnapshotStore(c.env.DB).get(source);
         return { fetchedAt: stored?.fetchedAt ?? null, data: stored?.snapshot ?? null };
       })

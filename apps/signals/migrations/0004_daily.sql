@@ -1,7 +1,7 @@
 -- Daily history (ADR 0038): one row per series per calendar day, kept for good. A series' days
 -- are in its own zone (shipping-activity: UTC; llm-usage: Africa/Casablanca). Rows are only
--- inserted or replaced, never deleted. Only this table is added, so the Worker version before
--- it runs unchanged against it (ADR 0010).
+-- inserted or replaced, never deleted. Only this table and a nullable column are added, so the
+-- Worker version before it runs unchanged against it (ADR 0010).
 CREATE TABLE daily (
   -- The source that writes the series.
   source TEXT NOT NULL,
@@ -16,3 +16,9 @@ CREATE TABLE daily (
   updated_at TEXT NOT NULL,
   PRIMARY KEY (source, day)
 ) STRICT, WITHOUT ROWID;
+
+-- A dated pull's write (ADR 0038): a random id set with each snapshot write that brings days.
+-- The batch writes its days only if the snapshot row then carries its id, so days are kept only
+-- with the very answer whose snapshot was stored, and a write that read an older state than the
+-- one stored is dropped whole. Null for every other source.
+ALTER TABLE snapshots ADD COLUMN write_id TEXT;

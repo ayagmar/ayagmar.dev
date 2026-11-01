@@ -55,13 +55,7 @@ async function pull(adapter: PullAdapter, env: Env, store: SnapshotStore): Promi
       throw new PullError('upstream_malformed');
     }
     stage = 'store_failed';
-    await store.putDated(
-      adapter.id,
-      history.snapshot,
-      history.fetchedAt,
-      history.days,
-      new Date(now).toISOString()
-    );
+    await store.putDated(adapter.id, history, new Date(now).toISOString());
   } catch (error) {
     const code = errorCode(error, stage);
     // A pull spread over several invocations that read its part (ADR 0030) did not fail.

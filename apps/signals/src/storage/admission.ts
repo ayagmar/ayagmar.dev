@@ -1,4 +1,4 @@
-import { isDailySource, type ProducerId, type SourceId } from '@min7/contracts';
+import type { ProducerId, SourceId } from '@min7/contracts';
 import { pushedDaysStatement } from './daily.ts';
 
 export interface PushAdmission {
@@ -90,7 +90,7 @@ export async function admitPush(db: D1Database, push: PushAdmission): Promise<Ad
       )
       .bind(push.producer, push.deliveryId, push.bodySha256, push.receivedAt, push.source),
     // 3. The days of the snapshot now stored, only if it is this delivery's (ADR 0038).
-    ...(push.historySince !== undefined && isDailySource(push.source)
+    ...(push.historySince !== undefined && push.source === 'llm-usage'
       ? [
           pushedDaysStatement(db, {
             producer: push.producer,

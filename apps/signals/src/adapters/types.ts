@@ -2,14 +2,25 @@ import type { DailySource, SourceId } from '@min7/contracts';
 import type { DailyRow } from '../storage/daily.ts';
 import type { SourceStatus } from '../storage/types.ts';
 
+/** What is stored for a source that keeps daily history, as a dated pull's merge reads it. */
+export interface StoredHistory {
+  /** The stored snapshot, or null. */
+  snapshot: unknown;
+  /** The stored days of the pull's dates, by date, as their stored JSON. */
+  days: ReadonlyMap<string, string>;
+}
+
 /** What a pull that keeps daily history stores (ADR 0038). */
 export interface PullHistory {
-  /** The snapshot kept in `snapshots`. */
-  snapshot: unknown;
   /** When the upstream says its answer was true; stored as `fetchedAt` and orders answers. */
   fetchedAt: string;
-  /** The days to write, in the series' zone. */
-  days: readonly DailyRow[];
+  /** The answer's dates that may hold a day; what is stored for them is given to `merge`. */
+  dates: { from: string; to: string } | null;
+  /**
+   * The snapshot to store and the days to write, given what is stored. Called only when the
+   * answer is newer than the stored one; days whose JSON would not change can be left out.
+   */
+  merge(stored: StoredHistory): { snapshot: unknown; days: DailyRow[] };
 }
 
 /**
@@ -28,7 +39,7 @@ export interface PullAdapter<Raw = unknown, Snapshot = unknown> {
   normalize(raw: Raw): Snapshot;
   /**
    * For a source that keeps daily history (ADR 0038): what to store from the normalized pull.
-   * Its days and its snapshot are written in one batch, and never over a later-dated answer.
+   * Its days and its snapshot are written in one batch, and only over an older answer.
    */
   history?(normalized: Snapshot): PullHistory;
 }

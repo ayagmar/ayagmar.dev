@@ -128,6 +128,14 @@ describe('pull adapter fetch', () => {
     expect(await counted(() => listening.fetch(withSecrets, signal()))).toBe(4);
     expect(await counted(() => shipping.fetch(env, signal()))).toBe(1);
     expect(await counted(() => shippingActivity.fetch(env, signal()))).toBe(1);
+    // An incomplete answer is asked for once more, and no more (ADR 0038).
+    network.use(
+      http.all('*', () => {
+        requests += 1;
+      }),
+      ...upstreamHandlers({ repoPulseActivity: 'incomplete' })
+    );
+    expect(await counted(() => shippingActivity.fetch(env, signal()))).toBe(2);
     expect(await counted(() => weather.fetch(env, signal()))).toBe(1);
     expect((await counted(() => projects.fetch(env, signal()))) * 2).toBeLessThanOrEqual(50);
   });

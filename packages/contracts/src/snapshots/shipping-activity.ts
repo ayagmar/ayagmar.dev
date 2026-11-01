@@ -5,8 +5,10 @@ import { repoFullNameSchema } from '../projects.ts';
 // Wire input: repo-pulse `GET /public/activity?days=N` (ADR 0038). repo-pulse is the producer;
 // it validates against schema/repo-pulse-activity.input.json. Unknown keys are dropped.
 
-/** The most days one activity answer holds, and how many signals asks for. */
+/** The most days one activity answer holds: signals asks for this many once a UTC day. */
 export const activityMaxDays = 400;
+/** The days signals asks for on its other pulls (ADR 0038). */
+export const activityRecentDays = 35;
 /** The most repositories one day lists; more sets `reposTruncated`. */
 export const activityMaxRepos = 50;
 
@@ -71,13 +73,16 @@ export const shippingActivityStoredDaySchema = repoPulseActivityDaySchema.omit({
 export type ShippingActivityStoredDay = z.infer<typeof shippingActivityStoredDaySchema>;
 
 /**
- * The latest `shipping-activity` pull, kept as its snapshot: when recording began, and every
- * repository the answer named on any day. Only these, and the featured projects, are named
- * when history is served (ADR 0038); the days themselves are in the history.
+ * The `shipping-activity` snapshot: when recording began, as of the latest answer stored; the
+ * repositories that may be named when history is served (with the featured projects, ADR
+ * 0038); and the UTC date of the last whole 400-day answer stored. The days themselves are in
+ * the history. A whole answer sets `repos` to the repositories it names on any day; a 35-day
+ * answer adds those it names and drops those a stored day of its window names but it does not.
  */
 export const shippingActivitySnapshotSchema = z.object({
   since: z.iso.date().nullable(),
   repos: z.array(repoFullNameSchema).max(activityMaxDays * activityMaxRepos),
+  fullOn: z.iso.date().nullable(),
 });
 
 export type ShippingActivitySnapshot = z.infer<typeof shippingActivitySnapshotSchema>;

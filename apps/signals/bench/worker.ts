@@ -146,24 +146,26 @@ function monkeytypeAnswers(): Answers {
 }
 
 /**
- * repo-pulse's activity for the 400 days ending today (ADR 0038), every day recorded and
- * `repos` repositories active on each, so every day is a row to write.
+ * repo-pulse's activity for the `length` days ending today (ADR 0038), every day recorded and
+ * `repos` repositories active on each. A day's counts depend only on its date, so two answers
+ * agree on the days they share; `today` adds one push to the last day.
  */
-function activityAnswers(repos: number): Answers {
-  const today = Math.floor(Date.now() / 86_400_000);
-  const days = Array.from({ length: 400 }, (_, i) => {
+function activityBody(repos: number, length: number, today = 0) {
+  const last = Math.floor(Date.now() / 86_400_000);
+  const days = Array.from({ length }, (_, i) => {
+    const day = last - (length - 1) + i;
     const list = Array.from({ length: repos }, (_, r) => ({
       repo: `ayagmar/repository-${String(r).padStart(2, '0')}`,
-      pushes: 2,
+      pushes: 2 + (day === last && r === 0 ? today : 0),
       commits: 7,
       merges: 3,
-      releases: (i + r) % 9 === 0 ? 1 : 0,
+      releases: (day + r) % 9 === 0 ? 1 : 0,
       stars: r % 3,
     }));
     const sum = (key: 'pushes' | 'commits' | 'merges' | 'releases' | 'stars') =>
       list.reduce((total, repo) => total + repo[key], 0);
     return {
-      date: new Date((today - 399 + i) * 86_400_000).toISOString().slice(0, 10),
+      date: new Date(day * 86_400_000).toISOString().slice(0, 10),
       pushes: sum('pushes'),
       commits: sum('commits'),
       merges: sum('merges'),
@@ -173,13 +175,32 @@ function activityAnswers(repos: number): Answers {
       reposTruncated: false,
     };
   });
-  const body = {
+  return {
     generatedAt: new Date().toISOString(),
-    since: days[0]?.date ?? null,
+    since: new Date((last - 399) * 86_400_000).toISOString().slice(0, 10),
     complete: true,
     days,
   };
-  return new Map([['activity', JSON.stringify(body)]]);
+}
+
+const activityAnswers = (repos: number, length: number, today = 0): Answers =>
+  new Map([['activity', JSON.stringify(activityBody(repos, length, today))]]);
+
+/**
+ * What an earlier whole answer stored: the 400 days of `activityBody(repos, 400)`, and a
+ * snapshot whose `fullOn` is today when `wholeToday`, so the pull asks for 35 days.
+ */
+function storedActivity(repos: number, wholeToday: boolean) {
+  const body = activityBody(repos, 400);
+  const today = body.days.at(-1)?.date ?? '';
+  return {
+    snapshot: {
+      since: body.since,
+      repos: body.days[0]?.repos.map(({ repo }) => repo) ?? [],
+      fullOn: wholeToday ? today : null,
+    },
+    days: body.days.map(({ date, ...day }) => ({ day: date, json: JSON.stringify(day) })),
+  };
 }
 
 /** What earlier invocations of a pull saved: `read` of the date's years, each summarized. */
@@ -207,8 +228,8 @@ const scenarios: Record<
     adapter?: PullAdapter;
     answers: () => Answers;
     seed?: () => ReturnType<typeof progress>;
-    /** Keep the history between runs, so a warm run finds every day already stored. */
-    keepDaily?: boolean;
+    /** The activity history and snapshot stored before each run. */
+    activity?: () => ReturnType<typeof storedActivity>;
   }
 > = {
   // A cron invocation with no adapter due: what every scenario's number is measured against.
@@ -224,15 +245,32 @@ const scenarios: Record<
       ]),
   },
   'monkeytype-max': { adapter: monkeytype, answers: monkeytypeAnswers },
-  // The activity pull with every one of its 400 days new: three repositories a day (a busy
+  // The first activity pull, every one of its 400 days new: three repositories a day (a busy
   // year for this account), and twelve, near the adapter's 512 KiB body cap.
-  activity: { adapter: shippingActivity, answers: () => activityAnswers(3) },
-  'activity-max': { adapter: shippingActivity, answers: () => activityAnswers(12) },
-  // The usual hourly pull: the same 400 days, all already stored, so D1 changes nothing.
-  'activity-unchanged': {
+  activity: { adapter: shippingActivity, answers: () => activityAnswers(3, 400) },
+  'activity-max': { adapter: shippingActivity, answers: () => activityAnswers(12, 400) },
+  // The first pull of a UTC date: the 400 days, all stored already but today's, which has one
+  // more push (ADR 0038).
+  'activity-daily': {
     adapter: shippingActivity,
-    answers: () => activityAnswers(3),
-    keepDaily: true,
+    answers: () => activityAnswers(3, 400, 1),
+    activity: () => storedActivity(3, false),
+  },
+  'activity-daily-max': {
+    adapter: shippingActivity,
+    answers: () => activityAnswers(12, 400, 1),
+    activity: () => storedActivity(12, false),
+  },
+  // Every other pull: the last 35 days, today's with one more push.
+  'activity-hourly': {
+    adapter: shippingActivity,
+    answers: () => activityAnswers(3, 35, 1),
+    activity: () => storedActivity(3, true),
+  },
+  'activity-hourly-max': {
+    adapter: shippingActivity,
+    answers: () => activityAnswers(12, 35, 1),
+    activity: () => storedActivity(12, true),
   },
   // A pull's first invocation for the account today (three years): registration, then the
   // newest year's page, at 100 scrobbles (the real days had 29 to 99), and progress saved.
@@ -287,10 +325,23 @@ export default {
     }
     if (url.pathname === '/setup') {
       // Forget the last attempt so the adapter is due, and set up the pull's progress.
+      const activity = scenario.activity?.();
       await env.DB.batch([
         env.DB.prepare('DELETE FROM snapshots'),
         env.DB.prepare('DELETE FROM pull_progress'),
-        ...(scenario.keepDaily ? [] : [env.DB.prepare('DELETE FROM daily')]),
+        env.DB.prepare('DELETE FROM daily'),
+        ...(activity === undefined
+          ? []
+          : [
+              env.DB.prepare(
+                "INSERT INTO snapshots (source, json, fetched_at) VALUES ('shipping-activity', ?, '2000-01-01T00:00:00.000Z')"
+              ).bind(JSON.stringify(activity.snapshot)),
+              env.DB.prepare(
+                `INSERT INTO daily (source, day, json, fetched_at, updated_at)
+                 SELECT 'shipping-activity', json_extract(value, '$.day'), json_extract(value, '$.json'), '2000-01-01T00:00:00.000Z', '2000-01-01T00:00:00.000Z'
+                 FROM json_each(?)`
+              ).bind(JSON.stringify(activity.days)),
+            ]),
       ]);
       const seed = scenario.seed?.();
       if (seed !== undefined) {

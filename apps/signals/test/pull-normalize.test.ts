@@ -92,7 +92,10 @@ describe('shipping-activity (repo-pulse daily activity)', () => {
     'normalizes the %s case',
     (name, raw) => {
       check(
-        () => shippingActivity.history(shippingActivity.normalize(raw)).snapshot,
+        () =>
+          shippingActivity
+            .history(shippingActivity.normalize(raw))
+            .merge({ snapshot: null, days: new Map() }).snapshot,
         expected[name as keyof typeof expected]
       );
     }
