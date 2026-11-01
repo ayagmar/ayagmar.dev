@@ -1,0 +1,75 @@
+{
+  "status": 200,
+  "body": {
+    "generatedAt": "2026-10-26T08:55:00.000Z",
+    "since": "2026-10-12",
+    "complete": false,
+    "days": [
+      {
+        "date": "2026-10-24",
+        "pushes": 2,
+        "commits": 8,
+        "merges": 2,
+        "releases": 0,
+        "stars": 2,
+        "repos": [
+          {
+            "repo": "ayagmar/pi-mobile",
+            "pushes": 2,
+            "commits": 8,
+            "merges": 2,
+            "releases": 0,
+            "stars": 2
+          }
+        ],
+        "reposTruncated": false
+      },
+      {
+        "date": "2026-10-25",
+        "pushes": 4,
+        "commits": 19,
+        "merges": 12,
+        "releases": 0,
+        "stars": 3,
+        "repos": [
+          {
+            "repo": "ayagmar/ayagmar.dev",
+            "pushes": 4,
+            "commits": 19,
+            "merges": 12,
+            "releases": 0,
+            "stars": 0
+          },
+          {
+            "repo": "ayagmar/pi-mobile",
+            "pushes": 0,
+            "commits": 0,
+            "merges": 0,
+            "releases": 0,
+            "stars": 3
+          }
+        ],
+        "reposTruncated": false
+      },
+      {
+        "date": "2026-10-26",
+        "pushes": 3,
+        "commits": 9,
+        "merges": 2,
+        "releases": 0,
+        "stars": 1,
+        "repos": [
+          {
+            "repo": "ayagmar/ccdesk",
+            "pushes": 3,
+            "commits": 9,
+            "merges": 2,
+            "releases": 0,
+            "stars": 1
+          }
+        ],
+        "reposTruncated": false
+      }
+    ]
+  }
+}

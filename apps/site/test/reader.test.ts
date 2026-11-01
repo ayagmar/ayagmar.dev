@@ -3,7 +3,7 @@
 
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { fixturesCapturedAt, snapshotFixtures } from '@min7/contracts/fixtures';
+import { daysFixtures, fixturesCapturedAt, snapshotFixtures } from '@min7/contracts/fixtures';
 import { fixtureEnvelope } from '@min7/contracts/testing';
 import { delay, HttpResponse, http, passthrough } from 'msw';
 import { setupServer } from 'msw/node';
@@ -140,6 +140,43 @@ describe('api mode', () => {
 
     await Promise.all([read('shipping'), read('shipping'), read('shipping')]);
     expect(calls).toBe(1);
+  });
+});
+
+describe('daily history (ADR 0038)', () => {
+  const block = {
+    source: 'shipping-activity',
+    version: 1,
+    fetchedAt: '2026-10-26T08:55:00.000Z',
+    stale: false,
+    data: daysFixtures['shipping-activity'].ok,
+  };
+
+  // Catches the strip reading another block or route than signals serves, and a missing route
+  // (signals not yet deployed) failing the build instead of falling back.
+  it('reads the last 28 days, and renders the fallback while the route is missing', async () => {
+    const asked: string[] = [];
+    server.use(
+      http.get(`${apiBase}/v1/days/shipping-activity`, ({ request }) => {
+        asked.push(new URL(request.url).search);
+        return HttpResponse.json(block);
+      })
+    );
+    const warnings: string[] = [];
+    const options = { apiBase, now: () => now, warn: (m: string) => warnings.push(m) };
+    expect(await createReader({ ...options, mode: 'api' }).readDays('shipping-activity')).toEqual(
+      block
+    );
+    expect(asked).toEqual(['?last=28']);
+
+    server.use(
+      http.get(`${apiBase}/v1/days/shipping-activity`, () =>
+        HttpResponse.json({ error: 'not_found' }, { status: 404 })
+      )
+    );
+    const missing = await createReader({ ...options, mode: 'api' }).readDays('shipping-activity');
+    expect(missing.data).toBeNull();
+    expect(warnings).toEqual([expect.stringMatching(/HTTP 404/)]);
   });
 });
 

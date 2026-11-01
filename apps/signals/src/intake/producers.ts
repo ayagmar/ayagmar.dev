@@ -14,6 +14,11 @@ export interface Producer<Push extends { deliveryId: string; sentAt: string }> {
    * code for a 422, or null when the push is consistent.
    */
   check?(push: Push): string | null;
+  /**
+   * For a producer whose days are kept as daily history (ADR 0038): the first date of this
+   * push to write once the series has any row. The days come from the stored snapshot.
+   */
+  historySince?(push: Push): string;
   /** Allowlist projection from a validated push to the published snapshot. */
   project(push: Push): unknown;
   /** Current and next bearer token (rotation, see docs/operations.md); unset slots never match. */
