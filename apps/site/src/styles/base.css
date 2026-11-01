@@ -128,11 +128,12 @@ a {
   text-underline-offset: 0.22em;
 }
 
-/* Hover and focus answer at once and stay interruptible: short transitions, never keyframes.
-   The reduced-motion rule at the end takes them to nothing. */
-a,
-button,
-summary {
+/* Hover answers at once and stays interruptible: a short transition, never keyframes. Only on
+   hover, so a change of theme recolours every link in the same frame (a fade would also catch
+   axe mid-way). The reduced-motion rule at the end takes it to nothing. */
+a:hover,
+button:hover,
+summary:hover {
   transition-property: color, text-decoration-color, border-color, background-color;
   transition-duration: 120ms;
   transition-timing-function: ease-out;

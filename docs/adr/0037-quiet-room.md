@@ -26,7 +26,7 @@ After the quiet windows (ADR 0034) the owner still found the site cartoony and g
 - `tabular-nums` on every time, number and data cell, so a ticking "3 minutes ago" or a column of counts does not shift.
 - Concentric corners: controls (inputs, buttons, `kbd`, inline code) take `--radius` (4 px); the dialogs and the Menu popover, with 1 rem of padding, take `--radius` plus 1 rem, so a Close button or the search field in a corner sits concentric with it. Code blocks and post art take twice `--radius`, and square corners where they run to a phone's edge.
 - Post art and images in posts have a 1 px outline in the text colour at 10%, so they hold their edge on either ground.
-- Hover and focus change colour with a 120 ms transition, never a keyframe animation, so they stay interruptible. The dialogs and the Menu open without animation. The reduced-motion rule takes every transition and animation to nothing.
+- Hover changes colour with a 120 ms transition, never a keyframe animation, so it stays interruptible. The transition applies only while hovered, so a change of theme recolours the page in one frame. The dialogs and the Menu open without animation. The reduced-motion rule takes every transition and animation to nothing.
 
 **Contrast.** On the ground, muted text is 6.6:1 by day and 7.5:1 at night, the lamp 6.5:1 and 10.6:1, rose 6.6:1 and 8.3:1. `--line`, the edge of inputs, buttons and the dialogs, is at least 3.3:1 against the ground and the dialog surface (`e2e/contrast.spec.ts`).
 
