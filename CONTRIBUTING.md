@@ -2,10 +2,10 @@
 
 ## Posting
 
-1. `just post "Title of the post"` writes `content/writing/<slug>.md` as a draft. The slug is the URL: `/writing/<slug>`.
-2. Write the post in Markdown. Run `PUBLIC_SHOW_DRAFTS=1 just dev` and read it at `http://localhost:4321/writing/<slug>`; without the variable, drafts are left out.
-3. Set `draft: false` and open a pull request. Cloudflare builds a preview of the site for the branch.
-4. Merge. `main` deploys to ayagmar.dev, the feeds and search index included.
+1. `just post "Title of the post"` writes `content/writing/<slug>.md` as a draft (the slug is the URL, `/writing/<slug>`), opens it in `$VISUAL` or `$EDITOR` (without `--wait`, so set it to a GUI editor), starts the dev server with drafts shown and opens the page in the browser. The page reloads on every save. If this checkout's dev server with drafts is already on port 4321, it uses that one; anything else there (plain `just dev`, another worktree or project) is refused with what to run. `--no-open` only writes the file.
+2. `just drafts` starts the same dev server later and prints the URL of every draft post and note.
+3. `just publish <slug>` publishes it. It needs a clean tree apart from that file, `HEAD` at `origin/main` and `gh` logged in. It sets `draft: false` and `date` to today (UTC; `updated` stays as it is), runs `just site-build`, which fails on a bad field or an unnamed diagram (the file goes back to a draft if it does), then commits `content(writing): publish <slug>` on a new branch `content/<slug>`, pushes it and opens a pull request. If the commit fails, the draft and the branch are put back; if the push or the pull request fails, the commit stays and it prints the commands that finish the job. It prints the pull request and the page's Preview URL, `https://content-<slug>-min7-site.ayagmar.workers.dev/writing/<slug>`, live once Workers Builds finishes. A slug over 45 characters is cut short in the branch name so that URL still fits. `--dry-run` runs the checks and prints the steps without changing anything.
+4. Merge the pull request. `main` deploys to ayagmar.dev, the feeds and search index included. `just publish` never merges.
 
 Frontmatter:
 
@@ -59,7 +59,7 @@ The build fails, naming the file and line, when a diagram has no name, has a Mer
 
 ## TIL notes
 
-A note is a short "today I learned" in `content/til/<slug>.md`; the slug is the URL, `/til/<slug>`. Frontmatter is `title` and `date` (`YYYY-MM-DD`), plus optional `tags` (the posts' rules) and `draft: true`. Any other field, `summary` included, fails the build. The body is a few lines to a few paragraphs of Markdown, with the same code blocks and diagrams as posts. `/til` shows every published note in full, newest first; `/til/feed.xml` and `/til/atom.xml` carry them, and the writing feeds do not. Feeds use the note's first paragraph as its summary. Read drafts with `PUBLIC_SHOW_DRAFTS=1 just dev`. Details: [ADR 0028](docs/adr/0028-til-notes.md).
+A note is a short "today I learned" in `content/til/<slug>.md`; the slug is the URL, `/til/<slug>`. `just til "Title"`, `just drafts` and `just publish <slug>` work as for posts, and the commit is `content(til): publish <slug>`. Frontmatter is `title` and `date` (`YYYY-MM-DD`), plus optional `tags` (the posts' rules) and `draft: true`. Any other field, `summary` included, fails the build. The body is a few lines to a few paragraphs of Markdown, with the same code blocks and diagrams as posts. `/til` shows every published note in full, newest first; `/til/feed.xml` and `/til/atom.xml` carry them, and the writing feeds do not. Feeds use the note's first paragraph as its summary. Details: [ADR 0028](docs/adr/0028-til-notes.md).
 
 ## Skills
 

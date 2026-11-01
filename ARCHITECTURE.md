@@ -119,6 +119,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,llm-usage,llm-usage-panel,stats-panels,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`                  |
 | /uses page data, its schema (ADR 0032)                                    | `content/uses.json`, `apps/site/src/data/uses.ts`, `apps/site/src/pages/uses.astro`                                                      |
 | Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                                               |
+| Favicon, touch icon and link-preview images (ADR 0027)                    | `apps/site/public/favicon.svg`, `src/lib/{og,og-card}.ts`, `src/pages/og/`, `src/pages/{favicon.ico,apple-touch-icon.png}.ts`            |
 | Performance budgets (numbers), static check, Lighthouse run and comment   | `scripts/budgets.json`, `scripts/budgets.ts`, `scripts/lighthouse.ts`, `scripts/lighthouse-report.js`                                    |
 | Commands                                                                  | `justfile`                                                                                                                               |
 | Decisions                                                                 | `docs/adr/`                                                                                                                              |
@@ -126,7 +127,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 ## Site build
 
 `just site-build` runs these steps:
-1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt` and the sitemap.
+1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt`, the sitemap, the icons and a link-preview PNG for each post and note plus one for every other page.
 2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post and note bodies) into `dist/pagefind/`.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 

@@ -7,6 +7,7 @@ import ReplyByEmail from '../../components/ReplyByEmail.astro';
 import Toc from '../../components/Toc.astro';
 import Base from '../../layouts/Base.astro';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
+import { noteOgImage } from '../../lib/og.ts';
 import { getNotes } from '../../lib/posts.ts';
 import { noteSummary } from '../../lib/til.ts';
 
@@ -21,7 +22,12 @@ const { Content, headings, remarkPluginFrontmatter } = await render(note);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
 ---
 
-<Base title={note.data.title} description={noteSummary(note)} feed={{ til: true }}>
+<Base
+  title={note.data.title}
+  description={noteSummary(note)}
+  feed={{ til: true }}
+  image={noteOgImage(note.id, note.data.title)}
+>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
     <!-- Search shows this as the result's title, so a note reads "TIL: ..." (ADR 0028). -->

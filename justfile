@@ -4,7 +4,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # The version of every build: Workers Builds' commit, else the local checkout, else "dev".
 # renovate: datasource=npm depName=renovate
-renovate_version := "44.195.1"
+renovate_version := "44.196.0"
 commit_sha := env("WORKERS_CI_COMMIT_SHA", `git rev-parse HEAD 2>/dev/null || echo dev`)
 
 # Where the site build reads source data (ADR 0015): the read API when Workers Builds builds
@@ -120,9 +120,24 @@ knip:
 boundaries:
     node scripts/check-boundaries.ts
 
-# Start a new draft post: just post "Title of the post"
-post title:
-    node scripts/new-post.ts {{ quote(title) }}
+# Start a draft post, open it in $VISUAL/$EDITOR and the browser: just post "Title" [--no-open]
+[positional-arguments]
+post +args:
+    node scripts/writing.ts new post "$@"
+
+# Start a draft TIL note the same way: just til "Title" [--no-open]
+[positional-arguments]
+til +args:
+    node scripts/writing.ts new til "$@"
+
+# Dev server with drafts shown, printing the URL of each draft post and note
+drafts:
+    node scripts/writing.ts drafts
+
+# Publish a draft on its own branch and open the PR (never merges): just publish <slug> [--dry-run]
+[positional-arguments]
+publish +args:
+    node scripts/writing.ts publish "$@"
 
 # Write packages/contracts/schema/*.json from the zod schemas
 contracts-schema:
@@ -201,7 +216,8 @@ site-build-preview:
     {{ site }} pagefind --site node_modules/.cache/preview --quiet
     {{ site }} node scripts/postbuild.ts node_modules/.cache/preview
 
-# Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026)
+# Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026),
+# and the TrueType copies in src/fonts/ttf the link-preview images draw with (ADR 0027)
 fonts:
     cd apps/site && uv run --no-project --with fonttools==4.67.0 --with brotli==1.2.1 python scripts/fonts.py
 

@@ -40,6 +40,9 @@ export default defineConfig({
         values: ['fixtures', 'api'],
         default: 'fixtures',
       }),
+      // The branch Workers Builds is building: a Preview's link previews point at the Preview
+      // (src/lib/og.ts). Unset outside Workers Builds, which means production.
+      WORKERS_CI_BRANCH: envField.string({ context: 'server', access: 'public', default: '' }),
       SIGNALS_API_BASE: envField.string({
         context: 'server',
         access: 'public',
