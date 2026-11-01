@@ -24,6 +24,8 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 ---
 
 <Base>
+  {/* Its scripts read the API as the page loads; in fixtures mode they make no request. */}
+  {signalsMode === 'api' && <link slot="head" rel="preconnect" href={signalsApiBase} crossorigin>}
   <section slot="room" class="room" aria-label="The room">
     <!-- The weather endpoint only in api mode: fixtures mode makes no request (ADR 0029). -->
     <div

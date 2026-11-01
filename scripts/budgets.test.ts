@@ -15,6 +15,7 @@ const limits = {
   fonts: 204_800,
   onDemand: ['/pagefind/pagefind.js'],
   allowances: [{ name: 'theme switch', file: '/_astro/theme.*.js', bytes: 1024 }],
+  preconnect: ['https://api.example.com'],
 };
 
 /** Bytes gzip cannot shrink, the same on every run. */
@@ -246,6 +247,28 @@ describe('external origins', () => {
       'https://img.example.com/a.png',
       'https://set.example.com/a.png',
       'https://upper.example.com/a.png',
+    ]);
+  });
+
+  // Catches the allowance growing into a way to load a resource from the read API's origin, or
+  // letting a preconnect to any other origin through.
+  it('allows only a bare preconnect to an origin budgets.json lists', () => {
+    write({
+      'index.html': page(
+        '',
+        [
+          '<link rel="preconnect" href="https://api.example.com" crossorigin>',
+          '<link rel="preconnect" href="https://other.example.com" crossorigin>',
+          '<link rel="preconnect preload" href="https://api.example.com/v1/a" as="fetch">',
+          '<link rel="stylesheet" href="https://api.example.com/a.css">',
+        ].join('')
+      ),
+    });
+    const found = problems().flatMap((p) => /loads (\S+) from another origin/.exec(p)?.[1] ?? []);
+    assert.deepEqual(found.sort(), [
+      'https://api.example.com/a.css',
+      'https://api.example.com/v1/a',
+      'https://other.example.com/',
     ]);
   });
 

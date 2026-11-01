@@ -27,6 +27,11 @@ export interface Budgets {
      * `file` is a URL path where `*` stands for any characters but `/`, such as a build hash.
      */
     allowances: { name: string; file: string; bytes: number }[];
+    /**
+     * Origins a page may `<link rel="preconnect">` to, and only that: the read API its scripts
+     * already fetch from (the CSP's connect-src). Any resource from them still fails.
+     */
+    preconnect: string[];
   };
   lighthouse: {
     runs: number;
@@ -226,6 +231,16 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     return found;
   };
 
+  /** Whether a link only opens a connection to an origin budgets.json lets pages preconnect to. */
+  const preconnectOnly = (rels: string[], href: string | undefined, from: string) => {
+    if (href === undefined || rels.some((rel) => rel !== 'preconnect')) return false;
+    try {
+      return limits.preconnect.includes(new URL(href, `${site}${from}`).origin);
+    } catch {
+      return false;
+    }
+  };
+
   /** A stylesheet and what it pulls in (other stylesheets, images, fonts). */
   const cssClosure = (file: string, into: Set<string>) => {
     if (into.has(file)) return;
@@ -300,7 +315,8 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
         if (jsTypes.has((a.get('type') ?? '').toLowerCase())) load(a.get('src'), scripts);
       } else if (element === 'link') {
         const rels = (a.get('rel') ?? '').toLowerCase().split(/\s+/);
-        if (rels.some((rel) => fetchingRels.has(rel))) {
+        const fetching = rels.filter((rel) => fetchingRels.has(rel));
+        if (fetching.length > 0 && !preconnectOnly(fetching, a.get('href'), url)) {
           load(a.get('href'), rels.includes('modulepreload') ? scripts : resources);
         }
       } else if (['use', 'image', 'feimage'].includes(element)) {
