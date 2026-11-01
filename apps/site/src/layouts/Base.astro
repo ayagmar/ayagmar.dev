@@ -92,7 +92,9 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
         <span>min</span><span>7</span>
       </a>
       <div class="site-tools">
-        <Search client:idle />
+        <!-- Hydrates when the browser is idle, or after 2 s if it never says so: a busy main
+             thread can withhold idle time indefinitely, leaving the no-JS link in place. -->
+        <Search client:idle={{ timeout: 2000 }} />
       </div>
       <!-- On phones the nav and the theme switch sit in a popover this button opens, with no
            script (base.css); from 52rem they are part of the header row. Search comes before them
