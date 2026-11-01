@@ -21,6 +21,25 @@ test('pages with source data load nothing from other origins in fixtures mode', 
   expect(elsewhere).toEqual([]);
 });
 
+// The shipping strip on both pages (ADR 0038), from the history fixture: recording began on
+// 12 Oct, so the 13 days before it are outlined, never drawn as quiet days, and the caption
+// names only the days with a record and when they were counted.
+for (const path of ['/', '/stats']) {
+  test(`the shipping strip on ${path} draws only the recorded days`, async ({ page }) => {
+    await page.goto(path);
+    const strip = page.locator('section:has(#shipping) .heat');
+    await expect(strip.locator('i')).toHaveCount(28);
+    await expect(strip.locator('i[data-l="none"]')).toHaveCount(13);
+    await expect(strip.locator('figcaption')).toHaveText(
+      'One square a day, 12 Oct to 26 Oct; outlined days have no record' +
+        'Counted up to 26 Oct, 09:00 UTC'
+    );
+    await expect(strip.getByRole('img')).toHaveAccessibleName(
+      /^Shipping activity from 12 Oct to 26 Oct: \d+ days with something shipped\. Outlined days have no record\. Counted up to 26 Oct, 09:00 UTC, drawn when this page was built\.$/
+    );
+  });
+}
+
 // The build cannot know whether the track still plays: it says when it was last seen.
 test('now playing shows the build-time value as last played, with its age', async ({ page }) => {
   await page.clock.install({ time: '2026-10-26T12:00:00Z' });

@@ -1,4 +1,5 @@
 import type { ProducerId, SourceId } from '@min7/contracts';
+import { pushedDaysStatement } from './daily.ts';
 
 export interface PushAdmission {
   producer: ProducerId;
@@ -12,6 +13,11 @@ export interface PushAdmission {
   /** Unix milliseconds the request was received. */
   receivedAt: number;
   minIntervalMs: number;
+  /**
+   * For a source that keeps daily history (ADR 0038): the first date of the stored snapshot's
+   * days to write once the series has a row.
+   */
+  historySince?: string;
 }
 
 export type AdmissionResult =
@@ -41,7 +47,8 @@ export async function findDelivery(
 
 /**
  * Stores the snapshot and records the delivery in one D1 batch (one transaction), or does
- * neither. The snapshot upsert only takes effect when the delivery id is unseen, the minimum
+ * neither; for a source with daily history, the same batch writes the stored snapshot's days.
+ * The snapshot upsert only takes effect when the delivery id is unseen, the minimum
  * interval since the last accepted push has passed, and the snapshot is not older than the
  * stored one. The delivery row is inserted only if the upsert took effect, which it detects
  * by the delivery id the upsert writes into the snapshot row. A zero-row upsert is a
@@ -82,6 +89,19 @@ export async function admitPush(db: D1Database, push: PushAdmission): Promise<Ad
          ON CONFLICT (producer, delivery_id) DO NOTHING`
       )
       .bind(push.producer, push.deliveryId, push.bodySha256, push.receivedAt, push.source),
+    // 3. The days of the snapshot now stored, only if it is this delivery's (ADR 0038).
+    ...(push.historySince !== undefined && push.source === 'llm-usage'
+      ? [
+          pushedDaysStatement(db, {
+            producer: push.producer,
+            source: push.source,
+            deliveryId: push.deliveryId,
+            bodySha256: push.bodySha256,
+            since: push.historySince,
+            now: lastSuccessAt,
+          }),
+        ]
+      : []),
   ]);
   if (upsert?.meta.changes === 1) return { outcome: 'accepted' };
   return explainRejection(db, push);

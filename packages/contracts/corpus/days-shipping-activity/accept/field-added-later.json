@@ -1,0 +1,33 @@
+{
+  "source": "shipping-activity",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:55:00.000Z",
+  "stale": false,
+  "data": {
+    "zone": "UTC",
+    "from": "2026-09-29",
+    "to": "2026-10-26",
+    "days": [
+      {
+        "date": "2026-10-25",
+        "pushes": 4,
+        "commits": 19,
+        "merges": 12,
+        "releases": 0,
+        "stars": 3,
+        "repos": [
+          {
+            "repo": "ayagmar/ayagmar.dev",
+            "pushes": 4,
+            "commits": 19,
+            "merges": 12,
+            "releases": 0,
+            "stars": 0
+          }
+        ],
+        "reposComplete": false,
+        "reviews": 2
+      }
+    ]
+  }
+}

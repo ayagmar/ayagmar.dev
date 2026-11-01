@@ -32,14 +32,29 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
     accept: ['repo-pulse/raw/ok.json', 'repo-pulse/raw/empty.json'],
     reject: ['repo-pulse/raw/malformed.json'],
   },
+  'repo-pulse-activity': {
+    accept: [
+      'repo-pulse-activity/raw/ok.json',
+      'repo-pulse-activity/raw/since-null.json',
+      'repo-pulse-activity/raw/incomplete.json',
+    ],
+    reject: ['repo-pulse-activity/raw/malformed.json'],
+  },
+  'days-shipping-activity': { accept: ['shipping-activity/days'] },
   // Push bodies are also the Worker's intake fixtures.
   'push-llm-usage': { accept: ['llm-usage/push/accept'], reject: ['llm-usage/push/reject'] },
   'push-trellis': { accept: ['trellis/push/accept'], reject: ['trellis/push/reject'] },
   'push-desktop': { accept: ['desktop/push/accept'], reject: ['desktop/push/reject'] },
 };
 
-// Sources whose exported schema is the whole read API envelope rather than its `data`.
-const envelopes = new Set(['weather', 'listening-history', 'desktop', 'monkeytype']);
+// Schemas that are a whole read API envelope rather than its `data`, with the envelope's source.
+const envelopes: Record<string, string> = {
+  weather: 'weather',
+  'listening-history': 'listening-history',
+  desktop: 'desktop',
+  monkeytype: 'monkeytype',
+  'days-shipping-activity': 'shipping-activity',
+};
 
 const fixturePayloads = (name: string, path: string) => {
   const full = join(root, 'fixtures', path);
@@ -49,8 +64,14 @@ const fixturePayloads = (name: string, path: string) => {
     const payload = file.includes('/raw/') ? json.body : json;
     return [
       `fixtures/${relative(join(root, 'fixtures'), file)}`,
-      envelopes.has(name)
-        ? { source: name, version: 1, fetchedAt: fixturesCapturedAt, stale: false, data: payload }
+      envelopes[name] !== undefined
+        ? {
+            source: envelopes[name],
+            version: 1,
+            fetchedAt: fixturesCapturedAt,
+            stale: false,
+            data: payload,
+          }
         : payload,
     ] as const;
   });

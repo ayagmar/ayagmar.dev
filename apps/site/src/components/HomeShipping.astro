@@ -1,0 +1,19 @@
+---
+import type { ShippingEvent } from '@min7/contracts';
+import type { ShippingStrip } from '../data/format.ts';
+import ShippingHeat from './ShippingHeat.astro';
+import ShippingList from './ShippingList.astro';
+
+interface Props {
+  /** The strip, from the daily history or the events (ADR 0038); null when neither has a day. */
+  strip: ShippingStrip | null;
+  /** The newest few events. */
+  events: readonly ShippingEvent[];
+}
+
+const { strip, events } = Astro.props;
+---
+
+{/* The strip has its own source: it shows whether or not the event list has anything. */}
+{strip !== null && <ShippingHeat strip={strip} />}
+{events.length === 0 ? <p>Nothing to show yet.</p> : <ShippingList events={events} />}
