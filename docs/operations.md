@@ -70,9 +70,9 @@ The `daily` table, the activity pull and `/v1/days` ship in signals; the strip r
    just signals-migrate-remote
    ```
 
-   A failed migration stops the deploy. A Worker rollback does not roll D1 back, and needs not: the previous version never reads `daily`.
+   It adds the `daily` table and a nullable `snapshots.write_id` column. A failed migration stops the deploy. A Worker rollback does not roll D1 back, and needs not: the previous version never reads either.
 2. Deploy signals (merge to `main`, or `just signals-deploy`).
-3. Check that the history has days. `upstream_not_found` for `shipping-activity` in `/v1/health` means repo-pulse does not serve `/public/activity` yet; wait for its deploy and the next hourly pull.
+3. Check that the history has days. `upstream_not_found` for `shipping-activity` in `/v1/health` means repo-pulse does not serve `/public/activity` yet; wait for its deploy and the next hourly pull. `upstream_incomplete` is retried every 2 minutes.
 
    ```sh
    curl -s https://api.ayagmar.dev/v1/health | jq '.sources[] | select(.source == "shipping-activity")'
