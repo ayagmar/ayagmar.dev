@@ -184,7 +184,7 @@ overrides:
   '@lhci/cli>tmp': 0.2.7
   external-editor>tmp: 0.2.7
   '@lhci/cli>uuid': 11.1.1
-  get-uri>basic-ftp: 6.2.3
+  get-uri>basic-ftp: 6.2.4
   '@lhci/cli>chrome-launcher': 1.2.2
 
 importers:
@@ -1855,8 +1855,8 @@ packages:
   bare-url@2.5.5:
     resolution: {integrity: sha512-iM9qJCruvpt2rPaLsrumVDru9pogI7PHziHIa9kTNRFt8C8HuSa+kI9kFezK+NvHEFnnz71rKGZ1EAilq/3V/Q==}
 
-  basic-ftp@6.2.3:
-    resolution: {integrity: sha512-T7GYtQ2eKJUN5YORG7A8u2WfB9JMN0a4/wl3MI64qq2qTRfa3FXzoNq0DDojZDkDyStcL+TkfKsz4JHEZx5kGQ==}
+  basic-ftp@6.2.4:
+    resolution: {integrity: sha512-6ACKOQxSlv5xka4i03ujfncNr9qp5yZNK3u0+yUFTAU4HfG5AeztCC9+R1I9dm8oq+1vt4RZ7cIRTBrdHqL2mw==}
     engines: {node: '>=10.0.0'}
 
   blake3-wasm@2.1.5:
@@ -5331,7 +5331,7 @@ snapshots:
     dependencies:
       bare-path: 3.1.2
 
-  basic-ftp@6.2.3: {}
+  basic-ftp@6.2.4: {}
 
   blake3-wasm@2.1.5: {}
 
@@ -5895,7 +5895,7 @@ snapshots:
 
   get-uri@6.0.5(supports-color@10.2.2):
     dependencies:
-      basic-ftp: 6.2.3
+      basic-ftp: 6.2.4
       data-uri-to-buffer: 6.0.2
       debug: 4.4.3(supports-color@10.2.2)
     transitivePeerDependencies:
