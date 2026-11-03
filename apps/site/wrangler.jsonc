@@ -18,8 +18,8 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    // The Worker only sees `/`, to answer terminal clients with index.txt.
-    "run_worker_first": ["/"]
+    // The Worker only sees the pages with a plain-text version, to answer terminal clients with it.
+    "run_worker_first": ["/", "/now"]
   },
   // Required by `wrangler preview` even though the site has no bindings to swap.
   "previews": {}
