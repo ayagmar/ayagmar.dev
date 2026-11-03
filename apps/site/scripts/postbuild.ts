@@ -4,7 +4,8 @@
 // style). Any other inline <script> or <style>, such as raw HTML in a Markdown post, fails the
 // build instead of being hashed into the policy. A `type="application/ld+json"` block is data a
 // browser never runs, so it needs no hash, but it must parse as JSON. The policy allows
-// Cloudflare Web Analytics only when a page loads its beacon (production builds).
+// Cloudflare Web Analytics only when a page loads its beacon (production builds). Before that, it
+// strips the comments from the theme script, which Astro copies as it is and every page blocks on.
 // Usage: node scripts/postbuild.ts [dist]
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -16,6 +17,7 @@ import only from 'astro/runtime/client/only.prebuilt.js';
 import visible from 'astro/runtime/client/visible.prebuilt.js';
 import island from 'astro/runtime/server/astro-island.prebuilt.js';
 import { ISLAND_STYLES } from 'astro/runtime/server/astro-island-styles.js';
+import ts from 'typescript';
 import { cloudflareAnalytics } from '../src/lib/search.ts';
 import {
   contentSecurityPolicy,
@@ -29,9 +31,17 @@ const allowed = {
 };
 
 const dist = process.argv[2] ?? join(import.meta.dirname, '..', 'dist');
-const pages = readdirSync(dist, { recursive: true, encoding: 'utf8' }).filter((file) =>
-  file.endsWith('.html')
-);
+
+const files = readdirSync(dist, { recursive: true, encoding: 'utf8' });
+const pages = files.filter((file) => file.endsWith('.html'));
+
+for (const file of files.filter((name) => /^_astro[/\\]theme\.[\w-]+\.js$/.test(name))) {
+  const path = join(dist, file);
+  const { outputText } = ts.transpileModule(readFileSync(path, 'utf8'), {
+    compilerOptions: { removeComments: true, alwaysStrict: false, target: ts.ScriptTarget.ESNext },
+  });
+  writeFileSync(path, outputText);
+}
 
 /**
  * The <script> and <style> elements of a page, found the way a browser tokenizes tags:

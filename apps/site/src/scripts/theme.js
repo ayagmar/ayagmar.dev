@@ -2,7 +2,8 @@
 // choice is on <html> before the first paint. "auto" stores nothing and leaves the theme to
 // prefers-color-scheme; CSS shows the switch only once this script has run. Also the keys of
 // ADR 0027 that work on every page: `t` swaps day and night, `?` opens the list of keys, whose
-// switch turns all single keys off (WCAG 2.1.4) as `data-shortcuts` on <html>.
+// switch turns all single keys off (WCAG 2.1.4) as `data-shortcuts` on <html>. The build ships it
+// without its comments (scripts/postbuild.ts).
 (() => {
   const root = document.documentElement;
   const key = 'theme';
