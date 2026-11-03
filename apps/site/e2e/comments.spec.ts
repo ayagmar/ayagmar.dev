@@ -2,7 +2,7 @@
 // answered by a stub widget that posts what the real one does (its height) and records what the
 // page sends it.
 import type { Page, Route } from '@playwright/test';
-import { expect, expectNoAxeViolations, test } from './fixtures.ts';
+import { expect, test } from './fixtures.ts';
 
 // A placeholder draft, so these tests run on the drafts build.
 const post = '/writing/token-logs';
@@ -217,18 +217,8 @@ test('without JavaScript the window offers the discussion on GitHub and no frame
   await context.close();
 });
 
-for (const colorScheme of ['light', 'dark'] as const) {
-  // Catches the closed window failing contrast or naming rules in one theme; the third-party
-  // frame is not scanned.
-  test(`a post with the comments window closed has no axe violations in ${colorScheme}`, {
-    tag: '@drafts',
-  }, async ({ page }) => {
-    await page.emulateMedia({ colorScheme });
-    await page.goto(post);
-    await expect(press(page)).toBeVisible();
-    await expectNoAxeViolations(page);
-  });
-}
+// The closed window is checked by axe with the post it sits under: pages.spec.ts in the day
+// theme, reader.spec.ts at night.
 
 // Catches the window, open or failed, pushing the page sideways or the header onto two rows.
 test('at 320px the open window does not overflow and the header stays one row', {
