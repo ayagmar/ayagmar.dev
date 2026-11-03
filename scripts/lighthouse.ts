@@ -10,9 +10,11 @@
 // file by the base commit) is not measured again; the base is served only for pages the cache
 // lacks. A head cache file receives the head's medians in the same format, for CI to keep under
 // the commit it measured.
+// CI splits each profile's pages across jobs with --shard; --tools writes what keys the cache.
 // Usage: node scripts/lighthouse.ts [--base <site dir>] [--head <site dir>]
-//          [--profile mobile|desktop]... [--out <metrics.json>]
+//          [--profile mobile|desktop]... [--out <metrics.json>] [--shard <i>/<n>]
 //          [--base-cache <file>] [--head-cache <file>]
+//        node scripts/lighthouse.ts --tools <file> [--head <site dir>]
 // A site dir is apps/site of a checkout, built: wrangler.jsonc, worker/ and dist/.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import {
@@ -20,12 +22,15 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { isDocument, parseAllDocuments } from 'yaml';
 import { budgets } from './budgets.ts';
 import { freePort } from './free-port.ts';
 import {
@@ -153,6 +158,95 @@ export function pagePaths(dist: string): Record<string, string> {
   return out;
 }
 
+/**
+ * The pages of shard `index` of `count`: every `count`th page in budgets.json order, so each
+ * page is in exactly one shard and a page left out of the build does not move the others.
+ */
+export function shard(
+  paths: Record<string, string>,
+  index: number,
+  count: number
+): Record<string, string> {
+  const order = Object.keys(budgets.lighthouse.pages);
+  return Object.fromEntries(
+    Object.entries(paths).filter(([name]) => order.indexOf(name) % count === index - 1)
+  );
+}
+
+/** A lockfile key's package name and what follows its `@`: `@lhci/cli@0.15.1` → `@lhci/cli`, `0.15.1`. */
+const splitKey = (key: string): [string, string] => {
+  const at = key.indexOf('@', 1);
+  return at === -1 ? [key, ''] : [key.slice(0, at), key.slice(at + 1)];
+};
+
+/**
+ * Every package that the measurement runs: Lighthouse CI with Lighthouse, Playwright with the
+ * Chromium it pins, and the Wrangler and workerd that serve the pages, each with all it depends
+ * on. Each is `name@version`, its resolution in `lockfile` (the integrity, or the tarball or git
+ * source) and the hash of any pnpm patch the lockfile applies to it, so a same-version patch or
+ * a re-resolved package changes the list too. CI keys the base cache on this instead of the
+ * whole lockfile, so a dependency bump elsewhere keeps the cached base (ADR 0017). Throws when a
+ * required package is not installed or has no entry in the lockfile.
+ */
+export function measuringTools(site: string, lockfile: string): string[] {
+  const resolutions = new Map<string, string[]>();
+  const patches: [string, string, string][] = [];
+  for (const doc of parseAllDocuments(lockfile)) {
+    if (!isDocument(doc)) throw new Error('pnpm-lock.yaml: not YAML');
+    const lock = doc.toJS() as {
+      packages?: Record<string, { resolution?: unknown; version?: string }>;
+      patchedDependencies?: Record<string, unknown>;
+    };
+    for (const [key, entry] of Object.entries(lock.packages ?? {})) {
+      const [name, version] = splitKey(key);
+      const id = `${name}@${entry.version ?? version}`;
+      resolutions.set(id, [...(resolutions.get(id) ?? []), JSON.stringify(entry.resolution)]);
+    }
+    for (const [key, hash] of Object.entries(lock.patchedDependencies ?? {})) {
+      patches.push([...splitKey(key), JSON.stringify(hash)]);
+    }
+  }
+  const found = new Map<string, string>();
+  const visit = (from: string, name: string, optional: boolean) => {
+    const dir = createRequire(join(from, 'package.json'))
+      .resolve.paths(name)
+      ?.map((modules) => join(modules, name))
+      .find((candidate) => existsSync(join(candidate, 'package.json')));
+    if (!dir) {
+      if (optional) return;
+      throw new Error(`${name} is not installed where ${from} looks for it`);
+    }
+    const real = realpathSync(dir);
+    if (found.has(real)) return;
+    const manifest = JSON.parse(readFileSync(join(real, 'package.json'), 'utf8')) as {
+      name: string;
+      version: string;
+      dependencies?: Record<string, string>;
+      optionalDependencies?: Record<string, string>;
+    };
+    const id = `${manifest.name}@${manifest.version}`;
+    const resolution = resolutions.get(id);
+    if (!resolution) throw new Error(`${id} is installed but has no entry in pnpm-lock.yaml`);
+    // A patch keyed by a bare name or a range may apply too; counting it costs a cache miss at most.
+    const patched = patches
+      .filter(
+        ([patchName, range]) =>
+          patchName === manifest.name &&
+          (!range || range === manifest.version || !/^\d+\.\d+\.\d+$/.test(range))
+      )
+      .map(([, range, hash]) => ` patch ${range || '*'} ${hash}`);
+    found.set(real, `${id} ${resolution.join(' ')}${patched.join('')}`);
+    const optionals = Object.keys(manifest.optionalDependencies ?? {});
+    for (const dep of Object.keys(manifest.dependencies ?? {})) {
+      visit(real, dep, optionals.includes(dep));
+    }
+    for (const dep of optionals) visit(real, dep, true);
+  };
+  for (const root of ['@lhci/cli', '@playwright/test', 'wrangler'])
+    visit(resolve(site), root, false);
+  return [...new Set(found.values())].sort();
+}
+
 /** Serves a site through `wrangler dev` on a free port; the caller stops the child. */
 async function serve(
   site: string,
@@ -181,8 +275,8 @@ async function serve(
 
 /**
  * Time allowed per Lighthouse run of one page, about 11 s in CI. A collect gets two runs more,
- * for lhci's own retries of a failed run: 13 minutes for 24 runs, so a hung collect is killed
- * and run once more inside the job's 35 minutes.
+ * for lhci's own retries of a failed run: 5.5 minutes for a CI shard's 9 runs, so a hung collect
+ * is killed and run once more inside the job's 20 minutes.
  */
 const runTimeout = 30_000;
 
@@ -398,10 +492,22 @@ async function main() {
       head: { type: 'string', default: 'apps/site' },
       profile: { type: 'string', multiple: true, default: [...profiles] },
       out: { type: 'string', default: '.lighthouse/metrics.json' },
+      shard: { type: 'string', default: '1/1' },
       'base-cache': { type: 'string' },
       'head-cache': { type: 'string' },
+      tools: { type: 'string' },
     },
   });
+  if (args.tools) {
+    const tools = measuringTools(args.head, readFileSync('pnpm-lock.yaml', 'utf8'));
+    mkdirSync(dirname(resolve(args.tools)), { recursive: true });
+    writeFileSync(args.tools, `${JSON.stringify(tools, null, 2)}\n`);
+    console.log(`lighthouse: ${tools.length} packages measure, listed in ${args.tools}`);
+    return;
+  }
+  const [index, count] = (/^(\d+)\/(\d+)$/.exec(args.shard) ?? []).slice(1).map(Number);
+  if (!index || !count || index > count)
+    throw new Error(`--shard ${args.shard}: <i>/<n>, 1 <= i <= n`);
   for (const p of args.profile) {
     if (!profiles.includes(p as Profile)) throw new Error(`--profile ${p}: mobile or desktop`);
   }
@@ -410,7 +516,8 @@ async function main() {
   const base = args.base ? resolve(args.base) : undefined;
   const bin = (name: string) => join(head, 'node_modules/.bin', name);
   const work = resolve(dirname(args.out));
-  const paths = pagePaths(join(head, 'dist'));
+  const paths = shard(pagePaths(join(head, 'dist')), index, count);
+  if (Object.keys(paths).length === 0) throw new Error(`--shard ${args.shard}: no page to measure`);
   console.log(
     `lighthouse: ${Object.entries(paths)
       .map(([n, p]) => `${n}=${p}`)

@@ -284,12 +284,13 @@ describe('the render command', () => {
   });
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  const run = (...contents: string[]) => {
+  const run = (...contents: string[]) => runWith([], contents);
+  const runWith = (flags: string[], contents: string[]) => {
     const files = contents.map((content, i) => {
       writeFileSync(join(dir, `metrics-${i}.json`), content);
       return `metrics-${i}.json`;
     });
-    return spawnSync(process.execPath, [report, 'render', ...files, 'comment.md'], {
+    return spawnSync(process.execPath, [report, 'render', ...flags, ...files, 'comment.md'], {
       cwd: dir,
       encoding: 'utf8',
     });
@@ -327,6 +328,30 @@ describe('the render command', () => {
       text((a) => Object.assign(a, { x: 1 }))
     );
     assert.equal(bad.status, 1);
+  });
+
+  // Catches the all-clear on a run where one of a profile's shard jobs failed before measuring.
+  it('names the shard jobs that sent nothing, given the jobs per profile', () => {
+    const shards = (profile: string) =>
+      [0, 1, 2].map((i) =>
+        text((a) => {
+          a.results = [{ ...artifact().results[0], page: Object.keys(pages)[i], profile } as never];
+        })
+      );
+    assert.equal(runWith(['--jobs', '3'], [...shards('mobile'), ...shards('desktop')]).status, 0);
+    assert.match(readFileSync(join(dir, 'comment.md'), 'utf8'), /Every page is within budget/);
+    assert.equal(
+      runWith(['--jobs', '3'], [...shards('mobile'), ...shards('desktop').slice(1)]).status,
+      0
+    );
+    const body = readFileSync(join(dir, 'comment.md'), 'utf8');
+    assert.match(body, /Incomplete: no metrics from 1 of the 3 desktop jobs/);
+    assert.doesNotMatch(body, /Every page is within budget/);
+    assert.equal(runWith(['--jobs', '3'], shards('mobile')).status, 0);
+    assert.match(
+      readFileSync(join(dir, 'comment.md'), 'utf8'),
+      /Incomplete: no metrics from all 3 desktop jobs/
+    );
   });
 });
 
@@ -376,6 +401,25 @@ describe('ci.yml', () => {
       restore.with.key ?? '',
       /\{\{ github\.event\.pull_request\.base\.sha \|\| github\.event\.before \}\}$/
     );
+  });
+
+  // Catches a shard added to the matrix but not to the comment's job count (a false
+  // "Incomplete", or a missing shard taken for complete), or shards sharing one cache entry.
+  it('splits each profile into the shards the comment expects, each with its own cache', () => {
+    const shards = (lighthouse as unknown as { strategy: { matrix: { shard: number[] } } }).strategy
+      .matrix.shard;
+    const n = shards.length;
+    assert.deepEqual(
+      shards,
+      Array.from({ length: n }, (_, i) => i + 1)
+    );
+    const render = comment.steps.find((step) => step.run?.includes(' - render '));
+    assert.match(render?.run ?? '', new RegExp(`- render --jobs ${n} `));
+    const runStep = lighthouse.steps.find((step) => step.run === 'just lighthouse-ci');
+    assert.equal(runStep?.env?.LIGHTHOUSE_SHARD, `\${{ matrix.shard }}/${n}`);
+    for (const step of [...cacheSteps('restore'), ...cacheSteps('save')]) {
+      assert.match(step.with?.key ?? '', new RegExp(`-\\$\\{\\{ matrix\\.shard \\}\\}of${n}-`));
+    }
   });
 
   it('skips the comment job on forks and outside pull requests', () => {
