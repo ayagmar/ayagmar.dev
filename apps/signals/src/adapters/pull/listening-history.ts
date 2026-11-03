@@ -30,7 +30,11 @@ const continueMs = 30_000;
  * half the time since midnight, at most an hour apart: 31 tries on a day that fails. */
 const retryMs = 5 * minute;
 const maxRetryMs = 60 * minute;
-/** A pull must end this long before midnight in Rabat, so its write lands on its own date. */
+/**
+ * A pull must end this long before midnight in Rabat, so its snapshot is unlikely to be
+ * written after it. Not a guarantee: a write can still land later, and `D1ProgressStore`
+ * keeps it from replacing the new date's progress.
+ */
 const finishMarginMs = 5_000;
 
 /** The past years whose `describedDate` exists, newest first: 29 February only in leap years. */
@@ -248,14 +252,10 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
     // One date for the whole pull, whatever the clock says later.
     const describedDate = rabatDate(Date.now());
     const progress = new D1ProgressStore(env.DB, 'listening-history');
+    // Every write below names this version, whatever its date or state.
     const saved = await progress.load();
-    let step = 0;
     let state: State | undefined;
-    if (saved?.describedDate === describedDate) {
-      // The stored step even when its state does not read, so the fresh start can replace it.
-      step = saved.step;
-      state = readState(saved.state, describedDate);
-    }
+    if (saved?.describedDate === describedDate) state = readState(saved.state, describedDate);
 
     // The key goes in the POST form, out of the URL that Workers traces record.
     const form = (method: string, params: Record<string, string> = {}) =>
@@ -294,17 +294,19 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
     }
 
     // A pull that crossed midnight in Rabat would label yesterday's answers as today's. One
-    // that ends in the last seconds before it is dropped too: its snapshot, written after
-    // midnight, would make the new date look done.
+    // that ends in the last seconds before it is dropped too, as its snapshot would likely be
+    // written after midnight. Later writes are delayed ones, which the store fences.
     if (rabatDate(Date.now() + finishMarginMs) !== describedDate) {
       throw new PullError('date_changed');
     }
     if (state.read < years.length) {
       // False when an overlapping invocation saved first: its part stands, this one is dropped.
-      await progress.save(describedDate, step, state);
+      await progress.save(saved, describedDate, state);
       throw new PullError('in_progress');
     }
-    await progress.clear();
+    // Lost to an overlapping invocation, which publishes instead. `in_progress` makes the
+    // history due again in 30 seconds, in case that one never does.
+    if (!(await progress.finish(saved, describedDate))) throw new PullError('in_progress');
     return { describedDate, firstYear: state.firstYear, years: state.years };
   },
 

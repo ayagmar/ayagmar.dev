@@ -235,8 +235,11 @@ describe('a pull spread over cron invocations', () => {
       stale: false,
       data: snapshotFixtures['listening-history'].ok,
     });
-    expect(await env.DB.prepare('SELECT * FROM pull_progress').all()).toMatchObject({
-      results: [],
+    // Finished, but kept with its step: a late write cannot find the row gone and recreate it.
+    expect(
+      await env.DB.prepare('SELECT described_date, step, json FROM pull_progress').all()
+    ).toMatchObject({
+      results: [{ described_date: '2026-10-26', step: 3, json: 'null' }],
     });
   });
 
@@ -320,13 +323,14 @@ describe('a pull spread over cron invocations', () => {
       '2026-10-26T23:58:54Z'
     );
     const requests = recordRequests(...upstreamHandlers());
-    // D1 takes 7 seconds to clear the progress.
-    const clear = D1ProgressStore.prototype.clear;
-    vi.spyOn(D1ProgressStore.prototype, 'clear').mockImplementation(async function (
-      this: D1ProgressStore
+    // D1 takes 7 seconds to finish the progress.
+    const finish = D1ProgressStore.prototype.finish;
+    vi.spyOn(D1ProgressStore.prototype, 'finish').mockImplementation(async function (
+      this: D1ProgressStore,
+      ...args
     ) {
       vi.setSystemTime(Date.now() + 7_000);
-      return clear.call(this);
+      return finish.apply(this, args);
     });
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(at('2026-10-26T23:59:54Z'));
@@ -390,11 +394,17 @@ describe('a pull spread over cron invocations', () => {
   });
 
   // Catches progress for today that no longer reads (written by a Worker version whose schema
-  // differs) blocking every save until midnight, so the date never gets its history.
-  it("starts over from today's progress when it cannot be read", async () => {
+  // differs, or cut short) blocking every save until midnight, or failing every load, so the
+  // date never gets its history.
+  it.each([
+    ['a shape it rejects', '{"read":99}'],
+    ['JSON that does not parse', '{"read":'],
+  ])("starts over from today's progress when it holds %s", async (_case, json) => {
     await env.DB.prepare(
-      "INSERT INTO pull_progress (source, described_date, step, json) VALUES ('listening-history', '2026-10-26', 3, '{\"read\":99}')"
-    ).run();
+      "INSERT INTO pull_progress (source, described_date, step, json) VALUES ('listening-history', '2026-10-26', 3, ?)"
+    )
+      .bind(json)
+      .run();
     network.use(...upstreamHandlers());
     expect(await pull(captured)).toEqual(['in_progress', 'in_progress', null]);
     expect((await served()).data).toEqual(snapshotFixtures['listening-history'].ok);
@@ -426,6 +436,166 @@ describe('a pull spread over cron invocations', () => {
       lastErrorCode: 'upstream_malformed',
     });
     expect((await served()).data).toEqual(snapshotFixtures['listening-history'].ok);
+  });
+});
+
+// Two invocations around midnight in Rabat (+00 in October 2026), or on one date, made to
+// interleave: one invocation's next write to `pull_progress` waits, after its five-second
+// guard, while others run to the end. Whatever the delay, the late write must change nothing.
+describe('progress written late by an overlapping invocation', () => {
+  const ok = rawFixtures['lastfm-history'].ok;
+  const yesterday = '2026-10-26';
+  const today = '2026-10-27';
+
+  beforeEach(() => {
+    // Registered in 2023, so three past years on either date, each with no scrobbles.
+    const empty = rawFixtures['lastfm-history'].empty.days[0]?.page.body;
+    network.use(
+      http.post('https://ws.audioscrobbler.com/2.0/', async ({ request }) => {
+        const form = await request.formData();
+        return HttpResponse.json(
+          form.get('method') === 'user.getinfo' ? ok.registration.body : empty
+        );
+      })
+    );
+    vi.useFakeTimers({ toFake: ['Date'] });
+  });
+
+  const seed = (describedDate: string, step: number, read: number) =>
+    env.DB.prepare(
+      "INSERT INTO pull_progress (source, described_date, step, json) VALUES ('listening-history', ?, ?, ?)"
+    )
+      .bind(describedDate, step, JSON.stringify({ firstYear: 2023, read, years: [] }))
+      .run();
+
+  const row = async () => {
+    const stored = await env.DB.prepare(
+      'SELECT described_date, step, json FROM pull_progress'
+    ).first<{ described_date: string; step: number; json: string }>();
+    return (
+      stored && { date: stored.described_date, step: stored.step, state: JSON.parse(stored.json) }
+    );
+  };
+
+  /** One invocation at `time`, run to the end: the code it fails with, or 'done'. */
+  async function invoke(time: string, invocationEnv = withKey) {
+    vi.setSystemTime(at(time));
+    try {
+      await listeningHistory.fetch(invocationEnv, AbortSignal.timeout(5000));
+      return 'done';
+    } catch (error) {
+      return (error as PullError).code;
+    }
+  }
+
+  /** An invocation at `time` whose first write to `pull_progress` waits for `release`. */
+  async function held(time: string) {
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let reach!: () => void;
+    const reached = new Promise<void>((resolve) => {
+      reach = resolve;
+    });
+    const forward = <T extends object>(target: T, key: string | symbol) => {
+      const value = Reflect.get(target, key);
+      return typeof value === 'function' ? value.bind(target) : value;
+    };
+    const hold = (statement: D1PreparedStatement): D1PreparedStatement =>
+      new Proxy(statement, {
+        get(target, key) {
+          if (key === 'bind') return (...values: unknown[]) => hold(target.bind(...values));
+          if (key === 'run') {
+            return async () => {
+              reach();
+              await released;
+              return target.run();
+            };
+          }
+          return forward(target, key);
+        },
+      });
+    const DB = new Proxy(env.DB, {
+      get(target, key) {
+        if (key !== 'prepare') return forward(target, key);
+        return (sql: string) => {
+          const statement = target.prepare(sql);
+          return /^\s*(INSERT INTO|UPDATE|DELETE FROM) pull_progress/.test(sql)
+            ? hold(statement)
+            : statement;
+        };
+      },
+    });
+    const outcome = invoke(time, { ...withKey, DB });
+    await reached;
+    return {
+      finish: () => {
+        release();
+        return outcome;
+      },
+    };
+  }
+
+  // Catches a save for yesterday, held past midnight, replacing today's progress.
+  it("drops yesterday's late save instead of replacing today's progress", async () => {
+    const late = await held(`${yesterday}T23:59:00Z`);
+    expect(await invoke(`${today}T00:01:00Z`)).toBe('in_progress');
+    const outcome = await late.finish();
+    expect(await row()).toMatchObject({ date: today, state: { read: 1 } });
+    expect(outcome).toBe('in_progress');
+  });
+
+  // Catches yesterday's last part, finished past midnight, deleting today's progress.
+  it("drops yesterday's late completion instead of deleting today's progress", async () => {
+    await seed(yesterday, 2, 2);
+    const late = await held(`${yesterday}T23:59:00Z`);
+    expect(await invoke(`${today}T00:01:00Z`)).toBe('in_progress');
+    const outcome = await late.finish();
+    expect(await row()).toMatchObject({ date: today, state: { read: 1 } });
+    // Lost: its history is not returned for publishing.
+    expect(outcome).toBe('in_progress');
+  });
+
+  // Catches a late save recreating yesterday's progress once today's pull has finished.
+  it("drops yesterday's late save after today's pull has finished", async () => {
+    await seed(yesterday, 1, 1);
+    const late = await held(`${yesterday}T23:59:00Z`);
+    for (const minute of ['01', '02']) {
+      expect(await invoke(`${today}T00:${minute}:00Z`)).toBe('in_progress');
+    }
+    expect(await invoke(`${today}T00:03:00Z`)).toBe('done');
+    const outcome = await late.finish();
+    expect(await row()).toMatchObject({ date: today, state: null });
+    expect(outcome).toBe('in_progress');
+  });
+
+  // Catches a stale completion consuming a later pull's progress on the same date, once that
+  // pull has reached the step the stale one loaded.
+  it('drops a stale completion after a refresh of the same date has reached its step', async () => {
+    await seed(yesterday, 2, 2);
+    const stale = await held(`${yesterday}T12:00:00Z`);
+    expect(await invoke(`${yesterday}T12:00:30Z`)).toBe('done');
+    // The refresh, seven hours on: registration and 2025, then 2024.
+    expect(await invoke(`${yesterday}T19:01:00Z`)).toBe('in_progress');
+    expect(await invoke(`${yesterday}T19:02:00Z`)).toBe('in_progress');
+    const outcome = await stale.finish();
+    expect(await row()).toMatchObject({ date: yesterday, state: { read: 2 } });
+    expect(outcome).toBe('in_progress');
+  });
+
+  // Catches a pull that finished its progress but never wrote its snapshot leaving the date
+  // without a history, or publishing a partial one: the next pull reads every year again.
+  it('pulls the date again when its finished pull was never published', async () => {
+    vi.spyOn(D1SnapshotStore.prototype, 'put').mockRejectedValueOnce(new Error('D1 is down'));
+    expect(await pull(at(`${today}T00:01:00Z`))).toEqual([
+      'in_progress',
+      'in_progress',
+      'store_failed',
+    ]);
+    expect((await served()).data).toBeNull();
+    expect(await pull(at(`${today}T00:09:00Z`))).toEqual(['in_progress', 'in_progress', null]);
+    expect((await served()).data).toEqual({ describedDate: today, firstYear: 2023, years: [] });
   });
 });
 
