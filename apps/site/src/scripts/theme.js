@@ -2,7 +2,8 @@
 // choice is on <html> before the first paint. "auto" stores nothing and leaves the theme to
 // prefers-color-scheme; CSS shows the switch only once this script has run. Also the keys of
 // ADR 0027 that work on every page: `t` swaps day and night, `?` opens the list of keys, whose
-// switch turns all single keys off (WCAG 2.1.4) as `data-shortcuts` on <html>.
+// switch turns all single keys off (WCAG 2.1.4) as `data-shortcuts` on <html>. The build ships it
+// without its comments (scripts/postbuild.ts).
 (() => {
   const root = document.documentElement;
   const key = 'theme';
@@ -79,6 +80,16 @@
     },
     true
   );
+
+  // A hello for whoever opens the console, once per page and on production only: Previews are on
+  // workers.dev and tests on 127.0.0.1.
+  if (location.hostname === 'ayagmar.dev') {
+    console.log(
+      '%cHello, console reader.',
+      'color: #d98a2b; font-weight: 600',
+      'How min7 is built: https://ayagmar.dev/colophon. The source: https://github.com/ayagmar/ayagmar.dev'
+    );
+  }
 
   document.addEventListener('keydown', (event) => {
     const target = event.target;
