@@ -1,11 +1,6 @@
 import { posts } from './content.ts';
 import { expect, expectNoAxeViolations, notFoundPath, pages, test } from './fixtures.ts';
 
-const viewports = [
-  { width: 360, height: 800 },
-  { width: 1280, height: 800 },
-];
-
 // Every page in the sitemap, and on the drafts build the pages that show or list a post: while
 // every post is a draft, production has none of them.
 const checked = [
@@ -24,28 +19,24 @@ const checked = [
   ].map((path) => ({ path, title: `${path} with drafts`, details: { tag: '@drafts' } })),
 ];
 
+// Catches a page that scrolls sideways on a 320px phone, or fails axe at a phone or a desktop
+// width. One load per page: the page is resized between the checks.
 for (const { path, title, details } of checked) {
-  test.describe(title, () => {
-    for (const viewport of viewports) {
-      test(`has no axe violations at ${viewport.width}px`, details, async ({ page }) => {
-        await page.setViewportSize(viewport);
-        const response = await page.goto(path);
-        expect(response?.status()).toBe(path === notFoundPath ? 404 : 200);
-        // Wait for the search island so axe sees the hydrated page.
-        await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  test(`${title} fits 320px and passes axe at 360 and 1280px`, details, async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(path === notFoundPath ? 404 : 200);
+    // Wait for the search island so axe sees the hydrated page.
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    expect(overflow, 'overflow at 320px').toBeLessThanOrEqual(0);
 
-        await expectNoAxeViolations(page);
-      });
+    for (const width of [360, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      await test.step(`axe at ${width}px`, () => expectNoAxeViolations(page));
     }
-
-    test('does not scroll sideways at 320px', details, async ({ page }) => {
-      await page.setViewportSize({ width: 320, height: 800 });
-      await page.goto(path);
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
-      );
-      expect(overflow).toBeLessThanOrEqual(0);
-    });
   });
 }
 
