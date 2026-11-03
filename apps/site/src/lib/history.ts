@@ -6,7 +6,7 @@
 import { rabatDate } from '@min7/contracts/rabat';
 import { count } from '../data/format.ts';
 import { trackBy } from './listening.ts';
-import { text } from './live.ts';
+import { instantMs, text } from './live.ts';
 import type { Markup } from './markup.ts';
 
 export interface HistoryYear {
@@ -32,7 +32,7 @@ const int = (value: unknown, min: number, max: number) =>
 
 /**
  * The history in a `/v1/listening-history` answer if the page may show it at `now`, else
- * undefined: a fresh (`stale: false`) envelope of this source with a readable `fetchedAt`,
+ * undefined: a fresh (`stale: false`) envelope of this source with a `fetchedAt` the contract accepts,
  * describing today's date in Rabat, by this browser's tzdata, and every value of its type and
  * in the contract's range (`listeningHistorySnapshotSchema`, which the browser does not load).
  * A snapshot for any other date is never shown, however fresh signals says it is.
@@ -40,7 +40,7 @@ const int = (value: unknown, min: number, max: number) =>
 export function readHistory(body: unknown, now: number): History | undefined {
   const { source, version, stale, fetchedAt, data } = Object(body);
   if (source !== 'listening-history' || version !== 1 || stale !== false) return;
-  if (typeof fetchedAt !== 'string' || Number.isNaN(Date.parse(fetchedAt))) return;
+  if (instantMs(fetchedAt, true) === undefined) return;
   const { describedDate, firstYear, years } = Object(data);
   if (describedDate !== rabatDate(now) || !int(firstYear, 2002, 9999)) return;
   if (!Array.isArray(years) || years.length > 24) return;

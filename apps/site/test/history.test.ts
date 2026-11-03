@@ -66,6 +66,9 @@ describe('which answers /stats shows', () => {
     ['another source', { source: 'listening' }],
     ['another version', { version: 2 }],
     ['an unreadable fetchedAt', { fetchedAt: 'today' }],
+    // Catches a fetchedAt the contract rejects but Date.parse reads, which the other readers refuse.
+    ['a non-ISO fetchedAt', { fetchedAt: 'Mon, 26 Oct 2026 00:03:12 GMT' }],
+    ['a fetchedAt on a day the calendar lacks', { fetchedAt: '2026-02-30T00:03:12.000Z' }],
   ])('shows nothing for %s', (_case, fields) => {
     const now = Date.parse('2026-10-26T12:00:00Z');
     expect(readHistory(envelope(snapshotFixtures['listening-history'].ok), now)).toBeDefined();
