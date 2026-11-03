@@ -19,16 +19,12 @@
     "apps/signals": {
       "entry": [
         "test/**/*.test.ts",
-        // Interfaces later adapters and storage implement; nothing imports them yet.
-        "src/adapters/types.ts",
-        "src/adapters/pull/index.ts",
-        "src/storage/types.ts",
         // The CPU bench Worker, run by scripts/signals-cpu.ts.
         "bench/worker.ts"
       ],
       "project": ["src/**/*.ts", "test/**/*.ts", "bench/**/*.ts"],
-      // `cloudflare:*` modules are built into workerd. wrangler is run by justfile recipes.
-      "ignoreDependencies": ["cloudflare", "wrangler"]
+      // Run by justfile recipes, which knip does not read.
+      "ignoreDependencies": ["wrangler"]
     },
     "apps/site": {
       "entry": ["scripts/*.ts", "test/**/*.test.ts", "e2e/**/*.spec.ts"],
