@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, it } from 'node:test';
+import { afterEach, beforeEach, describe, it } from 'node:test';
 import { budgets } from './budgets.ts';
 import {
   decide,
@@ -243,40 +243,84 @@ describe('runs and pages', () => {
 });
 
 describe('measuring tools', () => {
-  const install = (root: string, dir: string, name: string, version: string, deps = {}) => {
-    mkdirSync(join(root, dir, 'node_modules', name), { recursive: true });
-    writeFileSync(
-      join(root, dir, 'node_modules', name, 'package.json'),
-      JSON.stringify({ name, version, dependencies: deps, optionalDependencies: {} })
+  const installed = {
+    '@lhci/cli': ['0.15.1', { lighthouse: '12.6.1' }],
+    lighthouse: ['12.6.1', { 'axe-core': '^4' }],
+    'axe-core': ['4.14.0', {}],
+    '@playwright/test': ['1.64.1', { 'playwright-core': '1.64.1' }],
+    'playwright-core': ['1.64.1', {}],
+    wrangler: ['4.156.0', { workerd: '1' }],
+    workerd: ['1.20261023.1', {}],
+    knip: ['6.44.1', {}],
+  } as const;
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'min7-lighthouse-tools-'));
+    for (const [name, [version, dependencies]] of Object.entries(installed)) {
+      // wrangler sits in the site's own node_modules, as a workspace package's dependency does.
+      const dir = join(root, name === 'wrangler' ? 'apps/site' : '', 'node_modules', name);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, 'package.json'), JSON.stringify({ name, version, dependencies }));
+    }
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  /** A pnpm-lock.yaml (an env document, then the main one) for what is installed. */
+  const lockfile = (
+    change: { integrity?: Record<string, string>; patches?: Record<string, string> } = {}
+  ) => {
+    const packages = Object.entries(installed).map(
+      ([name, [version]]) =>
+        `  '${name}@${version}':\n    resolution: {integrity: ${change.integrity?.[name] ?? `sha512-${name}`}}\n`
     );
+    const patches = Object.entries(change.patches ?? {}).map(
+      ([key, hash]) => `  '${key}': ${hash}\n`
+    );
+    return [
+      "---\nlockfileVersion: '9.0'\npackages:\n  pnpm@12.16.1:\n    resolution: {integrity: sha512-pnpm}\n",
+      `---\nlockfileVersion: '9.0'\n${patches.length ? `patchedDependencies:\n${patches.join('')}` : ''}packages:\n${packages.join('')}`,
+    ].join('');
   };
-  const site = (axe: string) => {
-    const root = mkdtempSync(join(tmpdir(), 'min7-lighthouse-tools-'));
-    mkdirSync(join(root, 'apps/site'), { recursive: true });
-    install(root, '', '@lhci/cli', '0.15.1', { lighthouse: '12.6.1' });
-    install(root, '', 'lighthouse', '12.6.1', { 'axe-core': '^4' });
-    install(root, '', 'axe-core', axe);
-    install(root, '', '@playwright/test', '1.64.1', { 'playwright-core': '1.64.1' });
-    install(root, '', 'playwright-core', '1.64.1');
-    install(root, 'apps/site', 'wrangler', '4.156.0', { workerd: '1' });
-    install(root, '', 'workerd', '1.20261023.1');
-    install(root, '', 'knip', '6.44.1');
-    return root;
-  };
+  const tools = (lock = lockfile()) => measuringTools(join(root, 'apps/site'), lock);
 
   // Catches a cached base measured with another axe-core (its accessibility score) or workerd
   // being reused, and a bump of an unrelated tool (knip) throwing the cache away.
   it('lists every package the measurement loads, transitive ones included, and nothing else', () => {
-    const [a, b] = [site('4.14.0'), site('4.15.0')];
-    try {
-      const tools = measuringTools(join(a, 'apps/site'));
-      assert.ok(tools.includes('axe-core@4.14.0') && tools.includes('workerd@1.20261023.1'));
-      assert.ok(!tools.some((t) => t.startsWith('knip@')));
-      assert.notDeepEqual(measuringTools(join(b, 'apps/site')), tools);
-      rmSync(join(a, 'node_modules/workerd'), { recursive: true });
-      assert.throws(() => measuringTools(join(a, 'apps/site')), /workerd is not installed/);
-    } finally {
-      for (const root of [a, b]) rmSync(root, { recursive: true, force: true });
+    const list = tools();
+    assert.ok(list.some((t) => t.startsWith('axe-core@4.14.0 ')));
+    assert.ok(list.some((t) => t.startsWith('workerd@1.20261023.1 ')));
+    assert.ok(!list.some((t) => t.startsWith('knip@')));
+    assert.deepEqual(tools(lockfile({ integrity: { knip: 'sha512-other' } })), list);
+    rmSync(join(root, 'node_modules/workerd'), { recursive: true });
+    assert.throws(() => tools(), /workerd is not installed/);
+  });
+
+  // Catches a stale base reused after a same-version change to measuring code: a pnpm patch
+  // (by exact version, range or bare name) or a re-published or re-sourced package.
+  it('changes when a measuring package is patched or resolves differently at the same version', () => {
+    const list = tools();
+    for (const patches of [
+      { 'axe-core@4.14.0': 'aaa' },
+      { 'axe-core@^4': 'aaa' },
+      { 'axe-core': 'aaa' },
+    ]) {
+      const patched = tools(lockfile({ patches }));
+      assert.notDeepEqual(patched, list);
+      assert.notDeepEqual(
+        tools(lockfile({ patches: { [Object.keys(patches)[0] ?? '']: 'bbb' } })),
+        patched
+      );
     }
+    assert.deepEqual(tools(lockfile({ patches: { 'axe-core@4.13.0': 'aaa', knip: 'aaa' } })), list);
+    assert.notDeepEqual(tools(lockfile({ integrity: { lighthouse: 'sha512-other' } })), list);
+  });
+
+  // Catches a measuring package missing from the lockfile silently dropping out of the key.
+  it('fails when a measuring package has no lockfile entry', () => {
+    const lock = lockfile().replace(/ {2}'axe-core@4\.14\.0':\n.*\n/, '');
+    assert.throws(
+      () => tools(lock),
+      /axe-core@4\.14\.0 is installed but has no entry in pnpm-lock\.yaml/
+    );
   });
 });

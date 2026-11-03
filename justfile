@@ -191,7 +191,8 @@ lighthouse *args:
 # cached in .lighthouse/cache (ci.yml)
 lighthouse-ci: (lighthouse "--base" ".lighthouse/base/apps/site" "--profile" env("LIGHTHOUSE_PROFILE") "--shard" env("LIGHTHOUSE_SHARD") "--out" (".lighthouse/metrics-" + env("LIGHTHOUSE_PROFILE") + "-" + replace(env("LIGHTHOUSE_SHARD"), "/", "of") + ".json") "--base-cache" ".lighthouse/cache/base.json" "--head-cache" ".lighthouse/cache/head.json")
 
-# CI: list every package Lighthouse measures with in .lighthouse/tools.json, which keys the base cache
+# CI: list every package Lighthouse measures with, its lockfile resolution and patch, in
+# .lighthouse/tools.json, which keys the base cache
 lighthouse-tools:
     node scripts/lighthouse.ts --tools .lighthouse/tools.json
 

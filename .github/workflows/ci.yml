@@ -398,9 +398,9 @@ jobs:
         env:
           SIGNALS_MODE: fixtures
         run: just site-build
-      # Medians are only comparable when the measuring code, the packages it runs (every version
-      # in .lighthouse/tools.json), Node and the budgets are the same, so those are in the key
-      # along with the shard and the commit the numbers belong to.
+      # Medians are only comparable when the measuring code, the packages it runs (each version,
+      # lockfile resolution and patch in .lighthouse/tools.json), Node and the budgets are the
+      # same, so those are in the key along with the shard and the commit the numbers belong to.
       - name: List the packages that measure
         run: just lighthouse-tools
       - id: base-cache

@@ -30,6 +30,7 @@ import {
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { isDocument, parseAllDocuments } from 'yaml';
 import { budgets } from './budgets.ts';
 import { freePort } from './free-port.ts';
 import {
@@ -172,14 +173,39 @@ export function shard(
   );
 }
 
+/** A lockfile key's package name and what follows its `@`: `@lhci/cli@0.15.1` → `@lhci/cli`, `0.15.1`. */
+const splitKey = (key: string): [string, string] => {
+  const at = key.indexOf('@', 1);
+  return at === -1 ? [key, ''] : [key.slice(0, at), key.slice(at + 1)];
+};
+
 /**
- * Every package, as name@version, that the measurement runs: Lighthouse CI with Lighthouse,
- * Playwright with the Chromium it pins, and the Wrangler and workerd that serve the pages, each
- * with all it depends on. CI keys the base cache on this instead of the whole lockfile, so a
- * dependency bump elsewhere keeps the cached base (ADR 0017). Throws when a required package is
- * not installed.
+ * Every package that the measurement runs: Lighthouse CI with Lighthouse, Playwright with the
+ * Chromium it pins, and the Wrangler and workerd that serve the pages, each with all it depends
+ * on. Each is `name@version`, its resolution in `lockfile` (the integrity, or the tarball or git
+ * source) and the hash of any pnpm patch the lockfile applies to it, so a same-version patch or
+ * a re-resolved package changes the list too. CI keys the base cache on this instead of the
+ * whole lockfile, so a dependency bump elsewhere keeps the cached base (ADR 0017). Throws when a
+ * required package is not installed or has no entry in the lockfile.
  */
-export function measuringTools(site: string): string[] {
+export function measuringTools(site: string, lockfile: string): string[] {
+  const resolutions = new Map<string, string[]>();
+  const patches: [string, string, string][] = [];
+  for (const doc of parseAllDocuments(lockfile)) {
+    if (!isDocument(doc)) throw new Error('pnpm-lock.yaml: not YAML');
+    const lock = doc.toJS() as {
+      packages?: Record<string, { resolution?: unknown; version?: string }>;
+      patchedDependencies?: Record<string, unknown>;
+    };
+    for (const [key, entry] of Object.entries(lock.packages ?? {})) {
+      const [name, version] = splitKey(key);
+      const id = `${name}@${entry.version ?? version}`;
+      resolutions.set(id, [...(resolutions.get(id) ?? []), JSON.stringify(entry.resolution)]);
+    }
+    for (const [key, hash] of Object.entries(lock.patchedDependencies ?? {})) {
+      patches.push([...splitKey(key), JSON.stringify(hash)]);
+    }
+  }
   const found = new Map<string, string>();
   const visit = (from: string, name: string, optional: boolean) => {
     const dir = createRequire(join(from, 'package.json'))
@@ -198,7 +224,18 @@ export function measuringTools(site: string): string[] {
       dependencies?: Record<string, string>;
       optionalDependencies?: Record<string, string>;
     };
-    found.set(real, `${manifest.name}@${manifest.version}`);
+    const id = `${manifest.name}@${manifest.version}`;
+    const resolution = resolutions.get(id);
+    if (!resolution) throw new Error(`${id} is installed but has no entry in pnpm-lock.yaml`);
+    // A patch keyed by a bare name or a range may apply too; counting it costs a cache miss at most.
+    const patched = patches
+      .filter(
+        ([patchName, range]) =>
+          patchName === manifest.name &&
+          (!range || range === manifest.version || !/^\d+\.\d+\.\d+$/.test(range))
+      )
+      .map(([, range, hash]) => ` patch ${range || '*'} ${hash}`);
+    found.set(real, `${id} ${resolution.join(' ')}${patched.join('')}`);
     const optionals = Object.keys(manifest.optionalDependencies ?? {});
     for (const dep of Object.keys(manifest.dependencies ?? {})) {
       visit(real, dep, optionals.includes(dep));
@@ -462,7 +499,7 @@ async function main() {
     },
   });
   if (args.tools) {
-    const tools = measuringTools(args.head);
+    const tools = measuringTools(args.head, readFileSync('pnpm-lock.yaml', 'utf8'));
     mkdirSync(dirname(resolve(args.tools)), { recursive: true });
     writeFileSync(args.tools, `${JSON.stringify(tools, null, 2)}\n`);
     console.log(`lighthouse: ${tools.length} packages measure, listed in ${args.tools}`);
