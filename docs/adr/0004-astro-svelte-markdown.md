@@ -17,6 +17,7 @@ The site is mostly text. Pages must ship no JavaScript unless a feature needs it
 - `build.inlineStylesheets: 'never'`, so styles stay in files the CSP allows by origin (ADR 0019).
 - Markdown syntax highlighting is off for now: Shiki writes `style=""` attributes, which the CSP blocks. A highlighter that emits classes can come with the visual design.
 - "Last updated" comes from the `updated` frontmatter field. Deriving it from git history is not done yet.
+- Amended 2026-11-03: each code block in a post or note gets a Copy button at build time (`src/lib/markdown/code-copy.ts`, after the diagrams, so a diagram gets none). It is `hidden` until `src/scripts/code-copy.ts` finds the Clipboard API, which only secure contexts have; without it, or without JavaScript, there is no button. A visually hidden `role="status"` beside it says "Copied" (or "Could not copy") for screen readers, the button says the same for two seconds, and Pagefind skips the button. The script is 341 B gzip, which leaves a post page 43 B under its 20 KB budget. The button sits in the block's corner, absolutely placed so showing it moves nothing; with a mouse it shows on hover or focus in the block, and on touch screens it always shows in a band above the first line.
 
 ## Consequences
 

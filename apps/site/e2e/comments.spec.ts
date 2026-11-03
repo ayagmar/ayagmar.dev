@@ -8,6 +8,7 @@ import { expect, test } from './fixtures.ts';
 const post = '/writing/token-logs';
 const frames = (page: Page) => page.locator('[data-comments-frame] iframe');
 const press = (page: Page) => page.getByRole('button', { name: 'Show comments' });
+const status = (page: Page) => page.getByRole('region', { name: 'Comments' }).getByRole('status');
 
 const widget = `<!doctype html><title>stub</title><script>
   window.received = [];
@@ -160,10 +161,10 @@ test('a blocked giscus.app says so, keeps the link and moves nothing', { tag: '@
   await expect(press(page)).toBeVisible();
   const footer = page.locator('.site-footer');
   await press(page).click();
-  await expect(page.getByRole('status')).toHaveText('Loading comments…');
+  await expect(status(page)).toHaveText('Loading comments…');
   const loading = (await footer.boundingBox())?.y;
   await page.clock.runFor(10_500);
-  await expect(page.getByRole('status')).toHaveText(/could not load/);
+  await expect(status(page)).toHaveText(/could not load/);
   expect((await footer.boundingBox())?.y).toBe(loading);
   await expect(page.getByRole('link', { name: 'Open the discussion on GitHub' })).toBeVisible();
 });
@@ -176,9 +177,9 @@ test('a late answer replaces the error message', { tag: '@drafts' }, async ({ pa
   await expect(press(page)).toBeVisible();
   await press(page).click();
   await page.clock.runFor(10_500);
-  await expect(page.getByRole('status')).toHaveText(/could not load/);
+  await expect(status(page)).toHaveText(/could not load/);
   release();
-  await expect(page.getByRole('status')).toBeHidden();
+  await expect(status(page)).toBeHidden();
   await expect.poll(() => frames(page).evaluate((f) => f.style.height)).toBe('320px');
 });
 

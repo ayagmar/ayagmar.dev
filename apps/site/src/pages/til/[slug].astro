@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
+import CodeCopy from '../../components/CodeCopy.astro';
 import Comments from '../../components/Comments.astro';
 import PostHeader from '../../components/PostHeader.astro';
 import ReplyByEmail from '../../components/ReplyByEmail.astro';
@@ -45,6 +46,7 @@ const structuredData = [
     <div class="prose">
       <Content />
     </div>
+    <CodeCopy />
     <ReplyByEmail title={note.data.title} />
     <Comments collection="til" slug={note.id} />
     <p class="caption" data-pagefind-ignore><a href="/til">All notes</a></p>
