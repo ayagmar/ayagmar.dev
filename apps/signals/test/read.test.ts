@@ -103,20 +103,6 @@ describe('CORS and the edge cache', () => {
     expect(fromOther.headers.get('access-control-allow-origin')).toBeNull();
   });
 
-  it.each(['listening', 'weather'] as const)(
-    'never serves a cached %s copy past the moment it turns stale',
-    async (source) => {
-      const threshold = staleAfterSeconds[source] * 1000;
-      await seed(source, { n: 1 }, threshold - 1500);
-      const fresh = await get(`/v1/${source}`);
-      expect(await fresh.json()).toMatchObject({ stale: false });
-      expect(fresh.headers.get('cache-control')).toBe('public, max-age=1');
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      expect(await get(`/v1/${source}`).then((r) => r.json())).toMatchObject({ stale: true });
-    }
-  );
-
   // Weather is pulled every 15 minutes, but a new snapshot must still reach the browser within
   // a minute (ADR 0010), and the room's own expiry needs a fresh `stale` (ADR 0029).
   it('caches weather for a minute at most, like every source', async () => {
@@ -233,9 +219,12 @@ describe('freshness against a slow read', () => {
     expect(response.headers.get('cache-control')).not.toBe('public, max-age=1');
   });
 
+  // Catches a copy cached for the usual minute that would keep claiming to be fresh.
   it('does not serve a cached copy past its own expiry', async () => {
     await seedNearStale();
-    expect(await (await read()).json()).toMatchObject({ stale: false });
+    const fresh = await read();
+    expect(await fresh.json()).toMatchObject({ stale: false });
+    expect(fresh.headers.get('cache-control')).toBe('public, max-age=1');
 
     // The edge cache still holds the copy; signals' own clock says it has expired.
     clock += 5000;

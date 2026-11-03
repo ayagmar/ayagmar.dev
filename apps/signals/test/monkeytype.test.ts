@@ -148,29 +148,6 @@ describe('the ApeKey', () => {
     );
   });
 
-  it('gives up on a body that stops after its headers', { timeout: 10_000 }, async () => {
-    network.use(
-      http.get(
-        endpoint,
-        () =>
-          new HttpResponse(
-            new ReadableStream({
-              start(controller) {
-                controller.enqueue(new TextEncoder().encode('{"data":{'));
-              },
-            }),
-            { headers: { 'content-type': 'application/json' } }
-          )
-      )
-    );
-    const started = Date.now();
-    expect((await pullError(monkeytype.fetch(withKey, AbortSignal.timeout(20_000)))).code).toBe(
-      'upstream_timeout'
-    );
-    // getJson's own 5-second deadline covers the body.
-    expect(Date.now() - started).toBeLessThan(7_000);
-  });
-
   it('stops reading a body over 128 KiB, sent in chunks without a length', async () => {
     const chunk = new TextEncoder().encode('x'.repeat(16 * 1024));
     network.use(

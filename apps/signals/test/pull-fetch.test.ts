@@ -261,6 +261,26 @@ describe('pull adapter fetch', () => {
     expect(error.code).toBe('upstream_timeout');
   });
 
+  it('gives up on a body that stops after its headers', { timeout: 2_000 }, async () => {
+    network.use(
+      http.get(
+        feed,
+        () =>
+          new HttpResponse(
+            new ReadableStream({
+              start(controller) {
+                controller.enqueue(new TextEncoder().encode('{"events":['));
+              },
+            }),
+            { headers: { 'content-type': 'application/json' } }
+          )
+      )
+    );
+    const never = new AbortController().signal;
+    const error = await pullError(getJson(feed, { signal: never, maxBytes: 1024, timeoutMs: 50 }));
+    expect(error.code).toBe('upstream_timeout');
+  });
+
   it('keeps upstream text out of the error', async () => {
     network.use(
       http.get(feed, () =>
