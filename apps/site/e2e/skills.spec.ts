@@ -49,26 +49,28 @@ test('skills are grouped under headings and one install pattern is shown once', 
   );
 });
 
-for (const colorScheme of ['light', 'dark'] as const) {
-  for (const width of [360, 1280]) {
-    test(`has no axe violations in ${colorScheme} at ${width}px, with targets of 24px`, async ({
-      browser,
-    }) => {
-      const context = await browser.newContext({ colorScheme, viewport: { width, height: 800 } });
-      const page = await context.newPage();
-      await page.goto('/skills');
-      await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
-      await expectNoAxeViolations(page);
-      const small = await page
-        .locator('main a:visible, main summary:visible')
-        .evaluateAll((links) =>
-          links.filter((link) => link.getBoundingClientRect().height < 24).map((l) => l.textContent)
-        );
-      // Links in running text are exempt from the target size rule; the shelf's own are not.
-      expect(small.filter((text) => /README|npm|Install/.test(text ?? ''))).toEqual([]);
-      await context.close();
+// pages.spec.ts runs axe on /skills in the day theme; the targets are the same size in both.
+for (const width of [360, 1280]) {
+  test(`has no axe violations at night at ${width}px, with targets of 24px`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      colorScheme: 'dark',
+      viewport: { width, height: 800 },
     });
-  }
+    const page = await context.newPage();
+    await page.goto('/skills');
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    await expectNoAxeViolations(page);
+    const small = await page
+      .locator('main a:visible, main summary:visible')
+      .evaluateAll((links) =>
+        links.filter((link) => link.getBoundingClientRect().height < 24).map((l) => l.textContent)
+      );
+    // Links in running text are exempt from the target size rule; the shelf's own are not.
+    expect(small.filter((text) => /README|npm|Install/.test(text ?? ''))).toEqual([]);
+    await context.close();
+  });
 }
 
 test('search finds the shelf, labelled Skills', async ({ page }) => {
