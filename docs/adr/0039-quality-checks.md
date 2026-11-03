@@ -1,0 +1,41 @@
+# 0039. Checks against weak tests and narrating comments
+
+Status: accepted, 2026-11-03
+
+## Context
+
+Most changes here are written with coding agents. Agents add mocks to tests more often than people do (Hora and Robbes, arXiv 2602.00409: 36% of agent commits that touch tests add mocks, against 26%), write tests that restate the implementation or assert almost nothing while still raising coverage, and add comments that restate the code or narrate the steps. Telling them not to does not hold; a check that fails in CI and in the edit loop does. Strict TypeScript, Biome, knip, `just boundaries` and the budgets already run, so these checks cover only what those miss.
+
+## Decision
+
+### `just check-tests`
+
+`scripts/check-tests.ts` parses every tracked `*.test.*` and `*.spec.*` file with the TypeScript compiler API and fails on:
+
+| Finding                                                                                             | Why                                                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A `test` or `it` with no assertion                                                                  | It passes whatever the code does. An assertion is a finished `expect(...)` matcher, `assert` or `t.assert`, a helper named `expect…` or `assert…`, or a call to a function in the same file that asserts. A bare `expect(x)` is not one. |
+| A test whose only assertions are mock-call matchers (`toHaveBeenCalled*`, `mock.calls`)             | It checks that the code called what the test told it to, not what the code produced.                                                                                                                                                     |
+| A test whose only assertions are `toBeDefined()`, `toBeTruthy()`, `not.toBeNull()`                  | Almost any wrong value passes.                                                                                                                                                                                                           |
+| `.only` (or `only: true`)                                                                           | Every other test in the file stops running.                                                                                                                                                                                              |
+| `test.skip(...)`, `describe.skip(...)` or `skip: true` with neither a reason string nor a condition | A test switched off with no reason stays off. Playwright's `test.skip(condition, reason)` and vitest's `skipIf` pass.                                                                                                                    |
+
+`// check-tests: allow <reason>` on the finding's line or the line above silences it; the repo has none. Biome's `suspicious/noFocusedTests` also flags `.only` in the editor.
+
+### `just check-comments`
+
+`scripts/check-comments.ts` reads the comments in tracked source under `apps/`, `packages/`, `producers/` and `scripts/` (TypeScript and JavaScript through the compiler's own comment ranges, so text in strings is never read; the frontmatter, scripts, styles and HTML comments of `.astro` and `.svelte` files; CSS). It fails on a short list of phrases kept in the script: narration ("now we", "first we", a sentence starting "Next,", "here we"), restating ("This function" opening a sentence), history ("previously", "used to" unless passive, "New:" opening a sentence, "updated to") and filler ("simply", "basically", "Note that" opening a sentence), and on a TODO or FIXME with no issue number or URL. "no longer" was left out: every use in the code described behaviour ("a cached copy never claims to be fresh when it no longer is"). A false positive costs more than a miss, so the list grows only with a phrase that has shown up in review.
+
+Both scripts run in `just check` and in CI's `checks` job.
+
+### Biome
+
+On top of the recommended preset: `suspicious/noFocusedTests`, and `complexity/noExcessiveCognitiveComplexity` at 40, with 100 for `scripts/budgets.ts`, `scripts/check-boundaries.ts` and `scripts/lighthouse.ts`, whose main functions score 86 to 97. Both caps are what the code passes today; they stop a function from growing past the worst one rather than set a target. Not turned on: `suspicious/noSkippedTests` (it flags Playwright's conditional `test.skip(condition, reason)`, which `check-tests` allows), `complexity/noPlaywrightUselessAwait` (it reads D1's `.first()` as Playwright's) and the nursery promise rules `noFloatingPromises`, `noMisusedPromises` and `useAwaitThenable` (in Biome 2.6.4 they do not flag an unawaited call to an `async` function in this repo, so they would only look like coverage).
+
+### Mutation testing, report only
+
+StrykerJS with its vitest runner mutates `packages/contracts/src` (without the fixture registry and the MSW helpers) and `apps/site/src/lib`, and reports which mutants the tests let survive. `just mutate` runs both; `.github/workflows/mutation.yml` runs it every Monday and on demand and uploads the HTML and JSON reports. It never runs on pull requests and gates nothing: a run takes minutes per package, its score moves with code that has nothing to do with a change, and a surviving mutant is a question (is this behaviour worth a test?) rather than a defect. The site skips static mutants (module-level values, for which every test reruns): they were 16% of its mutants and an estimated 88% of the time. Contracts keeps them, since its schemas are module-level values and the whole run takes under three minutes. The site's config runs in place and in vitest's `forks` pool: Stryker's sandbox does not rewrite the site's `tsconfig.json` `extends` array, and tests that set `process.env.TZ` only take effect in a child process. In place means a local run edits `apps/site/src` while it runs and restores it at the end, also on Ctrl-C; do not edit the site during a run. `apps/signals` is left out: its tests run inside workerd through the Cloudflare vitest plugin's pool, and Stryker's vitest runner always sets the pool to one of its own (threads, forks or their vm variants), so the tests would run in Node without their D1, cache and rate-limit bindings.
+
+## Consequences
+
+A test or comment of these kinds fails `just check` before review. The checks are heuristics: a test can assert something useless with `toBe`, and a comment can narrate without a listed phrase; review still catches those, and a phrase review keeps finding goes into the list. The mutation report is read by hand, about once a week.

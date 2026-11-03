@@ -112,6 +112,7 @@ The design is the late-night room ([ADR 0026](docs/adr/0026-visual-design-late-n
 - The units depend on each other in one direction only (see [ARCHITECTURE.md](ARCHITECTURE.md)). `just boundaries` fails otherwise.
 - New dependencies need a line in [docs/adr/0020-dependency-policy.md](docs/adr/0020-dependency-policy.md) and an exact version.
 - Record decisions in `docs/adr/` (copy the shape of an existing one).
+- Tests and comments follow [AGENTS.md](AGENTS.md); `just check-tests` and `just check-comments` enforce the mechanical part ([ADR 0039](docs/adr/0039-quality-checks.md)).
 
 ## CI checks
 
@@ -119,24 +120,24 @@ One workflow, `.github/workflows/ci.yml`, runs on every pull request and on `mai
 
 Each job runs `just` recipes, so you can run the same thing locally. Recipes that need a pinned tool (gitleaks, lychee, osv-scanner, actionlint, zizmor, shellcheck, shfmt) download it into `.tools/bin` on first use (Linux x86_64).
 
-| Job              | Locally                                                                 |
-| ---------------- | ----------------------------------------------------------------------- |
-| `format`         | `just fmt-check` (`just fmt` fixes it)                                  |
-| `secrets-source` | `just scan-secrets-source`                                              |
-| `checks`         | `just lint typecheck knip boundaries test-scripts`                      |
-| `contracts`      | `just contracts-schema-check test-contracts`                            |
-| `site-test`      | `just test-site`                                                        |
-| `site-build`     | `just site-build site-dist-check scan-site`                             |
-| `e2e`            | `just e2e` (builds first; `just e2e-install` once for Chromium)         |
-| `links`          | `just links` after a build (`just links-internal` skips external links) |
-| `signals-test`   | `just test-signals signals-build scan-signals`                          |
-| `osv`            | `just osv`                                                              |
-| `workflows`      | `just workflows-lint ci-test ci-policy`                                 |
-| `renovate`       | `just renovate-check`                                                   |
-| `shell`          | `just shell-lint`                                                       |
-| `budgets`        | `just budgets` after a build                                            |
-| `lighthouse`     | `just lighthouse` after a build (`--profile desktop` for one profile)   |
-| `codeql`         | CI only                                                                 |
+| Job              | Locally                                                                                      |
+| ---------------- | -------------------------------------------------------------------------------------------- |
+| `format`         | `just fmt-check` (`just fmt` fixes it)                                                       |
+| `secrets-source` | `just scan-secrets-source`                                                                   |
+| `checks`         | `just lint typecheck knip boundaries check-tests check-comments test-scripts test-producers` |
+| `contracts`      | `just contracts-schema-check test-contracts`                                                 |
+| `site-test`      | `just test-site`                                                                             |
+| `site-build`     | `just site-build site-dist-check scan-site`                                                  |
+| `e2e`            | `just e2e` (builds first; `just e2e-install` once for Chromium)                              |
+| `links`          | `just links` after a build (`just links-internal` skips external links)                      |
+| `signals-test`   | `just test-signals signals-build scan-signals`                                               |
+| `osv`            | `just osv`                                                                                   |
+| `workflows`      | `just workflows-lint ci-test ci-policy`                                                      |
+| `renovate`       | `just renovate-check`                                                                        |
+| `shell`          | `just shell-lint`                                                                            |
+| `budgets`        | `just budgets` after a build                                                                 |
+| `lighthouse`     | `just lighthouse` after a build (`--profile desktop` for one profile)                        |
+| `codeql`         | CI only                                                                                      |
 
 Lighthouse runs when a change can affect the built site; add the `lighthouse` label to a pull request to run it anyway. On pull requests from this repository it posts one comment with each page's numbers, base → head, and updates it on every run.
 
