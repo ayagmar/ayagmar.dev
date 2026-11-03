@@ -252,8 +252,9 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
     let step = 0;
     let state: State | undefined;
     if (saved?.describedDate === describedDate) {
+      // The stored step even when its state does not read, so the fresh start can replace it.
+      step = saved.step;
       state = readState(saved.state, describedDate);
-      if (state !== undefined) step = saved.step;
     }
 
     // The key goes in the POST form, out of the URL that Workers traces record.

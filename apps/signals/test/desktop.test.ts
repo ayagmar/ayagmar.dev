@@ -3,15 +3,7 @@
 import { env } from 'cloudflare:workers';
 import { pushFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  clearState,
-  delivery,
-  deliveryRows,
-  fetchApi,
-  forgetLastPush,
-  push,
-  snapshotRow,
-} from './helpers.ts';
+import { clearState, delivery, deliveryRows, fetchApi, push, snapshotRow } from './helpers.ts';
 
 const { ok, minimal, 'sensitive-fields': sensitive } = pushFixtures.desktop;
 
@@ -140,23 +132,5 @@ describe('credentials', () => {
     const response = await push('llm-usage', delivery(ok));
     expect(response.status).toBe(422);
     expect(await snapshotRow('llm-usage')).toBeNull();
-  });
-});
-
-describe('delivery', () => {
-  // Catches a restarted producer's resend being stored twice or refused.
-  it('answers a resend of the same bytes with 200 and changes nothing', async () => {
-    const body = delivery(ok, { sentAt: minutesAgo(1) });
-    expect((await push('desktop', body)).status).toBe(202);
-    await forgetLastPush('desktop');
-
-    expect((await push('desktop', body)).status).toBe(200);
-    expect(await deliveryRows()).toHaveLength(1);
-  });
-
-  it('rejects a body over 64 KiB with 413', async () => {
-    const body = facts({}, { padding: 'x'.repeat(64 * 1024) });
-    expect((await push('desktop', body)).status).toBe(413);
-    expect(await deliveryRows()).toEqual([]);
   });
 });

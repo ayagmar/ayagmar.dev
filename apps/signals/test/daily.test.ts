@@ -25,6 +25,7 @@ import {
   forgetLastPush,
   push,
   snapshotRow,
+  sourceHealth,
 } from './helpers.ts';
 
 const network = setupNetwork();
@@ -95,13 +96,6 @@ const rows = async (source = 'shipping-activity') =>
       .all<{ day: string; json: string; fetched_at: string }>()
   ).results;
 
-const health = async () =>
-  (
-    await fetchApi('/v1/health').then((r) =>
-      r.json<{ sources: { source: string; lastErrorCode: string | null }[] }>()
-    )
-  ).sources.find((s) => s.source === 'shipping-activity');
-
 const storedSnapshot = async () => {
   const row = await snapshotRow('shipping-activity');
   return {
@@ -167,7 +161,7 @@ describe('the activity pull', () => {
     // Nothing before `since` (2026-10-12) is stored: those days were not recorded.
     expect((await rows()).map((row) => row.day)[0]).toBe('2026-10-12');
     expect(await rows()).toHaveLength(15);
-    expect((await health())?.lastErrorCode).toBeNull();
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBeNull();
   });
 
   it('stores nothing, and succeeds, while repo-pulse has recorded nothing', async () => {
@@ -175,7 +169,7 @@ describe('the activity pull', () => {
     await pullAt(capturedAt);
 
     expect(await rows()).toEqual([]);
-    expect((await health())?.lastErrorCode).toBeNull();
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBeNull();
     expect((await days('shipping-activity', 'last=28')).body.data).toMatchObject({ days: [] });
   });
 
@@ -235,7 +229,7 @@ describe('the activity pull', () => {
     await pullAt(capturedAt + 2 * hour);
 
     expect({ rows: await rows(), snapshot: await storedSnapshot() }).toEqual(before);
-    expect((await health())?.lastErrorCode).toBe(code);
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBe(code);
   });
 
   // repo-pulse's visibility gate answers `complete: false` when cold and stays warm 60 seconds.
@@ -253,13 +247,13 @@ describe('the activity pull', () => {
 
     expect(calls).toBe(2);
     expect(await rows()).toHaveLength(15);
-    expect((await health())?.lastErrorCode).toBeNull();
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBeNull();
   });
 
   it('tries again two minutes after a second incomplete answer, not an hour', async () => {
     answer({ ...okAnswer, complete: false });
     await pullAt(capturedAt);
-    expect((await health())?.lastErrorCode).toBe('upstream_incomplete');
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBe('upstream_incomplete');
 
     network.resetHandlers();
     network.use(...upstreamHandlers());
@@ -290,7 +284,7 @@ describe('the activity pull', () => {
     await pullAt(capturedAt);
 
     expect(await rows()).toEqual([]);
-    expect((await health())?.lastErrorCode).toBe('upstream_malformed');
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBe('upstream_malformed');
   });
 
   // `since` is when repo-pulse began recording: an answer whose days contradict it is not
@@ -309,7 +303,7 @@ describe('the activity pull', () => {
     await pullAt(capturedAt + 2 * hour);
 
     expect({ rows: await rows(), snapshot: await storedSnapshot() }).toEqual(before);
-    expect((await health())?.lastErrorCode).toBe('upstream_malformed');
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBe('upstream_malformed');
   });
 
   it('refuses an answer dated more than 5 minutes ahead of its clock', async () => {
@@ -317,7 +311,7 @@ describe('the activity pull', () => {
     await pullAt(Date.parse('2026-10-26T08:49:00Z'));
 
     expect(await rows()).toEqual([]);
-    expect((await health())?.lastErrorCode).toBe('upstream_malformed');
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBe('upstream_malformed');
   });
 
   it('keeps the newer answer when an older one arrives after it', async () => {
@@ -334,7 +328,7 @@ describe('the activity pull', () => {
     await pullAt(Date.parse('2026-10-26T11:30:00Z'));
 
     expect({ rows: await rows(), snapshot: await storedSnapshot() }).toEqual(before);
-    expect((await health())?.lastErrorCode).toBeNull();
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBeNull();
   });
 
   // Two answers dated alike: the first stored wins whole, snapshot and days together.
@@ -461,7 +455,7 @@ describe('the activity pull', () => {
 
     expect(await rows()).toEqual([]);
     expect((await storedSnapshot()).json).toBeNull();
-    expect((await health())?.lastErrorCode).toBe('store_failed');
+    expect((await sourceHealth('shipping-activity'))?.lastErrorCode).toBe('store_failed');
 
     await pullAt(capturedAt + hour);
     expect(await rows()).toHaveLength(15);

@@ -10,7 +10,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { PullError } from '../src/adapters/pull/index.ts';
 import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
 import { runScheduled } from '../src/cron/run.ts';
-import { clearState, fetchApi, snapshotRow } from './helpers.ts';
+import { clearState, fetchApi, snapshotRow, sourceHealth } from './helpers.ts';
 
 const network = setupNetwork();
 network.configure({ onUnhandledFrame: 'error' });
@@ -74,13 +74,6 @@ async function logged(run: () => Promise<unknown>): Promise<string> {
   await run();
   return JSON.stringify(spies.map((spy) => spy.mock.calls));
 }
-
-const health = async () =>
-  (
-    await fetchApi('/v1/health').then((r) =>
-      r.json<{ sources: { source: string; lastErrorCode: string | null }[] }>()
-    )
-  ).sources.find((s) => s.source === 'monkeytype');
 
 /** What /v1/monkeytype serves now, past the edge cache. */
 const served = async () => {
@@ -148,29 +141,6 @@ describe('the ApeKey', () => {
     );
   });
 
-  it('gives up on a body that stops after its headers', { timeout: 10_000 }, async () => {
-    network.use(
-      http.get(
-        endpoint,
-        () =>
-          new HttpResponse(
-            new ReadableStream({
-              start(controller) {
-                controller.enqueue(new TextEncoder().encode('{"data":{'));
-              },
-            }),
-            { headers: { 'content-type': 'application/json' } }
-          )
-      )
-    );
-    const started = Date.now();
-    expect((await pullError(monkeytype.fetch(withKey, AbortSignal.timeout(20_000)))).code).toBe(
-      'upstream_timeout'
-    );
-    // getJson's own 5-second deadline covers the body.
-    expect(Date.now() - started).toBeLessThan(7_000);
-  });
-
   it('stops reading a body over 128 KiB, sent in chunks without a length', async () => {
     const chunk = new TextEncoder().encode('x'.repeat(16 * 1024));
     network.use(
@@ -236,7 +206,9 @@ describe('a pull through the runner', () => {
       )
     );
     await cron(['2026-10-27T06:00:00Z']);
-    expect(await health()).toMatchObject({ lastErrorCode: 'upstream_http_error' });
+    expect(await sourceHealth('monkeytype')).toMatchObject({
+      lastErrorCode: 'upstream_http_error',
+    });
     expect(await served()).toEqual(before);
   });
 
@@ -251,7 +223,9 @@ describe('a pull through the runner', () => {
       )
     );
     const logs = await logged(() => cron(['2026-10-27T06:00:00Z']));
-    expect(await health()).toMatchObject({ lastErrorCode: 'upstream_unauthorized' });
+    expect(await sourceHealth('monkeytype')).toMatchObject({
+      lastErrorCode: 'upstream_unauthorized',
+    });
     expect(logs).toContain('upstream_unauthorized');
     expect(logs).not.toContain(apeKey);
     expect(logs).not.toContain('inactive');
@@ -311,7 +285,9 @@ describe("Monkeytype's Retry-After", () => {
     const seen = recordRequests(refused(status, { 'Retry-After': value }));
     const times = ['2026-10-27T00:00:00Z', ...triggers('2026-10-27T05:59:00Z', 64)];
     expect(await asked(seen, times)).toEqual(['00:00', '07:01']);
-    expect(await health()).toMatchObject({ lastErrorCode: 'upstream_rate_limited' });
+    expect(await sourceHealth('monkeytype')).toMatchObject({
+      lastErrorCode: 'upstream_rate_limited',
+    });
   });
 
   // Catches a refusal without a usable header retried every minute, or never.

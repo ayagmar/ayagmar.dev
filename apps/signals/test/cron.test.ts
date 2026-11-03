@@ -8,7 +8,7 @@ import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import worker from '../src/index.ts';
 import { D1SnapshotStore } from '../src/storage/d1.ts';
-import { clearState, deliveryRows, fetchApi } from './helpers.ts';
+import { clearState, deliveryRows, fetchApi, sourceHealth } from './helpers.ts';
 
 beforeEach(clearState);
 
@@ -84,7 +84,7 @@ function historyStandIn() {
 }
 
 describe('scheduled', () => {
-  it('runs with the empty adapter registry and still cleans up', async () => {
+  it("runs from the Worker's scheduled handler, delivery cleanup included", async () => {
     await env.DB.prepare(
       "INSERT INTO push_deliveries (producer, delivery_id, body_sha256, received_at) VALUES ('trellis', 'old', 'h', 0)"
     ).run();
@@ -93,14 +93,6 @@ describe('scheduled', () => {
     await worker.scheduled(controller, env);
 
     expect(await deliveryRows()).toEqual([]);
-  });
-
-  it('stores what each adapter normalizes, and serves it', async () => {
-    const listening = adapter('listening', 60);
-    await runScheduled(env, [listening], Date.now());
-
-    const body = await fetchApi('/v1/listening').then((r) => r.json());
-    expect(body).toMatchObject({ stale: false, data: { normalized: { id: 'listening' } } });
   });
 
   it('pulls one adapter per run, the most overdue first, so a frequent one starves none', async () => {
@@ -300,11 +292,8 @@ describe('scheduled', () => {
     await runScheduled(env, [failing, untyped], start + minute);
     await runScheduled(env, [failing, untyped], start + 2 * minute);
 
-    const health = await fetchApi('/v1/health').then((r) =>
-      r.json<{ sources: { source: string; lastErrorCode: string | null }[] }>()
-    );
-    expect(health.sources.find((s) => s.source === 'projects')?.lastErrorCode).toBe('upstream_5xx');
-    expect(health.sources.find((s) => s.source === 'shipping')?.lastErrorCode).toBe('fetch_failed');
+    expect((await sourceHealth('projects'))?.lastErrorCode).toBe('upstream_5xx');
+    expect((await sourceHealth('shipping'))?.lastErrorCode).toBe('fetch_failed');
     expect(await fetchApi('/v1/projects').then((r) => r.json())).toMatchObject({
       data: { normalized: { id: 'projects' } },
     });

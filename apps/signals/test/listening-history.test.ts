@@ -20,7 +20,7 @@ import { runScheduled } from '../src/cron/run.ts';
 import { D1SnapshotStore } from '../src/storage/d1.ts';
 import { D1ProgressStore } from '../src/storage/progress.ts';
 import type { SourceStatus } from '../src/storage/types.ts';
-import { clearState, fetchApi } from './helpers.ts';
+import { clearState, fetchApi, sourceHealth } from './helpers.ts';
 
 const network = setupNetwork();
 network.configure({ onUnhandledFrame: 'error' });
@@ -167,14 +167,6 @@ describe('the shared fixtures', () => {
   });
 });
 
-/** A source's row as /v1/health and the scheduler see it. */
-const health = async () =>
-  (
-    await fetchApi('/v1/health').then((r) =>
-      r.json<{ sources: { source: string; lastErrorCode: string | null }[] }>()
-    )
-  ).sources.find((s) => s.source === 'listening-history');
-
 /** What /v1/listening-history serves now, past the edge cache. */
 const served = async () => {
   await caches.default.delete('https://api.ayagmar.dev/v1/listening-history');
@@ -207,7 +199,7 @@ async function pull(start: number, limit = 10) {
   for (let i = 0; i < limit; i++) {
     vi.setSystemTime(start + i * 60_000 + 1500);
     await runScheduled(withKey, [listeningHistory], start + i * 60_000);
-    const code = (await health())?.lastErrorCode;
+    const code = (await sourceHealth('listening-history'))?.lastErrorCode;
     codes.push(code);
     if (code !== 'in_progress') break;
   }
@@ -225,7 +217,7 @@ describe('a pull spread over cron invocations', () => {
     await runScheduled(withKey, [listeningHistory], captured);
     // Registration and the newest year; nothing published yet.
     expect(requests.map((r) => r.form.method)).toEqual(['user.getinfo', 'user.getrecenttracks']);
-    expect(await health()).toMatchObject({ lastErrorCode: 'in_progress' });
+    expect(await sourceHealth('listening-history')).toMatchObject({ lastErrorCode: 'in_progress' });
     expect((await served()).data).toBeNull();
 
     // Then one year each: 2024 and 2023, the date's own ranges, page 1 of 200, each once.
@@ -294,7 +286,9 @@ describe('a pull spread over cron invocations', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(at('2026-10-26T23:59:59.500Z'));
     await runScheduled(withKey, [listeningHistory], at('2026-10-26T23:59:00Z'));
-    expect(await health()).toMatchObject({ lastErrorCode: 'date_changed' });
+    expect(await sourceHealth('listening-history')).toMatchObject({
+      lastErrorCode: 'date_changed',
+    });
     expect((await served()).data).toBeNull();
   });
 
@@ -305,7 +299,9 @@ describe('a pull spread over cron invocations', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(at('2026-10-26T23:59:56Z'));
     await runScheduled(withKey, [listeningHistory], at('2026-10-26T23:59:00Z'));
-    expect(await health()).toMatchObject({ lastErrorCode: 'date_changed' });
+    expect(await sourceHealth('listening-history')).toMatchObject({
+      lastErrorCode: 'date_changed',
+    });
   });
 
   // Catches a snapshot for yesterday, written after midnight because D1 was slow, taken for
@@ -393,6 +389,17 @@ describe('a pull spread over cron invocations', () => {
     expect(JSON.parse(row?.json ?? '{}')).toMatchObject({ read: 1, years: [{ year: 2025 }] });
   });
 
+  // Catches progress for today that no longer reads (written by a Worker version whose schema
+  // differs) blocking every save until midnight, so the date never gets its history.
+  it("starts over from today's progress when it cannot be read", async () => {
+    await env.DB.prepare(
+      "INSERT INTO pull_progress (source, described_date, step, json) VALUES ('listening-history', '2026-10-26', 3, '{\"read\":99}')"
+    ).run();
+    network.use(...upstreamHandlers());
+    expect(await pull(captured)).toEqual(['in_progress', 'in_progress', null]);
+    expect((await served()).data).toEqual(snapshotFixtures['listening-history'].ok);
+  });
+
   it('never puts the key in a URL or a log line, on the error paths too', async () => {
     const requests = recordRequests(...upstreamHandlers({ lastfmHistory: 'error-in-200' }));
     const logs = [vi.spyOn(console, 'warn'), vi.spyOn(console, 'log'), vi.spyOn(console, 'error')];
@@ -403,7 +410,9 @@ describe('a pull spread over cron invocations', () => {
     expect(requests.length).toBeGreaterThan(1);
     for (const { url } of requests) expect(url).not.toContain(lastfmKey);
     expect(JSON.stringify(logs.map((spy) => spy.mock.calls))).not.toContain(lastfmKey);
-    expect(await health()).toMatchObject({ lastErrorCode: 'upstream_rate_limited' });
+    expect(await sourceHealth('listening-history')).toMatchObject({
+      lastErrorCode: 'upstream_rate_limited',
+    });
   });
 
   it('fails a registration Last.fm does not give, and keeps an earlier history', async () => {
@@ -413,7 +422,9 @@ describe('a pull spread over cron invocations', () => {
     network.use(...upstreamHandlers({ lastfmHistory: 'unknown-registration' }));
     // The refresh, seven hours after the last invocation of that pull.
     await pull(captured + 7 * 3600_000 + 3 * 60_000);
-    expect(await health()).toMatchObject({ lastErrorCode: 'upstream_malformed' });
+    expect(await sourceHealth('listening-history')).toMatchObject({
+      lastErrorCode: 'upstream_malformed',
+    });
     expect((await served()).data).toEqual(snapshotFixtures['listening-history'].ok);
   });
 });
@@ -447,7 +458,9 @@ describe("Last.fm's Retry-After", () => {
   ])('waits until the time it gives as %s', async (_form, value) => {
     const requests = recordRequests(refused({ 'Retry-After': value }));
     expect(await asked(requests, '2026-10-27T00:01:00Z', 62)).toEqual(['00:01', '01:02']);
-    expect(await health()).toMatchObject({ lastErrorCode: 'upstream_rate_limited' });
+    expect(await sourceHealth('listening-history')).toMatchObject({
+      lastErrorCode: 'upstream_rate_limited',
+    });
   });
 
   // Catches the new date's eagerness, or a restarted isolate, running before the deadline.
