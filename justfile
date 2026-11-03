@@ -37,7 +37,7 @@ dev: site-dev
 build: site-build signals-build
 
 # Everything CI checks before merging, except e2e
-check: fmt-check lint typecheck knip boundaries check-tests contracts-schema-check test
+check: fmt-check lint typecheck knip boundaries check-tests check-comments contracts-schema-check test
 
 # Format every file Biome covers
 fmt:
@@ -122,6 +122,10 @@ boundaries:
 # checks, .only, or a skip with no reason (ADR 0039)
 check-tests:
     node scripts/check-tests.ts
+
+# Fail on a comment that narrates the code or its history, or a TODO with no issue (ADR 0039)
+check-comments:
+    node scripts/check-comments.ts
 
 # Start a draft post, open it in $VISUAL/$EDITOR and the browser: just post "Title" [--no-open]
 [positional-arguments]
