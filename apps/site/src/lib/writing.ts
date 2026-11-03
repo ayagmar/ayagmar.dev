@@ -39,3 +39,16 @@ export const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 /** Whole minutes to read a post's Markdown at 220 words a minute, never under one. */
 export const readingMinutes = (markdown: string) =>
   Math.max(1, Math.round(markdown.split(/\s+/).filter(Boolean).length / 220));
+
+/**
+ * The parts of `post`'s series in date order, `post` among them, from `posts`, the posts this
+ * build shows (drafts only where drafts are built). Empty outside a series or in a series of one.
+ */
+export function seriesParts<P extends Post>(posts: readonly P[], post: P): P[] {
+  const { series } = post.data;
+  if (series === undefined) return [];
+  const parts = posts
+    .filter((part) => part.data.series === series)
+    .toSorted((a, b) => a.data.date.getTime() - b.data.date.getTime() || a.id.localeCompare(b.id));
+  return parts.length > 1 ? parts : [];
+}

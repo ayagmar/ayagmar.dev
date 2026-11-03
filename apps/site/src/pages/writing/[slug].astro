@@ -6,6 +6,7 @@ import Comments from '../../components/Comments.astro';
 import PostHeader from '../../components/PostHeader.astro';
 import ProjectCard from '../../components/ProjectCard.astro';
 import ReplyByEmail from '../../components/ReplyByEmail.astro';
+import SeriesLine from '../../components/SeriesLine.astro';
 import Toc from '../../components/Toc.astro';
 import Base from '../../layouts/Base.astro';
 import { renderArt } from '../../lib/art.ts';
@@ -15,7 +16,7 @@ import { postOgImage } from '../../lib/og.ts';
 import { getDays, getPosts, getProjects } from '../../lib/posts.ts';
 import { morePostsAbout } from '../../lib/projects.ts';
 import { blogPosting, breadcrumbs } from '../../lib/structured-data.ts';
-import { isoDay, postPath } from '../../lib/writing.ts';
+import { isoDay, postPath, seriesParts } from '../../lib/writing.ts';
 
 export const getStaticPaths = (async () => {
   const posts = await getPosts();
@@ -25,6 +26,7 @@ export const getStaticPaths = (async () => {
     params: { slug: post.id },
     props: {
       post,
+      series: seriesParts(posts, post),
       envelope,
       receipt:
         post.data.receipts === undefined
@@ -49,7 +51,7 @@ export const getStaticPaths = (async () => {
   }));
 }) satisfies GetStaticPaths;
 
-const { post, envelope, cards, receipt } = Astro.props;
+const { post, series, envelope, cards, receipt } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(post);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
 const { title, summary, art, date, updated, tags, draft } = post.data;
@@ -79,6 +81,7 @@ const structuredData = [
     <PostHeader post={post} receipt={receipt}>
       {art !== undefined && <Fragment slot="art" set:html={renderArt(post.id, art)} />}
     </PostHeader>
+    <SeriesLine current={post.id} parts={series} />
     <Toc headings={headings} />
     <div class="prose">
       <Content />

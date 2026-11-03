@@ -1157,6 +1157,30 @@ main:has(.toc) .reader ~ .project-card {
     calc(2 * var(--pixel)) calc(3 * var(--pixel)) / 100% var(--pixel) no-repeat;
 }
 
+/* A series: which part this is, then every part on one quiet line, the current one unlinked. */
+.series {
+  margin: -0.5rem 0 1.5rem;
+  color: var(--fg-2);
+  font-size: 0.9375rem;
+}
+
+.series p {
+  margin: 0;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.series ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+
+.series [aria-current] {
+  color: var(--fg);
+}
+
 .post-projects {
   display: flex;
   flex-wrap: wrap;
@@ -1546,6 +1570,12 @@ main:has(.toc) .reader ~ .project-card {
     align-self: start;
     border: 0;
     background: none;
+  }
+
+  /* The series line takes the row under the header. Spanning only two rows, a contents list
+     taller than the header and the line would stretch them and push the text down. */
+  .reader:has(.series) .toc {
+    grid-row: 1 / span 3;
   }
 }
 
