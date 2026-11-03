@@ -55,6 +55,17 @@ describe('plan', () => {
     ]);
   });
 
+  // Catches the Renovate pin landing back in a toolchain file (every job on each self-bump) or
+  // in no group (the config never validated with the new Renovate).
+  it('runs only the tool checks for a Renovate self-bump', () => {
+    assert.deepEqual(runs(['.renovate-version']), [
+      'format',
+      'renovate',
+      'secrets-source',
+      'workflows',
+    ]);
+  });
+
   it('ignores labels other than lighthouse', () => {
     assert.deepEqual(runs(['README.md'], ['Lighthouse', 'perf']), ['format', 'secrets-source']);
   });

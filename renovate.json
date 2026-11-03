@@ -17,13 +17,21 @@
   },
   "customManagers": [
     {
-      "description": "CI tool pins in scripts/bootstrap.sh and the Renovate pin in the justfile. The sha256 next to a bootstrap pin is not updated: CI fails on the mismatch until it is.",
+      "description": "CI tool pins in scripts/bootstrap.sh. The sha256 next to a pin is not updated: CI fails on the mismatch until it is.",
       "customType": "regex",
-      "managerFilePatterns": ["/^scripts/bootstrap\\.sh$/", "/^justfile$/"],
+      "managerFilePatterns": ["/^scripts/bootstrap\\.sh$/"],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( extractVersion=(?<extractVersion>\\S+))?\\n[^\\n]*?=\\s*\"(?<currentValue>[^\"]+)\""
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
+    },
+    {
+      "description": "The Renovate that `just renovate-check` validates this file with: one version in .renovate-version, its own file so a bump plans only the tool checks (ADR 0018).",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.renovate-version$/"],
+      "matchStrings": ["^(?<currentValue>\\S+)\\s*$"],
+      "datasourceTemplate": "npm",
+      "depNameTemplate": "renovate"
     }
   ],
   "packageRules": [
