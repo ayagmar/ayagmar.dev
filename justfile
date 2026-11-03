@@ -37,7 +37,7 @@ dev: site-dev
 build: site-build signals-build
 
 # Everything CI checks before merging, except e2e
-check: fmt-check lint typecheck knip boundaries contracts-schema-check test
+check: fmt-check lint typecheck knip boundaries check-tests check-comments contracts-schema-check test
 
 # Format every file Biome covers
 fmt:
@@ -117,6 +117,24 @@ knip:
 # Fail if a unit depends on one it must not (see ARCHITECTURE.md)
 boundaries:
     node scripts/check-boundaries.ts
+
+# Fail on a test that cannot fail or hides others: no assertion, only mock calls or presence
+# checks, .only, or a skip with no reason (ADR 0039)
+check-tests:
+    node scripts/check-tests.ts
+
+# Fail on a comment that narrates the code or its history, or a TODO with no issue (ADR 0039)
+check-comments:
+    node scripts/check-comments.ts
+
+# Mutation testing of contracts and the site's src/lib, report only (ADR 0039). Takes minutes
+# and rewrites apps/site/src until it ends, so it needs that directory clean; reports in
+# <package>/reports/mutation/mutation.html
+mutate:
+    test -z "$(git status --porcelain -- apps/site/src)" || { echo "commit or stash apps/site/src first: the site run rewrites it in place (ADR 0039)" >&2; exit 1; }
+    nice -n 10 {{ contracts }} stryker run
+    nice -n 10 {{ site }} stryker run
+    test -z "$(git status --porcelain -- apps/site/src)" || { echo "apps/site/src was left mutated: git checkout -- apps/site/src" >&2; exit 1; }
 
 # Start a draft post, open it in $VISUAL/$EDITOR and the browser: just post "Title" [--no-open]
 [positional-arguments]

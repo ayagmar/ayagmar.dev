@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "pool": "forks" },
+  "mutate": ["src/lib/**/*.ts"],
+  "coverageAnalysis": "perTest",
+  "ignoreStatic": true,
+  "reporters": ["clear-text", "html", "json"],
+  "concurrency": 2,
+  "inPlace": true,
+  "cleanTempDir": "always"
+}

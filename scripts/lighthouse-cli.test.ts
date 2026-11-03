@@ -361,7 +361,8 @@ it('runs a crashed lhci collect once more, and fails with its error when it cras
 
 it('serves on free ports, so ports another run or a leftover server holds do not matter', async () => {
   site('head', pages, true);
-  // The ports the script used to take; if one is held already, that is the same situation.
+  // Hold the two ports after site-serve's 8790, where fixed ports would land; if another
+  // process holds one already, the test is the same.
   const held = await Promise.all(
     [8791, 8792].map(
       (port) =>
@@ -375,14 +376,16 @@ it('serves on free ports, so ports another run or a leftover server holds do not
   );
   try {
     // Asynchronous, so the servers holding the ports keep answering while the script runs.
-    await promisify(execFile)(
-      process.execPath,
-      [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
-      {
-        cwd: dir,
-        timeout: 60_000,
-        env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/nonexistent' },
-      }
+    await assert.doesNotReject(
+      promisify(execFile)(
+        process.execPath,
+        [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
+        {
+          cwd: dir,
+          timeout: 60_000,
+          env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/nonexistent' },
+        }
+      )
     );
   } finally {
     for (const server of held) server.close();
