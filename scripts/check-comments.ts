@@ -72,17 +72,17 @@ function componentComments(text: string): Comment[] {
   if (frontmatter) {
     comments.push(...scriptComments(frontmatter[2] ?? '', frontmatter[1]?.length ?? 0));
   }
-  for (const match of text.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script>/g)) {
+  for (const match of text.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script\s*>/gi)) {
     comments.push(...scriptComments(match[2] ?? '', match.index + (match[1]?.length ?? 0)));
   }
-  for (const match of text.matchAll(/(<style\b[^>]*>)([\s\S]*?)<\/style>/g)) {
+  for (const match of text.matchAll(/(<style\b[^>]*>)([\s\S]*?)<\/style\s*>/gi)) {
     const offset = match.index + (match[1]?.length ?? 0);
     comments.push(...blockComments(match[2] ?? '', /\/\*[\s\S]*?\*\//g, offset));
   }
-  const markup = text.replace(/<(script|style)\b[\s\S]*?<\/\1>/g, (block) =>
+  const markup = text.replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, (block) =>
     ' '.repeat(block.length)
   );
-  comments.push(...blockComments(markup, /<!--[\s\S]*?-->/g));
+  comments.push(...blockComments(markup, /<!--[\s\S]*?--!?>/g));
   return comments;
 }
 
@@ -98,7 +98,7 @@ export function checkCommentSource(fileName: string, text: string): Finding[] {
     // Comment markers as spaces, so a sentence's start is the comment's and positions hold.
     const words = comment.text
       .replace(/^(\s*)(?:\/\/+|\/\*+|\*+(?!\/)|<!--)/gm, (marker) => ' '.repeat(marker.length))
-      .replace(/\*\/|-->/g, (marker) => ' '.repeat(marker.length));
+      .replace(/\*\/|--!?>/g, (marker) => ' '.repeat(marker.length));
     for (const [phrase, message] of phrases) {
       const match = phrase.exec(words);
       if (match) {
