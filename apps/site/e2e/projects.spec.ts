@@ -89,23 +89,25 @@ test('search results name the project a post is about', { tag: '@drafts' }, asyn
 // them must wrap instead of pushing the page sideways on a phone. Post titles too: on home, one
 // long word in a grid track widens every panel. On the drafts build, so home lists posts.
 for (const path of ['/', '/projects/pi-mobile', '/projects', '/writing/token-logs']) {
-  for (const width of [320, 360, 390]) {
-    test(`${path} wraps long metadata at ${width}px`, { tag: '@drafts' }, async ({ page }) => {
+  test(`${path} wraps long metadata at 320, 360 and 390px`, { tag: '@drafts' }, async ({
+    page,
+  }) => {
+    await page.goto(path);
+    const filled = await page
+      .locator(
+        '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a, .home-projects a, .home-projects p, .posts a'
+      )
+      .evaluateAll((elements) => {
+        for (const element of elements) element.textContent = 'A'.repeat(80);
+        return elements.length;
+      });
+    expect(filled).toBeGreaterThan(2);
+    for (const width of [320, 360, 390]) {
       await page.setViewportSize({ width, height: 800 });
-      await page.goto(path);
-      const filled = await page
-        .locator(
-          '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a, .home-projects a, .home-projects p, .posts a'
-        )
-        .evaluateAll((elements) => {
-          for (const element of elements) element.textContent = 'A'.repeat(80);
-          return elements.length;
-        });
-      expect(filled).toBeGreaterThan(2);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth
       );
-      expect(overflow).toBeLessThanOrEqual(0);
-    });
-  }
+      expect(overflow, `${width}px`).toBeLessThanOrEqual(0);
+    }
+  });
 }
