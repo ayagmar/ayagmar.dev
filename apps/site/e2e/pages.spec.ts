@@ -59,3 +59,26 @@ test('the colophon shows the commit the site was built from', async ({ page }) =
   await page.goto('/colophon');
   await expect(page.getByText(/This build:/)).toContainText(/[0-9a-f]{12}|dev/);
 });
+
+// Catches the console hello showing on Previews and in tests, missing or doubled on production,
+// or pointing somewhere other than the colophon and the source.
+test('the console says hello once, on production only', async ({ page, baseURL }) => {
+  const logged: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'log') logged.push(message.text());
+  });
+  await page.goto('/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  expect(logged).toEqual([]);
+
+  // The same build, served as production: the Worker's answers under ayagmar.dev.
+  await page.route('https://ayagmar.dev/**', async (route) => {
+    const { pathname } = new URL(route.request().url());
+    await route.fulfill({ response: await page.request.fetch(new URL(pathname, baseURL).href) });
+  });
+  await page.goto('https://ayagmar.dev/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  expect(logged).toHaveLength(1);
+  expect(logged[0]).toContain('https://ayagmar.dev/colophon');
+  expect(logged[0]).toContain('https://github.com/ayagmar/ayagmar.dev');
+});

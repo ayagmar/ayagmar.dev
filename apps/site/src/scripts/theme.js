@@ -81,6 +81,16 @@
     true
   );
 
+  // A hello for whoever opens the console, once per page and on production only: Previews are on
+  // workers.dev and tests on 127.0.0.1.
+  if (location.hostname === 'ayagmar.dev') {
+    console.log(
+      '%cHello, console reader.',
+      'color: #d98a2b; font-weight: 600',
+      'How min7 is built: https://ayagmar.dev/colophon. The source: https://github.com/ayagmar/ayagmar.dev'
+    );
+  }
+
   document.addEventListener('keydown', (event) => {
     const target = event.target;
     if (
