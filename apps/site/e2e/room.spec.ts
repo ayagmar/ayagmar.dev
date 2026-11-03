@@ -134,10 +134,10 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
 });
 
 // The three placeholder drafts carry the three kinds of art (ADR 0027): ascii, dither, pattern.
-// Their pages, and home listing them, are checked on the drafts build.
+// Their pages, and home listing them, are checked on the drafts build; the ascii one,
+// /writing/token-logs, in reader.spec.ts.
 for (const [path, details] of [
   ['/', { tag: '@drafts' }],
-  ['/writing/token-logs', { tag: '@drafts' }],
   ['/writing/ephemeral-runners', { tag: '@drafts' }],
   ['/writing/cache-reads', { tag: '@drafts' }],
   ['/about', {}],
