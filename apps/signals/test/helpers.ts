@@ -6,6 +6,14 @@ const origin = 'https://api.ayagmar.dev';
 export const fetchApi = (path: string, init?: RequestInit) =>
   exports.default.fetch(new Request(`${origin}${path}`, init));
 
+/** A source's row as /v1/health and the scheduler see it. */
+export const sourceHealth = async (source: string) =>
+  (
+    await fetchApi('/v1/health').then((r) =>
+      r.json<{ sources: { source: string; lastErrorCode: string | null }[] }>()
+    )
+  ).sources.find((s) => s.source === source);
+
 const encoder = new TextEncoder();
 const hex = (buffer: ArrayBuffer) =>
   Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, '0')).join('');
