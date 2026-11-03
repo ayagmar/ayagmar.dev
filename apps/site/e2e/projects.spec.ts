@@ -95,7 +95,7 @@ for (const path of ['/', '/projects/pi-mobile', '/projects', '/writing/token-log
     await page.goto(path);
     const filled = await page
       .locator(
-        '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a, .home-projects a, .home-projects p, .posts a'
+        '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a:not(.heading-link), .home-projects a, .home-projects p, .posts a'
       )
       .evaluateAll((elements) => {
         for (const element of elements) element.textContent = 'A'.repeat(80);

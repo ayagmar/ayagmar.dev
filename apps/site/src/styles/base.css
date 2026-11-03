@@ -1206,6 +1206,29 @@ main:has(.toc) .reader ~ .project-card {
   scroll-margin-top: 1rem;
 }
 
+/* A section's `#` link (src/lib/markdown/heading-links.ts) shows while its heading is hovered or
+   the link has focus. The `#` is drawn here so the heading's text stays the same; its empty
+   alternative text keeps it out of what screen readers say for the link's own name. */
+.heading-link {
+  display: inline-block;
+  min-width: 24px;
+  margin-inline-start: 0.2em;
+  color: var(--accent);
+  text-align: center;
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.heading-link::before {
+  content: "#" / "";
+}
+
+:is(h2, h3):hover > .heading-link,
+.heading-link:focus-visible {
+  opacity: 1;
+}
+
 .prose li + li {
   margin-top: 0.3em;
 }
