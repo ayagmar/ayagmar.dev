@@ -1289,9 +1289,10 @@ main:has(.toc) .reader ~ .project-card {
   }
 }
 
-/* On touch it always shows, so it gets a band of its own above the first line. */
+/* On touch it always shows, so it gets a band of its own above the first line. `.prose` so the
+   band outranks `.prose pre`'s padding from 40rem. */
 @media (hover: none) {
-  .code-block pre {
+  .prose .code-block pre {
     padding-block-start: 2.75rem;
   }
 }
