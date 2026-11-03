@@ -1,0 +1,32 @@
+---
+import { postPath } from '../lib/writing.ts';
+
+interface Props {
+  /** The id of the post the line is on. */
+  current: string;
+  /** Every part in date order (`seriesParts`); none draws nothing. */
+  parts: readonly { id: string; data: { title: string } }[];
+}
+
+const { current, parts } = Astro.props;
+const index = parts.findIndex((part) => part.id === current);
+---
+
+{parts.length > 0 && (
+  <nav class="series" aria-label="Series" data-pagefind-ignore>
+    <p>
+      Part {index + 1} of {parts.length}
+    </p>
+    <ol>
+      {parts.map((part) => (
+        <li>
+          {part.id === current ? (
+            <span aria-current="page">{part.data.title}</span>
+          ) : (
+            <a href={postPath(part.id)}>{part.data.title}</a>
+          )}
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}

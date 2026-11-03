@@ -9,20 +9,22 @@
 
 Frontmatter:
 
-| Field      | Required | Rule                                                                 |
-| ---------- | -------- | -------------------------------------------------------------------- |
-| `title`    | yes      | Non-empty.                                                           |
-| `date`     | yes      | `YYYY-MM-DD`, the publish date.                                      |
-| `updated`  | no       | `YYYY-MM-DD`, not before `date`. Shown as "last updated".            |
-| `summary`  | yes      | One sentence. Used in lists, feeds and search.                       |
-| `tags`     | no       | Lowercase slugs like `rust` or `home-lab`, no repeats.               |
-| `series`   | no       | A lowercase slug shared by the posts of a series.                    |
-| `draft`    | no       | `true` keeps the post out of production builds. Defaults to `false`. |
-| `projects` | no       | Slugs of the featured projects the post is about, like `[runnerd]`.  |
-| `art`      | no       | Art above the title; see below. Posts without it get none.           |
-| `receipts` | no       | The days the post's receipt line counts; see below.                  |
+| Field      | Required | Rule                                                                              |
+| ---------- | -------- | --------------------------------------------------------------------------------- |
+| `title`    | yes      | Non-empty.                                                                        |
+| `date`     | yes      | `YYYY-MM-DD`, the publish date.                                                   |
+| `updated`  | no       | `YYYY-MM-DD`, not before `date`. Shown as "last updated".                         |
+| `summary`  | yes      | One sentence. Used in lists, feeds and search.                                    |
+| `tags`     | no       | Lowercase slugs like `rust` or `home-lab`, no repeats.                            |
+| `series`   | no       | A slug a series' posts share; each then shows "Part 2 of 3" and links the others. |
+| `draft`    | no       | `true` keeps the post out of production builds. Defaults to `false`.              |
+| `projects` | no       | Slugs of the featured projects the post is about, like `[runnerd]`.               |
+| `art`      | no       | Art above the title; see below. Posts without it get none.                        |
+| `receipts` | no       | The days the post's receipt line counts; see below.                               |
 
 Any other field fails the build, so a typo such as `sumary:` does not pass silently. The error names the file and the field.
+
+A series counts the posts the build shows: published ones in production, drafts too in Previews. A series with one part shown has no line.
 
 `art` draws a small picture above the title at build time, in the room's colours ([ADR 0027](docs/adr/0027-room-details-and-per-post-art.md)):
 
