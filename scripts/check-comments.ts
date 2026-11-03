@@ -20,14 +20,13 @@ const phrases: readonly [RegExp, string][] = [
   [opening('next,'), 'narrates steps ("next,")'],
   [/\bhere we\b/i, 'narrates steps ("here we")'],
   [opening('this function\\b'), 'restates the code ("this function")'],
-  [/\bpreviously\b/i, 'describes history ("previously")'],
-  // The habitual past only; the passive ("is used to build") passes.
-  [
-    /(?<!\b(?:is|are|be|been|being|was|were|gets?|got)\s+)\bused to\b/i,
-    'describes history ("used to")',
-  ],
+  // History, not behaviour: "Previously, …" but not "the previously stored reading".
+  [opening('previously\\b'), 'describes history ("previously")'],
+  // Only the habitual past, not a reduced relative clause like "the key used to sign a push".
+  [/\bused to be\b|\b(?:we|it|this|that|they|which)\s+used to\b/i, 'describes history ("used to")'],
   [opening('new:'), 'describes history ("new:")'],
-  [/\bupdated to\b/i, 'describes history ("updated to")'],
+  // "Updated to v2", not "the row is updated to the latest reading".
+  [opening('updated to\\b'), 'describes history ("updated to")'],
   [/\bsimply\b/i, 'filler ("simply")'],
   [/\bbasically\b/i, 'filler ("basically")'],
   [opening('note that\\b'), 'filler ("note that")'],
@@ -65,7 +64,7 @@ const blockComments = (text: string, pattern: RegExp, offset = 0): Comment[] =>
   [...text.matchAll(pattern)].map((match) => ({ pos: offset + match.index, text: match[0] }));
 
 // .astro and .svelte: the frontmatter and scripts as TypeScript, styles as CSS, the markup's
-// HTML comments.
+// HTML comments and Astro's `{/* … */}` comments, which Astro does not send to the browser.
 function componentComments(text: string): Comment[] {
   const comments: Comment[] = [];
   const frontmatter = /^(\s*---\r?\n)([\s\S]*?)\r?\n---/.exec(text);
@@ -79,10 +78,12 @@ function componentComments(text: string): Comment[] {
     const offset = match.index + (match[1]?.length ?? 0);
     comments.push(...blockComments(match[2] ?? '', /\/\*[\s\S]*?\*\//g, offset));
   }
-  const markup = text.replace(/<(script|style)\b[\s\S]*?<\/\1\b[^>]*>/gi, (block) =>
-    ' '.repeat(block.length)
-  );
+  const blank = (block: string) => block.replace(/[^\n]/g, ' ');
+  const markup = text
+    .replace(/^\s*---\r?\n[\s\S]*?\r?\n---/, blank)
+    .replace(/<(script|style)\b[\s\S]*?<\/\1\b[^>]*>/gi, blank);
   comments.push(...blockComments(markup, /<!--[\s\S]*?--!?>/g));
+  comments.push(...blockComments(markup, /(?<=\{\s*)\/\*[\s\S]*?\*\/(?=\s*\})/g));
   return comments;
 }
 
@@ -117,7 +118,11 @@ export function checkCommentSource(fileName: string, text: string): Finding[] {
 }
 
 export function checkComments(root: string): string[] {
-  const files = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
+  const files = execFileSync(
+    'git',
+    ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+    { cwd: root, encoding: 'utf8' }
+  )
     .split('\0')
     .filter((file) => source.test(file));
   return files.flatMap((file) =>

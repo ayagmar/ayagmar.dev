@@ -28,7 +28,8 @@ This machine is shared: prefix heavy commands with `nice` and run one at a time.
   with the shared fixtures and MSW at the network boundary (ADR 0016).
 - Assert the exact value when it is knowable. `just check-tests` fails a test with no
   assertion, one that asserts only that a mock was called or only `toBeDefined()`,
-  `toBeTruthy()` or `not.toBeNull()`, any `.only`, and a skip with no reason or condition.
+  `toBeTruthy()`, `not.toBeNull()` or `assert.ok(value)`, any `.only`, and a skip with no
+  reason or condition.
 - `// check-tests: allow <reason>` on the line or the line above silences one finding. Prefer
   fixing the test.
 - Never touch real host state: temporary directories, a temporary `HOME`, no real network.
