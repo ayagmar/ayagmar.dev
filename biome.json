@@ -27,12 +27,31 @@
     {
       "includes": ["apps/site/src/styles/**"],
       "linter": { "rules": { "style": { "noDescendingSpecificity": "off" } } }
+    },
+    {
+      "includes": ["scripts/budgets.ts", "scripts/check-boundaries.ts", "scripts/lighthouse.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": { "maxAllowedComplexity": 100 }
+            }
+          }
+        }
+      }
     }
   ],
   "linter": {
     "enabled": true,
     "rules": {
       "preset": "recommended",
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": { "maxAllowedComplexity": 40 }
+        }
+      },
       "correctness": {
         "noUnusedImports": "error",
         "noUnusedVariables": "error"
@@ -41,7 +60,8 @@
         "useBlockStatements": "off"
       },
       "suspicious": {
-        "noConsole": { "level": "error", "options": { "allow": ["error", "warn", "log"] } }
+        "noConsole": { "level": "error", "options": { "allow": ["error", "warn", "log"] } },
+        "noFocusedTests": "error"
       }
     }
   }
