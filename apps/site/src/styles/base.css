@@ -561,7 +561,8 @@ h1 + .caption,
 }
 
 @media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
-  .site-tools kbd {
+  :root:not([data-shortcuts]) .site-tools kbd[data-single],
+  [data-shortcuts] .site-tools kbd[data-modified] {
     display: inline;
   }
 }
