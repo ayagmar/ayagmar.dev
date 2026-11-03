@@ -83,3 +83,33 @@ for (const width of [360, 1280]) {
     await expectNoAxeViolations(page);
   });
 }
+
+test.describe('the copy button on a code block', () => {
+  // Catches the button copying its own label or the wrong block, a diagram getting a button,
+  // and a copy that screen readers never hear about.
+  test('copies the code and says so', { tag: '@drafts' }, async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.goto(post);
+    const copy = page.locator('.prose').getByRole('button', { name: 'Copy' });
+    await expect(copy).toHaveCount(await page.locator('.prose pre').count());
+    await expect(page.locator('.prose .diagram button')).toHaveCount(0);
+
+    await page.locator('.prose pre').first().focus();
+    await page.keyboard.press('Tab');
+    await expect(copy.first()).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.prose').getByRole('status').first()).toHaveText('Copied');
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    expect(copied).toBe('llm-usage --json --since 2026-10-01\n');
+  });
+
+  // Catches a button that does nothing where the Clipboard API is missing (plain http).
+  test('is not there without the Clipboard API', { tag: '@drafts' }, async ({ page }) => {
+    await page.addInitScript(() =>
+      Object.defineProperty(Navigator.prototype, 'clipboard', { value: undefined })
+    );
+    await page.goto(post);
+    await expect(page.locator('.prose pre').first()).toBeVisible();
+    await expect(page.locator('.prose').getByRole('button', { name: 'Copy' })).toHaveCount(0);
+  });
+});

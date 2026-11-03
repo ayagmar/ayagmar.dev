@@ -41,9 +41,10 @@ test('diagrams add no script, no inline style and are fully styled by /diagrams.
           .locator('script:not([type="application/ld+json"])')
           .evaluateAll((all) => all.map((s) => s.outerHTML).sort())
       );
-  // Same scripts as a page without diagrams: Astro's search island and the click handler of the
-  // comments window (ADR 0036) a post carries and /about does not.
-  const comments = /Comments\.astro_astro_type_script/;
+  // Same scripts as a page without diagrams: Astro's search island, plus the click handlers of the
+  // comments window (ADR 0036) and the code blocks' copy buttons, which a post carries and /about
+  // does not.
+  const comments = /(Comments|CodeCopy)\.astro_astro_type_script/;
   const withoutComments = async (path: string) =>
     (await scripts(path)).filter((script) => !comments.test(script));
   expect(await withoutComments(post)).toEqual(await scripts('/about'));

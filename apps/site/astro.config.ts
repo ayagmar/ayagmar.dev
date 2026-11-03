@@ -2,6 +2,7 @@ import { satteri } from '@astrojs/markdown-satteri';
 import sitemap from '@astrojs/sitemap';
 import svelte from '@astrojs/svelte';
 import { defineConfig, envField } from 'astro/config';
+import { codeCopy } from './src/lib/markdown/code-copy.ts';
 import { diagrams } from './src/lib/markdown/diagrams.ts';
 import { scopeIds } from './src/lib/markdown/scope-ids.ts';
 import { scrollable } from './src/lib/markdown/scrollable.ts';
@@ -21,10 +22,11 @@ export default defineConfig({
   // Shiki writes style="" attributes, which the CSP forbids. A highlighter that emits
   // classes can be added with the visual design.
   // ```mermaid fences become inline SVG at build time (ADR 0024); then the code blocks and tables
-  // left get tabindex so their sideways scroll works from the keyboard.
+  // left get tabindex so their sideways scroll works from the keyboard, and code blocks a copy
+  // button.
   markdown: {
     syntaxHighlight: false,
-    processor: satteri({ hastPlugins: [scopeIds, diagrams, scrollable] }),
+    processor: satteri({ hastPlugins: [scopeIds, diagrams, scrollable, codeCopy] }),
   },
   // sitemapFromPages edits what sitemap() wrote, so it comes after it.
   integrations: [svelte(), sitemap(), sitemapFromPages()],

@@ -2,6 +2,7 @@
 import { notePath } from '../lib/til.ts';
 import type { TilFrontmatter } from '../lib/til-schema.ts';
 import { isoDay } from '../lib/writing.ts';
+import CodeCopy from './CodeCopy.astro';
 
 interface Props {
   id: string;
@@ -32,4 +33,5 @@ const { title, date, tags, draft } = data;
   <div class="prose">
     <slot />
   </div>
+  <CodeCopy />
 </article>

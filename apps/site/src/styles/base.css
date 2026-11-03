@@ -1228,6 +1228,51 @@ main:has(.toc) .reader ~ .project-card {
   border-block: 2px solid var(--line);
 }
 
+/* The copy button (src/lib/markdown/code-copy.ts) sits in the block's corner in the code's own
+   colours, in both themes. Placed absolutely, so the script showing it moves nothing (CLS). With
+   a mouse it shows while the block is hovered or anything in it has focus. */
+.code-block {
+  position: relative;
+  margin: 0 0 1em;
+}
+
+.code-block pre {
+  margin: 0;
+}
+
+.code-block button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  border-color: color-mix(in srgb, var(--code-fg) 35%, transparent);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-size: 0.8125rem;
+  transition: opacity 120ms ease-out;
+}
+
+.code-block button[hidden] {
+  display: none;
+}
+
+.code-block button:hover,
+.code-block button:focus-visible {
+  border-color: var(--code-fg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .code-block:not(:hover, :focus-within) button {
+    opacity: 0;
+  }
+}
+
+/* On touch it always shows, so it gets a band of its own above the first line. */
+@media (hover: none) {
+  .code-block pre {
+    padding-block-start: 2.75rem;
+  }
+}
+
 /* The quote's bar is a column of pixels, not a rule. */
 .prose blockquote {
   position: relative;
