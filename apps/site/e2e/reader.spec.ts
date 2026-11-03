@@ -113,3 +113,23 @@ test.describe('the copy button on a code block', () => {
     await expect(page.locator('.prose').getByRole('button', { name: 'Copy' })).toHaveCount(0);
   });
 });
+
+// Catches a section's `#` link pointing at an id the page lacks, the `#` leaking into the
+// heading's text (and so the table of contents), and a link the keyboard reaches but cannot see.
+test('each section heading links to itself', { tag: '@drafts' }, async ({ page }) => {
+  await page.goto(post);
+  const headings = page.locator('.prose :is(h2, h3):not(.sr-only)');
+  expect(await headings.count()).toBeGreaterThan(0);
+  for (const heading of await headings.all()) {
+    const id = await heading.getAttribute('id');
+    const link = heading.getByRole('link', { name: 'Link to this section' });
+    await expect(link).toHaveAttribute('href', `#${id}`);
+    expect(await heading.textContent()).not.toContain('#');
+  }
+  const first = headings.first().getByRole('link');
+  await expect(first).toHaveCSS('opacity', '0');
+  await first.focus();
+  await expect(first).toHaveCSS('opacity', '1');
+  await page.keyboard.press('Enter');
+  expect(new URL(page.url()).hash).toBe(`#${await headings.first().getAttribute('id')}`);
+});

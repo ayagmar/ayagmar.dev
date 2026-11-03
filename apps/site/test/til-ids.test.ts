@@ -1,6 +1,7 @@
 // Builds two notes the way /til stacks them and checks every reference resolves inside its own
 // note. Catches a heading or footnote id repeated across notes, which sends a `#fragment` link
-// (a section link, a footnote mark, its backlink) into another note (ADR 0028).
+// (a section link, a heading's own `#` link, a footnote mark, its backlink) into another note
+// (ADR 0028).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it } from 'vitest';
@@ -21,11 +22,12 @@ beforeEach(() => {
     `import { satteri } from '@astrojs/markdown-satteri';
 import { defineConfig } from 'astro/config';
 import { diagrams } from './src/lib/markdown/diagrams.ts';
+import { headingLinks } from './src/lib/markdown/heading-links.ts';
 import { scopeIds } from './src/lib/markdown/scope-ids.ts';
 export default defineConfig({
   cacheDir: './cache',
   build: { format: 'file' },
-  markdown: { syntaxHighlight: false, processor: satteri({ hastPlugins: [scopeIds, diagrams] }) },
+  markdown: { syntaxHighlight: false, processor: satteri({ hastPlugins: [scopeIds, headingLinks, diagrams] }) },
 });
 `
   );
@@ -70,8 +72,9 @@ it('keeps ids, fragment links and aria references inside their own note', () => 
       ...(article ?? '').matchAll(/href="#([^"]+)"/g),
       ...(article ?? '').matchAll(/aria-describedby="([^"]+)"/g),
     ].map(([, id]) => id ?? '');
-    // The section link, the footnote mark, its backlink and the mark's description.
-    expect(wanted.length, name).toBeGreaterThanOrEqual(4);
+    // The section link, the heading's `#` link, the footnote mark, its backlink and the mark's
+    // description.
+    expect(wanted.length, name).toBeGreaterThanOrEqual(5);
     for (const id of wanted) expect(own.has(id), `${name}: #${id}`).toBe(true);
     expect(article).toContain(`This footnote belongs to ${name === 'first' ? 'First' : 'Second'}.`);
   }
