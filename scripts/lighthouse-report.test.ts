@@ -263,7 +263,7 @@ describe('validate and render', () => {
         },
       }))
     );
-    validate(JSON.stringify({ version: 2, runs: 9, results }));
+    assert.doesNotThrow(() => validate(JSON.stringify({ version: 2, runs: 9, results })));
   });
 
   it('knows exactly the pages and metrics budgets.json measures', () => {

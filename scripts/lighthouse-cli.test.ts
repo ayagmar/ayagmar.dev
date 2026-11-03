@@ -375,14 +375,16 @@ it('serves on free ports, so ports another run or a leftover server holds do not
   );
   try {
     // Asynchronous, so the servers holding the ports keep answering while the script runs.
-    await promisify(execFile)(
-      process.execPath,
-      [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
-      {
-        cwd: dir,
-        timeout: 60_000,
-        env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/nonexistent' },
-      }
+    await assert.doesNotReject(
+      promisify(execFile)(
+        process.execPath,
+        [script, '--head', 'head', '--profile', 'desktop', '--out', 'out/metrics.json'],
+        {
+          cwd: dir,
+          timeout: 60_000,
+          env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/nonexistent' },
+        }
+      )
     );
   } finally {
     for (const server of held) server.close();

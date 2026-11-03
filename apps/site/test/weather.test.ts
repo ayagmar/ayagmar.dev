@@ -167,6 +167,9 @@ describe('which answers the room shows', () => {
   });
 
   it('believes a server clock up to two minutes ahead', () => {
-    expect(readWeather(answer({}, { fetchedAt: ago(-2 * 60_000) }), now)).toBeDefined();
+    expect(readWeather(answer({}, { fetchedAt: ago(-2 * 60_000) }), now)).toEqual({
+      state: 'rain',
+      words: 'slight rain, 14 °C',
+    });
   });
 });
