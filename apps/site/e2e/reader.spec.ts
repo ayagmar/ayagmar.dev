@@ -113,6 +113,23 @@ test.describe('the copy button on a code block', () => {
     await expect(page.locator('.prose pre').first()).toBeVisible();
     await expect(page.locator('.prose').getByRole('button', { name: 'Copy' })).toHaveCount(0);
   });
+
+  test.describe('on a 712px touch screen', () => {
+    test.use({ viewport: { width: 712, height: 1000 }, hasTouch: true });
+
+    // Catches the band above the first line lost from 40rem, where touch screens always show the
+    // button and it then covers the start of the code.
+    test('sits above the first line of code', { tag: '@drafts' }, async ({ page }) => {
+      await page.goto(post);
+      const block = page.locator('.prose .code-block').first();
+      await expect(block.getByRole('button', { name: 'Copy' })).toBeVisible();
+      const { button, line } = await block.evaluate((element) => ({
+        button: element.querySelector('button')?.getBoundingClientRect().bottom ?? 0,
+        line: element.querySelector('code')?.getClientRects()[0]?.top ?? 0,
+      }));
+      expect(button).toBeLessThanOrEqual(line);
+    });
+  });
 });
 
 // Catches a section's `#` link pointing at an id the page lacks, the `#` leaking into the
