@@ -25,6 +25,53 @@ test('/ opens search; drafts are not in the index', async ({ page }) => {
   await expect(dialog.getByRole('status')).toHaveText('No results.');
 });
 
+// Catches `/` taken from someone typing in a field, or from a browser shortcut that adds a
+// modifier to it.
+test('/ is left alone while typing and with a modifier', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  for (const key of ['Alt+/', 'Control+/', 'Meta+/']) await page.keyboard.press(key);
+  await page.evaluate(() =>
+    document.querySelector('main')?.prepend(document.createElement('input'))
+  );
+  await page.locator('main input').first().focus();
+  await page.keyboard.press('/');
+  await expect(page.locator('main input').first()).toHaveValue('/');
+  await expect(dialog).toBeHidden();
+});
+
+// Catches `/` and `?` lost on layouts that type them with AltGr, which Windows reports as
+// Ctrl+Alt (Brazilian ABNT2: AltGr+Q is `/`).
+test('/ and ? typed with AltGr still work', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  const altGr = (key: string) =>
+    page.evaluate((key) => {
+      const init = { key, ctrlKey: true, altKey: true, modifierAltGraph: true, bubbles: true };
+      document.body.dispatchEvent(new KeyboardEvent('keydown', init));
+    }, key);
+  await altGr('?');
+  const keys = page.getByRole('dialog', { name: 'Keyboard' });
+  await expect(keys).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(keys).toBeHidden();
+  await altGr('/');
+  await expect(page.getByRole('dialog', { name: 'Search' })).toBeVisible();
+});
+
+// Catches the hint naming `/` while single-key shortcuts are off and `/` does nothing.
+test('the hint names the key that opens search', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/about');
+  const button = page.getByRole('button', { name: /search/i });
+  await expect(button).toHaveAccessibleName('Search /');
+  await page.evaluate(() => {
+    document.documentElement.dataset.shortcuts = 'off';
+  });
+  await expect(button).toHaveAccessibleName('Search Ctrl K');
+});
+
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 

@@ -93,10 +93,10 @@
 
   document.addEventListener('keydown', (event) => {
     const target = event.target;
+    // AltGr (Ctrl+Alt on Windows) is how some layouts type `?`, so it is not a modifier here.
     if (
-      event.ctrlKey ||
+      ((event.ctrlKey || event.altKey) && !event.getModifierState('AltGraph')) ||
       event.metaKey ||
-      event.altKey ||
       root.dataset.shortcuts ||
       document.querySelector('dialog[open]')
     )

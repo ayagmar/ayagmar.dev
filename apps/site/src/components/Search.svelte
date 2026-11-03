@@ -42,8 +42,13 @@ function isTyping(target: EventTarget | null) {
 function onKeydown(event: KeyboardEvent) {
   const shortcut =
     ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') ||
-    // `/` is a single-key shortcut: off with the list of keys' switch (theme.js, ADR 0027).
-    (event.key === '/' && !isTyping(event.target) && !document.documentElement.dataset.shortcuts);
+    // `/` is a single-key shortcut: off with the list of keys' switch (theme.js, ADR 0027), and
+    // left to the browser with a modifier (Ctrl / and the like). AltGr, which Windows reports as
+    // Ctrl+Alt, is how some layouts type `/` at all.
+    (event.key === '/' &&
+      (event.getModifierState('AltGraph') || !(event.ctrlKey || event.altKey || event.metaKey)) &&
+      !isTyping(event.target) &&
+      !document.documentElement.dataset.shortcuts);
   if (!shortcut || dialog?.open) return;
   event.preventDefault();
   open();
@@ -78,8 +83,10 @@ const href = (url: string) => url.replace(/\.html$/, '');
 <svelte:window onkeydown={onKeydown} />
 
 {#if hydrated}
+  <!-- The hint names `/`, or Ctrl K when single-key shortcuts are off (base.css). Only Ctrl K is
+       announced: it works whatever the switch says; the list of keys gives `/`. -->
   <button type="button" onclick={open} aria-keyshortcuts="Control+K">
-    Search <kbd>Ctrl K</kbd>
+    Search <kbd>/</kbd><kbd>Ctrl K</kbd>
   </button>
 {:else}
   <a href="/writing">Browse writing</a>

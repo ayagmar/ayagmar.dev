@@ -24,7 +24,8 @@ test.describe('on a 390px phone', () => {
     await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
     const header = await page.locator('.site-header').boundingBox();
     expect(header?.height).toBeLessThan(64);
-    await expect(page.locator('.site-header kbd')).toBeHidden();
+    for (const hint of await page.locator('.site-header kbd').all())
+      await expect(hint).toBeHidden();
 
     const nav = page.getByRole('navigation', { name: 'Site' });
     await expect(nav).toBeHidden();
