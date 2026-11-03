@@ -173,7 +173,7 @@ async function serve(
     } catch {
       // Not listening yet.
     }
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 100));
   }
   child.kill();
   throw new Error(`wrangler dev in ${site} did not answer within 60 s`);
