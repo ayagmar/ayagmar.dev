@@ -96,6 +96,7 @@ jobs:
       - run: just typecheck
       - run: just knip
       - run: just boundaries
+      - run: just check-tests
       - run: just test-scripts
       - run: just test-producers
 
