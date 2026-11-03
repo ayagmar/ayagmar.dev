@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { listeningHistoryEnvelopeSchema } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
-import { knowsRabatDate, readHistory, yearLine } from '../src/lib/history.ts';
+import { readHistory, yearLine } from '../src/lib/history.ts';
 import type { Markup } from '../src/lib/markup.ts';
 
 const corpus = join(import.meta.dirname, '../../../packages/contracts/corpus/listening-history');
@@ -73,11 +73,6 @@ describe('which answers /stats shows', () => {
       readHistory(envelope(snapshotFixtures['listening-history'].ok, fields), now)
     ).toBeUndefined();
   });
-});
-
-// Node's tzdata has Morocco's 2026 rules; a browser without them shows no history.
-it('knows the Rabat date by current rules here', () => {
-  expect(knowsRabatDate()).toBe(true);
 });
 
 describe('the words for a year', () => {

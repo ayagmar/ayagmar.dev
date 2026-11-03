@@ -11,7 +11,7 @@ import {
   readHistory,
   yearLine,
 } from '../lib/history.ts';
-import { due } from '../lib/live.ts';
+import { ask, due } from '../lib/live.ts';
 import { el, toNode } from '../lib/markup.ts';
 
 const block = document.querySelector<HTMLElement>('.history');
@@ -38,15 +38,11 @@ function refresh(now: number, current: boolean, returned: boolean) {
   if (asked !== undefined && !due(now - asked, (current ? 60 : 5) * 60_000, returned)) return;
   asked = now;
   pending = true;
-  fetch(endpoint, { signal: AbortSignal.timeout(5_000) })
-    // An error status is a failure, whatever its body says.
-    .then((response) => response.ok && response.json())
-    .catch(() => {})
-    .then((body) => {
-      pending = false;
-      answer = body;
-      check();
-    });
+  ask(endpoint).then((body) => {
+    pending = false;
+    answer = body;
+    check();
+  });
 }
 
 /**

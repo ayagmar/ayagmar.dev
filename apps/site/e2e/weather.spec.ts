@@ -3,9 +3,8 @@
 // mode build would, and answers the API itself from the shared weather fixtures.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import AxeBuilder from '@axe-core/playwright';
 import type { Page, Route } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1/weather';
 const minute = 60_000;
@@ -368,8 +367,9 @@ test('a hanging refresh drops the weather at its deadline, and a later answer br
   await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'rain');
   await page.clock.runFor(15 * minute);
   await expect.poll(() => requests).toBe(2);
-  // The page clock flows at real speed between steps, so the 5 s deadline takes 5 s.
-  await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'none', { timeout: 8_000 });
+  // The fake clock runs the request's 5 s deadline.
+  await page.clock.runFor(5_000);
+  await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'none');
   // Jump rather than run: running would also play out the next request's deadline.
   await page.clock.fastForward(15 * minute);
   await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'snow');
@@ -421,15 +421,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
     await visit(page, noon, (route) => route.fulfill(envelope('rain', noon)));
     await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'rain');
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+    await expectNoAxeViolations(page);
   });
 }
 
-// Catches the CC BY 4.0 credit for Open-Meteo going missing when it moved from under the room
-// to the colophon (ADR 0029): the sentence, both links, and no credit line left on home.
+// Catches the CC BY 4.0 credit for Open-Meteo going missing from the colophon (ADR 0029): the
+// sentence and both links, and no credit line on home.
 test('the colophon credits Open-Meteo under CC BY 4.0, and home carries no credit line', async ({
   page,
 }) => {

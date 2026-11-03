@@ -518,21 +518,13 @@ const newPage = async (browser: Browser, options: Parameters<Browser['newContext
   (await browser.newContext(options)).newPage();
 
 // Fixtures mode builds the public Previews: nobody should take its numbers for live ones.
-test('fixtures mode labels every panel as sample data and asks for nothing', async ({
-  page,
-  baseURL,
-}) => {
-  const elsewhere: string[] = [];
-  page.on('request', (request) => {
-    if (!request.url().startsWith(baseURL ?? '')) elsewhere.push(request.url());
-  });
+// That it asks nothing is signals.spec.ts's check.
+test('fixtures mode labels every panel as sample data', async ({ page }) => {
   await page.goto('/stats');
   await expect(page.locator('.sample-banner')).toContainText('Sample data');
   for (const source of sources) {
     await expect(panel(page, source).locator('.sample')).toHaveText('Sample data, not live');
   }
-  await page.waitForLoadState('networkidle');
-  expect(elsewhere).toEqual([]);
 });
 
 test('without JavaScript the panels show the build, timed in Rabat', async ({ browser }) => {

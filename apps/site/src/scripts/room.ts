@@ -5,6 +5,8 @@
 // reading order, unless the list of keys has turned single-key shortcuts off. Without this
 // script the room is the static scene of the page's theme, with no moon, note or weather; a
 // browser with outdated time zone rules gets the sky and the moon, but not the lamp or the note.
+
+import { ask } from '../lib/live.ts';
 import { isLate, knowsRabatTime, moonAt, moonPath, rabatTime, skyAt } from '../lib/sky.ts';
 import { readWeather } from '../lib/weather.ts';
 
@@ -33,15 +35,11 @@ function refresh(now: number) {
   if (!endpoint || pending || document.hidden || now - asked < 15 * 60_000) return;
   asked = now;
   pending = true;
-  fetch(endpoint, { signal: AbortSignal.timeout(5_000) })
-    // An error status is a failure, whatever its body says.
-    .then((response) => response.ok && response.json())
-    .catch(() => {})
-    .then((body) => {
-      pending = false;
-      answer = body;
-      tick();
-    });
+  ask(endpoint).then((body) => {
+    pending = false;
+    answer = body;
+    tick();
+  });
 }
 
 /** The whole room clock, the window's label included: on every minute and weather change. */

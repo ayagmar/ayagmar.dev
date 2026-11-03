@@ -4,9 +4,8 @@
 // the browser's clock fixed.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import AxeBuilder from '@axe-core/playwright';
 import type { Page, Route } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1/listening-history';
 const minute = 60_000;
@@ -175,11 +174,7 @@ for (const width of [320, 360, 1280]) {
     ).toBeLessThanOrEqual(0);
     for (const colorScheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme });
-      const results = await new AxeBuilder({ page })
-        .include('.history')
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-        .analyze();
-      expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+      await expectNoAxeViolations(page, '.history');
     }
   });
 }
@@ -296,9 +291,10 @@ test('asks on load, then hourly, one request at a time', async ({ page }) => {
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await page.waitForTimeout(300);
   expect(requests).toBe(2);
-  // The page clock flows at real speed between steps, so the 5 s deadline takes 5 s. A
-  // refresh that fails drops the history, as the room's weather does (ADR 0029).
-  await expect(block(page)).toBeHidden({ timeout: 8_000 });
+  // The fake clock runs the request's 5 s deadline. A refresh that fails drops the history,
+  // as the room's weather does (ADR 0029).
+  await page.clock.runFor(5_000);
+  await expect(block(page)).toBeHidden();
   await page.clock.fastForward(5 * minute);
   await expect.poll(() => requests).toBe(3);
   await expect(block(page)).toBeVisible();

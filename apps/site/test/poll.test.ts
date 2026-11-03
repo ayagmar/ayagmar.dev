@@ -136,6 +136,7 @@ describe('a live panel', () => {
     await comeBack('visibilitychange');
     await vi.advanceTimersByTimeAsync(10 * minute);
     expect(asked).toBe(0);
-    expect(shown.length).toBeGreaterThan(10);
+    // On load, when the tab came back, and on each of the 10 minute ticks.
+    expect(shown).toHaveLength(12);
   });
 });

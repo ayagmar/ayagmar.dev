@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const { skills } = JSON.parse(
   readFileSync(join(import.meta.dirname, '../../../content/skills.json'), 'utf8')
@@ -50,29 +49,35 @@ test('skills are grouped under headings and one install pattern is shown once', 
   );
 });
 
-for (const colorScheme of ['light', 'dark'] as const) {
-  for (const width of [360, 1280]) {
-    test(`has no axe violations in ${colorScheme} at ${width}px, with targets of 24px`, async ({
-      browser,
-    }) => {
-      const context = await browser.newContext({ colorScheme, viewport: { width, height: 800 } });
-      const page = await context.newPage();
-      await page.goto('/skills');
-      await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
-      const results = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-        .analyze();
-      expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+// pages.spec.ts runs axe on /skills in the day theme; this runs it at night, and checks the
+// shelf's targets in both.
+for (const width of [360, 1280]) {
+  test(`has no axe violations at night at ${width}px, with targets of 24px in both themes`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      colorScheme: 'dark',
+      viewport: { width, height: 800 },
+    });
+    const page = await context.newPage();
+    await page.goto('/skills');
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    await expectNoAxeViolations(page);
+    for (const colorScheme of ['dark', 'light'] as const) {
+      await page.emulateMedia({ colorScheme });
       const small = await page
         .locator('main a:visible, main summary:visible')
         .evaluateAll((links) =>
           links.filter((link) => link.getBoundingClientRect().height < 24).map((l) => l.textContent)
         );
       // Links in running text are exempt from the target size rule; the shelf's own are not.
-      expect(small.filter((text) => /README|npm|Install/.test(text ?? ''))).toEqual([]);
-      await context.close();
-    });
-  }
+      expect(
+        small.filter((text) => /README|npm|Install/.test(text ?? '')),
+        colorScheme
+      ).toEqual([]);
+    }
+    await context.close();
+  });
 }
 
 test('search finds the shelf, labelled Skills', async ({ page }) => {

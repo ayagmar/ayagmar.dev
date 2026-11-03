@@ -6,6 +6,7 @@
 import { rabatDate } from '@min7/contracts/rabat';
 import { count } from '../data/format.ts';
 import { trackBy } from './listening.ts';
+import { text } from './live.ts';
 import type { Markup } from './markup.ts';
 
 export interface HistoryYear {
@@ -28,8 +29,6 @@ export { knowsRabatDate } from './rabat-date.ts';
 
 const int = (value: unknown, min: number, max: number) =>
   Number.isInteger(value) && (value as number) >= min && (value as number) <= max;
-const text = (value: unknown) =>
-  typeof value === 'string' && value.length >= 1 && value.length <= 1024;
 
 /**
  * The history in a `/v1/listening-history` answer if the page may show it at `now`, else
@@ -54,8 +53,8 @@ export function readHistory(body: unknown, now: number): History | undefined {
       !int(scrobbles, 1, 1_000_000) ||
       !int(counted, 1, 1_000_000) ||
       !int(plays, 1, 1_000_000) ||
-      !text(track) ||
-      !text(artist)
+      !text(track, 1024) ||
+      !text(artist, 1024)
     )
       return;
     read.push({ year, scrobbles, read: counted, top: { track, artist, plays } });

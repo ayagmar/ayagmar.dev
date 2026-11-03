@@ -2,10 +2,9 @@
 // the second port in playwright.config.ts). The production build holds none while every note is
 // a draft, so this is where a note page, the stacked /til page and feeds with entries are
 // checked.
-import AxeBuilder from '@axe-core/playwright';
 import { notes } from './content.ts';
 import { expectValidFeed } from './feed-rules.ts';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const newestFirst = notes.toSorted((a, b) => b.date.localeCompare(a.date));
 const paths = ['/til', ...newestFirst.map((note) => `/til/${note.slug}`)];
@@ -26,10 +25,7 @@ test.describe('axe, in both themes and at both sizes', () => {
           await page.setViewportSize({ width, height: 800 });
           await page.goto(path);
           await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
-          const results = await new AxeBuilder({ page })
-            .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-            .analyze();
-          expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+          await expectNoAxeViolations(page);
         });
       }
     }

@@ -3,10 +3,9 @@
 // these pages never ask signals for anything. Each test below gives the blocks the API
 // endpoints, as an `api` mode build would, answers the API itself from the shared fixtures,
 // and fixes the browser's clock.
-import AxeBuilder from '@axe-core/playwright';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import type { Page, Route } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1';
 const minute = 60_000;
@@ -146,22 +145,16 @@ test('without JavaScript, /uses shows its static parts and no live panel', async
   await context.close();
 });
 
-// Catches a request to signals from the fixtures build, which also builds public Previews.
-test('in fixtures mode, /stats and /uses ask signals nothing', async ({ page }) => {
-  const outside: string[] = [];
-  page.on('request', (request) => {
-    if (!request.url().startsWith('http://127.0.0.1')) outside.push(request.url());
-  });
-  for (const path of ['/stats', '/uses']) {
-    await page.goto(path);
-    await page.waitForTimeout(300);
-  }
-  expect(outside).toEqual([]);
+// Catches the panel showing in the fixtures build, which has no endpoint to fill it. That it asks
+// nothing is signals.spec.ts's check.
+test('in fixtures mode, /uses shows no live panel', async ({ page }) => {
+  await page.goto('/uses');
+  await expect(page.getByText('NVIDIA GeForce RTX 5090')).toBeVisible();
   await expect(live(page)).toBeHidden();
 });
 
-// Catches the live parts overflowing a phone, failing axe in either theme, or shifting the
-// page once they fill in.
+// Catches the live parts overflowing a phone, squeezing the agents' bars, or failing axe in
+// either theme.
 for (const width of [320, 360, 1280]) {
   for (const path of ['/stats', '/uses'] as const) {
     test(`${path} with its live parts fits ${width}px and passes axe in both themes`, async ({
@@ -186,10 +179,7 @@ for (const width of [320, 360, 1280]) {
       }
       for (const colorScheme of ['light', 'dark'] as const) {
         await page.emulateMedia({ colorScheme });
-        const results = await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-          .analyze();
-        expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+        await expectNoAxeViolations(page);
       }
     });
   }

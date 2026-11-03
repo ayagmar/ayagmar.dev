@@ -1,7 +1,6 @@
 // The post reader on a phone (ADR 0026): text near the screen edges, a one-row header, and both
 // themes readable.
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 // A placeholder draft, so these tests run on the drafts build.
 const post = '/writing/token-logs';
@@ -81,9 +80,6 @@ for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto(post);
     await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+    await expectNoAxeViolations(page);
   });
 }

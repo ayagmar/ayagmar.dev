@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { test as base, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { test as base, expect, type Page } from '@playwright/test';
 
 const dist = join(import.meta.dirname, '..', 'dist');
 
@@ -47,5 +48,20 @@ export const test = base.extend<{ cspGuard: undefined }>({
     { auto: true },
   ],
 });
+
+/** Fails unless axe finds no WCAG 2.2 AA or best-practice violation on the page or in `include`. */
+export async function expectNoAxeViolations(page: Page, include?: string) {
+  const axe = new AxeBuilder({ page }).withTags([
+    'wcag2a',
+    'wcag2aa',
+    'wcag21a',
+    'wcag21aa',
+    'wcag22aa',
+    'best-practice',
+  ]);
+  if (include) axe.include(include);
+  const { violations } = await axe.analyze();
+  expect(violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+}
 
 export { expect };

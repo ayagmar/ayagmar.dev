@@ -1,7 +1,6 @@
 // Comments under posts and notes (ADR 0036). giscus.app is never reached: every request to it is
 // answered by a stub widget that posts what the real one does (its height) and records what the
 // page sends it.
-import AxeBuilder from '@axe-core/playwright';
 import type { Page, Route } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
@@ -218,21 +217,8 @@ test('without JavaScript the window offers the discussion on GitHub and no frame
   await context.close();
 });
 
-for (const colorScheme of ['light', 'dark'] as const) {
-  // Catches the closed window failing contrast or naming rules in one theme; the third-party
-  // frame is not scanned.
-  test(`a post with the comments window closed has no axe violations in ${colorScheme}`, {
-    tag: '@drafts',
-  }, async ({ page }) => {
-    await page.emulateMedia({ colorScheme });
-    await page.goto(post);
-    await expect(press(page)).toBeVisible();
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
-  });
-}
+// The closed window is checked by axe with the post it sits under: pages.spec.ts in the day
+// theme, reader.spec.ts at night.
 
 // Catches the window, open or failed, pushing the page sideways or the header onto two rows.
 test('at 320px the open window does not overflow and the header stays one row', {
