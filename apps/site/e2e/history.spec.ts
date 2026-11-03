@@ -296,9 +296,10 @@ test('asks on load, then hourly, one request at a time', async ({ page }) => {
   await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await page.waitForTimeout(300);
   expect(requests).toBe(2);
-  // The page clock flows at real speed between steps, so the 5 s deadline takes 5 s. A
-  // refresh that fails drops the history, as the room's weather does (ADR 0029).
-  await expect(block(page)).toBeHidden({ timeout: 8_000 });
+  // The fake clock runs the request's 5 s deadline. A refresh that fails drops the history,
+  // as the room's weather does (ADR 0029).
+  await page.clock.runFor(5_000);
+  await expect(block(page)).toBeHidden();
   await page.clock.fastForward(5 * minute);
   await expect.poll(() => requests).toBe(3);
   await expect(block(page)).toBeVisible();
