@@ -128,10 +128,13 @@ check-comments:
     node scripts/check-comments.ts
 
 # Mutation testing of contracts and the site's src/lib, report only (ADR 0039). Takes minutes
-# and rewrites apps/site/src until it ends; reports in <package>/reports/mutation/mutation.html
+# and rewrites apps/site/src until it ends, so it needs that directory clean; reports in
+# <package>/reports/mutation/mutation.html
 mutate:
+    test -z "$(git status --porcelain -- apps/site/src)" || { echo "commit or stash apps/site/src first: the site run rewrites it in place (ADR 0039)" >&2; exit 1; }
     nice -n 10 {{ contracts }} stryker run
     nice -n 10 {{ site }} stryker run
+    test -z "$(git status --porcelain -- apps/site/src)" || { echo "apps/site/src was left mutated: git checkout -- apps/site/src" >&2; exit 1; }
 
 # Start a draft post, open it in $VISUAL/$EDITOR and the browser: just post "Title" [--no-open]
 [positional-arguments]
