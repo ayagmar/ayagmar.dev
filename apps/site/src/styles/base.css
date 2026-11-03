@@ -1569,6 +1569,12 @@ main:has(.toc) .reader ~ .project-card {
     border: 0;
     background: none;
   }
+
+  /* The series line takes the row under the header. Spanning only two rows, a contents list
+     taller than the header and the line would stretch them and push the text down. */
+  .reader:has(.series) .toc {
+    grid-row: 1 / span 3;
+  }
 }
 
 /* Where the browser can show a closed disclosure's content, the contents sit open beside the

@@ -133,3 +133,39 @@ test('each section heading links to itself', { tag: '@drafts' }, async ({ page }
   await page.keyboard.press('Enter');
   expect(new URL(page.url()).hash).toBe(`#${await headings.first().getAttribute('id')}`);
 });
+
+// Catches a series line stretching the rows beside a long contents list at desktop width, which
+// leaves an empty band between the header and the text. No post has a series, that many headings
+// or that much text yet, so the test adds them in SeriesLine.astro's and Toc.astro's markup.
+test('a contents list beside a series post does not push its text down', {
+  tag: '@drafts',
+}, async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // Without art the header is shorter than the contents list.
+  await page.goto('/writing/ricing-niri');
+  const textTop = () =>
+    page.locator('.reader > .prose').evaluate((prose: HTMLElement) => prose.offsetTop);
+  await page.locator('.reader').evaluate((reader) => {
+    reader
+      .querySelector('.post-header')
+      ?.insertAdjacentHTML(
+        'afterend',
+        '<nav class="series"><p>Part 1 of 2</p><ol><li><span aria-current="page">One</span></li><li><a href="#">Two</a></li></ol></nav>'
+      );
+    reader
+      .querySelector('.prose')
+      ?.insertAdjacentHTML('beforeend', '<p>A long part.</p>'.repeat(40));
+  });
+  const withoutContents = await textTop();
+  await page.locator('.series').evaluate((line) => {
+    const items = Array.from(
+      { length: 13 },
+      (_, i) => `<li><a href="#s${i}">Section ${i}</a></li>`
+    );
+    line.insertAdjacentHTML(
+      'afterend',
+      `<details class="toc"><summary>On this page</summary><ol>${items.join('')}</ol></details>`
+    );
+  });
+  expect(await textTop()).toBe(withoutContents);
+});
