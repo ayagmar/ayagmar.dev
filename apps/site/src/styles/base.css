@@ -561,8 +561,9 @@ h1 + .caption,
 }
 
 @media (min-width: 64rem) and (hover: hover) and (pointer: fine) {
-  :root:not([data-shortcuts]) .site-tools kbd[data-single],
-  [data-shortcuts] .site-tools kbd[data-modified] {
+  /* The first names `/`, the second Ctrl K (Search.svelte). */
+  :root:not([data-shortcuts]) .site-tools kbd:first-of-type,
+  [data-shortcuts] .site-tools kbd:last-of-type {
     display: inline;
   }
 }

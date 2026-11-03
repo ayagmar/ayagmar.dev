@@ -83,9 +83,10 @@ const href = (url: string) => url.replace(/\.html$/, '');
 <svelte:window onkeydown={onKeydown} />
 
 {#if hydrated}
-  <!-- The hint names `/`, or Ctrl K when single-key shortcuts are off (base.css). -->
-  <button type="button" onclick={open} aria-keyshortcuts="/ Control+K">
-    Search <kbd data-single>/</kbd><kbd data-modified>Ctrl K</kbd>
+  <!-- The hint names `/`, or Ctrl K when single-key shortcuts are off (base.css). Only Ctrl K is
+       announced: it works whatever the switch says; the list of keys gives `/`. -->
+  <button type="button" onclick={open} aria-keyshortcuts="Control+K">
+    Search <kbd>/</kbd><kbd>Ctrl K</kbd>
   </button>
 {:else}
   <a href="/writing">Browse writing</a>
