@@ -268,6 +268,17 @@
   pointer-events: none;
 }
 
+/* The spot is 13 % in from the scene's left and `.scene` clips sideways, so on a phone the note
+   wraps before the scene's right edge. */
+@media (max-width: 30rem) {
+  .room-cat-spot span {
+    width: max-content;
+    max-width: calc(87vw - 1rem);
+    line-height: 1.3;
+    white-space: normal;
+  }
+}
+
 .room-cat-spot:hover span,
 .room-cat-spot:focus-visible span {
   opacity: 1;

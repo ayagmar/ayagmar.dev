@@ -240,7 +240,8 @@ test.describe('the room keeps Rabat time', () => {
   });
 
   // Catches the cat missing its hours or waiting for a reload, moving the page when it comes,
-  // a note the keyboard cannot reach, and art from the other theme.
+  // a note the keyboard cannot reach or cut off by the scene's edge on a phone, and art from the
+  // other theme.
   test('a cat sleeps on the sill from 02:00 to 05:00, and says so on focus', async ({ page }) => {
     const cat = page.getByRole('img', { name: /cat asleep on the windowsill/ });
     const art = () =>
@@ -259,7 +260,13 @@ test.describe('the room keeps Rabat time', () => {
     expect(await page.locator('.intro').boundingBox()).toEqual(intro);
     expect(await art()).toBe('cat-night');
     await cat.focus();
-    await expect(cat.getByText('The cat keeps the night shift until five.')).toBeVisible();
+    const note = cat.getByText('The cat keeps the night shift until five.');
+    await expect(note).toBeVisible();
+    for (const width of [320, 360, 390]) {
+      await page.setViewportSize({ width, height: 800 });
+      const box = await note.boundingBox();
+      expect(box && box.x + box.width).toBeLessThanOrEqual(width);
+    }
     await expectNoAxeViolations(page, '.room');
     await page.emulateMedia({ colorScheme: 'light' });
     expect(await art()).toBe('cat-day');
