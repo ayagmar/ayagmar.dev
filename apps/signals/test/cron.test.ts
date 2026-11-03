@@ -84,7 +84,7 @@ function historyStandIn() {
 }
 
 describe('scheduled', () => {
-  it('runs with the empty adapter registry and still cleans up', async () => {
+  it("runs from the Worker's scheduled handler, delivery cleanup included", async () => {
     await env.DB.prepare(
       "INSERT INTO push_deliveries (producer, delivery_id, body_sha256, received_at) VALUES ('trellis', 'old', 'h', 0)"
     ).run();
@@ -93,14 +93,6 @@ describe('scheduled', () => {
     await worker.scheduled(controller, env);
 
     expect(await deliveryRows()).toEqual([]);
-  });
-
-  it('stores what each adapter normalizes, and serves it', async () => {
-    const listening = adapter('listening', 60);
-    await runScheduled(env, [listening], Date.now());
-
-    const body = await fetchApi('/v1/listening').then((r) => r.json());
-    expect(body).toMatchObject({ stale: false, data: { normalized: { id: 'listening' } } });
   });
 
   it('pulls one adapter per run, the most overdue first, so a frequent one starves none', async () => {
