@@ -127,6 +127,12 @@ check-tests:
 check-comments:
     node scripts/check-comments.ts
 
+# Mutation testing of contracts and the site's src/lib, report only (ADR 0039). Takes minutes
+# and rewrites apps/site/src until it ends; reports in <package>/reports/mutation/mutation.html
+mutate:
+    nice -n 10 {{ contracts }} stryker run
+    nice -n 10 {{ site }} stryker run
+
 # Start a draft post, open it in $VISUAL/$EDITOR and the browser: just post "Title" [--no-open]
 [positional-arguments]
 post +args:

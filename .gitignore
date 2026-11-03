@@ -18,3 +18,5 @@ worker-configuration.d.ts
 *.tsbuildinfo
 .lycheecache
 .lighthouse/
+.stryker-tmp/
+**/reports/mutation/
