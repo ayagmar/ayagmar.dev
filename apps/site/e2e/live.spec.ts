@@ -159,8 +159,8 @@ test('in fixtures mode, /stats and /uses ask signals nothing', async ({ page }) 
   await expect(live(page)).toBeHidden();
 });
 
-// Catches the live parts overflowing a phone, failing axe in either theme, or shifting the
-// page once they fill in.
+// Catches the live parts overflowing a phone, squeezing the agents' bars, or failing axe in
+// either theme.
 for (const width of [320, 360, 1280]) {
   for (const path of ['/stats', '/uses'] as const) {
     test(`${path} with its live parts fits ${width}px and passes axe in both themes`, async ({
