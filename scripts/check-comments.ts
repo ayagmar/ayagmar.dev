@@ -72,14 +72,14 @@ function componentComments(text: string): Comment[] {
   if (frontmatter) {
     comments.push(...scriptComments(frontmatter[2] ?? '', frontmatter[1]?.length ?? 0));
   }
-  for (const match of text.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script\s*>/gi)) {
+  for (const match of text.matchAll(/(<script\b[^>]*>)([\s\S]*?)<\/script\b[^>]*>/gi)) {
     comments.push(...scriptComments(match[2] ?? '', match.index + (match[1]?.length ?? 0)));
   }
-  for (const match of text.matchAll(/(<style\b[^>]*>)([\s\S]*?)<\/style\s*>/gi)) {
+  for (const match of text.matchAll(/(<style\b[^>]*>)([\s\S]*?)<\/style\b[^>]*>/gi)) {
     const offset = match.index + (match[1]?.length ?? 0);
     comments.push(...blockComments(match[2] ?? '', /\/\*[\s\S]*?\*\//g, offset));
   }
-  const markup = text.replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, (block) =>
+  const markup = text.replace(/<(script|style)\b[\s\S]*?<\/\1\b[^>]*>/gi, (block) =>
     ' '.repeat(block.length)
   );
   comments.push(...blockComments(markup, /<!--[\s\S]*?--!?>/g));
