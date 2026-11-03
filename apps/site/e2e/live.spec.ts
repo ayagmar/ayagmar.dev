@@ -3,10 +3,9 @@
 // these pages never ask signals for anything. Each test below gives the blocks the API
 // endpoints, as an `api` mode build would, answers the API itself from the shared fixtures,
 // and fixes the browser's clock.
-import AxeBuilder from '@axe-core/playwright';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import type { Page, Route } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1';
 const minute = 60_000;
@@ -186,10 +185,7 @@ for (const width of [320, 360, 1280]) {
       }
       for (const colorScheme of ['light', 'dark'] as const) {
         await page.emulateMedia({ colorScheme });
-        const results = await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-          .analyze();
-        expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+        await expectNoAxeViolations(page);
       }
     });
   }

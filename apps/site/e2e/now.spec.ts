@@ -1,7 +1,6 @@
 // /now and reply by email (ADR 0035). The page itself is also in the sitemap, so e2e/pages.spec.ts
 // runs axe on it at 360 and 1280 px and checks it does not scroll sideways at 320 px.
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const updated = '2026-10-30';
 
@@ -14,10 +13,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.goto('/now');
     await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
     await expect(page.getByText(/may be out of date/)).toBeVisible();
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+    await expectNoAxeViolations(page);
   });
 }
 

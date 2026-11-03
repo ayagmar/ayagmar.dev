@@ -1,6 +1,5 @@
-import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 // The page background of each theme (--ground in base.css).
 const ground = { day: 'rgb(246, 242, 234)', night: 'rgb(14, 12, 19)' } as const;
@@ -149,10 +148,7 @@ for (const [path, details] of [
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.goto(path);
     await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+    await expectNoAxeViolations(page);
   });
 }
 
@@ -313,11 +309,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.goto('/');
     await page.getByRole('button', { name: 'Keys' }).click();
     await expect(page.getByRole('dialog', { name: 'Keyboard' })).toBeVisible();
-    const results = await new AxeBuilder({ page })
-      .include('dialog.keys')
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+    await expectNoAxeViolations(page, 'dialog.keys');
   });
 }
 

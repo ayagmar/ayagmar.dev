@@ -4,9 +4,8 @@
 // the browser's clock fixed.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import AxeBuilder from '@axe-core/playwright';
 import type { Page, Route } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1/listening-history';
 const minute = 60_000;
@@ -175,11 +174,7 @@ for (const width of [320, 360, 1280]) {
     ).toBeLessThanOrEqual(0);
     for (const colorScheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme });
-      const results = await new AxeBuilder({ page })
-        .include('.history')
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-        .analyze();
-      expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+      await expectNoAxeViolations(page, '.history');
     }
   });
 }

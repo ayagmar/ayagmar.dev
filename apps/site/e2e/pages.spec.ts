@@ -1,6 +1,5 @@
-import AxeBuilder from '@axe-core/playwright';
 import { posts } from './content.ts';
-import { expect, notFoundPath, pages, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, notFoundPath, pages, test } from './fixtures.ts';
 
 const viewports = [
   { width: 360, height: 800 },
@@ -35,10 +34,7 @@ for (const { path, title, details } of checked) {
         // Wait for the search island so axe sees the hydrated page.
         await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
 
-        const results = await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-          .analyze();
-        expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+        await expectNoAxeViolations(page);
       });
     }
 

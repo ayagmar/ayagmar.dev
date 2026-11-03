@@ -3,9 +3,8 @@
 // mode build would, and answers the API itself from the shared weather fixtures.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import AxeBuilder from '@axe-core/playwright';
 import type { Page, Route } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1/weather';
 const minute = 60_000;
@@ -422,10 +421,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
     await visit(page, noon, (route) => route.fulfill(envelope('rain', noon)));
     await expect(page.locator('.scene')).toHaveAttribute('data-weather', 'rain');
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+    await expectNoAxeViolations(page);
   });
 }
 

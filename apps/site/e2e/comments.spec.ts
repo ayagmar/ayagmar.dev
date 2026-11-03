@@ -1,9 +1,8 @@
 // Comments under posts and notes (ADR 0036). giscus.app is never reached: every request to it is
 // answered by a stub widget that posts what the real one does (its height) and records what the
 // page sends it.
-import AxeBuilder from '@axe-core/playwright';
 import type { Page, Route } from '@playwright/test';
-import { expect, test } from './fixtures.ts';
+import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 // A placeholder draft, so these tests run on the drafts build.
 const post = '/writing/token-logs';
@@ -227,10 +226,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
     await page.goto(post);
     await expect(press(page)).toBeVisible();
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'])
-      .analyze();
-    expect(results.violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
+    await expectNoAxeViolations(page);
   });
 }
 
