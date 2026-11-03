@@ -213,6 +213,66 @@
   }
 }
 
+/* The cat on the windowsill between 02:00 and 05:00 (ADR 0027), by src/scripts/room.ts's hour:
+   above the view and its weather, lit as the room of the shown theme. Its spot covers the cat's
+   pixels (scripts/scene.py) and shows the note above it on hover and focus, like a hotspot's
+   label. Only the shown layer is downloaded. */
+/* Without the script, out of its hours, or with outdated time zone rules (no `data-late`), there
+   is no cat to see or focus. */
+.scene:not([data-late]:is([data-hour="02"], [data-hour="03"], [data-hour="04"])) .room-cat {
+  display: none;
+}
+
+.room-cat {
+  position: absolute;
+  inset: 0;
+  background: url("../assets/cat-night.png") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+:root[data-theme="day"] .room-cat {
+  background-image: url("../assets/cat-day.png");
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="night"]) .room-cat {
+    background-image: url("../assets/cat-day.png");
+  }
+}
+
+.room-cat-spot {
+  position: absolute;
+  top: 46.25%;
+  left: 12.917%;
+  width: 5.417%;
+  height: 11.25%;
+  pointer-events: auto;
+}
+
+.room-cat-spot:focus-visible {
+  outline: 2px dashed var(--lamp);
+  outline-offset: 2px;
+}
+
+.room-cat-spot span {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  padding: 0.3rem 0.5rem;
+  background: var(--ground);
+  color: var(--text);
+  font: 600 0.8125rem / 1 var(--mono);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.room-cat-spot:hover span,
+.room-cat-spot:focus-visible span {
+  opacity: 1;
+}
+
 /* Over the desk's front, below every hotspot, so showing it moves nothing. */
 .room-note {
   position: absolute;

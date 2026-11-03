@@ -32,6 +32,7 @@ const strip = shippingStrip(
   (await getDays()).dates
 );
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
+const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift until five.';
 ---
 
 <Base structuredData={[website(), person(about.data.identity)]}>
@@ -60,6 +61,15 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
       </svg>
       <span class="room-weather" aria-hidden="true"></span>
       <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Rabat.</p>
+      {/* Shown 02:00 to 05:00 in Rabat (room.css, by the hour src/scripts/room.ts sets). The art
+          is a layer of the whole scene; the spot over the cat holds its name and the note shown
+          on hover and focus. */}
+      <span class="room-cat">
+        {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so the keyboard gets the note a pointer gets on hover (WCAG 1.4.13); it does nothing else. */}
+        <span class="room-cat-spot" tabindex="0" role="img" aria-label={catName}>
+          <span aria-hidden="true">The cat keeps the night shift until five.</span>
+        </span>
+      </span>
       {roomObjects.map((item) => (
         <a class="hotspot" href={item.href} data-room={item.id}>
           <span>
