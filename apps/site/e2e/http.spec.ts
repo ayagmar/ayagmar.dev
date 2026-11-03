@@ -57,6 +57,27 @@ test.describe('responses', () => {
     });
   }
 
+  // Catches the Worker not running for /now, or the text drifting from the page: both come from
+  // content/now.md.
+  test('curl gets /now as plain text that says what the page says', async ({ request, page }) => {
+    const response = await request.get('/now', { headers: { 'User-Agent': 'curl/8.11.1' } });
+    expect(response.headers()['content-type']).toContain('text/plain');
+    expect(response.headers().vary).toMatch(/user-agent/i);
+    expectSecurityHeaders(response.headers());
+    const text = await response.text();
+
+    await page.goto('/now');
+    const updated = await page.locator('.intro time').textContent();
+    const brewing = await page
+      .locator('.brewing li')
+      .evaluateAll((items) =>
+        items.map((item) => [...item.children].map((child) => child.textContent))
+      );
+    expect(brewing.length).toBeGreaterThan(0);
+    expect(text).toContain(`Now | min7\nUpdated ${updated}.`);
+    for (const [name, note] of brewing) expect(text).toContain(`  ${name}\n    ${note}\n`);
+  });
+
   test('browsers get the HTML home page', async ({ request }) => {
     const response = await request.get('/', { headers: { 'User-Agent': browser } });
     expect(response.headers()['content-type']).toContain('text/html');

@@ -2,7 +2,7 @@
 import { getEntry, render } from 'astro:content';
 import Brewing from '../components/Brewing.astro';
 import Base from '../layouts/Base.astro';
-import { staleAfterDays } from '../lib/now.ts';
+import { staleAfterDays, updatedOn } from '../lib/now.ts';
 import { nowPage } from '../lib/site.ts';
 import { isoDay } from '../lib/writing.ts';
 
@@ -12,12 +12,6 @@ if (entry === undefined) throw new Error('content/now.md is missing');
 const { updated, brewing } = entry.data;
 const { Content } = await render(entry);
 const day = isoDay(updated);
-const absolute = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-}).format(updated);
 ---
 
 <Base
@@ -27,7 +21,7 @@ const absolute = new Intl.DateTimeFormat('en-GB', {
   <div class="column">
     <header class="intro">
       <h1>Now</h1>
-      <p class="caption">Updated <time datetime={day}>{absolute}</time>.</p>
+      <p class="caption">Updated <time datetime={day}>{updatedOn(updated)}</time>.</p>
       {/* Shown by src/scripts/now.ts against the reader's clock; never claims freshness itself. */}
       <p class="caption stale" data-stale-after={staleAfterDays} data-updated={day} hidden>
         This page may be out of date: it was last updated more than {staleAfterDays} days ago.

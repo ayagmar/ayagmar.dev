@@ -107,7 +107,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/live.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{now-playing,stats-live}.ts`                        |
 | Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/markup.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                                      |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                                      |
-| Site Worker (terminal check on `/`)                                       | `apps/site/worker/index.ts`                                                                                                              |
+| Site Worker (terminal check on `/` and `/now`)                            | `apps/site/worker/index.ts`                                                                                                              |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                                              |
 | About page data, its schema                                               | `content/about.json`, `apps/site/src/data/about.ts`                                                                                      |
 | Skills shelf: data, schema, sync script, page (ADR 0031)                  | `content/skills.json`, `apps/site/src/lib/{skills-schema,skills}.ts`, `src/pages/skills.astro`, `scripts/skills-sync.ts`                 |
@@ -132,4 +132,4 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post and note bodies) into `dist/pagefind/`.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
-In production, Workers static assets serve `dist/`. The site Worker runs only for `/`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt`, anything else gets `index.html`. `index.txt` starts with the room in ASCII. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.
+In production, Workers static assets serve `dist/`. The site Worker runs only for `/` and `/now`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt` or `now.txt`, anything else gets the HTML page. `index.txt` starts with the room in ASCII. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.
