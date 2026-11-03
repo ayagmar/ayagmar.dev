@@ -145,17 +145,11 @@ test('without JavaScript, /uses shows its static parts and no live panel', async
   await context.close();
 });
 
-// Catches a request to signals from the fixtures build, which also builds public Previews.
-test('in fixtures mode, /stats and /uses ask signals nothing', async ({ page }) => {
-  const outside: string[] = [];
-  page.on('request', (request) => {
-    if (!request.url().startsWith('http://127.0.0.1')) outside.push(request.url());
-  });
-  for (const path of ['/stats', '/uses']) {
-    await page.goto(path);
-    await page.waitForTimeout(300);
-  }
-  expect(outside).toEqual([]);
+// Catches the panel showing in the fixtures build, which has no endpoint to fill it. That it asks
+// nothing is signals.spec.ts's check.
+test('in fixtures mode, /uses shows no live panel', async ({ page }) => {
+  await page.goto('/uses');
+  await expect(page.getByText('NVIDIA GeForce RTX 5090')).toBeVisible();
   await expect(live(page)).toBeHidden();
 });
 

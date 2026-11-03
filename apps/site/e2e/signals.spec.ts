@@ -5,6 +5,8 @@ import { expect, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1/listening';
 
+// Catches a request to signals or any other origin from the fixtures build, which also builds
+// public Previews.
 test('pages with source data load nothing from other origins in fixtures mode', async ({
   page,
   baseURL,
@@ -13,7 +15,7 @@ test('pages with source data load nothing from other origins in fixtures mode', 
   page.on('request', (request) => {
     if (!request.url().startsWith(baseURL ?? '')) elsewhere.push(request.url());
   });
-  for (const path of ['/', '/stats', '/projects']) {
+  for (const path of ['/', '/stats', '/uses', '/projects']) {
     await page.goto(path);
     await page.waitForLoadState('networkidle');
   }
