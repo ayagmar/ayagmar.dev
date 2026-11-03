@@ -215,7 +215,7 @@ test.describe('the room keeps Rabat time', () => {
   });
 
   // Catches a browser whose tzdata predates 2026c dimming the lamp on the wrong hour: it still
-  // puts Rabat at +01, so at 01:30 there it would say 02:30 and show "probably asleep".
+  // puts Rabat at +01, so at 01:30 there it would say 02:30 and show "probably asleep" and the cat.
   // The sky and the moon come from UTC and stay.
   test('with outdated time zone rules the lamp stays on and no note shows', async ({ page }) => {
     await page.addInitScript(() => {
@@ -236,6 +236,44 @@ test.describe('the room keeps Rabat time', () => {
     });
     expect((await room(page)).moon).not.toBe('');
     await expect(page.locator('.room-note')).toBeHidden();
+    await expect(page.locator('.room-cat')).toBeHidden();
+  });
+
+  // Catches the cat missing its hours or waiting for a reload, moving the page when it comes,
+  // a note the keyboard cannot reach or cut off by the scene's edge on a phone, and art from the
+  // other theme.
+  test('a cat sleeps on the sill from 02:00 to 05:00, and says so on focus', async ({ page }) => {
+    const cat = page.getByRole('img', { name: /cat asleep on the windowsill/ });
+    const art = () =>
+      page
+        .locator('.room-cat')
+        .evaluate((layer) => getComputedStyle(layer).backgroundImage.match(/cat-\w+/)?.[0]);
+    await page.clock.install({ time: '2026-10-26T01:59:30Z' });
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/');
+    await expect(page.locator('.scene')).toHaveAttribute('data-sky', 'night');
+    await expect(cat).toBeHidden();
+    const intro = await page.locator('.intro').boundingBox();
+
+    await page.clock.runFor(60_000);
+    await expect(cat).toBeVisible();
+    expect(await page.locator('.intro').boundingBox()).toEqual(intro);
+    expect(await art()).toBe('cat-night');
+    await cat.focus();
+    const note = cat.getByText('The cat keeps the night shift until five.');
+    await expect(note).toBeVisible();
+    for (const width of [320, 360, 390]) {
+      await page.setViewportSize({ width, height: 800 });
+      const box = await note.boundingBox();
+      expect(box && box.x + box.width).toBeLessThanOrEqual(width);
+    }
+    await expectNoAxeViolations(page, '.room');
+    await page.emulateMedia({ colorScheme: 'light' });
+    expect(await art()).toBe('cat-day');
+    await expectNoAxeViolations(page, '.room');
+
+    await page.clock.runFor(3 * 60 * 60_000);
+    await expect(cat).toBeHidden();
   });
 
   test('just after sunset the window shows dusk', async ({ page }) => {

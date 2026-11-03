@@ -1,10 +1,12 @@
 // The room's clock on the home page (ADR 0027): the window shows the sky and the moon over
-// Rabat now, and between 02:00 and 07:00 there the lamp is turned down with a note. Over them,
+// Rabat now, between 02:00 and 07:00 there the lamp is turned down with a note, and between
+// 02:00 and 05:00 a cat sleeps on the windowsill. Over them,
 // the current weather in Rabat from signals (ADR 0029), when the page has its endpoint (api
 // data mode) and a usable answer. Also the keys 1 to 7, which open the room's objects in
 // reading order, unless the list of keys has turned single-key shortcuts off. Without this
-// script the room is the static scene of the page's theme, with no moon, note or weather; a
-// browser with outdated time zone rules gets the sky and the moon, but not the lamp or the note.
+// script the room is the static scene of the page's theme, with no moon, note, cat or weather; a
+// browser with outdated time zone rules gets the sky and the moon, but not the lamp, the note or
+// the cat.
 
 import { ask } from '../lib/live.ts';
 import { isLate, knowsRabatTime, moonAt, moonPath, rabatTime, skyAt } from '../lib/sky.ts';
@@ -14,7 +16,7 @@ const scene = document.querySelector<HTMLElement>('.scene');
 const view = document.querySelector('.room-window');
 const moon = document.querySelector('.room-moon path');
 const note = document.querySelector<HTMLElement>('.room-note');
-// Without Morocco's current rules the hour there is a guess: no lamp or note from it.
+// Without Morocco's current rules the hour there is a guess: no lamp, note or cat from it.
 const knows = knowsRabatTime();
 // `${SIGNALS_API_BASE}/v1/weather`, absent in fixtures mode: then no request and no weather.
 const endpoint = scene?.dataset.weatherSrc;
@@ -53,6 +55,8 @@ function tick() {
   scene.dataset.sky = sky;
   scene.dataset.weather = weather?.state ?? 'none';
   scene.toggleAttribute('data-late', late);
+  // The hour in Rabat, for the cat (room.css), which only counts it with `data-late` set.
+  scene.dataset.hour = rabatTime(now).slice(0, 2);
   // A moon this thin would be a single pixel or none: leave it out.
   moon?.setAttribute(
     'd',

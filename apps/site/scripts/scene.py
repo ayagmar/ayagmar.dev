@@ -8,7 +8,8 @@ ordered (Bayer) dither onto a fixed palette; no photo or portrait is involved.
 The room details (ADR 0027) add four layers the home page script picks by Rabat time:
 `window-{day,dusk,night}.png`, only the view through the window on a transparent scene, and
 `room-night-dim.png`, the night room with the lamp turned down between 02:00 and 07:00. The
-moon is not drawn here: the script draws the real phase over the window.
+moon is not drawn here: the script draws the real phase over the window. `cat-{night,day}.png`
+are only a cat asleep on the sill, shown between 02:00 and 05:00.
 Run `just scene`; the outputs in src/assets/ are committed.
 
 The hotspot rectangles over the scene live in src/styles/room.css, in percentages of these
@@ -24,11 +25,12 @@ OUT_DIR = Path(__file__).resolve().parent.parent / "src" / "assets"
 
 
 def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
-         weather: str | None = None) -> tuple[Image.Image, Image.Image]:
+         weather: str | None = None, cat: bool = False) -> tuple[Image.Image, Image.Image]:
     """The room in daylight or at night, and the mask of the view through the window that
     nothing in the room covers. `sky` is that view (day, dusk or night, the theme's own by
     default) and `lamp` scales the desk lamp's light. With `weather` (cloudy, overcast, fog, rain,
-    snow or storm) the mask is only the part of the view that weather covers (ADR 0029)."""
+    snow or storm) the mask is only the part of the view that weather covers (ADR 0029). With
+    `cat` a cat sleeps on the sill, and the mask is the cat."""
     sky = sky or ("day" if DAY else "night")
     W, H = 480, 160
     rnd = random.Random(7)
@@ -285,6 +287,26 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
     R(57 + 7, 58, 144, 60, (178, 164, 170))
     R(58, 90, 150, 94, (196, 184, 160))
     R(58, 94, 150, 95, WOOD_D)
+
+    # ---------------------------------------------------------------- cat
+    # A ginger cat asleep on the sill, left of the lamp, curled with its tail along the front: the
+    # late-night detail the home page shows between 02:00 and 05:00 in Rabat (ADR 0027).
+    CAT = Image.new("L", (W, H), 0)
+    if cat:
+        dc = ImageDraw.Draw(CAT)
+        GINGER, STRIPE, SHUT = (214, 150, 90), (150, 92, 54), (36, 22, 20)
+        for shape, xy, col in (
+            ("ellipse", [63, 82, 82, 89], GINGER),                # body
+            ("ellipse", [75, 79, 86, 88], GINGER),                # head
+            ("polygon", [(76, 81), (77, 76), (80, 80)], GINGER),  # ears
+            ("polygon", [(82, 80), (85, 76), (86, 82)], GINGER),
+            ("rectangle", [62, 88, 76, 89], STRIPE),              # tail
+        ):
+            for layer, fill in ((da, col), (de, 0), (dv, 0), (dc, 255)):
+                getattr(layer, shape)(xy, fill=fill)
+        for x, y, col in ((66, 84, STRIPE), (69, 83, STRIPE), (72, 83, STRIPE), (67, 85, STRIPE),
+                          (78, 84, SHUT), (79, 84, SHUT), (82, 84, SHUT), (83, 84, SHUT)):
+            P(x, y, col)
 
     # -------------------------------------------------------- fairy lights
     pts = []
@@ -586,7 +608,7 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
 
     if not weather:
         room = OUT.quantize(colors=len(PAL) + 4, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
-        return room, V
+        return room, CAT if cat else V
     # Onto the palette itself: the octree can average two dark colours into one off it.
     exact = Image.new("P", (1, 1))
     exact.putpalette([c for colour in PAL for c in colour])
@@ -604,7 +626,8 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
 
 def window_only(room: Image.Image, view: Image.Image) -> Image.Image:
     """`room` with everything but the uncovered view through the window made transparent. The
-    frame, the mullions and the lamp stay in the room underneath, so they keep its light."""
+    frame, the mullions and the lamp stay in the room underneath, so they keep its light. With a
+    cat's mask for `view`, the cat alone."""
     # Stay a palette image: one spare palette entry becomes the transparent one.
     clear = len(room.getpalette()) // 3
     out = room.copy()
@@ -643,6 +666,9 @@ outputs = {
     "room-day.png": draw(True)[0],
     "room-night-dim.png": draw(False, lamp=0.35)[0],
     **{f"window-{sky}.png": window_only(*draw(False, sky)) for sky in ("day", "dusk", "night")},
+    # Lit as the room is at that hour: the lamp turned down at night, daylight in the day theme.
+    "cat-night.png": window_only(*draw(False, lamp=0.35, cat=True)),
+    "cat-day.png": window_only(*draw(True, cat=True)),
 }
 # The weather over the window (ADR 0029): one layer per kind for the day sky and one for the
 # night, which dusk shows too, plus the falling rain. Clear weather is the sky as it is.
