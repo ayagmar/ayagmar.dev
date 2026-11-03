@@ -49,9 +49,10 @@ test('skills are grouped under headings and one install pattern is shown once', 
   );
 });
 
-// pages.spec.ts runs axe on /skills in the day theme; the targets are the same size in both.
+// pages.spec.ts runs axe on /skills in the day theme; this runs it at night, and checks the
+// shelf's targets in both.
 for (const width of [360, 1280]) {
-  test(`has no axe violations at night at ${width}px, with targets of 24px`, async ({
+  test(`has no axe violations at night at ${width}px, with targets of 24px in both themes`, async ({
     browser,
   }) => {
     const context = await browser.newContext({
@@ -62,13 +63,19 @@ for (const width of [360, 1280]) {
     await page.goto('/skills');
     await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
     await expectNoAxeViolations(page);
-    const small = await page
-      .locator('main a:visible, main summary:visible')
-      .evaluateAll((links) =>
-        links.filter((link) => link.getBoundingClientRect().height < 24).map((l) => l.textContent)
-      );
-    // Links in running text are exempt from the target size rule; the shelf's own are not.
-    expect(small.filter((text) => /README|npm|Install/.test(text ?? ''))).toEqual([]);
+    for (const colorScheme of ['dark', 'light'] as const) {
+      await page.emulateMedia({ colorScheme });
+      const small = await page
+        .locator('main a:visible, main summary:visible')
+        .evaluateAll((links) =>
+          links.filter((link) => link.getBoundingClientRect().height < 24).map((l) => l.textContent)
+        );
+      // Links in running text are exempt from the target size rule; the shelf's own are not.
+      expect(
+        small.filter((text) => /README|npm|Install/.test(text ?? '')),
+        colorScheme
+      ).toEqual([]);
+    }
     await context.close();
   });
 }
