@@ -1,9 +1,16 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { checkTestSource } from './check-tests.ts';
+import { checkTestSource, checkTests } from './check-tests.ts';
 
 const findings = (source: string) =>
   checkTestSource('fixture.test.ts', source).map(({ line, message }) => `${line}: ${message}`);
+
+const presenceOnly =
+  'test asserts only presence (toBeDefined, toBeTruthy, not.toBeNull, assert.ok) or mock calls';
 
 describe('check-tests', () => {
   // Catches a test that passes whatever the code does: no assertion, a dangling `expect(x)`,
@@ -17,11 +24,11 @@ describe('check-tests', () => {
       "it('exists', () => { expect(a).toBeDefined(); expect(b).not.toBeNull(); });",
       "it.only('one', () => { expect(a).toBe(1); });",
       "test.describe.only('suite', () => {});",
-      "it('focus', { only: true }, () => { assert.ok(a); });",
+      "it('focus', { only: true }, () => { assert.equal(a, 1); });",
       "it.skip('later', () => { expect(a).toBe(1); });",
       "describe.skip('suite', () => {});",
       "test('inside', () => { test.skip(); expect(a).toBe(1); });",
-      "it('opt', { skip: true }, () => { assert.ok(a); });",
+      "it('opt', { skip: true }, () => { assert.equal(a, 1); });",
       '// check-tests: allow',
       "it('no reason given', () => {});",
     ].join('\n');
@@ -30,7 +37,7 @@ describe('check-tests', () => {
       '2: test has no assertion',
       '3: test asserts only that a mock was called',
       '4: test asserts only that a mock was called',
-      '5: test asserts only toBeDefined/toBeTruthy/not.toBeNull or mock calls',
+      `5: ${presenceOnly}`,
       '6: focused test (.only) runs only this test',
       '7: focused test (.only) runs only this test',
       '8: focused test (.only) runs only this test',
@@ -39,6 +46,31 @@ describe('check-tests', () => {
       '11: skipped without a reason or condition',
       '12: skipped without a reason (skip: true)',
       '14: test has no assertion',
+    ]);
+  });
+
+  // Catches the node:test spelling of `toBeTruthy()`, and a weak or mock-only assertion hidden
+  // in a helper, getting past the rules the plain form fails.
+  it('sees presence checks through assert.ok and helpers', () => {
+    const source = [
+      "it('ok', () => { assert.ok(result); });",
+      "it('bare', () => { assert(result.rows[0]); });",
+      "it('context', (t) => { t.assert.ok(result.id); });",
+      'const called = () => expect(fn).toHaveBeenCalled();',
+      "it('wrapped mock', () => { called(); });",
+      'function present(x) { expect(x).toBeTruthy(); }',
+      'const viaTwo = (x) => present(x);',
+      "it('wrapped presence', () => { viaTwo(a); });",
+      'function both(x) { expect(fn).toHaveBeenCalled(); assert.equal(x, 1); }',
+      "it('wrapped value', () => { both(a); });",
+      "it('predicate', () => { assert.ok(jobs.includes('e2e')); });",
+    ].join('\n');
+    assert.deepEqual(findings(source), [
+      `1: ${presenceOnly}`,
+      `2: ${presenceOnly}`,
+      `3: ${presenceOnly}`,
+      '5: test asserts only that a mock was called',
+      `8: ${presenceOnly}`,
     ]);
   });
 
@@ -59,11 +91,25 @@ describe('check-tests', () => {
       "it('mock and value', () => { expect(fn).toHaveBeenCalled(); expect(out).toBe(2); });",
       "test.skip(notes.length === 0, 'content/til has no notes');",
       "test('inside', () => { test.skip(!ready, 'needs ready'); expect(a).toBe(1); });",
-      "it('opt', { skip: process.platform !== 'linux' }, () => { assert.ok(a); });",
+      "it('opt', { skip: process.platform !== 'linux' }, () => { assert.equal(a, 1); });",
       '// check-tests: allow the smoke run is the assertion',
       "it('runs', () => { main(); });",
       "it.todo('later');",
     ].join('\n');
     assert.deepEqual(findings(source), []);
+  });
+
+  // Catches a test file an agent wrote but has not staged passing `just check` locally.
+  it('reads untracked test files, not ignored ones', () => {
+    const root = mkdtempSync(join(tmpdir(), 'min7-check-tests-'));
+    try {
+      execFileSync('git', ['init', '-q'], { cwd: root });
+      writeFileSync(join(root, '.gitignore'), 'ignored.test.ts\n');
+      writeFileSync(join(root, 'new.test.ts'), "it('x', () => {});\n");
+      writeFileSync(join(root, 'ignored.test.ts'), "it('x', () => {});\n");
+      assert.deepEqual(checkTests(root), ['new.test.ts:1: test has no assertion']);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 });

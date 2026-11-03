@@ -49,6 +49,16 @@ const mockOnly = /Called|Returned|\.mock\.(?:calls|results|callCount)/;
 const allow = /\/\/\s*check-tests: allow\s+\S/;
 
 type Kind = 'strong' | 'mock' | 'weak';
+const rank: Record<Kind, number> = { mock: 0, weak: 1, strong: 2 };
+const strongest = (kinds: Kind[]) =>
+  kinds.reduce<Kind | undefined>(
+    (best, kind) => (best && rank[best] >= rank[kind] ? best : kind),
+    undefined
+  );
+// `assert(x)` or `assert.ok(x)` on a plain value is `toBeTruthy()`; on a predicate call it is not.
+const presence = (arg: ts.Expression | undefined) =>
+  arg !== undefined &&
+  (ts.isIdentifier(arg) || ts.isPropertyAccessExpression(arg) || ts.isElementAccessExpression(arg));
 
 // The names along a callee: `test.describe.only` → [test, describe, only]. Through calls, so
 // `it.each(rows)` → [it, each]; without them, `expect(x).toBe` has none.
@@ -89,7 +99,7 @@ function assertionKind(
   call: ts.CallExpression,
   path: string[],
   sourceFile: ts.SourceFile,
-  helpers: Set<string>
+  helpers: Map<string, Kind>
 ): Kind | undefined {
   const [root] = path;
   if (root === undefined) return undefined;
@@ -110,13 +120,21 @@ function assertionKind(
   if (root.startsWith('expect')) return 'strong';
   if (root.startsWith('assert') || path.slice(1).includes('assert')) {
     const args = call.arguments.map((arg) => arg.getText(sourceFile)).join(' ');
-    return mockOnly.test(args) ? 'mock' : 'strong';
+    if (mockOnly.test(args)) return 'mock';
+    const truthy =
+      (path.length === 1 && root === 'assert') ||
+      (path.at(-1) === 'ok' && path.at(-2) === 'assert');
+    return truthy && presence(call.arguments[0]) ? 'weak' : 'strong';
   }
-  if (path.length === 1 && helpers.has(root)) return 'strong';
+  if (path.length === 1) return helpers.get(root);
   return undefined;
 }
 
-function assertionsIn(node: ts.Node, sourceFile: ts.SourceFile, helpers: Set<string>): Kind[] {
+function assertionsIn(
+  node: ts.Node,
+  sourceFile: ts.SourceFile,
+  helpers: Map<string, Kind>
+): Kind[] {
   const kinds: Kind[] = [];
   const visit = (child: ts.Node) => {
     if (ts.isCallExpression(child)) {
@@ -130,8 +148,10 @@ function assertionsIn(node: ts.Node, sourceFile: ts.SourceFile, helpers: Set<str
   return kinds;
 }
 
-// Functions declared in the file that assert, directly or through another such function.
-function assertingHelpers(sourceFile: ts.SourceFile): Set<string> {
+// Functions declared in the file that assert, directly or through another such function, each
+// with the strongest kind of assertion it makes, so a wrapper hides neither a mock-only nor a
+// presence-only check.
+function assertingHelpers(sourceFile: ts.SourceFile): Map<string, Kind> {
   const bodies = new Map<string, ts.Node>();
   const visit = (node: ts.Node) => {
     if (ts.isFunctionDeclaration(node) && node.name && node.body) {
@@ -147,12 +167,15 @@ function assertingHelpers(sourceFile: ts.SourceFile): Set<string> {
     ts.forEachChild(node, visit);
   };
   visit(sourceFile);
-  const helpers = new Set<string>();
+  const helpers = new Map<string, Kind>();
+  // Kinds only rise, so this ends.
   for (let grew = true; grew; ) {
     grew = false;
     for (const [name, body] of bodies) {
-      if (!helpers.has(name) && assertionsIn(body, sourceFile, helpers).length > 0) {
-        helpers.add(name);
+      const kind = strongest(assertionsIn(body, sourceFile, helpers));
+      const known = helpers.get(name);
+      if (kind !== undefined && (known === undefined || rank[kind] > rank[known])) {
+        helpers.set(name, kind);
         grew = true;
       }
     }
@@ -211,7 +234,10 @@ export function checkTestSource(fileName: string, text: string): Finding[] {
     else if (kinds.every((kind) => kind === 'mock')) {
       report(call, 'test asserts only that a mock was called');
     } else if (kinds.every((kind) => kind !== 'strong')) {
-      report(call, 'test asserts only toBeDefined/toBeTruthy/not.toBeNull or mock calls');
+      report(
+        call,
+        'test asserts only presence (toBeDefined, toBeTruthy, not.toBeNull, assert.ok) or mock calls'
+      );
     }
   };
 
@@ -220,7 +246,11 @@ export function checkTestSource(fileName: string, text: string): Finding[] {
 }
 
 export function checkTests(root: string): string[] {
-  const files = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
+  const files = execFileSync(
+    'git',
+    ['ls-files', '-z', '--cached', '--others', '--exclude-standard'],
+    { cwd: root, encoding: 'utf8' }
+  )
     .split('\0')
     .filter((file) => testFile.test(file));
   return files.flatMap((file) =>
