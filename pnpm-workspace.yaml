@@ -37,8 +37,9 @@ overrides:
   # @lhci/cli only calls Launcher.getInstallations(); 1.2.2 has it and drops rimraf.
   "@lhci/cli>chrome-launcher": 1.2.2
   # Under @stryker-mutator/core 10.1.1 (`just mutate`, ADR 0039). GHSA-g3hv-75wg-m249 in
-  # minimatch 10.2.6, fixed only in 11.0.1; Stryker imports `minimatch` and `Minimatch`, which
-  # 11 keeps. GHSA-4mjr-xmp4-gh2g, GHSA-6pq8-jhm2-2vcw, GHSA-q8mj-m7cp-5q26 and
-  # GHSA-x5fp-wj9c-mxmx in qs 6.15.1 (through typed-rest-client 2.3.1), fixed by 6.16.1.
-  "@stryker-mutator/core>minimatch": 11.0.1
+  # minimatch 10.2.6, fixed from 11.0.1; 11.0.3 is the newest of that line at least three days
+  # old, and keeps the `minimatch` and `Minimatch` Stryker imports. GHSA-4mjr-xmp4-gh2g,
+  # GHSA-6pq8-jhm2-2vcw, GHSA-q8mj-m7cp-5q26 and GHSA-x5fp-wj9c-mxmx in qs 6.15.1 (through
+  # typed-rest-client 2.3.1), fixed by 6.16.1.
+  "@stryker-mutator/core>minimatch": 11.0.3
   "typed-rest-client>qs": 6.16.1
