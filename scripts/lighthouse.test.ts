@@ -9,6 +9,7 @@ import { budgets } from './budgets.ts';
 import {
   decide,
   type Metric,
+  measuringTools,
   medians,
   overBudget,
   pagePaths,
@@ -238,5 +239,44 @@ describe('runs and pages', () => {
     }
     // A left-out page does not move the others between shards, so their cached base still applies.
     assert.deepEqual(Object.keys(shard(withoutPost, 3, 3)), Object.keys(shard(all, 3, 3)));
+  });
+});
+
+describe('measuring tools', () => {
+  const install = (root: string, dir: string, name: string, version: string, deps = {}) => {
+    mkdirSync(join(root, dir, 'node_modules', name), { recursive: true });
+    writeFileSync(
+      join(root, dir, 'node_modules', name, 'package.json'),
+      JSON.stringify({ name, version, dependencies: deps, optionalDependencies: {} })
+    );
+  };
+  const site = (axe: string) => {
+    const root = mkdtempSync(join(tmpdir(), 'min7-lighthouse-tools-'));
+    mkdirSync(join(root, 'apps/site'), { recursive: true });
+    install(root, '', '@lhci/cli', '0.15.1', { lighthouse: '12.6.1' });
+    install(root, '', 'lighthouse', '12.6.1', { 'axe-core': '^4' });
+    install(root, '', 'axe-core', axe);
+    install(root, '', '@playwright/test', '1.64.1', { 'playwright-core': '1.64.1' });
+    install(root, '', 'playwright-core', '1.64.1');
+    install(root, 'apps/site', 'wrangler', '4.156.0', { workerd: '1' });
+    install(root, '', 'workerd', '1.20261023.1');
+    install(root, '', 'knip', '6.44.1');
+    return root;
+  };
+
+  // Catches a cached base measured with another axe-core (its accessibility score) or workerd
+  // being reused, and a bump of an unrelated tool (knip) throwing the cache away.
+  it('lists every package the measurement loads, transitive ones included, and nothing else', () => {
+    const [a, b] = [site('4.14.0'), site('4.15.0')];
+    try {
+      const tools = measuringTools(join(a, 'apps/site'));
+      assert.ok(tools.includes('axe-core@4.14.0') && tools.includes('workerd@1.20261023.1'));
+      assert.ok(!tools.some((t) => t.startsWith('knip@')));
+      assert.notDeepEqual(measuringTools(join(b, 'apps/site')), tools);
+      rmSync(join(a, 'node_modules/workerd'), { recursive: true });
+      assert.throws(() => measuringTools(join(a, 'apps/site')), /workerd is not installed/);
+    } finally {
+      for (const root of [a, b]) rmSync(root, { recursive: true, force: true });
+    }
   });
 });

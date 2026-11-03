@@ -398,15 +398,17 @@ jobs:
         env:
           SIGNALS_MODE: fixtures
         run: just site-build
-      # Medians are only comparable when the measuring code, its pins and the budgets are the
-      # same, so those files are in the key along with the shard and the commit the numbers
-      # belong to.
+      # Medians are only comparable when the measuring code, the packages it runs (every version
+      # in .lighthouse/tools.json), Node and the budgets are the same, so those are in the key
+      # along with the shard and the commit the numbers belong to.
+      - name: List the packages that measure
+        run: just lighthouse-tools
       - id: base-cache
         name: Restore the base's numbers
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .lighthouse/cache/base.json
-          key: lighthouse-${{ matrix.profile }}-${{ matrix.shard }}of3-${{ hashFiles('pnpm-lock.yaml', 'scripts/lighthouse.ts', 'scripts/budgets.json') }}-${{ github.event.pull_request.base.sha || github.event.before }}
+          key: lighthouse-${{ matrix.profile }}-${{ matrix.shard }}of3-${{ hashFiles('.lighthouse/tools.json', '.node-version', 'scripts/lighthouse.ts', 'scripts/budgets.json') }}-${{ github.event.pull_request.base.sha || github.event.before }}
       - name: Run Lighthouse
         env:
           LIGHTHOUSE_PROFILE: ${{ matrix.profile }}
@@ -424,7 +426,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .lighthouse/cache/base.json
-          key: lighthouse-${{ matrix.profile }}-${{ matrix.shard }}of3-${{ hashFiles('pnpm-lock.yaml', 'scripts/lighthouse.ts', 'scripts/budgets.json') }}-${{ github.sha }}
+          key: lighthouse-${{ matrix.profile }}-${{ matrix.shard }}of3-${{ hashFiles('.lighthouse/tools.json', '.node-version', 'scripts/lighthouse.ts', 'scripts/budgets.json') }}-${{ github.sha }}
       - id: upload
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

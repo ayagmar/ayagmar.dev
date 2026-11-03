@@ -10,10 +10,11 @@
 // file by the base commit) is not measured again; the base is served only for pages the cache
 // lacks. A head cache file receives the head's medians in the same format, for CI to keep under
 // the commit it measured.
-// CI splits each profile's pages across jobs with --shard.
+// CI splits each profile's pages across jobs with --shard; --tools writes what keys the cache.
 // Usage: node scripts/lighthouse.ts [--base <site dir>] [--head <site dir>]
 //          [--profile mobile|desktop]... [--out <metrics.json>] [--shard <i>/<n>]
 //          [--base-cache <file>] [--head-cache <file>]
+//        node scripts/lighthouse.ts --tools <file> [--head <site dir>]
 // A site dir is apps/site of a checkout, built: wrangler.jsonc, worker/ and dist/.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
 import {
@@ -21,10 +22,12 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { budgets } from './budgets.ts';
@@ -167,6 +170,44 @@ export function shard(
   return Object.fromEntries(
     Object.entries(paths).filter(([name]) => order.indexOf(name) % count === index - 1)
   );
+}
+
+/**
+ * Every package, as name@version, that the measurement runs: Lighthouse CI with Lighthouse,
+ * Playwright with the Chromium it pins, and the Wrangler and workerd that serve the pages, each
+ * with all it depends on. CI keys the base cache on this instead of the whole lockfile, so a
+ * dependency bump elsewhere keeps the cached base (ADR 0017). Throws when a required package is
+ * not installed.
+ */
+export function measuringTools(site: string): string[] {
+  const found = new Map<string, string>();
+  const visit = (from: string, name: string, optional: boolean) => {
+    const dir = createRequire(join(from, 'package.json'))
+      .resolve.paths(name)
+      ?.map((modules) => join(modules, name))
+      .find((candidate) => existsSync(join(candidate, 'package.json')));
+    if (!dir) {
+      if (optional) return;
+      throw new Error(`${name} is not installed where ${from} looks for it`);
+    }
+    const real = realpathSync(dir);
+    if (found.has(real)) return;
+    const manifest = JSON.parse(readFileSync(join(real, 'package.json'), 'utf8')) as {
+      name: string;
+      version: string;
+      dependencies?: Record<string, string>;
+      optionalDependencies?: Record<string, string>;
+    };
+    found.set(real, `${manifest.name}@${manifest.version}`);
+    const optionals = Object.keys(manifest.optionalDependencies ?? {});
+    for (const dep of Object.keys(manifest.dependencies ?? {})) {
+      visit(real, dep, optionals.includes(dep));
+    }
+    for (const dep of optionals) visit(real, dep, true);
+  };
+  for (const root of ['@lhci/cli', '@playwright/test', 'wrangler'])
+    visit(resolve(site), root, false);
+  return [...new Set(found.values())].sort();
 }
 
 /** Serves a site through `wrangler dev` on a free port; the caller stops the child. */
@@ -417,8 +458,16 @@ async function main() {
       shard: { type: 'string', default: '1/1' },
       'base-cache': { type: 'string' },
       'head-cache': { type: 'string' },
+      tools: { type: 'string' },
     },
   });
+  if (args.tools) {
+    const tools = measuringTools(args.head);
+    mkdirSync(dirname(resolve(args.tools)), { recursive: true });
+    writeFileSync(args.tools, `${JSON.stringify(tools, null, 2)}\n`);
+    console.log(`lighthouse: ${tools.length} packages measure, listed in ${args.tools}`);
+    return;
+  }
   const [index, count] = (/^(\d+)\/(\d+)$/.exec(args.shard) ?? []).slice(1).map(Number);
   if (!index || !count || index > count)
     throw new Error(`--shard ${args.shard}: <i>/<n>, 1 <= i <= n`);
