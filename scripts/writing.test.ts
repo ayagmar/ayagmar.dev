@@ -166,6 +166,25 @@ describe('publish', () => {
       );
     });
 
+  // Catches a note published under content(writing), or its Preview link pointing at /writing.
+  it('publishes a TIL note and prints its Preview under /til', () => {
+    rmSync(join(repo, 'content/writing/cache-reads.md'));
+    writeFileSync(
+      join(repo, 'content/til/brace-groups.md'),
+      '---\ntitle: "Brace groups"\ndate: 2026-10-01\ntags: []\ndraft: true\n---\n\nBody.\n'
+    );
+    const { code, out } = cli(['publish', 'brace-groups']);
+    assert.equal(code, 0, out);
+    assert.equal(
+      git(origin, 'log', '-1', '--format=%s', 'content/brace-groups'),
+      'content(til): publish brace-groups'
+    );
+    assert.equal(
+      /^Preview.*: (\S+)$/m.exec(out)?.[1],
+      'https://content-brace-groups-min7-site.ayagmar.workers.dev/til/brace-groups'
+    );
+  });
+
   it('a dry run checks and prints the steps but changes nothing', () => {
     const { code, out } = cli(['publish', '--dry-run', 'cache-reads']);
     assert.equal(code, 0, out);
