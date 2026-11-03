@@ -43,11 +43,10 @@ function onKeydown(event: KeyboardEvent) {
   const shortcut =
     ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') ||
     // `/` is a single-key shortcut: off with the list of keys' switch (theme.js, ADR 0027), and
-    // left to the browser with a modifier (Ctrl / and the like).
+    // left to the browser with a modifier (Ctrl / and the like). AltGr, which Windows reports as
+    // Ctrl+Alt, is how some layouts type `/` at all.
     (event.key === '/' &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.altKey &&
+      (event.getModifierState('AltGraph') || !(event.ctrlKey || event.altKey || event.metaKey)) &&
       !isTyping(event.target) &&
       !document.documentElement.dataset.shortcuts);
   if (!shortcut || dialog?.open) return;
