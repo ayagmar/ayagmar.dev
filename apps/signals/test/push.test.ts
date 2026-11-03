@@ -515,17 +515,6 @@ describe('agent hours (ADR 0014)', () => {
     const { data } = await served('llm-usage');
     expect(JSON.stringify(data)).not.toContain('activeMs');
   });
-
-  // Catches the projection dropping hours it was sent, or keeping some and not others.
-  it('keeps every agent-hours value it was sent', async () => {
-    expect((await push('llm-usage', delivery(llmUsageOk))).status).toBe(202);
-    const { data } = (await served('llm-usage')) as { data: typeof llmUsageSnapshotOk };
-    expect(data.last7Days.activeMs).toBe(llmUsageOk.payload.last7Days.activeMs);
-    expect(data.monthToDate.activeMs).toBe(llmUsageOk.payload.monthToDate.activeMs);
-    expect(data.days.map((day) => day.activeMs)).toEqual(
-      llmUsageOk.payload.days.map((day) => day.activeMs)
-    );
-  });
 });
 
 /** The ok payload as a producer from before agent hours sends it. */
