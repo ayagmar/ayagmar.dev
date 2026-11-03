@@ -393,6 +393,17 @@ describe('a pull spread over cron invocations', () => {
     expect(JSON.parse(row?.json ?? '{}')).toMatchObject({ read: 1, years: [{ year: 2025 }] });
   });
 
+  // Catches progress for today that no longer reads (written by a Worker version whose schema
+  // differs) blocking every save until midnight, so the date never gets its history.
+  it("starts over from today's progress when it cannot be read", async () => {
+    await env.DB.prepare(
+      "INSERT INTO pull_progress (source, described_date, step, json) VALUES ('listening-history', '2026-10-26', 3, '{\"read\":99}')"
+    ).run();
+    network.use(...upstreamHandlers());
+    expect(await pull(captured)).toEqual(['in_progress', 'in_progress', null]);
+    expect((await served()).data).toEqual(snapshotFixtures['listening-history'].ok);
+  });
+
   it('never puts the key in a URL or a log line, on the error paths too', async () => {
     const requests = recordRequests(...upstreamHandlers({ lastfmHistory: 'error-in-200' }));
     const logs = [vi.spyOn(console, 'warn'), vi.spyOn(console, 'log'), vi.spyOn(console, 'error')];
