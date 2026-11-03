@@ -37,8 +37,17 @@ export const due = (sinceMs: number, everyMs: number, returned: boolean) =>
   sinceMs >= (returned ? Math.min(everyMs, returnMs) : everyMs - 5_000);
 
 /**
- * Asks `endpoint` while the page is visible, one request at a time with a 5 s deadline that
- * covers the body: on load, then every `everyMs`, and when the tab comes back once its last
+ * The JSON body `endpoint` answers with, or undefined if the request fails: an error status,
+ * whatever its body says, no answer within 5 s (the deadline covers the body), or a body that
+ * is not JSON. Every script that asks signals asks through this.
+ */
+export const ask = (endpoint: string): Promise<unknown> =>
+  fetch(endpoint, { signal: AbortSignal.timeout(5_000) })
+    .then((response) => (response.ok ? response.json() : undefined))
+    .catch(() => undefined);
+
+/**
+ * Asks `endpoint` (`ask`) while the page is visible, one request at a time: on load, then every `everyMs`, and when the tab comes back once its last
  * request is a minute old (`due`). After each answer, every minute, and whenever the tab comes
  * back, `show(answer, now, failed)` decides again what the page shows. A failed request (an
  * error status, no answer in time, not JSON) keeps the last answer and sets `failed` until one
@@ -62,16 +71,12 @@ export function poll(
     if (asked !== undefined && !due(now - asked, everyMs, returned)) return;
     asked = now;
     pending = true;
-    fetch(endpoint, { signal: AbortSignal.timeout(5_000) })
-      // An error status is a failure, whatever its body says.
-      .then((response) => (response.ok ? response.json() : undefined))
-      .catch(() => undefined)
-      .then((body) => {
-        pending = false;
-        failed = body === undefined;
-        if (!failed) answer = body;
-        show(answer, Date.now(), failed);
-      });
+    ask(endpoint).then((body) => {
+      pending = false;
+      failed = body === undefined;
+      if (!failed) answer = body;
+      show(answer, Date.now(), failed);
+    });
   }
 
   const back = () => check(true);
