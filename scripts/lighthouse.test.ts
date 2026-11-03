@@ -5,6 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
+import { budgets } from './budgets.ts';
 import {
   decide,
   type Metric,
@@ -13,6 +14,7 @@ import {
   pagePaths,
   readLhr,
   regressions,
+  shard,
   shifts,
 } from './lighthouse.ts';
 
@@ -220,5 +222,21 @@ describe('runs and pages', () => {
     } finally {
       rmSync(dist, { recursive: true, force: true });
     }
+  });
+
+  // Catches a page in budgets.json that no CI job measures, or that two jobs report.
+  it('puts every page in exactly one shard, whichever pages the build left out', () => {
+    const all = Object.fromEntries(Object.keys(budgets.lighthouse.pages).map((n) => [n, `/${n}`]));
+    const { post: _, ...withoutPost } = all;
+    for (const paths of [all, withoutPost]) {
+      for (const count of [1, 2, 3, 4]) {
+        const names = Array.from({ length: count }, (_, i) =>
+          Object.keys(shard(paths, i + 1, count))
+        );
+        assert.deepEqual(names.flat().sort(), Object.keys(paths).sort());
+      }
+    }
+    // A left-out page does not move the others between shards, so their cached base still applies.
+    assert.deepEqual(Object.keys(shard(withoutPost, 3, 3)), Object.keys(shard(all, 3, 3)));
   });
 });

@@ -10,8 +10,9 @@
 // file by the base commit) is not measured again; the base is served only for pages the cache
 // lacks. A head cache file receives the head's medians in the same format, for CI to keep under
 // the commit it measured.
+// CI splits each profile's pages across jobs with --shard.
 // Usage: node scripts/lighthouse.ts [--base <site dir>] [--head <site dir>]
-//          [--profile mobile|desktop]... [--out <metrics.json>]
+//          [--profile mobile|desktop]... [--out <metrics.json>] [--shard <i>/<n>]
 //          [--base-cache <file>] [--head-cache <file>]
 // A site dir is apps/site of a checkout, built: wrangler.jsonc, worker/ and dist/.
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process';
@@ -153,6 +154,21 @@ export function pagePaths(dist: string): Record<string, string> {
   return out;
 }
 
+/**
+ * The pages of shard `index` of `count`: every `count`th page in budgets.json order, so each
+ * page is in exactly one shard and a page left out of the build does not move the others.
+ */
+export function shard(
+  paths: Record<string, string>,
+  index: number,
+  count: number
+): Record<string, string> {
+  const order = Object.keys(budgets.lighthouse.pages);
+  return Object.fromEntries(
+    Object.entries(paths).filter(([name]) => order.indexOf(name) % count === index - 1)
+  );
+}
+
 /** Serves a site through `wrangler dev` on a free port; the caller stops the child. */
 async function serve(
   site: string,
@@ -181,8 +197,8 @@ async function serve(
 
 /**
  * Time allowed per Lighthouse run of one page, about 11 s in CI. A collect gets two runs more,
- * for lhci's own retries of a failed run: 13 minutes for 24 runs, so a hung collect is killed
- * and run once more inside the job's 35 minutes.
+ * for lhci's own retries of a failed run: 5.5 minutes for a CI shard's 9 runs, so a hung collect
+ * is killed and run once more inside the job's 20 minutes.
  */
 const runTimeout = 30_000;
 
@@ -398,10 +414,14 @@ async function main() {
       head: { type: 'string', default: 'apps/site' },
       profile: { type: 'string', multiple: true, default: [...profiles] },
       out: { type: 'string', default: '.lighthouse/metrics.json' },
+      shard: { type: 'string', default: '1/1' },
       'base-cache': { type: 'string' },
       'head-cache': { type: 'string' },
     },
   });
+  const [index, count] = (/^(\d+)\/(\d+)$/.exec(args.shard) ?? []).slice(1).map(Number);
+  if (!index || !count || index > count)
+    throw new Error(`--shard ${args.shard}: <i>/<n>, 1 <= i <= n`);
   for (const p of args.profile) {
     if (!profiles.includes(p as Profile)) throw new Error(`--profile ${p}: mobile or desktop`);
   }
@@ -410,7 +430,8 @@ async function main() {
   const base = args.base ? resolve(args.base) : undefined;
   const bin = (name: string) => join(head, 'node_modules/.bin', name);
   const work = resolve(dirname(args.out));
-  const paths = pagePaths(join(head, 'dist'));
+  const paths = shard(pagePaths(join(head, 'dist')), index, count);
+  if (Object.keys(paths).length === 0) throw new Error(`--shard ${args.shard}: no page to measure`);
   console.log(
     `lighthouse: ${Object.entries(paths)
       .map(([n, p]) => `${n}=${p}`)

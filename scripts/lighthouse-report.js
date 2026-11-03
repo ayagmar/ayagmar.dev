@@ -7,8 +7,8 @@
 // The artifact came from a job that ran the pull request's code: nothing from it reaches the
 // comment or the log except numbers that passed the checks below. Page and metric names are
 // rendered from the tables here, never from the artifact.
-// Usage: node scripts/lighthouse-report.js render <metrics.json>... <comment.md>
-// One artifact per profile job; the comment merges them.
+// Usage: node scripts/lighthouse-report.js render [--jobs <n>] <metrics.json>... <comment.md>
+// One artifact per Lighthouse job, <n> jobs per profile; the comment merges them.
 import { readFileSync, statSync, writeFileSync } from 'node:fs';
 
 export const marker = '<!-- min7-lighthouse -->';
@@ -182,36 +182,57 @@ export function validate(text) {
 }
 
 /**
- * The artifacts of the profile jobs as one. They must agree on the number of runs and not repeat
- * a page and profile; there is at most one per profile.
- * @param {Metrics[]} parts
- * @returns {Metrics}
+ * @typedef {{ profile: 'mobile' | 'desktop', count: number, of: number }} Missing
+ * `count` of the `of` jobs measuring `profile` sent no artifact.
  */
-export function merge(parts) {
+
+/**
+ * The artifacts of the Lighthouse jobs as one, and the jobs that sent none, for `jobs` jobs per
+ * profile. The artifacts must agree on the number of runs and not repeat a page and profile.
+ * @param {Metrics[]} parts
+ * @param {number} jobs
+ * @returns {{ metrics: Metrics, missing: Missing[] }}
+ */
+export function merge(parts, jobs = 1) {
   const first = parts[0];
-  if (!first || parts.length > profiles.length) {
-    throw new Error(`artifacts: not 1 to ${profiles.length} files`);
+  if (!first || parts.length > profiles.length * jobs) {
+    throw new Error(`artifacts: not 1 to ${profiles.length * jobs} files`);
   }
   if (parts.some((part) => part.runs !== first.runs)) throw new Error('artifacts: runs differ');
   const results = parts.flatMap((part) => part.results);
   const keys = new Set(results.map((r) => `${r.page} ${r.profile}`));
   if (keys.size !== results.length) throw new Error('artifacts: repeat a page and profile');
-  return { version, runs: first.runs, results };
+  const missing = profiles.flatMap((profile) => {
+    const sent = parts.filter((part) => part.results.some((r) => r.profile === profile)).length;
+    if (sent > jobs) throw new Error(`artifacts: more than ${jobs} for ${profile}`);
+    return sent < jobs ? [{ profile, count: jobs - sent, of: jobs }] : [];
+  });
+  return { metrics: { version, runs: first.runs, results }, missing };
 }
 
 /**
  * The comment body: one table per profile, base → head for each metric and page.
  * @param {Metrics} m
+ * @param {Missing[]} missing the jobs that sent no artifact; by default, one per profile absent from `m`
  * @returns {string}
  */
-export function render(m) {
+export function render(
+  m,
+  missing = profiles
+    .filter((profile) => !m.results.some((r) => r.profile === profile))
+    .map((profile) => ({ profile, count: 1, of: 1 }))
+) {
   const failing = m.results.filter((r) => r.over.length > 0 || r.regressed.length > 0).length;
-  const missing = profiles.filter((p) => !m.results.some((r) => r.profile === p));
+  /** @param {Missing} gap */
+  const jobsOf = ({ profile, count, of }) => {
+    if (of === 1) return `the ${profile} job`;
+    return count === of ? `all ${of} ${profile} jobs` : `${count} of the ${of} ${profile} jobs`;
+  };
   /** One paragraph per thing wrong; the all-clear only when nothing is wrong or missing. */
   const summary = [
     ...(missing.length > 0
       ? [
-          `Incomplete: no metrics from the ${missing.join(' and ')} ${missing.length === 1 ? 'job' : 'jobs'}, which failed before measuring. The \`lighthouse\` job fails.`,
+          `Incomplete: no metrics from ${missing.map(jobsOf).join(' and ')}, which failed before measuring. The \`lighthouse\` job fails.`,
         ]
       : []),
     ...(failing > 0
@@ -284,12 +305,19 @@ if (process.argv[2] === 'render') {
   const files = process.argv.slice(3);
   const output = files.pop() ?? '';
   try {
+    let jobs = 1;
+    if (files[0] === '--jobs') {
+      jobs = Number(files[1]);
+      if (!Number.isInteger(jobs) || jobs < 1 || jobs > 9) throw new Error('--jobs: 1 to 9');
+      files.splice(0, 2);
+    }
     // Refuse an oversized file before reading it.
     for (const input of files) {
       if (statSync(input).size > maxBytes) throw new Error(`artifact: over ${maxBytes} bytes`);
     }
     const parts = files.map((input) => validate(readFileSync(input, 'utf8')));
-    writeFileSync(output, render(merge(parts)));
+    const merged = merge(parts, jobs);
+    writeFileSync(output, render(merged.metrics, merged.missing));
     console.log('lighthouse-report: artifact valid, comment rendered');
   } catch (error) {
     console.error(`lighthouse-report: ${error instanceof Error ? error.message : 'failed'}`);
