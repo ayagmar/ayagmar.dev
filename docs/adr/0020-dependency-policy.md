@@ -57,16 +57,16 @@ gitleaks for the pre-commit hook is a system tool, not a package (`just tools gi
 
 Release binaries, pinned by version and sha256 in `scripts/bootstrap.sh` (Linux x86_64) and installed into `.tools/bin` by the recipes that need them. The sha256 is the digest GitHub records for the release asset; for gitleaks, osv-scanner, actionlint and lychee it was also checked against the project's own checksum file.
 
-| Tool        | Version  | Why                                                                                         |
-| ----------- | -------- | ------------------------------------------------------------------------------------------- |
-| gitleaks    | 8.30.1   | Secrets in git history and built output. The binary, not the action, which needs a license. |
-| osv-scanner | 2.7.0    | Known vulnerabilities in `pnpm-lock.yaml` when dependencies change.                         |
-| lychee      | 0.24.2   | Links in the built site.                                                                    |
-| actionlint  | 1.7.12   | Workflow syntax, expressions and the shell in `run:` blocks (with shellcheck).              |
-| zizmor      | 1.31.1   | Workflow security audits.                                                                   |
-| shellcheck  | 0.11.0   | Shell script lint.                                                                          |
-| shfmt       | 3.14.1   | Shell script formatting.                                                                    |
-| renovate    | 44.178.3 | `renovate-config-validator` for `renovate.json`, run with `npm exec` (pin in the justfile). |
+| Tool        | Version  | Why                                                                                                |
+| ----------- | -------- | -------------------------------------------------------------------------------------------------- |
+| gitleaks    | 8.30.1   | Secrets in git history and built output. The binary, not the action, which needs a license.        |
+| osv-scanner | 2.7.0    | Known vulnerabilities in `pnpm-lock.yaml` when dependencies change.                                |
+| lychee      | 0.24.2   | Links in the built site.                                                                           |
+| actionlint  | 1.7.12   | Workflow syntax, expressions and the shell in `run:` blocks (with shellcheck).                     |
+| zizmor      | 1.31.1   | Workflow security audits.                                                                          |
+| shellcheck  | 0.11.0   | Shell script lint.                                                                                 |
+| shfmt       | 3.14.1   | Shell script formatting.                                                                           |
+| renovate    | 44.178.3 | `renovate-config-validator` for `renovate.json`, run with `npm exec` (pin in `.renovate-version`). |
 
 GitHub Actions, pinned by commit SHA in `.github/`: `actions/checkout` 7.0.1, `actions/setup-node` 7.1.0, `actions/cache` 6.1.0, `actions/upload-artifact` 7.0.2, `actions/download-artifact` 8.0.2, `github/codeql-action` 4.39.1. Nothing else: no third-party action runs in CI.
 
@@ -86,7 +86,7 @@ GitHub Actions, pinned by commit SHA in `.github/`: `actions/checkout` 7.0.1, `a
 - TypeScript is held below 7 (`allowedVersions: <7.0.0`) until `@astrojs/check` and `svelte-check` accept it; the rule says to remove it then.
 - satteri is held to the minor `@astrojs/markdown-satteri` declares (`allowedVersions: <0.11.0` while it declares `^0.10.5`). A second satteri version would give the diagram plugin types that Astro's processor rejects. The bound moves when `@astrojs/markdown-satteri` moves.
 - `@types/node` is held to the Node major in `.node-version` (`allowedVersions: <25.0.0` while Node is 24), so the types never describe APIs the runtime lacks. The pull request that moves `.node-version` to a new major raises the bound.
-- A regex manager tracks the tool pins in `scripts/bootstrap.sh` (`# renovate:` comments) and the Renovate pin in the justfile. Renovate cannot update the sha256 next to a bootstrap pin, so those pull requests never automerge and fail CI until someone updates the checksum from the release.
+- A regex manager tracks the tool pins in `scripts/bootstrap.sh` (`# renovate:` comments), and a second one the Renovate pin, the single version in `.renovate-version`. The pin has its own file, outside the toolchain files that run every job (ADR 0018), so a Renovate bump runs only `format`, `secrets-source`, `workflows` and `renovate`. Renovate cannot update the sha256 next to a bootstrap pin, so those pull requests never automerge and fail CI until someone updates the checksum from the release.
 
 `just renovate-check` validates the config with the pinned Renovate and runs `scripts/renovate-policy.test.ts`, which fails if any rule turns automerge on for anything but patch or minor; CI runs it when tool config changes.
 

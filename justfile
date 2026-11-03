@@ -3,8 +3,6 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 
 # The version of every build: Workers Builds' commit, else the local checkout, else "dev".
-# renovate: datasource=npm depName=renovate
-renovate_version := "44.198.3"
 commit_sha := env("WORKERS_CI_COMMIT_SHA", `git rev-parse HEAD 2>/dev/null || echo dev`)
 
 # Where the site build reads source data (ADR 0015): the read API when Workers Builds builds
@@ -346,10 +344,10 @@ shell-lint: (tools "shellcheck" "shfmt")
 osv: (tools "osv-scanner")
     osv-scanner scan source --lockfile pnpm-lock.yaml
 
-# Validate renovate.json with the pinned Renovate, and its automerge policy
+# Validate renovate.json with the Renovate pinned in .renovate-version, and its automerge policy
 renovate-check:
     node --test scripts/renovate-policy.test.ts
-    npm exec --yes --package renovate@{{ renovate_version }} -- renovate-config-validator --strict --no-global renovate.json
+    npm exec --yes --package renovate@{{ trim(read(".renovate-version")) }} -- renovate-config-validator --strict --no-global renovate.json
 
 # Apply the main branch ruleset and merge settings on GitHub (owner, needs gh with admin)
 repo-ruleset:
