@@ -5,6 +5,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { APIRequestContext } from '@playwright/test';
+import { notes } from './content.ts';
 import { expect, test } from './fixtures.ts';
 
 const builds = {
@@ -63,7 +64,8 @@ test('every page names a link-preview image production serves', async ({ request
   const images = await checkPreviews(builds.production, request);
   // Notes get their own; the rest share the room's.
   expect([...images.keys()]).toContain('/og/default.png');
-  expect([...images.keys()].some((path) => path.startsWith('/og/til/'))).toBe(true);
+  const published = notes.some((note) => !note.draft);
+  expect([...images.keys()].some((path) => path.startsWith('/og/til/'))).toBe(published);
 });
 
 // Catches a Preview pointing crawlers at production, which has no image for an unpublished post.
