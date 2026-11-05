@@ -23,7 +23,7 @@
     "msw": "catalog:",
     "pagefind": "1.6.0",
     "sharp": "0.35.5",
-    "svelte-check": "4.7.7",
+    "svelte-check": "4.7.8",
     "typescript": "catalog:",
     "vitest": "catalog:",
     "wrangler": "catalog:"
