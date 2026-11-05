@@ -7,7 +7,7 @@
     "@astrojs/sitemap": "3.7.4",
     "@astrojs/svelte": "9.1.2",
     "@min7/contracts": "workspace:*",
-    "astro": "7.4.4",
+    "astro": "7.4.5",
     "pele": "1.13.0",
     "satteri": "0.10.5",
     "svelte": "5.57.3"
