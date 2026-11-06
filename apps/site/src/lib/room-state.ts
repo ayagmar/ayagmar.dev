@@ -12,7 +12,7 @@
 import type { ListeningSnapshot, ShippingEvent } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 import { type HeatLevel, heatmap } from './heat.ts';
-import { type NowPlayingLine, nowPlaying } from './listening.ts';
+import { type NowPlayingLine, nowPlaying, nowPlayingWords } from './listening.ts';
 import type { Answer } from './live.ts';
 import { plural } from './plural.ts';
 import {
@@ -236,9 +236,6 @@ function screenAt(
   return { cells, words: `${tokens(total)} tokens${whole ? '' : ' on record'}, ${range}${asOf}` };
 }
 
-const lineWords = ({ lead, track }: NowPlayingLine) =>
-  track === null ? lead : `${lead} ${track.track} by ${track.artist}`;
-
 function recordAt(
   reading: RoomInputs['listening'],
   { kind, instant }: RoomMoment
@@ -260,7 +257,7 @@ function recordAt(
     reading.currentUntil !== null &&
     instant <= reading.currentUntil;
   const line = nowPlaying(data, reading.fetchedAt, now);
-  return { state: line.playing ? 'playing' : 'resting', line, words: lineWords(line) };
+  return { state: line.playing ? 'playing' : 'resting', line, words: nowPlayingWords(line) };
 }
 
 function clockAt(

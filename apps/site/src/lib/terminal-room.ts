@@ -4,8 +4,6 @@
  * into frames (src/pages/terminal/) and the site Worker renders one per request (worker/room.ts).
  * Every word comes from the module that words it for the page.
  */
-import { type NowPlayingLine, nowPlayingMarkup } from './listening.ts';
-import { el } from './markup.ts';
 import { inline } from './markup-text.ts';
 import type { ClockedRoom } from './room-state.ts';
 import { curlTarget, identityLines, sampleNote, textPages } from './site.ts';
@@ -135,11 +133,6 @@ export function terminalLine(text: string): string {
   return `${line}…`;
 }
 
-function listeningLine(line: NowPlayingLine): string {
-  const { words, at } = nowPlayingMarkup(line);
-  return inline(el('p', {}, ...words, ' ', ...(at === null ? [] : [at]))).trim();
-}
-
 /** The answer to `curl ayagmar.dev/room`, ending in how to get it without colour. */
 export function renderTerminalRoom(
   frame: Uint8Array,
@@ -154,7 +147,7 @@ export function renderTerminalRoom(
     '',
     `It is ${lamp.time} in Rabat.`,
     window.label,
-    ...(record.line === null ? [] : [terminalLine(listeningLine(record.line))]),
+    ...(record.words === null ? [] : [terminalLine(record.words)]),
     ...(pins.latest === null ? [] : [terminalLine(`Shipped ${inline(shippingItem(pins.latest))}`)]),
     ...(sample ? [sampleNote] : []),
     '',

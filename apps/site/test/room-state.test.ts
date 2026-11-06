@@ -124,6 +124,7 @@ describe('the clock', () => {
 
 describe('the record', () => {
   const snapshot: RoomListening = { nowPlaying: track, recent: [recent('2026-10-26T11:00:00Z')] };
+  const empty: RoomListening = { nowPlaying: null, recent: [] };
 
   // Catches a record turning on a build's snapshot, on fixtures, on an answer the latest refresh
   // did not bring, past its limit by a millisecond, or in the past.
@@ -154,7 +155,7 @@ describe('the record', () => {
     const at = past(Date.parse('2026-10-26T10:00:00Z'));
     expect(roomState(inputs({ listening }), at).record).toMatchObject({
       state: 'resting',
-      words: 'Last played Older by Nick Drake',
+      words: 'Last played Older by Nick Drake · 26 Oct, 09:00',
     });
     const before = past(Date.parse('2026-10-26T08:00:00Z'));
     expect(roomState(inputs({ listening }), before).record).toEqual({
@@ -162,6 +163,29 @@ describe('the record', () => {
       line: null,
       words: null,
     });
+  });
+
+  // Catches a hotspot making a present claim from an old empty answer the panel dates: the build's,
+  // one aged past its limit, and one a failed refresh left in place.
+  it.each([
+    ['the build', reading(empty), live(noon + dayMs)],
+    ['an aged answer', reading(empty, noon, 'live', noon + limit), live(noon + limit + 1)],
+    ['a failed refresh', reading(empty, noon, 'live', null), live(noon + minute)],
+  ] as const)('dates an empty record from %s', (_, listening, moment) => {
+    const state = roomState(inputs({ listening }), moment);
+    expect(hotspotWords(roomObjects[6], state)).toBe(
+      'Record player: music. Nothing played lately · checked 26 Oct, 12:00.'
+    );
+  });
+
+  // Catches a date on a line that describes now.
+  it('needs no date while it describes now', () => {
+    const listening = reading(empty, noon, 'live', noon + limit);
+    expect(roomState(inputs({ listening }), live()).record.words).toBe('Nothing playing right now');
+    const playing = reading(snapshot, noon, 'live', noon + limit);
+    expect(roomState(inputs({ listening: playing }), live()).record.words).toBe(
+      'Now playing Which Will by Nick Drake'
+    );
   });
 
   // Catches an accepted answer turning the record after a later refresh that was not current: the
@@ -194,7 +218,7 @@ describe('the record', () => {
     expect(stateAfter(a, noon).state).toBe('playing');
     const after = stateAfter(next, noon + minute);
     expect(after.state).toBe('resting');
-    expect(after.words).toBe('Last played Which Will by Nick Drake');
+    expect(after.words).toBe('Last played Which Will by Nick Drake · 26 Oct, 12:00');
   });
 
   // The rule as a sequence: whatever a tab sees, in any order, restarts included.
