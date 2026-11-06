@@ -89,7 +89,9 @@ live('listening', 60_000, readListening, (_panel, answer, now) => {
   show(Date.now());
 });
 
-const scrub = document.querySelector('.room-scrub');
+const scrub = document.querySelector<HTMLElement>('.room-scrub');
+// A past date needs Rabat's real calendar: with old rules, today could pass for a finished day.
+if (!inputs.knowsRabat) scrub?.remove();
 let woken = false;
 const wake = () => {
   if (woken) return;

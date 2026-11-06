@@ -150,6 +150,22 @@ declare global {
   }
 }
 
+// Catches the scrub on a browser whose zone rules still run Morocco at +01: at 23:30 UTC it thinks
+// tomorrow has begun, so today would be offered as a finished day.
+test("offers no past days without Rabat's current rules", async ({ page }) => {
+  await page.addInitScript(() => {
+    const parts = Intl.DateTimeFormat.prototype.formatToParts;
+    Intl.DateTimeFormat.prototype.formatToParts = function (time) {
+      const old = this.resolvedOptions().timeZone === 'Africa/Casablanca';
+      return parts.call(this, old ? Number(time) + 3_600_000 : time);
+    };
+  });
+  await page.clock.setFixedTime('2026-11-06T23:30:00Z');
+  await page.goto('/');
+  await expect(page.locator('.room-window')).toHaveAttribute('aria-label', /Through the window/);
+  await expect(page.locator('.room-scrub')).toHaveCount(0);
+});
+
 // Catches a control shown to a reader it cannot work for.
 test('has no control without JavaScript', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
