@@ -13,22 +13,12 @@ import {
   count,
   type ShippingStrip,
   type StripCell,
-  shippedCount,
   shippedWords,
   stripCells,
   stripOf,
 } from '../data/format.ts';
-import {
-  type Counts,
-  dayPath,
-  type Published,
-  range,
-  repoHref,
-  shipped,
-  short,
-  unnamedRepos,
-  unread,
-} from './days.ts';
+import { type Counts, dayPath, shipped, shippedCount } from './day-words.ts';
+import { type Published, range, repoHref, short, unnamedRepos, unread } from './days.ts';
 import { hours } from './llm-usage-panel.ts';
 import { plural } from './plural.ts';
 import { dayMs, isoDate, repoName, tokens, utcDate } from './words.ts';

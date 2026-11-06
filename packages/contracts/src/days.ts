@@ -74,3 +74,5 @@ export type ShippingActivityDays = NonNullable<
   z.infer<typeof shippingActivityDaysEnvelopeSchema>['data']
 >;
 export type LlmUsageDays = NonNullable<z.infer<typeof llmUsageDaysEnvelopeSchema>['data']>;
+export type ListeningDays = NonNullable<z.infer<typeof listeningDaysEnvelopeSchema>['data']>;
+export type WeatherDays = NonNullable<z.infer<typeof weatherDaysEnvelopeSchema>['data']>;

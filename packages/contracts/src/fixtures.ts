@@ -60,6 +60,8 @@ import lastfmHistoryRawTies from '../fixtures/lastfm-history/raw/ties.json' with
 import lastfmHistoryRawUnknownRegistration from '../fixtures/lastfm-history/raw/unknown-registration.json' with {
   type: 'json',
 };
+import listeningDaysOk from '../fixtures/listening/days/ok.json' with { type: 'json' };
+import listeningHistoryOk from '../fixtures/listening/history/ok.json' with { type: 'json' };
 import listeningSnapshotEmpty from '../fixtures/listening/snapshot/empty.json' with {
   type: 'json',
 };
@@ -210,6 +212,8 @@ import trellisPushSensitiveFields from '../fixtures/trellis/push/accept/sensitiv
   type: 'json',
 };
 
+import weatherDaysOk from '../fixtures/weather/days/ok.json' with { type: 'json' };
+import weatherHistoryOk from '../fixtures/weather/history/ok.json' with { type: 'json' };
 import weatherSnapshotClear from '../fixtures/weather/snapshot/clear.json' with { type: 'json' };
 import weatherSnapshotFog from '../fixtures/weather/snapshot/fog.json' with { type: 'json' };
 import weatherSnapshotOk from '../fixtures/weather/snapshot/ok.json' with { type: 'json' };
@@ -401,6 +405,12 @@ export const daysFixtures = {
   'llm-usage': {
     ok: llmUsageDaysOk,
   },
+  listening: {
+    ok: listeningDaysOk,
+  },
+  weather: {
+    ok: weatherDaysOk,
+  },
 } as const;
 
 /**
@@ -414,5 +424,11 @@ export const historyFixtures = {
   },
   'llm-usage': {
     ok: llmUsageHistoryOk,
+  },
+  listening: {
+    ok: listeningHistoryOk,
+  },
+  weather: {
+    ok: weatherHistoryOk,
   },
 } as const;

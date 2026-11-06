@@ -1,0 +1,181 @@
+{
+  "zone": "Africa/Casablanca",
+  "from": "2026-09-29",
+  "to": "2026-10-26",
+  "days": [
+    {
+      "date": "2026-10-12",
+      "day": {
+        "code": 0,
+        "at": "2026-10-12T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 61,
+        "at": "2026-10-12T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-13",
+      "day": {
+        "code": 1,
+        "at": "2026-10-13T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 1,
+        "at": "2026-10-13T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-14",
+      "day": {
+        "code": 2,
+        "at": "2026-10-14T13:00:00Z",
+        "origin": "live"
+      },
+      "night": null
+    },
+    {
+      "date": "2026-10-15",
+      "day": {
+        "code": 3,
+        "at": "2026-10-15T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 4,
+        "at": "2026-10-15T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-16",
+      "day": {
+        "code": 61,
+        "at": "2026-10-16T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 2,
+        "at": "2026-10-16T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-17",
+      "day": {
+        "code": 1,
+        "at": "2026-10-17T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 80,
+        "at": "2026-10-17T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-18",
+      "day": {
+        "code": 0,
+        "at": "2026-10-18T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 3,
+        "at": "2026-10-18T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-19",
+      "day": {
+        "code": 45,
+        "at": "2026-10-19T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 0,
+        "at": "2026-10-19T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-21",
+      "day": {
+        "code": 2,
+        "at": "2026-10-21T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 0,
+        "at": "2026-10-21T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-22",
+      "day": {
+        "code": 80,
+        "at": "2026-10-22T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 1,
+        "at": "2026-10-22T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-23",
+      "day": {
+        "code": 3,
+        "at": "2026-10-23T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 2,
+        "at": "2026-10-23T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-24",
+      "day": {
+        "code": 0,
+        "at": "2026-10-24T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 3,
+        "at": "2026-10-24T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-25",
+      "day": {
+        "code": 0,
+        "at": "2026-10-25T13:00:00Z",
+        "origin": "live"
+      },
+      "night": {
+        "code": 61,
+        "at": "2026-10-25T22:00:00Z",
+        "origin": "live"
+      }
+    },
+    {
+      "date": "2026-10-26",
+      "day": {
+        "code": 1,
+        "at": "2026-10-26T13:00:00Z",
+        "origin": "live"
+      },
+      "night": null
+    }
+  ]
+}

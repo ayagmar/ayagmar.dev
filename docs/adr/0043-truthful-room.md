@@ -1,6 +1,6 @@
 # 0043. The room shows what is true
 
-Status: accepted, 2026-11-06. Amends ADR 0017 (budgets), ADR 0027 (the cat's hours, the record), ADR 0029 (when the room asks for weather, its allowance) and ADR 0045 (`RoomFacts`).
+Status: accepted, 2026-11-06. Amends ADR 0017 (budgets), ADR 0027 (the cat's hours, the record), ADR 0029 (when the room asks for weather, its allowance) and ADR 0045 (`RoomFacts`). Amended 2026-11-06: a `past` moment is a date's records, not a filter over the snapshot, and home's script runs `roomClock` alone (ADR 0044).
 
 ## Context
 
@@ -14,13 +14,13 @@ The room's picture told stories nothing had measured. `scene.py` painted six inv
 
 **Three kinds of moment.**
 
-| Kind    | What it is                                   | Window, lamp      | Record                                | Dated events, scrobbles | Daily totals                                                             | Weather                   |
-| ------- | -------------------------------------------- | ----------------- | ------------------------------------- | ----------------------- | ------------------------------------------------------------------------ | ------------------------- |
-| `live`  | This instant, with a clock                   | From the clock    | May say playing                       | As observed             | Up to the observation's date, with an as-of while that day was running   | `readWeather` on the body |
-| `built` | The build, whose page must hold while served | Null: no-JS scene | Rests, `Last played`                  | As observed             | The same                                                                 | None                      |
-| `past`  | A moment already over (ADR 0044's scrub)     | From the clock    | Never playing; unknown with no record | Only those before it    | Days before its date only: a total for its own date may hold later hours | None, so no claim         |
+| Kind    | What it is                                   | Window, lamp      | Record                                | Dated events, scrobbles | Daily totals                                                           | Weather                   |
+| ------- | -------------------------------------------- | ----------------- | ------------------------------------- | ----------------------- | ---------------------------------------------------------------------- | ------------------------- |
+| `live`  | This instant, with a clock                   | From the clock    | May say playing                       | As observed             | Up to the observation's date, with an as-of while that day was running | `readWeather` on the body |
+| `built` | The build, whose page must hold while served | Null: no-JS scene | Rests, `Last played`                  | As observed             | The same                                                               | None                      |
+| `past`  | A date already over (ADR 0044)               | From the clock    | Never playing; from the date's record | That date's records     | That date's records, as a day summary                                  | The date's night slot     |
 
-A snapshot taken at 18:00 holds all of that day's tokens, so filtering by date cannot make a 09:00 claim; the screen shows that day as no record. A current track is dated when the answer was taken, so a past moment drops it before wording rather than letting `nowPlaying` prefer it. Stored history for weather and listening is not part of this ADR. Without it, a past moment says unknown.
+A snapshot taken at 18:00 holds all of that day's tokens, so filtering by date cannot make a 09:00 claim. ADR 0044 settled this by claiming no instant: a past moment says what its date came to, from `/v1/days`.
 
 **The refresh outcome is separate from the accepted answer.** `follow` in `live.ts` is the DOM-free reader `live()` now uses: it keeps the accepted answer and reports whether the latest refresh brought it. A reading then carries `currentUntil`: the last instant it may be said to describe now, or null. An older, stale, null or malformed answer leaves a young accepted snapshot in place and still stops the record, as the panel always did. The exact 15-minute limit stays: `roomState` checks `instant <= currentUntil` on every tick. The panel's line and the scene's record are one `RoomState.record`; `renderNowPlaying` takes a line and decides nothing.
 

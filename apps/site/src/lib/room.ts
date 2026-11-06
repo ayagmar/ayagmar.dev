@@ -28,10 +28,12 @@ function roomFact(id: RoomObject['id'], state: RoomState) {
 }
 
 /** A hotspot's name: `Notebook: writing. 3 posts, newest: Token logs.` */
-export function hotspotWords({ id, object, section }: RoomObject, state: RoomState): string {
-  const fact = roomFact(id, state);
-  return `${object}: ${section}${fact === null ? '' : `. ${fact}.`}`;
-}
+export const hotspotName = ({ object, section }: RoomObject, fact: string | null) =>
+  `${object}: ${section}${fact === null ? '' : `. ${fact}.`}`;
+
+/** The name of `object`'s hotspot in `state`. */
+export const hotspotWords = (object: RoomObject, state: RoomState) =>
+  hotspotName(object, roomFact(object.id, state));
 
 export const catName =
   'A ginger cat asleep on the windowsill. It keeps the night shift until five.';

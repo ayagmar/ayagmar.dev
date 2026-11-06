@@ -7,9 +7,11 @@ import {
   daysLast,
   type Envelope,
   isStale,
+  type ListeningDays,
   type ListeningSnapshot,
   type LlmUsageDays,
   type LlmUsageSnapshot,
+  listeningDaysEnvelopeSchema,
   listeningEnvelopeSchema,
   llmUsageDaysEnvelopeSchema,
   llmUsageEnvelopeSchema,
@@ -23,6 +25,8 @@ import {
   shippingActivityDaysEnvelopeSchema,
   shippingEnvelopeSchema,
   staleAfterSeconds,
+  type WeatherDays,
+  weatherDaysEnvelopeSchema,
 } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 
@@ -45,15 +49,19 @@ interface Snapshots {
 const daysSchemas = {
   'shipping-activity': shippingActivityDaysEnvelopeSchema,
   'llm-usage': llmUsageDaysEnvelopeSchema,
+  listening: listeningDaysEnvelopeSchema,
+  weather: weatherDaysEnvelopeSchema,
 };
 
 interface DaysBlocks {
   'shipping-activity': ShippingActivityDays;
   'llm-usage': LlmUsageDays;
+  listening: ListeningDays;
+  weather: WeatherDays;
 }
 
-/** The series the site reads; `/v1/days` serves more than it draws. */
-type SiteSeries = keyof DaysBlocks;
+/** The series the site reads, which is every series `/v1/days` serves. */
+export type SiteSeries = keyof DaysBlocks;
 
 /** A day of `series`' history, as `/v1/days/<series>` serves it. */
 export type DayOf<Series extends SiteSeries> = DaysBlocks[Series]['days'][number];
@@ -69,7 +77,7 @@ export interface SeriesHistory<Day> {
 }
 
 /** Every month `/v1/days` serves for `series` at `now`: from the first to the current one there. */
-function historyMonths(series: SiteSeries, now: Date): string[] {
+export function historyMonths(series: SiteSeries, now: Date): string[] {
   const current = (
     dailyZones[series] === 'UTC' ? now.toISOString() : rabatDate(now.getTime())
   ).slice(0, 7);
@@ -234,6 +242,12 @@ export function createReader(options: ReaderOptions) {
     }) as Envelope<unknown>;
   }
 
+  /** One month of `series` as `/v1/days/<series>?month=` serves it; `data` is null if unread. */
+  const readMonth = (series: SiteSeries, month: string) =>
+    mode === 'fixtures'
+      ? monthFromFixtures(series, month)
+      : fromApi(series, `${apiBase}/v1/days/${series}?month=${month}`, daysSchemas[series]);
+
   const histories = new Map<SiteSeries, Promise<SeriesHistory<unknown>>>();
 
   /**
@@ -248,13 +262,7 @@ export function createReader(options: ReaderOptions) {
     let pending = histories.get(series);
     if (pending === undefined) {
       const months = historyMonths(series, now());
-      pending = Promise.all(
-        months.map((month) =>
-          mode === 'fixtures'
-            ? monthFromFixtures(series, month)
-            : fromApi(series, `${apiBase}/v1/days/${series}?month=${month}`, daysSchemas[series])
-        )
-      ).then((blocks) => {
+      pending = Promise.all(months.map((month) => readMonth(series, month))).then((blocks) => {
         const history: SeriesHistory<unknown> = { days: [], failed: [], fetchedAt: null };
         for (const [index, { data, fetchedAt }] of blocks.entries()) {
           if (data === null) history.failed.push(months[index] as string);
@@ -271,5 +279,5 @@ export function createReader(options: ReaderOptions) {
     return (await pending) as SeriesHistory<DayOf<Series>>;
   }
 
-  return { read, readDays, readHistory };
+  return { read, readDays, readMonth, readHistory };
 }

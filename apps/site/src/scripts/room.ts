@@ -3,8 +3,9 @@
 // it. Nothing is decided here. The window, the lamp and the cat follow Rabat's clock (ADR 0027);
 // the weather comes from signals (ADR 0029) when the page has its endpoint, and the record and
 // the Listening panel's line from `/v1/listening` (ADR 0015). The corkboard, the shelf and the
-// framed screen stay as the build drew them. Also the keys 1 to 7, which open the room's objects
-// in reading order, unless the list of keys has turned single-key shortcuts off. Without this
+// framed screen stay as the build drew them, until a reader scrubs to a past day: the control
+// loads src/scripts/room-scrub.ts on first touch (ADR 0044), and the live answers keep arriving
+// behind it. Also the keys 1 to 7, which open the room's objects in reading order, unless the list of keys has turned single-key shortcuts off. Without this
 // script the room is the build's: the static scene of the page's theme, with no moon, note, cat
 // or weather; a browser with outdated time zone rules gets the sky and the moon, but not the
 // lamp, the note or the cat.
@@ -12,15 +13,9 @@
 import { readListening, renderNowPlaying } from '../lib/listening.ts';
 import { live, poll } from '../lib/live.ts';
 import { knowsRabat } from '../lib/rabat-date.ts';
-import { hotspotWords, roomObjects } from '../lib/room.ts';
-import {
-  changedParts,
-  liveReading,
-  type RoomSeed,
-  type RoomState,
-  roomState,
-  seededInputs,
-} from '../lib/room-state.ts';
+import { hotspotName, roomObjects } from '../lib/room.ts';
+import { changedParts, liveReading, roomClock, seededInputs } from '../lib/room-clock.ts';
+import type { RoomSeed, RoomState } from '../lib/room-state.ts';
 import { moonPath } from '../lib/sky.ts';
 
 const scene = document.querySelector('.scene') as HTMLElement;
@@ -30,11 +25,16 @@ const note = document.querySelector('.room-note') as HTMLElement;
 const seed: RoomSeed = JSON.parse(scene.dataset.roomSeed as string);
 const inputs = seededInputs(seed, knowsRabat());
 
-// What the page shows now, starting with what the build drew.
-let drawn = roomState(inputs, { kind: 'built', instant: seed.builtAt });
+type Clocked = Pick<RoomState, 'window' | 'lamp' | 'record'>;
+
+// The room as it is now, starting with what the build drew; `painted` is what the scene shows,
+// and `past` the day a reader has scrubbed to, if any.
+let drawn: Clocked = roomClock(inputs, { kind: 'built', instant: seed.builtAt });
+let painted = drawn;
+let past: Clocked | null = null;
 
 /** The parts of the room this page keeps current; the others stay as the build drew them. */
-const draw: Partial<Record<keyof RoomState, (state: RoomState) => void>> = {
+const draw: Record<keyof Clocked, (state: Clocked) => void> = {
   window({ window }) {
     if (window === null) return;
     scene.dataset.sky = window.sky;
@@ -51,21 +51,29 @@ const draw: Partial<Record<keyof RoomState, (state: RoomState) => void>> = {
     (note.querySelector('time') as HTMLElement).textContent = lamp.time;
   },
   record(state) {
-    const { line } = state.record;
-    if (line === null) return;
-    scene.dataset.record = state.record.state;
-    renderNowPlaying(document.querySelector('.now-playing') as HTMLElement, line);
+    if (state.record.state === 'unknown') delete scene.dataset.record;
+    else scene.dataset.record = state.record.state;
     const object = roomObjects[6];
     const label = scene.querySelector(`[data-room="${object.id}"] span`) as HTMLElement;
-    label.textContent = hotspotWords(object, state);
+    label.textContent = hotspotName(object, state.record.words);
   },
 };
 
-/** Redraws what differs from what the page shows at `instant`. */
+/** Redraws what differs from what the scene shows. */
+function paint(state: Clocked) {
+  for (const part of changedParts(painted, state)) draw[part](state);
+  painted = state;
+}
+
+/** The room at `instant`. The Listening panel always says what is true now, scrubbed or not. */
 function show(instant: number) {
-  const next = roomState(inputs, { kind: 'live', instant });
-  for (const part of changedParts(drawn, next)) draw[part]?.(next);
+  const next = roomClock(inputs, { kind: 'live', instant });
+  const { line } = next.record;
+  if (line !== null && changedParts(drawn, next).includes('record')) {
+    renderNowPlaying(document.querySelector('.now-playing') as HTMLElement, line);
+  }
   drawn = next;
+  paint(past ?? next);
 }
 
 // Every 15 minutes while the page is visible: signals pulls Open-Meteo that often. `poll` runs this
@@ -80,6 +88,29 @@ live('listening', 60_000, readListening, (_panel, answer, now) => {
   inputs.listening = liveReading(answer, now ? answer.at + seed.listeningLimitMs : null);
   show(Date.now());
 });
+
+const scrub = document.querySelector<HTMLElement>('.room-scrub');
+// A past date needs Rabat's real calendar: with old rules, today could pass for a finished day.
+if (!inputs.knowsRabat) scrub?.remove();
+let woken = false;
+const wake = () => {
+  if (woken) return;
+  woken = true;
+  import('./room-scrub.ts')
+    .then((module) =>
+      module.startScrub(scrub as HTMLElement, scene, inputs, (state) => {
+        past = state;
+        show(Date.now());
+      })
+    )
+    .catch(() => {
+      // The room stays live; the next touch asks again.
+      woken = false;
+      (scrub?.querySelector('input') as HTMLInputElement).value = '0';
+      (scrub?.querySelector('.room-scrub-failed') as HTMLElement).hidden = false;
+    });
+};
+for (const touch of ['focusin', 'pointerdown', 'input']) scrub?.addEventListener(touch, wake);
 
 document.addEventListener('keydown', (event) => {
   const target = event.target;

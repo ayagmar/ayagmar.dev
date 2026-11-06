@@ -10,7 +10,7 @@ import {
   type ProjectSlug,
   type ShippingActivityDay,
 } from '@min7/contracts';
-import { shippedCount } from '../data/format.ts';
+import { dayPath, shipped, shippedCount } from './day-words.ts';
 import { hours } from './llm-usage-panel.ts';
 import { plural } from './plural.ts';
 import { projectPath } from './projects.ts';
@@ -37,13 +37,6 @@ export interface Published {
   kind: 'Post' | 'Note';
 }
 
-export type Counts = Pick<
-  ShippingActivityDay,
-  'pushes' | 'commits' | 'merges' | 'releases' | 'stars'
->;
-
-export const dayPath = (date: string) => `/day/${date}`;
-
 const longDate = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
   day: 'numeric',
@@ -69,18 +62,6 @@ export function range(from: string, to: string): string {
       ? String(Number(from.slice(8)))
       : short(from).replace(/ \d{4}$/, '');
   return `${start}–${short(to)}`;
-}
-
-/** What shipped, `2 merges · 5 commits in 1 push · 1 release`; empty for nothing. Stars are
- * attention, not shipping, as on the strip. */
-export function shipped({ merges, commits, pushes, releases }: Counts): string {
-  return [
-    merges > 0 && plural(merges, 'merge', 'merges'),
-    pushes > 0 && `${plural(commits, 'commit', 'commits')} in ${plural(pushes, 'push', 'pushes')}`,
-    releases > 0 && plural(releases, 'release', 'releases'),
-  ]
-    .filter(Boolean)
-    .join(' · ');
 }
 
 export const repoHref = (repo: string) => {

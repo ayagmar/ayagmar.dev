@@ -47,6 +47,8 @@ interface State {
   time: number;
   weather?: string;
   record?: string;
+  /** How many days to scrub back with the control (ADR 0044). */
+  back?: number;
 }
 
 const states: State[] = [
@@ -61,6 +63,7 @@ const states: State[] = [
     weathers.map((weather) => ({ label: `${name}, ${weather}`, time: sky(name), weather }))
   ),
   ...[...moons()].map(([label, time]) => ({ label, time })),
+  { label: 'past day, 16 Oct', time: Date.UTC(2026, 9, 27, 12), back: 11 },
 ];
 
 const types: Record<string, string> = {
@@ -93,6 +96,11 @@ async function shot(page: Page, state: State): Promise<Buffer> {
     },
     { weather: state.weather, record: state.record }
   );
+  if (state.back !== undefined) {
+    await page.getByRole('slider').focus();
+    for (let press = 0; press < state.back; press++) await page.keyboard.press('ArrowLeft');
+    await page.locator('.room-scrub-facts li', { hasNotText: 'Reading' }).nth(3).waitFor();
+  }
   await page.waitForLoadState('networkidle');
   return page.locator('.scene').screenshot();
 }

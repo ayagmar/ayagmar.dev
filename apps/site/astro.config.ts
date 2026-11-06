@@ -10,6 +10,18 @@ import { scrollable } from './src/lib/markdown/scrollable.ts';
 import { siteUrl } from './src/lib/site.ts';
 import { sitemapFromPages } from './src/lib/sitemap.ts';
 
+/**
+ * Vite wraps every `import()` in a helper that preloads the chunk's CSS and imports, even with
+ * `modulePreload: false`. Home's one dynamic import has neither to preload, and the helper would
+ * add 750 B to its first load to save nothing (ADR 0044).
+ */
+const noPreloadHelper = () => ({
+  name: 'min7:no-preload-helper',
+  enforce: 'pre' as const,
+  load: (id: string) =>
+    id === '\0vite/preload-helper.js' ? 'export const __vitePreload = (load) => load();' : null,
+});
+
 export default defineConfig({
   site: siteUrl,
   output: 'static',
@@ -33,7 +45,7 @@ export default defineConfig({
   integrations: [svelte(), sitemap(), sitemapFromPages()],
   // Never inline a script or asset into the page: the CSP has no `data:` and allows no inline
   // script except Astro's own (ADR 0019), so the home page's room script stays a file (ADR 0027).
-  vite: { build: { assetsInlineLimit: 0 } },
+  vite: { build: { assetsInlineLimit: 0 }, plugins: [noPreloadHelper()] },
   env: {
     schema: {
       COMMIT_SHA: envField.string({ context: 'server', access: 'public', default: 'dev' }),

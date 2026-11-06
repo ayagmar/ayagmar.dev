@@ -1,16 +1,21 @@
 ---
 import { getEntry } from 'astro:content';
+import { rabatDate } from '@min7/contracts/rabat';
 import HomeShipping from '../components/HomeShipping.astro';
+import Markup from '../components/Markup.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
 import Sample from '../components/Sample.astro';
 import { shippingStrip } from '../data/format.ts';
-import { roomSeed } from '../data/room.ts';
+import { roomSeed, scrubFrom } from '../data/room.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
+import { dayPath } from '../lib/day-words.ts';
 import { getDays, getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
 import { catName, catNote, hotspotWords, roomObjects } from '../lib/room.ts';
+import { daysBack } from '../lib/room-day.ts';
+import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
 import { roomState, seededInputs } from '../lib/room-state.ts';
 import { site } from '../lib/site.ts';
 import { moonColour } from '../lib/sky.ts';
@@ -38,6 +43,9 @@ const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 const seed = await roomSeed();
 // The page is the room's `built` moment: no clock, so no sky, and every object carries its date.
 const room = roomState(seededInputs(seed, true), { kind: 'built', instant: seed.builtAt });
+// The scrub needs a past day to go back to (ADR 0044). Its script moves `min` as the days pass.
+const from = await scrubFrom();
+const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
 ---
 
 <Base structuredData={[website(), person(about.data.identity)]}>
@@ -49,6 +57,7 @@ const room = roomState(seededInputs(seed, true), { kind: 'built', instant: seed.
       class="scene"
       data-weather-src={signalsMode === 'api' ? `${signalsApiBase}/v1/weather` : undefined}
       data-room-seed={JSON.stringify(seed)}
+      data-record={room.record.state === 'unknown' ? undefined : room.record.state}
     >
       <span
         class="room-art night"
@@ -62,19 +71,13 @@ const room = roomState(seededInputs(seed, true), { kind: 'built', instant: seed.
       ></span>
       {/* What the room holds, from its state (ADR 0043): picture only, as each hotspot says it. */}
       <ul class="room-pins room-lit" aria-hidden="true">
-        {room.pins.pins.map((pin) => (
-          <li data-kind={pin.kind}>
-            {Array.from({ length: Math.min(pin.count, 3) }, () => (
-              <i></i>
-            ))}
-          </li>
-        ))}
+        <Markup nodes={pinsMarkup(room.pins)} />
       </ul>
       <div class="room-screen heat room-lit" aria-hidden="true">
-        {room.screen.cells.map((cell) => <i data-l={cell.level ?? 'none'}></i>)}
+        <Markup nodes={screenMarkup(room.screen)} />
       </div>
       <ol class="room-books room-lit" aria-hidden="true">
-        {room.shelf.books.map((book) => <li data-tone={book.tone}></li>)}
+        <Markup nodes={booksMarkup(room.shelf)} />
       </ol>
       <span class="room-record" aria-hidden="true"></span>
       <!-- The room's clock (ADR 0027): src/scripts/room.ts fills these in by Rabat time. -->
@@ -98,6 +101,42 @@ const room = roomState(seededInputs(seed, true), { kind: 'built', instant: seed.
         </a>
       ))}
     </div>
+    {/* Shown only with scripts (room.css); src/scripts/room-scrub.ts runs it from the first touch. */}
+    {daysHeld > 0 && (
+      <div
+        class="room-scrub"
+        data-from={from}
+        data-days-src={
+          signalsMode === 'api'
+            ? `${signalsApiBase}/v1/days/{series}?month={month}`
+            : '/sample/days/{series}/{month}.json'
+        }
+      >
+        <input
+          type="range"
+          min={-daysHeld}
+          max="0"
+          step="1"
+          value="0"
+          aria-label="Go back through past days"
+          aria-valuetext="Now"
+        >
+        <div class="room-scrub-line">
+          <p class="room-scrub-date">Back through the days</p>
+          <a class="room-scrub-read" href={dayPath(from as string)} hidden>
+            Read this day
+          </a>
+          <button type="button" class="room-scrub-now" hidden>
+            Back to now
+          </button>
+        </div>
+        <p class="room-scrub-failed" role="alert" hidden>
+          The past days could not be loaded. Move the slider to try again.
+        </p>
+        <ul class="room-scrub-facts" hidden></ul>
+        <p class="sr-only" role="status"></p>
+      </div>
+    )}
     {room.sample && <Sample />}
     <!-- Open-Meteo's CC BY 4.0 credit is on the colophon, linked from the footer (ADR 0029). -->
   </section>
