@@ -234,12 +234,14 @@ test.describe('llms.txt', () => {
   });
 });
 
-test.describe('a post', { tag: '@drafts' }, () => {
+test.describe('a post', () => {
   const slug = 'token-logs';
   const path = `/writing/${slug}`;
 
   // Catches any of the three ways to a post's copies breaking, on a post with diagrams.
-  test('has text, negotiated Markdown and a Markdown URL', async ({ request }) => {
+  test('has text, negotiated Markdown and a Markdown URL', { tag: '@drafts' }, async ({
+    request,
+  }) => {
     const text = await get(request, path, { 'User-Agent': curl });
     expect(text.headers()['content-type']).toBe('text/plain; charset=utf-8');
     expect(await text.text()).toContain('[Diagram: From session log to token totals]');
@@ -260,14 +262,14 @@ test.describe('a post', { tag: '@drafts' }, () => {
   });
 
   // Catches code-copy buttons, diagram SVG or any other page markup reaching a copy.
-  test('copies carry no HTML from the page', async ({ request }) => {
+  test('copies carry no HTML from the page', { tag: '@drafts' }, async ({ request }) => {
     for (const copy of [`${path}.md`, `${path}.txt`]) {
       expect(await (await request.get(copy)).text(), copy).not.toMatch(/<(svg|button|div)\b/);
     }
   });
 
   // Catches a Preview's own lists leaving out the drafts it shows.
-  test('is listed in the preview build', async ({ request }) => {
+  test('is listed in the preview build', { tag: '@drafts' }, async ({ request }) => {
     expect(await (await request.get('/llms.txt')).text()).toContain(`${path}.md)`);
     expect(await (await request.get('/writing.txt')).text()).toContain(`${path}\n`);
   });
