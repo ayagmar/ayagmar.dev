@@ -1035,6 +1035,12 @@
   }
 }
 
+/* The line under the scene sits on the page's column, as the scrub does. */
+.room > .sample {
+  width: min(66rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+}
+
 /* The scrub under the room (ADR 0044). Only with scripts, from the first paint: `data-theme-switch`
    is set before it, so the band is there at once and showing it moves nothing. */
 .room-scrub {

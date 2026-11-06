@@ -210,6 +210,19 @@ test("offers no past days without Rabat's current rules", async ({ page }) => {
   await expect(page.locator('.room-scrub')).toHaveCount(0);
 });
 
+// Catches the sample line left at the window's edge, off the column everything else sits on.
+for (const width of [1440, 390]) {
+  test(`keeps the sample line on the page's column at ${width}`, async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ viewport: { width, height: 800 } });
+    const page = await context.newPage();
+    await page.goto(`${baseURL}/`);
+    const sample = await page.locator('.room > .sample').boundingBox();
+    const scrubber = await page.locator('.room-scrub').boundingBox();
+    expect(sample?.x).toBe(scrubber?.x);
+    await context.close();
+  });
+}
+
 // Catches a control shown to a reader it cannot work for.
 test('has no control without JavaScript', async ({ browser, baseURL }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
