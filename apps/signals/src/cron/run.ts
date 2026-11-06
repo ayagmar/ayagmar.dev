@@ -112,5 +112,5 @@ export async function runScheduled(
     maxBatches: 10,
   });
   logEvent('log', 'cron run', { pulled: next?.adapter.id ?? null, deliveriesDeleted: deleted });
-  await runBackfill(env, scheduledTime);
+  await runBackfill(env, statuses, scheduledTime);
 }

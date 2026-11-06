@@ -751,14 +751,15 @@ describe('the backfill', () => {
     await arm('2026-10-01', '2026-10-03');
     const seen = lastfm({ '2026-10-01': null });
     archiveAnswers(quiet);
-    for (let minute = 0; minute < 8; minute++) {
-      await tick(`2026-11-06T10:0${minute}:30Z`);
+    for (let minute = 0; minute < 40; minute++) {
+      await tick(new Date(Date.parse('2026-11-06T10:00:30Z') + minute * 60_000).toISOString());
     }
     expect(seen.asked.length).toBe(5);
-    expect(await backfillState()).toEqual({
+    expect(await backfillState()).toMatchObject({
       next: '2026-10-01',
       to: '2026-10-03',
       tries: 5,
+      code: 'upstream_unreachable',
       stopped: true,
     });
     expect(await dayCount()).toBe(0);
@@ -773,6 +774,72 @@ describe('the backfill', () => {
     await tick('2026-11-06T10:00:30Z');
     expect(await dayCount()).toBe(0);
   });
+
+  // Catches a refusal repeated every minute until its five tries are gone, with an hour asked
+  // for. Each tick is a fresh invocation, so the wait has to come from storage.
+  it.each([
+    ['Last.fm', 'lastfm'],
+    ['the archive', 'archive'],
+  ])('waits out a Retry-After from %s without asking or spending a try', async (_, refuser) => {
+    await seedSnapshots();
+    await arm('2026-10-01', '2026-10-01');
+    const refusal = () =>
+      new HttpResponse(null, { status: 429, headers: { 'Retry-After': '3600' } });
+    const asked = { lastfm: 0, archive: 0 };
+    network.use(
+      http.post(lastfmUrl, () => {
+        asked.lastfm++;
+        return refuser === 'lastfm' ? refusal() : HttpResponse.json(page({ total: 0 }));
+      }),
+      http.get(archiveUrl, () => {
+        asked.archive++;
+        return refuser === 'archive'
+          ? refusal()
+          : HttpResponse.json(archive('2026-10-01', () => 3));
+      })
+    );
+    await tick('2026-11-06T10:00:30Z');
+    const refused = { ...asked };
+    const state = await backfillState();
+    expect(state).toMatchObject({ tries: 1, code: 'upstream_rate_limited' });
+    expect(state.notBefore).toBe(Date.parse('2026-11-06T11:00:30Z'));
+
+    for (const minute of [1, 2, 30, 59]) {
+      await tick(`2026-11-06T10:${String(minute).padStart(2, '0')}:31Z`);
+    }
+    expect(asked).toEqual(refused);
+    expect(await backfillState()).toEqual(state);
+
+    network.resetHandlers();
+    lastfm({});
+    archiveAnswers(() => 3);
+    await tick('2026-11-06T11:00:31Z');
+    expect(await backfillState()).toBeNull();
+  });
+
+  // Catches a backfill asking Last.fm straight after the live pull was told to wait.
+  it.each([['listening'], ['listening-history'], ['weather']] as const)(
+    'asks nothing while %s is told to wait, and spends no try',
+    async (source) => {
+      await seedSnapshots();
+      await arm('2026-10-01', '2026-10-01');
+      const until = Date.parse('2026-11-06T11:00:00Z');
+      await new D1SnapshotStore(env.DB).recordFailure(
+        source,
+        'upstream_rate_limited',
+        '2026-11-06T10:00:00.000Z',
+        until
+      );
+      const seen = lastfm({});
+      await tick('2026-11-06T10:30:30Z');
+      expect(seen.requests).toBe(0);
+      expect(await backfillState()).toMatchObject({ tries: 0 });
+
+      archiveAnswers(() => 3);
+      await tick('2026-11-06T11:00:30Z');
+      expect(await backfillState()).toBeNull();
+    }
+  );
 
   // Catches an unbounded or mistyped arming: a range ending today, or reversed, or over a year.
   it.each([

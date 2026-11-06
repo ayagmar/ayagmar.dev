@@ -6,6 +6,7 @@ import {
   calendarDatePattern,
   daysFirstMonth,
   listeningStoredDaySchema,
+  type SourceId,
   weatherStoredDaySchema,
 } from '@min7/contracts';
 import { nextDate, rabatDate } from '@min7/contracts/rabat';
@@ -26,6 +27,7 @@ import { logEvent } from '../security/log.ts';
 import { D1SnapshotStore } from '../storage/d1.ts';
 import { mergedRows } from '../storage/daily.ts';
 import { D1ProgressStore, type Progress } from '../storage/progress.ts';
+import type { SourceStatus } from '../storage/types.ts';
 
 /** Two requests per run, each with `getJson`'s 5 seconds; this bounds the pair. */
 const runTimeoutMs = 10_000;
@@ -35,6 +37,10 @@ const archiveMaxBytes = 16 * 1024;
 const maxDays = 400;
 /** Runs in a row that may fail on one date before the backfill stops and waits for a person. */
 const maxTries = 5;
+/** Between tries when the upstream names no time of its own. */
+const retryMs = 5 * 60_000;
+/** Sources whose `Retry-After` also binds the backfill: the same two upstreams. */
+const cooldownSources: readonly SourceId[] = ['listening', 'listening-history', 'weather'];
 
 const dayMs = 24 * 60 * 60_000;
 
@@ -45,18 +51,29 @@ interface State {
   to: string;
   /** Runs begun on `next`, counted before any work, so a killed run counts too. */
   tries: number;
+  /** Unix ms before which no run asks anything or spends a try: kept here, for a restart. */
+  notBefore?: number;
+  /** Why the last try failed: a fixed code. */
+  code?: string;
   /** Set once `tries` ran out: `next` is where it stopped. */
   stopped?: true;
 }
 
 /** The stored state if it names a bounded range of past dates in the order they go. */
 function readState(value: unknown, today: string): State | undefined {
-  const { next, to, tries, stopped } = Object(value);
+  const { next, to, tries, notBefore, code, stopped } = Object(value);
   const dates = [next, to].every((d) => typeof d === 'string' && calendarDatePattern.test(d));
   if (!dates || !Number.isInteger(tries) || tries < 0) return;
   if (next < `${daysFirstMonth}-01` || next > to || to >= today) return;
   if (Date.parse(to) - Date.parse(next) >= maxDays * dayMs) return;
-  return { next, to, tries, ...(stopped === true ? { stopped } : {}) };
+  return {
+    next,
+    to,
+    tries,
+    ...(Number.isFinite(notBefore) ? { notBefore } : {}),
+    ...(typeof code === 'string' ? { code } : {}),
+    ...(stopped === true ? { stopped } : {}),
+  };
 }
 
 /** Reads `date` from both upstreams, then commits each. Failing anywhere throws. */
@@ -64,12 +81,11 @@ async function fillDate(env: Env, date: string, now: number) {
   const apiKey = readSecret(env, 'LASTFM_API_KEY');
   if (apiKey === undefined) throw new PullError('not_configured');
   const signal = AbortSignal.timeout(runTimeoutMs);
-  const [listening, archive] = await Promise.all([
-    readListeningDay(date, apiKey, signal),
-    getJson(archiveUrl(date), { signal, maxBytes: archiveMaxBytes }),
-  ]);
+  // One after the other: a refusal from Last.fm asks the archive nothing.
+  const listening = await readListeningDay(date, apiKey, signal);
   const { values: listeningValues, failure } = listeningDayValues([listening]);
   if (failure !== undefined) throw failure.error;
+  const archive = await getJson(archiveUrl(date), { signal, maxBytes: archiveMaxBytes });
   const weatherValues = weatherDayValues(date, weatherDayOf(date, archive));
 
   const store = new D1SnapshotStore(env.DB);
@@ -91,7 +107,11 @@ async function fillDate(env: Env, date: string, now: number) {
   if (!committed) throw new PullError('upstream_error');
 }
 
-async function step(env: Env, now: number): Promise<void> {
+async function step(
+  env: Env,
+  statuses: ReadonlyMap<SourceId, SourceStatus>,
+  now: number
+): Promise<void> {
   const progress = new D1ProgressStore(env.DB, 'daily-backfill');
   const loaded = await progress.load();
   if (loaded === null || loaded.state === null) return;
@@ -102,17 +122,28 @@ async function step(env: Env, now: number): Promise<void> {
     await progress.finish(loaded, describedDate);
     return;
   }
-  if (state.stopped === true) return;
+  if (state.stopped === true || (state.notBefore ?? 0) > now) return;
+  const cooling = cooldownSources.some((id) => (statuses.get(id)?.retryAfterAt ?? 0) > now);
+  if (cooling) return;
   if (state.tries >= maxTries) {
-    logEvent('warn', 'backfill stopped', { date: state.next });
+    logEvent('warn', 'backfill stopped', { date: state.next, code: state.code ?? null });
     await progress.save(loaded, describedDate, { ...state, stopped: true });
     return;
   }
-  const claim = { ...state, tries: state.tries + 1 };
+  const { notBefore: _waited, ...ready } = state;
+  const claim = { ...ready, tries: state.tries + 1 };
   if (!(await progress.save(loaded, describedDate, claim))) return;
   const claimed: Progress = { ...loaded, step: loaded.step + 1 };
 
-  await fillDate(env, state.next, now);
+  try {
+    await fillDate(env, state.next, now);
+  } catch (error) {
+    if (!(error instanceof PullError)) throw error;
+    logEvent('warn', 'backfill failed', { date: state.next, code: error.code });
+    const notBefore = error.retryAt ?? now + retryMs;
+    await progress.save(claimed, describedDate, { ...claim, notBefore, code: error.code });
+    return;
+  }
 
   logEvent('log', 'backfill day', { date: state.next });
   if (state.next === state.to) await progress.finish(claimed, describedDate);
@@ -130,11 +161,14 @@ async function step(env: Env, now: number): Promise<void> {
  * logged, as this must not fail the run that already did its pull. A date is the unit: a run
  * killed halfway repeats it, and the merges make that change nothing.
  */
-export async function runBackfill(env: Env, now: number): Promise<void> {
+export async function runBackfill(
+  env: Env,
+  statuses: ReadonlyMap<SourceId, SourceStatus>,
+  now: number
+): Promise<void> {
   try {
-    await step(env, now);
-  } catch (error) {
-    const code = error instanceof PullError ? error.code : 'backfill_failed';
-    logEvent('warn', 'backfill failed', { code });
+    await step(env, statuses, now);
+  } catch {
+    logEvent('warn', 'backfill failed', { code: 'backfill_failed' });
   }
 }
