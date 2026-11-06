@@ -11,8 +11,8 @@ declare global {
   interface Window {
     /** For each `pagereveal` of this document, whether a view transition came with it. */
     revealed: boolean[];
-    /** The pseudo-elements animating once the transition has started. */
-    running: string[];
+    /** The transition once started: what animates, and the height of the header's capture. */
+    running: { animated: string[]; headerHeight: string };
     /** The page background on each of the document's first frames. */
     themeFrames: string[];
   }
@@ -24,9 +24,13 @@ const watchReveal = (page: Page) =>
     addEventListener('pagereveal', (event) => {
       window.revealed.push(event.viewTransition !== null);
       event.viewTransition?.ready.then(() => {
-        window.running = document.documentElement
-          .getAnimations({ subtree: true })
-          .flatMap((animation) => (animation.effect as KeyframeEffect).pseudoElement ?? []);
+        const root = document.documentElement;
+        window.running = {
+          animated: root
+            .getAnimations({ subtree: true })
+            .flatMap((animation) => (animation.effect as KeyframeEffect).pseudoElement ?? []),
+          headerHeight: getComputedStyle(root, '::view-transition-group(site-header)').height,
+        };
       });
     });
   });
@@ -64,32 +68,40 @@ test.describe('with reduced motion', () => {
 });
 
 // Catches the header's group animating again: from a page left scrolled down it would slide in
-// from above the window, and any change of box would morph it.
-test('only the page fades, from a scrolled page too', async ({ page }) => {
+// from above the window. Also its name lost, when it would fade with the page, which no list of
+// animations shows: the capture would be gone.
+test('only the page fades and the header is captured, from a scrolled page too', async ({
+  page,
+}) => {
   await watchReveal(page);
   await page.goto('/');
   await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await page.locator('.site-footer a[href="/colophon"]').click();
   await page.waitForFunction(() => window.running !== undefined);
-  expect([...new Set(await page.evaluate(() => window.running))].sort()).toEqual([
+  const { animated, headerHeight } = await page.evaluate(() => window.running);
+  expect([...new Set(animated)].sort()).toEqual([
     '::view-transition-group(root)',
     '::view-transition-new(root)',
     '::view-transition-old(root)',
   ]);
+  const header = await page.locator('.site-header').boundingBox();
+  expect(headerHeight).toBe(`${header?.height}px`);
 });
 
-// Catches the header moving half a scrollbar sideways between a page that scrolls and one that
-// does not, which is the jump a still header exists to avoid.
-test('the header keeps its box between pages', async ({ page }) => {
-  await page.goto('/');
-  const header = page.locator('.site-header');
-  const home = await header.boundingBox();
-  await page.goto(notFoundPath);
-  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(
-    page.viewportSize()?.height
-  );
-  expect(await header.boundingBox()).toEqual(home);
-});
+for (const width of [1280, 700]) {
+  // Catches the header moving half a scrollbar sideways between a page that scrolls and one that
+  // does not, which is the jump a still header exists to avoid. Classic scrollbars do not depend
+  // on the window's width, so a narrow window counts too.
+  test(`the header keeps its box between pages at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/');
+    const header = page.locator('.site-header');
+    const home = await header.boundingBox();
+    await page.goto(notFoundPath);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(1000);
+    expect(await header.boundingBox()).toEqual(home);
+  });
+}
 
 for (const { system, choice } of [
   { system: 'light', choice: 'night' },

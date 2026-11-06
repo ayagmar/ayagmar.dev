@@ -2142,11 +2142,9 @@ dialog mark {
   }
 
   /* A page too short to scroll would otherwise centre the header half a scrollbar to the right.
-     Only where scrollbars take room: on a phone it would cost width and hold nothing still. */
-  @media (min-width: 52rem) {
-    :root {
-      scrollbar-gutter: stable;
-    }
+     Overlay scrollbars get no gutter, so phones keep their width. */
+  :root {
+    scrollbar-gutter: stable;
   }
 
   .site-header {
