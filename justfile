@@ -99,6 +99,10 @@ producers-dry-run:
 producers-local origin="http://127.0.0.1:8787":
     dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; node producers/samples.ts "$dir"; for producer in desktop llm-usage; do name="PUSH_TOKEN_$(echo "$producer" | tr a-z- A-Z_)"; MIN7_TEST_ENDPOINT={{ quote(origin) }} MIN7_STATE_DIR="$dir/state-$producer" MIN7_TEST_TOKEN="$(sed -n "s/^$name=//p" apps/signals/.dev.vars)" node "producers/$producer.ts" --fixtures "$dir/$producer"; done
 
+# Every state of the home room on one contact sheet, apps/site/.room-states/sheet.png (never shipped)
+room-states: site-build
+    {{ site }} node scripts/room-states.ts
+
 # Browser tests against the built site served by its real Worker (wrangler dev)
 e2e: site-build e2e-test
 

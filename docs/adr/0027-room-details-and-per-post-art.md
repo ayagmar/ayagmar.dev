@@ -123,6 +123,7 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 
 ## How to see each one
 
+- All of them at once: `just room-states` writes a contact sheet of every sky, late hour, weather and phase in both themes to `apps/site/.room-states/sheet.png`, from the built page and `src/lib/sky.ts`. It is a recipe and not a Preview route so that nothing can reach production: the directory is ignored and no page links it.
 - Window, moon, lamp and note: open the home page; it shows Rabat now. For other hours, the e2e tests "the room keeps Rabat time" in `apps/site/e2e/room.spec.ts` fix the clock at 03:00, noon and dusk; Playwright's `page.clock.setFixedTime` does the same by hand.
 - Record: only with a live `/v1/listening` answer. Locally, `signals.spec.ts` serves one from the shared fixtures.
 - `curl -s http://localhost:8790/` after `just site-build` and `just site-serve`.
