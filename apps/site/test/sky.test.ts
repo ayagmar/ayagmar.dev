@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isLate, moonAt, moonPath, rabatTime, skyAt } from '../src/lib/sky.ts';
+import { isLate, moonAt, moonDisc, moonPath, rabatTime, skyAt } from '../src/lib/sky.ts';
 
 const hour = 3_600_000;
 const minute = 60_000;
@@ -50,13 +50,11 @@ describe('the moon', () => {
   // Catches a moon lit on the wrong side: from Morocco a waxing moon is lit on the right.
   it('is drawn lit on the right while waxing and on the left while waning', () => {
     const columns = (path: string) => [...path.matchAll(/M(-?\d+) /g)].map(([, x]) => Number(x));
-    const waxing = moonPath(moonAt(Date.parse('2026-02-20T00:00Z')), 0, 0, 6);
-    const waning = moonPath(moonAt(Date.parse('2026-06-12T00:00Z')), 0, 0, 6);
-    expect(Math.min(...columns(waxing))).toBeGreaterThanOrEqual(0);
-    expect(Math.max(...columns(waning))).toBeLessThan(0);
-    expect(moonPath({ elongation: 0, fraction: 0, waxing: true, name: 'new moon' }, 0, 0, 6)).toBe(
-      ''
-    );
+    const waxing = moonPath(moonAt(Date.parse('2026-02-20T00:00Z')));
+    const waning = moonPath(moonAt(Date.parse('2026-06-12T00:00Z')));
+    expect(Math.min(...columns(waxing))).toBeGreaterThanOrEqual(moonDisc.x);
+    expect(Math.max(...columns(waning))).toBeLessThan(moonDisc.x);
+    expect(moonPath({ elongation: 0, fraction: 0, waxing: true, name: 'new moon' })).toBe('');
   });
 });
 

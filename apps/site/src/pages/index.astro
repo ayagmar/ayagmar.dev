@@ -11,6 +11,7 @@ import { getDays, getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
 import { roomObjects } from '../lib/room.ts';
 import { site } from '../lib/site.ts';
+import { moonColour } from '../lib/sky.ts';
 import { person, website } from '../lib/structured-data.ts';
 import { notePath } from '../lib/til.ts';
 import { isoDay } from '../lib/writing.ts';
@@ -57,7 +58,7 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
       <!-- The room's clock (ADR 0027): src/scripts/room.ts fills these in by Rabat time. -->
       <span class="room-window"></span>
       <svg class="room-moon" viewBox="0 0 480 160" preserveAspectRatio="none" aria-hidden="true">
-        <path fill="#e8e8fa"></path>
+        <path fill={moonColour}></path>
       </svg>
       <span class="room-weather" aria-hidden="true"></span>
       <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Rabat.</p>
