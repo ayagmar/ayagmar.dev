@@ -5,22 +5,27 @@
 
 const terminalAgent = /^(curl|wget|httpie|xh)\//i;
 
-// What this site can answer with. A range outside it says nothing about a page's format.
-const served = new Set(['text/markdown', 'text/html', 'application/xhtml+xml', 'text/*', '*/*']);
-
 /**
- * Whether `text/markdown` is what `accept` ranks first among the types above: named outright,
- * with a higher q than HTML or a wildcard, or the same q and listed first. A browser never names
- * it. A range with a q that does not parse is dropped, so a malformed header means HTML.
+ * Whether Markdown beats HTML for `accept`. Each is rated by the most specific range that matches
+ * it (RFC 9110 12.5.1), zero ranges included, so a wildcard cannot undo an exclusion. Markdown
+ * must be named outright, which no browser does, and win on q, or tie and be listed first. A
+ * range whose q does not parse is dropped, so a malformed header means HTML.
  */
 function prefersMarkdown(accept: string | null) {
   const ranges = (accept ?? '').split(',').flatMap((range) => {
     const [type = '', ...params] = range.split(';').map((part) => part.trim().toLowerCase());
     const weight = params.find((param) => /^q\s*=/.test(param))?.replace(/^q\s*=\s*/, '') ?? '1';
-    const q = /^(0(\.\d{0,3})?|1(\.0{0,3})?)$/.test(weight) ? Number(weight) : 0;
-    return served.has(type) && q > 0 ? [{ type, q }] : [];
+    return /^(0(\.\d{0,3})?|1(\.0{0,3})?)$/.test(weight) ? [{ type, q: Number(weight) }] : [];
   });
-  return ranges.toSorted((a, b) => b.q - a.q)[0]?.type === 'text/markdown';
+  const named = (type: string) => ranges.find((range) => range.type === type);
+  const markdown = named('text/markdown');
+  if (markdown === undefined || markdown.q === 0) return false;
+  const html = named('text/html') ?? named('text/*') ?? named('*/*');
+  if (html === undefined) return true;
+  return (
+    markdown.q > html.q ||
+    (markdown.q === html.q && ranges.indexOf(markdown) < ranges.indexOf(html))
+  );
 }
 
 export default {

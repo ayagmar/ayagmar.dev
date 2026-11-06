@@ -10,14 +10,14 @@ Status: accepted, 2026-11-06
 
 ### Which pages, at which URLs
 
-| Page                                                     | Text                       | Markdown    |
-| -------------------------------------------------------- | -------------------------- | ----------- |
-| `/writing/<slug>`, `/til/<slug>`                         | `<page>.txt`               | `<page>.md` |
-| `/`, `/writing`, `/til`, `/projects`, `/projects/<slug>` | `/index.txt`, `<page>.txt` | none        |
-| `/about`, `/uses`, `/stats`, `/now`                      | `<page>.txt`               | none        |
-| `/skills`, `/colophon`, `/day/*`, tag pages, 404         | none                       | none        |
+| Page                                                      | Text                       | Markdown    |
+| --------------------------------------------------------- | -------------------------- | ----------- |
+| `/writing/<slug>`, `/til/<slug>`                          | `<page>.txt`               | `<page>.md` |
+| `/`, `/writing`, `/til`, `/projects`, `/projects/<slug>`  | `/index.txt`, `<page>.txt` | none        |
+| `/about`, `/uses`, `/stats`, `/now`                       | `<page>.txt`               | none        |
+| `/skills`, `/colophon`, `/day/*`, `/YYYY`, tag pages, 404 | none                       | none        |
 
-Every copy is a file in `dist/`, built by an Astro endpoint next to its page, so a draft has no copy on production for the same reason it has no page: the endpoints read `getPosts` and `getNotes`. Markdown stops at posts and notes, the pages whose source it is; the others would need a third renderer for no gain over text. `/skills` and `/colophon` have their prose inside the `.astro` file, so a copy would be a second hand-written version. Tag and day pages are `noindex` filtered views of what the lists already say.
+Every copy is a file in `dist/`, built by an Astro endpoint next to its page, so a draft has no copy on production for the same reason it has no page: the endpoints read `getPosts` and `getNotes`. Markdown stops at posts and notes, the pages whose source it is; the others would need a third renderer for no gain over text. `/skills` and `/colophon` have their prose inside the `.astro` file, so a copy would be a second hand-written version. Tag and day pages are `noindex` filtered views of what the lists already say. Year pages (ADR 0041) get no copy and are not in `llms.txt`: a page is a calendar of squares, the indexed text around it is counts that `/stats.txt` and the feeds cover in part, and a copy would need a renderer over `src/lib/years.ts` and a new routed pattern, a Worker run per view, for readers nobody has asked about. `curl ayagmar.dev/2026` gets the HTML, as any page without a copy does.
 
 ### One model per page
 
@@ -33,7 +33,7 @@ What needs the reader's clock or browser stays on the page: "On this day", the l
 
 YAML frontmatter (`title`, `author`, `date`, `updated`, `summary`, `tags`, `draft` when true, `canonical`), then `# Title`, then the body as written. Frontmatter, not a plain header, because a reader can parse it without guessing; values are JSON strings, which YAML reads, so a title with a colon or quote cannot break it.
 
-- Links, images and link definitions are made absolute by `absoluteLinks`, which reads positions from the Markdown parser (`markdownToMdast`), so a link shown in a code sample stays as written. A `#fragment` goes to the HTML page, with a note's id prefix (ADR 0028). Raw HTML is left alone: `/writing/a.md` has the same base as `/writing/a`, so its relative links still resolve.
+- Links, images and link definitions are made absolute by `absoluteLinks`. The Markdown parser (`markdownToMdast`) finds each node, and the destination is read from the node's own syntax after its label, so a code sample, a title and the prose around a link stay as written. A `#fragment` goes to the HTML page, with a note's id prefix (ADR 0028). Raw HTML is left alone: `/writing/a.md` has the same base as `/writing/a`, so its relative links still resolve.
 - A relative image would become a URL under the post's path. No post has one today, and `just links` scans the built `.md` files, so the first one that fails to resolve fails CI rather than an agent.
 - Mermaid fences stay, since the source is the form an agent can read. Text replaces each with `[Diagram: <name>]`, its `accDescr` and the page's URL: every diagram must have a name (ADR 0024), and Mermaid source is not reading matter in a terminal.
 - Code-copy buttons and heading links come from HTML passes, so neither format has them.
@@ -60,7 +60,7 @@ The price: a post view used to cost nothing, and past the daily limit these path
 2. A `curl`, `wget`, HTTPie or `xh` user agent (ADR 0005): the page's `.txt`.
 3. Anything else, or a page with no such copy: the static page.
 
-"Prefers" means `text/markdown` is the highest-ranked of the types the site serves: named outright, with a q above HTML's or any wildcard's, or the same q and listed first. Agents do send `text/markdown, text/html`; a browser never names Markdown. So `*/*`, `text/*`, `text/html, text/markdown;q=0.5`, a missing header, garbage and a range whose q does not parse all get HTML. A terminal asking `Accept: text/html` still gets text, as it does today; `curl -A` gets the HTML.
+"Prefers" compares the two representations, each rated by the most specific range that matches it (RFC 9110 12.5.1): `text/markdown` by its own range, `text/html` by its own, else `text/*`, else `*/*`. Ranges with q=0 count, so a wildcard cannot undo an exclusion. On top of that sit two choices of this site: Markdown must be named outright, and it must win on q or tie and be listed first. Agents do send `text/markdown, text/html`; a browser never names Markdown. So `text/*;q=1, text/html;q=0.1, text/markdown;q=0.9` gets Markdown, while `*/*`, `text/*`, `text/html, text/markdown;q=0.5`, `text/*, text/markdown;q=0.9`, a missing header, garbage and a range whose q does not parse all get HTML. A terminal asking `Accept: text/html` still gets text, as it does today; `curl -A` gets the HTML.
 
 The Worker looks a copy up by fetching it from the assets binding and falls through on a 404, so it holds no list of pages. An unknown path, a draft's slug and a trailing slash all reach the static layer as they did: 404, 404 and a 307 to the page. A 404 under a routed path is the HTML 404 page for every client, including terminals; a text 404 would apply only under the routed paths, while `/nope` never reaches the Worker. HEAD and conditional requests pass through unchanged.
 
@@ -68,7 +68,7 @@ The Worker looks a copy up by fetching it from the assets binding and falls thro
 
 Every answer the Worker gives carries `Vary: Accept, User-Agent`, the HTML and 404s included. What each layer does, as checked in the docs and on `wrangler dev`:
 
-- Workers run before the cache, so no Cloudflare cache sits in front of the choice. The variants are separate asset files, cached by their own paths, so one can never be stored as the other. Cloudflare's docs for static assets say nothing about `Vary`; nothing here depends on the edge honouring it. A zone Cache Rule that caches these paths would have to be keyed on those headers, so do not add one.
+- On this configuration no Cloudflare cache sits in front of the choice: the zone cache runs after a Worker, and nothing here turns on Workers Cache, the opt-in cache that can answer before a Worker runs and honours `Vary`, or caches the Worker's own output. That is a fact about this setup, not a platform guarantee, so check this section before enabling either. The variants are separate asset files, cached by their own paths (`CF-Cache-Status` differed between the HTML and the text of one URL on a Preview), so one can never be stored as the other. Cloudflare's static assets docs say nothing about `Vary`, and nothing here depends on the edge honouring it. A zone Cache Rule that caches these paths would have to be keyed on those headers, so do not add one.
 - `Vary` is for browsers and other shared caches beyond Cloudflare. Assets default to `public, max-age=0, must-revalidate` with an ETag of the file's hash, so a cached copy is revalidated each time and a validator from one variant cannot match another.
 - The `.md` and `.txt` URLs depend on nothing, skip the Worker and carry no such `Vary`.
 
