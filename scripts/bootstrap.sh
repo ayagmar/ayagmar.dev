@@ -72,7 +72,7 @@ tool_url["actionlint"]="https://github.com/rhysd/actionlint/releases/download/v{
 tool_sha256["actionlint"]="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
 tool_path["actionlint"]="actionlint"
 # renovate: datasource=github-releases depName=zizmorcore/zizmor
-tool_version["zizmor"]="1.31.1"
+tool_version["zizmor"]="1.32.0"
 tool_url["zizmor"]="https://github.com/zizmorcore/zizmor/releases/download/v{v}/zizmor-x86_64-unknown-linux-gnu.tar.gz"
 tool_sha256["zizmor"]="d185f726bdaf92df78273217dfdd24ebcd6b0ef48cf3ce776ff5762b6e138c99"
 tool_path["zizmor"]="zizmor"
