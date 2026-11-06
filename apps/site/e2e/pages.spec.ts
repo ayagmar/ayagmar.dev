@@ -55,6 +55,13 @@ test('pages link their feeds for discovery', { tag: '@drafts' }, async ({ page }
   ]);
 });
 
+// Catches the line break before an expression eating the space: "No cookies.Visits are counted".
+test('the colophon keeps its spaces around what the build fills in', async ({ page }) => {
+  await page.goto('/colophon');
+  await expect(page.locator('main')).toContainText('No cookies. No tracking');
+  await expect(page.locator('main')).toContainText(/This build: \S/);
+});
+
 test('the colophon shows the commit the site was built from', async ({ page }) => {
   await page.goto('/colophon');
   await expect(page.getByText(/This build:/)).toContainText(/[0-9a-f]{12}|dev/);

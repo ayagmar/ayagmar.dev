@@ -15,7 +15,7 @@ const analytics = analyticsToken(WORKERS_CI_BRANCH) !== undefined;
   <div class="paper column t-colophon">
     <h1>Colophon</h1>
     <p>
-      Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No cookies.
+      Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No cookies.{' '}
       {analytics ? (
         <>
           Visits are counted by Cloudflare Web Analytics, the one third-party script, which uses no
@@ -31,7 +31,7 @@ const analytics = analyticsToken(WORKERS_CI_BRANCH) !== undefined;
       comments".
     </p>
     <p>
-      This build:
+      This build:{' '}
       {isCommit ? (
         <a href={`${repo}/commit/${COMMIT_SHA}`}>
           <code>{COMMIT_SHA.slice(0, 12)}</code>
