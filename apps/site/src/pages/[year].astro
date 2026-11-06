@@ -17,7 +17,7 @@ export const getStaticPaths = (async () => {
 
 const { page } = Astro.props;
 const { shipping, usage, year } = page;
-const words = shipping.empty === null ? stripWords(shipping.strip) : null;
+const words = shipping.empty === null ? stripWords(shipping.strip, 'faint') : null;
 ---
 
 <Base title={year} description={page.description} noindex={!page.hasContent}>
@@ -179,6 +179,13 @@ const words = shipping.empty === null ? stripWords(shipping.strip) : null;
 .year-heat a,
 .year-heat i {
   display: block;
+}
+
+/* A day with no record inside a shown month steps back: most of a young year is such days, and
+   outlines would outweigh what was recorded. Its label still says "no record" (ADR 0041). */
+.heat.year-heat i[data-l="none"] {
+  background: color-mix(in oklab, var(--rule) 30%, transparent);
+  outline: none;
 }
 
 .year-heat li[data-column="2"] {

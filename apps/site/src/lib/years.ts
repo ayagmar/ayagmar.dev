@@ -138,6 +138,19 @@ function datesOf(month: string, today: string): string[] {
   );
 }
 
+/**
+ * The months a series draws: from the first with a record or a failed read (an unknown month may
+ * hold records), so a year that began being recorded in October does not open on nine empty ones.
+ */
+function shownMonths(
+  months: readonly string[],
+  days: readonly { date: string }[],
+  failed: readonly string[]
+): string[] {
+  const first = [...days.map((day) => day.date.slice(0, 7)), ...failed].sort()[0] ?? '';
+  return first === '' ? [] : months.filter((month) => month >= first);
+}
+
 const list = (names: string[]) =>
   names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
@@ -287,7 +300,7 @@ function shippingYear(
   const days = history.days.filter(inYear(year));
   const failed = history.failed.filter((month) => month.startsWith(`${year}-`));
   const byDate = new Map(days.map((day) => [day.date, shippedCount(day)]));
-  const shown = monthsOf(year, today);
+  const shown = shownMonths(monthsOf(year, today), days, failed);
   const dates = shown
     .filter((month) => !failed.includes(month))
     .flatMap((month) => datesOf(month, today));
@@ -364,7 +377,7 @@ function usageYear(
       empty: failed.length > 0 ? unread('Agent usage') : `No agent usage recorded in ${year}.`,
     };
   }
-  const rows = monthsOf(year, today).map((month): UsageRow => {
+  const rows = shownMonths(monthsOf(year, today), days, failed).map((month): UsageRow => {
     const name = nameOf(month);
     if (failed.includes(month)) return { name, state: 'unknown' };
     const recorded = days.filter((day) => day.date.startsWith(`${month}-`));

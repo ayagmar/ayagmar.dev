@@ -126,7 +126,7 @@ describe('the calendar', () => {
       after,
       new Set(['2026-03-02'])
     );
-    const march = calendar(page(pages, '2026')).months[2]?.cells;
+    const march = calendar(page(pages, '2026')).months[0]?.cells;
     expect(march?.slice(0, 3)).toEqual([
       { date: '2026-03-01', level: 0, label: '1 Mar: nothing shipped', page: false },
       {
@@ -139,14 +139,31 @@ describe('the calendar', () => {
     ]);
   });
 
+  // Catches a year that began being recorded in October opening on nine empty months, and a month
+  // that failed to load being dropped when it comes first: it may hold records (ADR 0041).
+  it('opens on the first month with a record or a failed read, in each series', () => {
+    const recorded = history([shipped('2026-10-03')], [used('2026-09-30', 10)]);
+    const entry = page(yearPages(recorded, [], after, none), '2026');
+    expect(calendar(entry).months[0]?.name).toBe('October');
+    expect(usage(entry).rows[0]?.name).toBe('September');
+
+    const unread = history([shipped('2026-10-03')], [], { shipping: ['2026-08'] });
+    const months = calendar(page(yearPages(unread, [], after, none), '2026')).months;
+    expect(months.slice(0, 3).map((month) => [month.name, month.cells === null])).toEqual([
+      ['August', true],
+      ['September', false],
+      ['October', false],
+    ]);
+  });
+
   // Catches squares or zeros for days that have not happened, and "the year" said of a year
   // still running.
   it('stops at the build date and says so far in the current year', () => {
     const now = new Date('2026-03-15T12:00:00Z');
     const entry = page(yearPages(history([shipped('2026-03-10')]), [], now, none), '2026');
     const { months, facts: listed } = calendar(entry);
-    expect(months.map((month) => month.name)).toEqual(['January', 'February', 'March']);
-    expect(months[2]?.cells?.at(-1)?.date).toBe('2026-03-15');
+    expect(months.map((month) => month.name)).toEqual(['March']);
+    expect(months[0]?.cells?.at(-1)?.date).toBe('2026-03-15');
     expect(listed.map((fact) => fact.label)).toEqual([
       'Shipped on record so far',
       'Busiest day on record so far',

@@ -69,7 +69,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
     // Catches the year's calendar drifting from the strip's levels.
     test('every heat level of a year holds the same contrast', async ({ page }) => {
       await page.goto('/2026');
-      await check(page.locator('.year-heat'));
+      await check(page.locator('.year-heat'), false);
     });
   });
 }
