@@ -1,0 +1,44 @@
+{
+  "source": "weather",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:55:00.000Z",
+  "stale": false,
+  "data": {
+    "zone": "Africa/Casablanca",
+    "from": "2026-10-01",
+    "to": "2026-10-31",
+    "days": [
+      {
+        "date": "2026-10-25",
+        "day": {
+          "code": 61,
+          "at": "2026-10-25T13:00:00Z",
+          "origin": "live"
+        },
+        "night": {
+          "code": 0,
+          "at": "2026-10-25T21:45:00Z",
+          "origin": "live"
+        }
+      },
+      {
+        "date": "2026-10-24",
+        "day": {
+          "code": 3,
+          "at": "2026-10-24T13:00:00Z",
+          "origin": "archive"
+        },
+        "night": null
+      },
+      {
+        "date": "2026-10-26",
+        "day": {
+          "code": 199,
+          "at": "2026-10-26T12:30:00Z",
+          "origin": "live"
+        },
+        "night": null
+      }
+    ]
+  }
+}

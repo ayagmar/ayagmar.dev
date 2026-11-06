@@ -45,7 +45,7 @@ const incompleteRetryMs = 2 * 60 * 1000;
  * The first minutes of a date in Rabat belong to the listening history, which every other due
  * source delays by a minute (ADR 0030); this pull waits until they are over.
  */
-const midnightYieldMs = 15 * 60 * 1000;
+export const midnightYieldMs = 15 * 60 * 1000;
 const counts = ['pushes', 'commits', 'merges', 'releases', 'stars'] as const;
 
 const isCount = (value: unknown): value is number =>

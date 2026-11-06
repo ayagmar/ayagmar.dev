@@ -4,7 +4,6 @@ import {
   historyMaxYears,
   historyPageLimit,
   type ListeningHistorySnapshot,
-  lastfmHistoryPageSchema,
   lastfmUserInfoSchema,
   listeningHistorySnapshotSchema,
 } from '@min7/contracts';
@@ -13,7 +12,7 @@ import { D1ProgressStore } from '../../storage/progress.ts';
 import type { SourceStatus } from '../../storage/types.ts';
 import type { PullAdapter } from '../types.ts';
 import { checkSnapshot, getJson, PullError, type UpstreamResponse } from './http.ts';
-import { lastfmEndpoint, lastfmUser, readLastfm } from './listening.ts';
+import { lastfmEndpoint, lastfmForm, readLastfm, readRangePage } from './lastfm.ts';
 import { readSecret } from './secrets.ts';
 
 /** `user.getInfo` is about 1 KiB. */
@@ -87,35 +86,12 @@ type Year = ListeningHistorySnapshot['years'][number];
  * only the newest 200 are read, and `read` says so.
  */
 export function summarizeDay(day: HistoryDay, response: UpstreamResponse): Year | null {
-  const fail = () => new PullError('upstream_malformed');
-  const page = readLastfm(response, lastfmHistoryPageSchema).recenttracks;
-  const attr = page['@attr'];
-  const total = Number(attr.total);
-  if (
-    attr.user.toLowerCase() !== lastfmUser ||
-    attr.page !== '1' ||
-    Number(attr.perPage) !== historyPageLimit ||
-    Number(attr.totalPages) !== Math.ceil(total / historyPageLimit)
-  ) {
-    throw fail();
-  }
-  const scrobbles = (Array.isArray(page.track) ? page.track : [page.track]).filter(
-    (item) => item['@attr']?.nowplaying !== 'true'
-  );
-  if (scrobbles.length !== Math.min(total, historyPageLimit)) throw fail();
+  const { total, scrobbles } = readRangePage(day, response, historyPageLimit);
   if (total === 0) return null;
 
   // Exact artist and title after trimming the ends; nested maps, so no name can collide.
   const tallies = new Map<string, Map<string, Tally>>();
-  let previous = Number.POSITIVE_INFINITY;
-  for (const item of scrobbles) {
-    const at = Number(item.date?.uts);
-    const artist = item.artist['#text'].trim();
-    const track = item.name.trim();
-    if (!(at >= day.from && at < day.to && at <= previous) || artist === '' || track === '') {
-      throw fail();
-    }
-    previous = at;
+  for (const { at, artist, track } of scrobbles) {
     const byTrack = tallies.get(artist) ?? new Map<string, Tally>();
     tallies.set(artist, byTrack);
     const tally = byTrack.get(track);
@@ -133,7 +109,7 @@ export function summarizeDay(day: HistoryDay, response: UpstreamResponse): Year 
       if (top === undefined || ranksAbove(candidate, top)) top = candidate;
     }
   }
-  if (top === undefined) throw fail();
+  if (top === undefined) throw new PullError('upstream_malformed');
   return {
     year: day.year,
     scrobbles: total,
@@ -257,14 +233,11 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
     let state: State | undefined;
     if (saved?.describedDate === describedDate) state = readState(saved.state, describedDate);
 
-    // The key goes in the POST form, out of the URL that Workers traces record.
-    const form = (method: string, params: Record<string, string> = {}) =>
-      new URLSearchParams({ method, user: lastfmUser, api_key: apiKey, format: 'json', ...params });
     if (state === undefined) {
       const registration = await getJson(lastfmEndpoint, {
         signal,
         maxBytes: infoMaxBytes,
-        form: form('user.getinfo'),
+        form: lastfmForm(apiKey, 'user.getinfo'),
       });
       state = { firstYear: registrationYear(registration, describedDate), read: 0, years: [] };
     }
@@ -278,7 +251,7 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
       const page = await getJson(lastfmEndpoint, {
         signal,
         maxBytes: pageMaxBytes,
-        form: form('user.getrecenttracks', {
+        form: lastfmForm(apiKey, 'user.getrecenttracks', {
           limit: String(historyPageLimit),
           page: '1',
           from: String(day.from),

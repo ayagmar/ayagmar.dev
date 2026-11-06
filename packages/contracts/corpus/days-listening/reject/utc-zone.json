@@ -1,0 +1,23 @@
+{
+  "source": "listening",
+  "version": 1,
+  "fetchedAt": "2026-10-26T08:55:00.000Z",
+  "stale": false,
+  "data": {
+    "zone": "UTC",
+    "from": "2026-10-01",
+    "to": "2026-10-31",
+    "days": [
+      {
+        "date": "2026-10-25",
+        "count": 41,
+        "last": {
+          "track": "Nowhere to Run",
+          "artist": "LTN",
+          "playedAt": "2026-10-25T22:41:07Z"
+        },
+        "asOf": "2026-10-26T00:01:12.000Z"
+      }
+    ]
+  }
+}

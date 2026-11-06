@@ -7,10 +7,10 @@ import { mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { extname, join, resolve } from 'node:path';
+import { weatherCodes } from '@min7/contracts/weather-codes';
 import { chromium, type Page } from '@playwright/test';
 import sharp from 'sharp';
 import { isLate, moonAt, type Sky, skyAt } from '../src/lib/sky.ts';
-import { weatherCodes } from '../src/lib/weather.ts';
 
 const site = resolve(import.meta.dirname, '..');
 const out = join(site, '.room-states');

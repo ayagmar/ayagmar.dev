@@ -82,3 +82,56 @@ The `daily` table, the activity pull and `/v1/days` ship in signals; the strip r
 4. Rebuild the site once the count is above 0 (a merge to `main`, or a retry of the last site build in Workers Builds). A site built before that keeps the event-based strip until its next build.
 
 The llm-usage history fills with the next accepted push; `/v1/days/llm-usage?month=YYYY-MM` shows it.
+
+## Listening and weather days (ADR 0038)
+
+These need no migration and no new secret. Merging to `main` deploys them through Workers Builds, and recording starts on its own: weather at the next pull, listening in the first minutes of the next hour. A Worker rollback needs nothing either: the older version ignores the new rows and answers 404 on the two new routes.
+
+Check that days arrive. A Preview cannot show this, as cron triggers never run there.
+
+```sh
+curl -s 'https://api.ayagmar.dev/v1/days/listening?last=28' | jq '.data.days[-2:]'
+curl -s 'https://api.ayagmar.dev/v1/days/weather?last=28' | jq '.data.days[-2:]'
+```
+
+Whether a series is recording is on `/v1/health`, under `days`, apart from the source's own row: a failing day read leaves the snapshot and `sources` clean.
+
+```sh
+curl -s https://api.ayagmar.dev/v1/health | jq '.days'
+```
+
+`retryAfterAt`, in Unix ms, is a Last.fm refusal of the day reads: until then neither live day reads nor a backfill ask. `lastErrorCode` with `lastErrorDate` is the latest failure, and stays until a pull records every date it read. `stale: true` means nothing recorded for 3 hours (listening) or 45 minutes (weather); listening is also stale until the first hour after a deploy. `upstream_malformed` for listening means Last.fm's range answer differs from what `readRangePage` checks; `upstream_future` for weather means Open-Meteo dated a reading ahead of the clock, and it was not recorded. Workers Logs has a `day read failed` line for each, with the code. Days missed while failing stay missing until a backfill covers them. A block's `fetchedAt` is when the source was last collected, not when that day was: read `asOf` and each slot's `at`.
+
+### Backfilling past days
+
+Fills past dates of both series, about one date every two minutes, in production only: cron triggers never run in Previews, and no key leaves the Worker. Wrangler needs a login with D1 access; nothing else is secret. The range includes both dates, must end before today in Rabat, starts no earlier than 2025-01-01 and spans at most 400 days. A date is fetched only when the backfill reaches it, so try one first:
+
+```sh
+just signals-backfill 2026-10-01 2026-10-01
+```
+
+A few minutes later, check the date and that the row says it finished (`json` is `null`):
+
+```sh
+curl -s 'https://api.ayagmar.dev/v1/days/listening?month=2026-10' | jq '.data.days[0]'
+curl -s 'https://api.ayagmar.dev/v1/days/weather?month=2026-10' | jq '.data.days[0]'
+pnpm --filter @min7/signals exec wrangler d1 execute DB --remote --command "SELECT described_date, step, json FROM pull_progress WHERE source = 'daily-backfill'"
+```
+
+Edge caching holds a month block for up to 60 seconds. Then arm the rest, which takes about two minutes per date, and pauses for the first 15 minutes of each date in Rabat:
+
+```sh
+just signals-backfill 2026-10-02 2026-11-05
+```
+
+Workers Logs has one `backfill day` line per date. It waits by itself: `notBefore` in `json` is the Unix ms of the next try, a time the upstream gave with `Retry-After`, an hour when the archive lacks an hour, else 5 minutes. A cooldown already recorded for `listening`, `listening-history` or `weather`, or a `retryAfterAt` under `days` on `/v1/health`, holds it too. Waiting asks nothing and spends no try. It stops by itself:
+
+- After the last date: `json` is `null`.
+- After 5 failed tries on a date: a `backfill stopped` line, and `json` holds `"stopped":true` with `next`, the date it stopped on, and `code`, why. Fix the cause, then arm again from `next`. `upstream_incomplete` means the archive never reached one of that date's two hours: what it did have is kept, and the date is incomplete, not done.
+- On a range it refuses: a `backfill refused` line, no request made, `json` is `null`.
+
+Arming again is always safe, also over a running backfill and over dates already filled: a date only ever gains what it lacked, and a live weather slot is never replaced by an archived one. To cancel, arm nothing and clear the row's state:
+
+```sh
+pnpm --filter @min7/signals exec wrangler d1 execute DB --remote --command "UPDATE pull_progress SET json = 'null', step = step + 1 WHERE source = 'daily-backfill'"
+```

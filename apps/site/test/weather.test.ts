@@ -1,11 +1,7 @@
 import { staleAfterSeconds, weatherEnvelopeSchema } from '@min7/contracts';
+import { type WeatherState, weatherCodes } from '@min7/contracts/weather-codes';
 import { describe, expect, it } from 'vitest';
-import {
-  readWeather,
-  type WeatherState,
-  weatherCodes,
-  weatherMaxAgeMs,
-} from '../src/lib/weather.ts';
+import { readWeather, weatherMaxAgeMs } from '../src/lib/weather.ts';
 
 describe('the weather codes', () => {
   // Open-Meteo's "Weather code descriptions as JSON", copied from https://open-meteo.com/en/docs

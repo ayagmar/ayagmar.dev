@@ -2,7 +2,6 @@
 // page is reachable from /stats and from a day.
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { dailySources } from '@min7/contracts';
 import { daysFixtures, historyFixtures } from '@min7/contracts/fixtures';
 import { expect, notFoundPath, test } from './fixtures.ts';
 
@@ -23,7 +22,7 @@ test('the year shows its calendar, each square leading to an existing day', asyn
     .locator('.year-heat a')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
   expect(hrefs.filter((href) => !existsSync(join(dist, `${href.slice(1)}.html`)))).toEqual([]);
-  const recorded = dailySources
+  const recorded = (['shipping-activity', 'llm-usage'] as const)
     .flatMap((series) => [...historyFixtures[series].ok.days, ...daysFixtures[series].ok.days])
     .map((day) => day.date)
     .filter((date) => date.startsWith('2026-'));

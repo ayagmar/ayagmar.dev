@@ -4,6 +4,7 @@ import type { SourceId } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { pullAdapters } from '../src/adapters/pull/index.ts';
+import { dayReadsDue } from '../src/adapters/pull/listening-days.ts';
 import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import worker from '../src/index.ts';
@@ -187,6 +188,16 @@ describe('scheduled', () => {
       expect(Math.max(...later), id).toBeLessThanOrEqual(limit);
       expect(run - (runs.at(-1) ?? 0), `${id} at the end`).toBeLessThanOrEqual(limit);
     }
+    // A listening pull inside every hour's window, so each hour reads its days (ADR 0038),
+    // across both midnights and past the hours weather failed. Startup waits out the others.
+    const listeningRuns = attempts.get('listening') ?? [];
+    for (let at = 60; at < run - 60; at += 60) {
+      const hourStart = at - ((at + start / minute) % 60);
+      const read = listeningRuns.some(
+        (r) => dayReadsDue(start + r * minute).length > 0 && r >= hourStart && r < hourStart + 60
+      );
+      expect(read, new Date(start + hourStart * minute).toISOString()).toBe(true);
+    }
     expect(weatherFailures).toBeGreaterThan(0);
     // Tried with a key after the refusal, and stored.
     expect(monkeytypeKeyed).toBeGreaterThan(1);
@@ -225,6 +236,11 @@ describe('scheduled', () => {
           await store.recordFailure(id, 'upstream_error', at.toISOString());
         } else await store.put(id, {}, at.toISOString());
       }
+      // An armed backfill takes no turn in these minutes (ADR 0038), so this order is unchanged.
+      await env.DB.prepare(
+        `INSERT INTO pull_progress (source, described_date, step, json)
+         VALUES ('daily-backfill', '2026-09-02', 1, '{"next":"2026-09-01","to":"2026-09-02","tries":0}')`
+      ).run();
       const history = historyStandIn();
       const adapters = standIns(async (id) => (id === 'listening-history' ? history.part() : {}));
       vi.useFakeTimers({ toFake: ['Date'] });

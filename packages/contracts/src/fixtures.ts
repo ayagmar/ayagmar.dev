@@ -151,6 +151,9 @@ import openMeteoRawStorm from '../fixtures/open-meteo/raw/storm.json' with { typ
 import openMeteoRawUnknownCode from '../fixtures/open-meteo/raw/unknown-code.json' with {
   type: 'json',
 };
+import openMeteoArchiveRawOk from '../fixtures/open-meteo-archive/raw/ok.json' with {
+  type: 'json',
+};
 import projectsSnapshotEmpty from '../fixtures/projects/snapshot/empty.json' with { type: 'json' };
 import projectsSnapshotOk from '../fixtures/projects/snapshot/ok.json' with { type: 'json' };
 import projectsSnapshotPartial from '../fixtures/projects/snapshot/partial.json' with {
@@ -271,6 +274,9 @@ export const rawFixtures = {
     missing: npmRawMissing,
     ok: npmRawOk,
     partial: npmRawPartial,
+  },
+  'open-meteo-archive': {
+    ok: openMeteoArchiveRawOk,
   },
   'open-meteo': {
     clear: openMeteoRawClear,

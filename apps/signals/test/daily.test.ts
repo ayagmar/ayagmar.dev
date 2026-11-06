@@ -482,7 +482,7 @@ describe('GET /v1/days', () => {
   });
 
   it('answers an unknown series with the JSON 404, and only reads', async () => {
-    expect((await fetchApi('/v1/days/listening?last=28')).status).toBe(404);
+    expect((await fetchApi('/v1/days/shelf?last=28')).status).toBe(404);
     const post = await fetchApi('/v1/days/llm-usage?last=28', { method: 'POST' });
     expect(post.status).toBe(405);
     expect(post.headers.get('allow')).toBe('GET, HEAD, OPTIONS');
