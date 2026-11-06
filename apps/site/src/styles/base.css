@@ -1,5 +1,6 @@
-/* The late-night room (ADR 0026), quiet around it: the room is the only picture; the rest is
-   type, hairline rules and one accent, the lamp. One token layer for day and night, mobile first.
+/* The late-night room (ADR 0026), quiet around it: the room and a post's dots are the pictures;
+   the rest is type, hairline rules and one accent, the lamp. One token layer for day and night,
+   mobile first.
    Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
    It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
 
@@ -1253,6 +1254,34 @@ main:has(.toc) .reader ~ .project-card {
 
 .art-dots .accent {
   stroke: light-dark(#b06846, #fac468);
+}
+
+/* Paper is white whichever theme is chosen, and browsers drop backgrounds when printing. */
+@media print {
+  .art-dots .bright {
+    stroke: #14172e;
+  }
+
+  .art-dots .dim {
+    stroke: #968a70;
+  }
+
+  .art-dots .accent {
+    stroke: #b06846;
+  }
+}
+
+/* SVG keeps its author colours in forced colors, and one of them could be the user's canvas. */
+@media (forced-colors: active) {
+  .art-dots .ground {
+    fill: none;
+  }
+
+  .art-dots .bright,
+  .art-dots .dim,
+  .art-dots .accent {
+    stroke: CanvasText;
+  }
 }
 
 .prose {
