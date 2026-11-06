@@ -104,9 +104,9 @@ const weatherSlotSchema = z.object({
 export type WeatherSlot = z.infer<typeof weatherSlotSchema>;
 
 const weatherSlots = {
-  /** Sun up, nearest 13:00 in Rabat. Null when nothing was recorded: unknown, never clear. */
+  /** Sun up, nearest 13 hours into the date. Null when nothing was recorded: unknown, never clear. */
   day: weatherSlotSchema.nullable(),
-  /** Sun down, nearest 22:00 in Rabat. Null when nothing was recorded: unknown, never clear. */
+  /** Sun down, nearest 22 hours into the date. Null when nothing was recorded: unknown, never clear. */
   night: weatherSlotSchema.nullable(),
 };
 

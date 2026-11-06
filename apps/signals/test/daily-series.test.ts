@@ -125,7 +125,10 @@ const pullListening = async (time: string) => {
 };
 
 /** One weather pull at `time`, Open-Meteo answering `current`. */
-async function pullWeather(time: string, current: { code: number; isDay: 0 | 1 | null }) {
+async function pullWeather(
+  time: string,
+  current: { code: number; isDay: 0 | 1 | null; observedAt?: string }
+) {
   const now = at(time);
   const { body } = rawFixtures['open-meteo'].ok as { body: { current: object } };
   network.use(
@@ -134,7 +137,7 @@ async function pullWeather(time: string, current: { code: number; isDay: 0 | 1 |
         ...body,
         current: {
           ...body.current,
-          time: now / 1000,
+          time: (current.observedAt === undefined ? now : Date.parse(current.observedAt)) / 1000,
           weather_code: current.code,
           is_day: current.isDay,
         },
@@ -442,6 +445,35 @@ describe('the weather pull', () => {
     await pullWeather('2026-09-19T23:30:00Z', { code: 0, isDay: 0 });
     expect(await weatherDay('2026-09-19')).toBeUndefined();
     expect((await weatherDay('2026-09-20'))?.night?.code).toBe(0);
+  });
+
+  // Catches a reading dated ahead of the clock taking its slot's exact aim: no real reading
+  // could beat it, and the archive may not replace a live slot, so it would stay for good.
+  it('never records a reading from the future, and that date fills as usual', async () => {
+    await pullWeather('2026-11-06T12:00:00Z', {
+      code: 61,
+      isDay: 1,
+      observedAt: '2026-11-08T13:00:00Z',
+    });
+    expect(await dayCount()).toBe(0);
+    expect((await snapshotRow('weather'))?.json).toContain('"weatherCode":61');
+
+    await pullWeather('2026-11-08T12:45:00Z', { code: 2, isDay: 1 });
+    expect((await weatherDay('2026-11-08'))?.day).toEqual({
+      code: 2,
+      at: '2026-11-08T12:45:00Z',
+      origin: 'live',
+    });
+  });
+
+  // Catches the limit set tighter than the runner's: an ordinary step just ahead of the clock.
+  it('takes a reading a moment ahead of the clock', async () => {
+    await pullWeather('2026-10-26T12:30:00Z', {
+      code: 2,
+      isDay: 1,
+      observedAt: '2026-10-26T12:34:00Z',
+    });
+    expect((await weatherDay('2026-10-26'))?.day?.at).toBe('2026-10-26T12:34:00Z');
   });
 
   // Catches a failed pull writing a day, or taking the stored one with it.

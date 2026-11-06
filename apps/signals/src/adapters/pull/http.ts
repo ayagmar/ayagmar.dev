@@ -17,6 +17,8 @@ export type PullErrorCode =
   | 'upstream_incomplete'
   /** More past years than one history snapshot holds (ADR 0030). */
   | 'over_budget'
+  /** An answer dated past `maxUpstreamAheadMs`: it cannot have been observed yet (ADR 0038). */
+  | 'upstream_future'
   /** The date in Rabat changed while the pull ran, so its answers would mix two dates. */
   | 'date_changed'
   /** A pull spread over several invocations read its part; it is not finished (ADR 0030). */
@@ -62,6 +64,9 @@ function retryAfter(value: string | null, now: number): number | undefined {
       : Number.NaN;
   return at > now ? Math.min(at, now + maxRetryAfterMs) : undefined;
 }
+
+/** An upstream's own date for an answer may run this far ahead of the Worker's clock. */
+export const maxUpstreamAheadMs = 5 * 60_000;
 
 /** RFC 3339 in UTC without milliseconds, e.g. `2026-10-26T08:53:00Z`. */
 export const fromUnixSeconds = (seconds: number) =>
