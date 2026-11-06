@@ -3,12 +3,13 @@ import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { roomSeed } from '../src/lib/room-seed.ts';
+import { type RoomInputs, roomState } from '../src/lib/room-state.ts';
+import { moonShown, type Sky } from '../src/lib/sky.ts';
 import {
   frameFor,
   frames,
-  type RoomFacts,
   renderTerminalRoom,
-  roomFacts,
   scene,
   shrink,
   terminalCells,
@@ -20,12 +21,20 @@ const listening = snapshotFixtures.listening.ok as ListeningSnapshot;
 const shipping = snapshotFixtures.shipping.ok as ShippingSnapshot;
 const night = Date.parse('2026-10-26T22:00:00Z');
 const blank = new Uint8Array(80 * 26 * 3);
-const text = {
-  listening: undefined,
-  shipping: undefined,
-  sample: false,
-  origin: 'https://ayagmar.dev',
-};
+const origin = 'https://ayagmar.dev';
+const roomAt = (time: number, inputs: Partial<RoomInputs> = {}) =>
+  roomState(
+    {
+      knowsRabat: true,
+      posts: [],
+      shipping: null,
+      usage: null,
+      listening: null,
+      weather: undefined,
+      ...inputs,
+    },
+    { kind: 'live', instant: time }
+  );
 const words = (output: string) => output.split('\n').slice(13);
 
 describe('the picture', () => {
@@ -45,7 +54,7 @@ describe('the picture', () => {
 
   // Catches a line wider than an 80-column terminal, which would wrap the room apart.
   it('is 13 rows of 80 half-blocks', () => {
-    const rows = renderTerminalRoom(blank, roomFacts(night), text).split('\n').slice(0, 13);
+    const rows = renderTerminalRoom(blank, roomAt(night), origin).split('\n').slice(0, 13);
     for (const row of rows) expect(row.replace(/\p{Cc}\[[0-9;]*m/gu, '')).toBe('▀'.repeat(80));
   });
 
@@ -54,24 +63,24 @@ describe('the picture', () => {
   it('has a frame for every instant of a year', () => {
     const seen = new Set<string>();
     for (let time = Date.UTC(2026, 0, 1); time < Date.UTC(2027, 0, 1); time += 1_800_000) {
-      seen.add(frameFor(roomFacts(time)));
+      seen.add(frameFor(roomAt(time)));
     }
     expect([...seen].sort()).toEqual(Object.keys(frames).sort());
   });
 
-  const facts = (sky: RoomFacts['sky'], fraction: number): RoomFacts => ({
-    ...roomFacts(night),
-    sky,
-    moon: { elongation: 180, fraction, waxing: false, name: 'full moon' },
-  });
+  const lit = (sky: Sky, fraction: number) => {
+    const state = roomAt(night);
+    const moon = { elongation: 180, fraction, waxing: false, name: 'full moon' };
+    return { ...state, window: { ...state.window, sky, moon, moonShown: moonShown(sky, moon) } };
+  };
   // The cell at (20, 4): the disc's centre, in the top half of text row 2.
   const moonCell = (output: string) => output.split('\n')[2]?.includes('38;2;232;232;250');
 
   // Catches the moon left out of the picture, or drawn in daylight as the page never does.
   it('shows the moon only as the page does', () => {
-    expect(moonCell(renderTerminalRoom(blank, facts('night', 1), text))).toBe(true);
-    expect(moonCell(renderTerminalRoom(blank, facts('day', 1), text))).toBe(false);
-    expect(moonCell(renderTerminalRoom(blank, facts('night', 0.01), text))).toBe(false);
+    expect(moonCell(renderTerminalRoom(blank, lit('night', 1), origin))).toBe(true);
+    expect(moonCell(renderTerminalRoom(blank, lit('day', 1), origin))).toBe(false);
+    expect(moonCell(renderTerminalRoom(blank, lit('night', 0.01), origin))).toBe(false);
   });
 });
 
@@ -90,11 +99,15 @@ describe('the words', () => {
       number: 1,
       title: 'e\x1b]0;f\x07g',
     } as const;
-    const output = renderTerminalRoom(blank, roomFacts(night), {
-      ...text,
-      listening: { data: hostile, fetchedAt: '2026-10-26T21:59:00Z', now: true },
-      shipping: { ...shipping, events: [merge] },
-    });
+    const taken = { fetchedAt: '2026-10-26T21:59:00Z', at: night - 60_000 };
+    const output = renderTerminalRoom(
+      blank,
+      roomAt(night, {
+        listening: { ...taken, data: hostile, origin: 'live', currentUntil: night },
+        shipping: { ...taken, data: { events: [merge] }, origin: 'live', currentUntil: null },
+      }),
+      origin
+    );
     expect(words(output).join('\n')).not.toMatch(/\p{Cc}(?<!\n)|\p{Cf}/u);
     expect(words(output)).toContain('Now playing a[2Jb1m by cd');
     expect(words(output).join('\n')).toContain('x merged #1: e]0;fg');
@@ -119,10 +132,10 @@ describe('the words', () => {
   // Catches a Preview's commands sending the reader to production, or cut short by a long name.
   it('name commands that work where the copy is served', () => {
     const preview = `https://${'a-long-branch-'.repeat(4)}min7-site.ayagmar.workers.dev`;
-    const production = words(renderTerminalRoom(blank, roomFacts(night), text));
+    const production = words(renderTerminalRoom(blank, roomAt(night), origin));
     expect(production).toContain('  curl ayagmar.dev/writing');
     expect(production.at(-2)).toBe('Without colour: curl ayagmar.dev');
-    const other = words(renderTerminalRoom(blank, roomFacts(night), { ...text, origin: preview }));
+    const other = words(renderTerminalRoom(blank, roomAt(night), preview));
     expect(other).toContain(`  curl ${preview}/writing`);
     expect(other.at(-2)).toBe(`Without colour: curl ${preview}`);
   });
@@ -133,9 +146,9 @@ describe('the Worker', () => {
   const limit = staleAfterSeconds.listening * 1000;
   const start = Date.parse('2026-11-06T12:00:00Z');
   const iso = (time: number) => new Date(time).toISOString();
-  const envelope = (source: string, data: unknown, at: number, stale = false) => ({
+  const envelope = <Source, Data>(source: Source, data: Data, at: number, stale = false) => ({
     source,
-    version: 1,
+    version: 1 as const,
     fetchedAt: iso(at),
     stale,
     data,
@@ -161,9 +174,15 @@ describe('the Worker', () => {
         return Response.json({
           origin: 'https://ayagmar.dev',
           signals,
-          listeningLimitMs: limit,
-          listening: envelope('listening', listening, builtAt),
-          shipping: envelope('shipping', shipping, builtAt),
+          seed: roomSeed({
+            posts: [],
+            shipping: envelope('shipping' as const, shipping, builtAt),
+            usage: envelope('llm-usage' as const, null, builtAt),
+            listening: envelope('listening' as const, listening, builtAt),
+            origin: signals === null ? 'sample' : 'build',
+            builtAt,
+            listeningLimitMs: limit,
+          }),
         });
       }
       return new Response('plain', { headers: { 'X-Robots-Tag': 'noindex', ETag: '"a"' } });

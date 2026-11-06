@@ -9,6 +9,7 @@
  * 00 to 03 describe how clouds developed over the past hour, where Open-Meteo means clear to
  * overcast, and where 4677 says "moderate or heavy" (57, 67, 81, 86) Open-Meteo names one.
  */
+import { skewMs } from './live.ts';
 
 export type WeatherState = 'clear' | 'cloudy' | 'overcast' | 'fog' | 'rain' | 'snow' | 'storm';
 
@@ -50,9 +51,6 @@ export const weatherCodes: Readonly<Record<number, readonly [WeatherState, strin
  * is for: `staleAfterSeconds.weather` in contracts, which the browser does not import (zod).
  */
 export const weatherMaxAgeMs = 45 * 60_000;
-
-/** A server clock up to this far ahead of the visitor's is still believable. */
-const skewMs = 2 * 60_000;
 
 export interface Weather {
   state: WeatherState;

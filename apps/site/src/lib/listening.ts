@@ -4,7 +4,7 @@
  */
 import type { ListeningSnapshot } from '@min7/contracts';
 import { artistUrl, trackUrl } from './lastfm.ts';
-import { type Answer, instantMs, list, text, whole } from './live.ts';
+import { instantMs, list, text, whole } from './live.ts';
 import { el, type Markup, toNode, when } from './markup.ts';
 
 /** A Last.fm page, or null. Links only; the site never loads from Last.fm. */
@@ -60,7 +60,7 @@ export interface NowPlayingLine {
  * with when. The build cannot know, so it always says `Last played`.
  */
 export function nowPlaying(
-  { nowPlaying: current, recent }: ListeningSnapshot,
+  { nowPlaying: current, recent }: Pick<ListeningSnapshot, 'nowPlaying' | 'recent'>,
   fetchedAt: string,
   now: boolean
 ): NowPlayingLine {
@@ -110,12 +110,7 @@ let said = '';
  * Updates the page's `.now-playing` line in place. The track sentence is a polite live region
  * announced whole when it changes; the time after it ticks every minute outside it.
  */
-export function renderNowPlaying(
-  line: HTMLElement,
-  { data, fetchedAt }: Answer<ListeningSnapshot>,
-  now: boolean
-): void {
-  const current = nowPlaying(data, fetchedAt, now);
+export function renderNowPlaying(line: HTMLElement, current: NowPlayingLine): void {
   const { words, at } = nowPlayingMarkup(current);
   const sentence = line.firstElementChild as HTMLElement;
   const key = JSON.stringify(words);

@@ -162,6 +162,15 @@ test('now playing ignores an answer that links off Last.fm', async ({ page }) =>
 const disc = (page: Page) =>
   page.locator('.disc').evaluate((element) => getComputedStyle(element).animationName);
 
+/** The record in the scene, which must say what the panel's does: both draw one state. */
+const sceneRecord = (page: Page) =>
+  page.locator('.scene').evaluate((scene) => ({
+    state: scene.getAttribute('data-record'),
+    strip: /record-\w+/.exec(
+      getComputedStyle(scene.querySelector('.room-record') as Element).backgroundImage
+    )?.[0],
+  }));
+
 // Catches a record that turns for a build-time, stale or empty answer, or for people who asked
 // for less motion (ADR 0027).
 test('the record rests on the build-time value', async ({ page }) => {
@@ -225,6 +234,10 @@ const playing = (fetchedAt = '2026-10-26T10:30:00Z', track = 'Which Will') =>
 const expectLive = async (page: Page, track = 'Which Will') => {
   await expect(page.locator('.now-playing')).toHaveText(`Now playing ${track} by Nick Drake`);
   expect(await disc(page)).toBe('spin');
+  expect(await sceneRecord(page)).toMatchObject({ state: 'playing', strip: expect.any(String) });
+  await expect(page.locator('[data-room="record-player"]')).toHaveAccessibleName(
+    `Record player: music. Now playing ${track} by Nick Drake.`
+  );
 };
 
 const expectRested = async (page: Page, when: string, track = 'Which Will') => {
@@ -232,6 +245,10 @@ const expectRested = async (page: Page, when: string, track = 'Which Will') => {
     `Last played ${track} by Nick Drake · ${when}`
   );
   expect(await disc(page)).toBe('none');
+  expect(await sceneRecord(page)).toEqual({ state: 'resting', strip: undefined });
+  await expect(page.locator('[data-room="record-player"]')).toHaveAccessibleName(
+    `Record player: music. Last played ${track} by Nick Drake.`
+  );
 };
 
 test('the record stops when a later refresh fails', async ({ page }) => {

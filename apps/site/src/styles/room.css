@@ -80,6 +80,177 @@
   }
 }
 
+/* What the room holds (ADR 0043), drawn over the bare objects of the scene from the room's state,
+   as percentages of its 480x160 pixels: real notes, a real calendar, a spine per post. Picture
+   only: each object's hotspot says the same in words. Every colour is one of the room's own
+   (src/lib/art.ts). They are the lit things in the room, and dim with its lamp. */
+.scene {
+  --room-paper: #d8c8a0;
+  --room-amber: #fac468;
+  --room-ink: #241614;
+  --room-tack: #be4038;
+  --room-spine: #804840;
+}
+
+.room-lit {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  forced-color-adjust: none;
+  animation: lamp-on 1.8s steps(9) 0.1s backwards;
+}
+
+:root[data-theme="day"] .room-lit {
+  animation: none;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="night"]) .room-lit {
+    animation: none;
+  }
+}
+
+.scene[data-late] .room-lit {
+  filter: brightness(0.55);
+}
+
+/* Six notes on the cork, a repository's day each: a release is the larger, amber one, and each
+   holds up to three lines of ink for what happened. */
+.room-pins {
+  top: 10%;
+  left: 2.5%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 5% 5%;
+  width: 9.167%;
+  height: 22.5%;
+}
+
+.room-pins li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12%;
+  margin: 8%;
+  padding: 24% 12% 0;
+  background: var(--room-paper);
+}
+
+.room-pins li[data-kind="release"] {
+  margin: 0;
+  background: var(--room-amber);
+}
+
+.room-pins li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 42%;
+  width: 16%;
+  aspect-ratio: 1;
+  background: var(--room-tack);
+}
+
+.room-pins i {
+  height: 7%;
+  background: var(--room-ink);
+}
+
+/* The last eleven weeks of tokens, a column a week: the ramp of /stats (ADR 0037) in its night
+   colours, whatever the theme, as a screen is dark in both. */
+.room-screen {
+  top: 41.25%;
+  left: 2.5%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  grid-template-columns: repeat(11, 1fr);
+  gap: calc(100% / 27) calc(100% / 43);
+  width: 8.958%;
+  height: 16.875%;
+  background: none;
+  color-scheme: dark;
+}
+
+.room-screen i {
+  aspect-ratio: auto;
+}
+
+/* A spine per post on the bottom shelf, in 19 tracks of five pixels, oldest at the left. The
+   heights turn over by position, so a new post never moves the ones before it. */
+.room-books {
+  top: 38.125%;
+  left: 76.875%;
+  display: grid;
+  grid-template-columns: repeat(19, 1fr);
+  align-items: end;
+  width: 19.792%;
+  height: 15.625%;
+}
+
+.room-books li {
+  height: 84%;
+  margin-right: 20%;
+  background: var(--room-paper);
+}
+
+.room-books li[data-tone="1"] {
+  background: var(--room-spine);
+}
+
+.room-books li:nth-child(3n) {
+  height: 96%;
+}
+
+.room-books li:nth-child(5n + 1) {
+  height: 76%;
+}
+
+/* The record turns with the arm on it only while `record.state` says a track is playing now. The
+   strip is the same pixels in eight frames, so a still one tells the same: reduced motion loses
+   the turning, not the truth. Only then does it download. */
+.room-record {
+  position: absolute;
+  top: 68.125%;
+  left: 76.875%;
+  width: 17.083%;
+  height: 11.25%;
+  background: 0 0 / 800% 100% no-repeat;
+  image-rendering: pixelated;
+  forced-color-adjust: none;
+  pointer-events: none;
+}
+
+.scene[data-record="playing"] .room-record {
+  background-image: url("../assets/record-night.png");
+}
+
+:root[data-theme="day"] .scene[data-sky="day"][data-record="playing"] .room-record {
+  background-image: url("../assets/record-day.png");
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="night"]) .scene[data-sky="day"][data-record="playing"] .room-record {
+    background-image: url("../assets/record-day.png");
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scene[data-record="playing"] .room-record {
+    animation: record-turn 1.8s steps(8) infinite;
+  }
+}
+
+/* Eight frames across seven steps of the strip's offset: the eighth step lands past the last. */
+@keyframes record-turn {
+  to {
+    background-position-x: calc(100% * 8 / 7);
+  }
+}
+
 /* The room's clock (ADR 0027), set by src/scripts/room.ts: the view through the window by
    Rabat's sun, the moon, and the lamp turned down late at night. Each layer covers the whole
    scene, so it lines up with it at every size; only the one in use is downloaded. */
@@ -264,13 +435,13 @@
   }
 }
 
-/* The cat on the windowsill between 02:00 and 05:00 (ADR 0027), by src/scripts/room.ts's hour:
+/* The cat on the windowsill between 02:00 and 05:00 (ADR 0027), by `lamp.cat` in the room's state:
    above the view and its weather, lit by the turned-down lamp in either theme, since these hours
    are always dark. Its spot covers the cat's pixels (scripts/scene.py) and shows the note above
    it on hover and focus, like a hotspot's label. */
-/* Without the script, out of its hours, or with outdated time zone rules (no `data-late`), there
-   is no cat to see or focus. */
-.scene:not([data-late]:is([data-hour="02"], [data-hour="03"], [data-hour="04"])) .room-cat {
+/* Without the script, out of its hours, or with outdated time zone rules, there is no cat to see
+   or focus. */
+.scene:not([data-cat]) .room-cat {
   display: none;
 }
 
@@ -401,11 +572,13 @@
   position: absolute;
   bottom: 100%;
   left: -2px;
+  /* A title can be long: it wraps inside the scene, which clips sideways. */
+  width: max-content;
+  max-width: min(32rem, 88vw);
   padding: 0.3rem 0.5rem;
   background: var(--ground);
   color: var(--text);
-  font: 600 0.8125rem / 1 var(--mono);
-  white-space: nowrap;
+  font: 600 0.8125rem / 1.3 var(--mono);
   opacity: var(--label, 0);
   pointer-events: none;
 }
