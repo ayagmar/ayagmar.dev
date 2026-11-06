@@ -1,5 +1,4 @@
 import type { Page } from '@playwright/test';
-import { skyAt } from '../src/lib/sky.ts';
 import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 // The page background of each theme (--ground in base.css).
@@ -74,31 +73,38 @@ test('without JavaScript the page follows the system theme and hides the switch'
   await context.close();
 });
 
-// Catches both scenes downloading when the stored choice differs from the system, more than one
-// window layer (ADR 0027), and italic text on home, which puts another font in front of the
-// scene and pushes mobile LCP past 2 s.
-test('home loads one scene, one window and two fonts', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/about');
-  await page.evaluate(() => localStorage.setItem('theme', 'day'));
-  await page.goto('/');
-  await page.waitForLoadState('load');
-  const assets = await page.evaluate(() =>
-    performance
-      .getEntriesByType('resource')
-      .map((entry) => entry.name.match(/\/_astro\/([\w-]+)\.[\w-]+\.(?:png|woff2)$/)?.[1])
-      .filter((name) => name !== undefined)
-      .sort()
-  );
-  // Which window depends on the time in Rabat; there is exactly one. So does the cat: it loads
-  // from 02:00 to 05:00 there, and only in the page's theme. A fixed clock is no way out, since
-  // Playwright's clock leaves `performance` without its entries.
-  // The night scene comes over the day one after dark, so it is timed too, but only then.
-  const timed = skyAt(Date.now()) === 'day' ? /^(?:window|cat)-/ : /^(?:window|cat|room-night)/;
-  expect(assets.filter((name) => !timed.test(name))).toEqual(['mono', 'room-day', 'serif-roman']);
-  expect(assets.filter((name) => name.startsWith('window-'))).toHaveLength(1);
-  expect(assets.filter((name) => name === 'cat-night')).toEqual([]);
-});
+// Catches a scene downloading that the room does not show, whether the stored choice differs from
+// the system or the sky brings the night scene over the day one, more than one window layer (ADR
+// 0027), the cat out of its hours or not as its one layer, and italic text on home, which puts
+// another font in front of the scene and pushes mobile LCP past 2 s. Each list is exact, and the
+// clock is fixed, so this holds at any hour; responses, as a fixed clock empties `performance`.
+for (const [theme, time, room] of [
+  ['day', '2026-10-26T12:00:00Z', ['room-day', 'window-day']],
+  ['day', '2026-10-26T17:55:00Z', ['room-day', 'room-night', 'window-dusk']],
+  ['day', '2026-10-26T21:00:00Z', ['room-day', 'room-night', 'window-night']],
+  ['day', '2026-10-26T03:00:00Z', ['cat-night', 'room-day', 'room-night-dim', 'window-night']],
+  ['day', '2026-10-26T06:00:00Z', ['room-day', 'room-night-dim', 'window-night']],
+  ['night', '2026-10-26T12:00:00Z', ['room-night', 'window-day']],
+  ['night', '2026-10-26T03:00:00Z', ['cat-night', 'room-night-dim', 'window-night']],
+] as const) {
+  test(`home loads only what the room shows: ${theme} theme at ${time}`, async ({ page }) => {
+    const assets: string[] = [];
+    page.on('response', (response) => {
+      const name = response.url().match(/\/_astro\/([\w-]+)\.[\w-]+\.(?:png|woff2)$/)?.[1];
+      if (name !== undefined) assets.push(name);
+    });
+    await page.clock.setFixedTime(time);
+    await page.emulateMedia({ colorScheme: theme === 'day' ? 'dark' : 'light' });
+    await page.addInitScript((choice) => localStorage.setItem('theme', choice), theme);
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    // Night theme's first paint can fetch the lit scene before room.ts turns the lamp down, so
+    // in that one state it may or may not have started; every other list is exact.
+    const racing = theme === 'night' && room.some((name) => name === 'room-night-dim');
+    const loaded = assets.filter((name) => !(racing && name === 'room-night'));
+    expect(loaded.toSorted()).toEqual(['mono', ...room, 'serif-roman'].toSorted());
+  });
+}
 
 const roomLinks = (page: Page) =>
   page.locator('.scene a').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
@@ -231,7 +237,10 @@ test('a hotspot lights by itself without :has()', async ({ page }) => {
   const unlit = await spot.evaluate((el) => getComputedStyle(el).borderTopColor);
   await spot.hover();
   await expect(label).toHaveCSS('opacity', '1');
-  expect(await spot.evaluate((el) => getComputedStyle(el).borderTopColor)).not.toBe(unlit);
+  // Polled: a hover's colour change is a 120 ms transition (ADR 0037).
+  await expect
+    .poll(() => spot.evaluate((el) => getComputedStyle(el).borderTopColor))
+    .not.toBe(unlit);
   await page.mouse.move(0, 0);
   await expect(label).toHaveCSS('opacity', '0');
   await page.locator('[data-room="notebook"]').focus();
