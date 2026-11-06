@@ -41,6 +41,13 @@
   --lamp: light-dark(#8a4300, #f2b45a);
   --rose: light-dark(#9a3226, #f0907f);
   --rule: light-dark(#ddd5c8, #26222e);
+  /* The heat ramp (ADR 0037), one step of lightness each, quieter than the room above it: the top
+     stops short of the lamp at night, so a busy day never outshines the scene. Each step is at
+     least 3:1 on the ground and 1.3:1 from the last (e2e/contrast.spec.ts). */
+  --heat-1: light-dark(oklch(0.64 0.08 70), oklch(0.5 0.07 62));
+  --heat-2: light-dark(oklch(0.57 0.085 66), oklch(0.57 0.075 66));
+  --heat-3: light-dark(oklch(0.5 0.085 62), oklch(0.64 0.08 70));
+  --heat-4: light-dark(oklch(0.435 0.08 58), oklch(0.71 0.085 74));
 
   /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
   --paper: light-dark(#fbf6ea, #efe3c6);
@@ -722,6 +729,28 @@ h1 + .caption,
   font-weight: 600;
 }
 
+/* The end of a post is small print, set below the text it follows: the reply link, the comments
+   and the project block inherit the reader's large size otherwise, and outweigh the last
+   paragraph (ADR 0037). */
+.reply,
+.m-comments,
+.reader ~ .project-card {
+  color: var(--fg-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.m-comments h2,
+.reader ~ .project-card h2 {
+  margin-block-end: 0.35rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.reader ~ .project-card :is(.project-summary, h3) {
+  font-size: inherit;
+}
+
 .reply {
   margin-block: 2rem 0;
 }
@@ -729,7 +758,8 @@ h1 + .caption,
 /* Comments under a post or note (ADR 0036). The giscus iframe is added by comments.ts on a press;
    the status line keeps two lines so loading, ready and failed do not move what follows. */
 .m-comments {
-  margin-block-start: 3rem;
+  margin-block-start: 2rem;
+  padding-block-start: 1.25rem;
 }
 
 .comments-actions {
@@ -1028,27 +1058,33 @@ time[data-ago] {
   display: block;
 }
 
+/* A day with no record steps back in the views that are mostly such days: a year and the LLM
+   usage year. Fainter than a recorded zero, and each view's caption says so (ADR 0037, 0041). */
 .heat i[data-l="none"] {
-  /* A day with no record (ADR 0038): an outline, so it never reads as a quiet day. */
+  background: color-mix(in oklab, var(--rule) 30%, transparent);
+}
+
+/* On the 28-day strip it is an outline, so it never reads as a quiet day (ADR 0038). */
+.ship-heat i[data-l="none"] {
   background: transparent;
   outline: 1px solid var(--fg-2);
   outline-offset: -1px;
 }
 
 .heat i[data-l="1"] {
-  background: light-dark(#b07a3c, #8a5a22);
+  background: var(--heat-1);
 }
 
 .heat i[data-l="2"] {
-  background: light-dark(#8a4f10, #b37a2c);
+  background: var(--heat-2);
 }
 
 .heat i[data-l="3"] {
-  background: light-dark(#6c3a05, #e09a3a);
+  background: var(--heat-3);
 }
 
 .heat i[data-l="4"] {
-  background: light-dark(#4a2200, #ffd58a);
+  background: var(--heat-4);
 }
 
 .heat-cap {
@@ -1094,8 +1130,9 @@ time[data-ago] {
    run to the screen edge, scrolling inside themselves. The lamp is the charm: a warm pool
    behind the title, a dithered pixel edge where its light falls off, a tile star at breaks. */
 
-/* The lamp's pool, behind the top of the page, header included so it has no edge. */
-body:has(.reader) {
+/* The lamp's pool, behind the top of the page, header included so it has no edge. /til is a list
+   on the one column, so it has none (ADR 0037). */
+body:has(.reader:not(.column)) {
   background:
     radial-gradient(
       ellipse 46rem 24rem at 50% -2rem,
@@ -1117,6 +1154,10 @@ body:has(.reader) {
 
 .reader > * {
   grid-column: 1;
+}
+
+.reader.column {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* The project card under a post is as wide as the post: the text, and the contents beside it. */

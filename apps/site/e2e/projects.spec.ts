@@ -57,7 +57,7 @@ test('the projects index counts the posts per project', { tag: '@drafts' }, asyn
   await page.goto('/projects');
   await expect(page.locator('#llm-usage-metrics .project-post-count')).toHaveText(/^2 posts/);
   await expect(page.locator('#runnerd .project-post-count')).toHaveText(/^1 post/);
-  await expect(page.locator('#headroom .project-post-count')).toHaveText(/^no posts/);
+  await expect(page.locator('#headroom')).not.toContainText('no posts');
 });
 
 test("a project feed carries only that project's posts", { tag: '@drafts' }, async ({

@@ -668,7 +668,6 @@ outputs = {
     **{f"window-{sky}.png": window_only(*draw(False, sky)) for sky in ("day", "dusk", "night")},
     # Lit as the room is at that hour: the lamp turned down at night, daylight in the day theme.
     "cat-night.png": window_only(*draw(False, lamp=0.35, cat=True)),
-    "cat-day.png": window_only(*draw(True, cat=True)),
 }
 # The weather over the window (ADR 0029): one layer per kind for the day sky and one for the
 # night, which dusk shows too, plus the falling rain. Clear weather is the sky as it is.

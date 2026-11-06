@@ -5,6 +5,7 @@ import Base from '../../layouts/Base.astro';
 import { feedPaths } from '../../lib/feed.ts';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { getNotes } from '../../lib/posts.ts';
+import { nothingPublished } from '../../lib/writing.ts';
 
 const notes = await Promise.all(
   (await getNotes()).map(async (note) => ({ note, ...(await render(note)) }))
@@ -21,10 +22,10 @@ const feeds = feedPaths({ til: true });
   feed={{ til: true }}
 >
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
-  <div class="reader">
+  <div class="reader column">
     <h1>Today I learned</h1>
     {notes.length === 0 ? (
-      <p>Nothing published yet.</p>
+      <p>{nothingPublished}</p>
     ) : (
       notes.map(({ note, Content }, index) => (
         <>

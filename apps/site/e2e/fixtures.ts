@@ -60,6 +60,15 @@ export async function expectNoAxeViolations(page: Page, include?: string) {
     'best-practice',
   ]);
   if (include) axe.include(include);
+  // Home's entrance fades its text in, and axe would measure the contrast of a half-faded line.
+  await page.evaluate(() =>
+    Promise.allSettled(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished)
+    )
+  );
   const { violations } = await axe.analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
 }

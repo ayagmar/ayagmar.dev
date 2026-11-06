@@ -52,3 +52,15 @@ test('a year with no history and other top-level paths are the 404 page', async 
     expect(response?.status(), path).toBe(404);
   }
 });
+
+// Catches the strip's outline winning over the calendar's faint square: both rules are as
+// specific, so which one holds depends on the order the stylesheets are bundled in.
+test('a day with no record in a shown month is faint, not outlined', async ({ page }) => {
+  await page.goto('/2026');
+  const style = await page
+    .locator('.year-heat i[data-l="none"]')
+    .first()
+    .evaluate((square) => getComputedStyle(square).outlineStyle);
+  expect(style).toBe('none');
+  await expect(page.locator('.year-heat .heat-cap')).toContainText('faint days have no record');
+});

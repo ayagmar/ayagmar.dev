@@ -55,6 +55,13 @@ test('pages link their feeds for discovery', { tag: '@drafts' }, async ({ page }
   ]);
 });
 
+// Catches the line break before an expression eating the space: "No cookies.Visits are counted".
+test('the colophon keeps its spaces around what the build fills in', async ({ page }) => {
+  await page.goto('/colophon');
+  await expect(page.locator('main')).toContainText('No cookies. No tracking');
+  await expect(page.locator('main')).toContainText(/This build: \S/);
+});
+
 test('the colophon shows the commit the site was built from', async ({ page }) => {
   await page.goto('/colophon');
   await expect(page.getByText(/This build:/)).toContainText(/[0-9a-f]{12}|dev/);
@@ -81,4 +88,21 @@ test('the console says hello once, on production only', async ({ page, baseURL }
   expect(logged).toHaveLength(1);
   expect(logged[0]).toContain('https://ayagmar.dev/colophon');
   expect(logged[0]).toContain('https://github.com/ayagmar/ayagmar.dev');
+});
+
+// Catches a page leaving the one column (ADR 0037), by a different x or by losing `.column`: /til
+// sat 39 px left of every other page. Only home, /stats and the reader's own pages are off it.
+test('every page on the column starts its title at the same x', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const offColumn = /^\/$|^\/stats$|^\/(?:writing|til)\/(?!tags(?:\/|$))/;
+  const starts = new Map<string, number>();
+  for (const path of [...pages, '/day/2026-10-25', notFoundPath]) {
+    if (offColumn.test(path)) continue;
+    await page.goto(path);
+    const title = page.locator('.column h1');
+    await expect(title, path).toHaveCount(1);
+    starts.set(path, (await title.boundingBox())?.x ?? Number.NaN);
+  }
+  expect(starts.has('/til')).toBe(true);
+  expect(new Set(starts.values()).size, JSON.stringify([...starts])).toBe(1);
 });

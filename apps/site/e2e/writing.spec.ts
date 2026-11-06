@@ -12,17 +12,14 @@ const publishedNotes = notes.filter((note) => !note.draft);
 test.describe('without published posts', () => {
   test.skip(published.length > 0, 'a post is published');
 
-  // Catches an empty list that renders a blank panel, an error or a tag list with no tags, and
-  // home's Writing window left empty while there are notes to show in it.
-  test('home, /writing and index.txt say nothing is published', async ({ page, request }) => {
+  // Catches an empty band on home or in its text copy, a blank /writing or a tag list with no
+  // tags, and home's Writing section missing while there are notes to show in it.
+  test('home drops Writing until it has content, /writing says so', async ({ page, request }) => {
     await page.goto('/');
     const panel = page.getByRole('region', { name: 'Writing' });
     if (publishedNotes.length === 0) {
-      await expect(panel.getByText('Nothing published yet.')).toBeVisible();
-      await expect(panel.getByRole('link', { name: 'All writing' })).toHaveAttribute(
-        'href',
-        '/writing'
-      );
+      await expect(panel).toHaveCount(0);
+      await expect(page.getByText('Nothing published yet.')).toHaveCount(0);
     } else {
       await expect(
         panel.getByText('No posts yet. The latest short notes, from TIL:')
@@ -41,7 +38,8 @@ test.describe('without published posts', () => {
     await expect(page.getByRole('heading', { name: 'Tags' })).toHaveCount(0);
 
     const text = await (await request.get('/index.txt')).text();
-    expect(text).toMatch(/\nWriting\n {2}Nothing published yet\.\n/);
+    if (publishedNotes.length === 0) expect(text).not.toContain('Nothing published yet.');
+    expect(text).not.toMatch(/^Writing$/m);
   });
 
   test('the writing feeds follow the validator rules with no entries', async ({

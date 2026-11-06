@@ -5,10 +5,17 @@ import { projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
 import { feedPaths } from './feed.ts';
-import { postCount, postsAbout, projectLinks, projectPath, type SiteProject } from './projects.ts';
+import {
+  postCount,
+  postsAbout,
+  projectLinks,
+  projectPath,
+  projectRowLabel,
+  type SiteProject,
+} from './projects.ts';
 import { curlTarget, identityLines, nav, nowPage, site, siteUrl } from './site.ts';
 import { type Note, notePath } from './til.ts';
-import { isoDay, type Post, postPath, postsByTag } from './writing.ts';
+import { isoDay, nothingPublished, type Post, postPath, postsByTag } from './writing.ts';
 
 const rule = '-'.repeat(72);
 
@@ -16,7 +23,7 @@ const rule = '-'.repeat(72);
 export const textFile = (body: string) =>
   new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 
-const empty = '  Nothing published yet.';
+const empty = `  ${nothingPublished}`;
 
 /** Lines of `date  title`, then the URL under it, then `extra` lines, for a list of entries. */
 const dated = (date: Date, title: string, path: string, ...extra: string[]) => [
@@ -60,18 +67,12 @@ export function renderPlainText(
   projects: readonly ProjectSlug[],
   origin: string
 ): string {
-  const writing =
-    posts.length === 0
-      ? [empty]
-      : posts
-          .slice(0, 10)
-          .flatMap((post) => dated(post.data.date, post.data.title, postPath(post.id)));
-  const til =
-    notes.length === 0
-      ? [empty]
-      : notes
-          .slice(0, 5)
-          .flatMap((note) => dated(note.data.date, note.data.title, notePath(note.id)));
+  const writing = posts
+    .slice(0, 10)
+    .flatMap((post) => dated(post.data.date, post.data.title, postPath(post.id)));
+  const til = notes
+    .slice(0, 5)
+    .flatMap((note) => dated(note.data.date, note.data.title, notePath(note.id)));
   const slugWidth = Math.max(0, ...projects.map((slug) => slug.length)) + 2;
   const projectLines = projects.map(
     (slug) =>
@@ -81,12 +82,9 @@ export function renderPlainText(
     asciiRoom,
     '',
     ...identityLines,
-    rule,
-    'Writing',
-    ...writing,
-    rule,
-    'TIL',
-    ...til,
+    // As on the home page, a section appears once it has something in it.
+    ...(writing.length === 0 ? [] : [rule, 'Writing', ...writing]),
+    ...(til.length === 0 ? [] : [rule, 'TIL', ...til]),
     rule,
     'Projects',
     ...projectLines,
@@ -152,7 +150,7 @@ export function renderProjectsText(
     ...projects.flatMap((project) => [
       project.slug,
       ...(project.summary === null ? [] : [`  ${project.summary}`]),
-      `  ${[postCount(postsAbout(posts, project.slug).length), project.status].filter(Boolean).join(', ')}`,
+      ...(projectRowLabel(project, posts) === '' ? [] : [`  ${projectRowLabel(project, posts)}`]),
       `  ${siteUrl}${projectPath(project.slug)}`,
       '',
     ]),

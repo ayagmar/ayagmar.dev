@@ -16,7 +16,7 @@ import {
   type StripCell,
   shippedCount,
   shippedWords,
-  stripCell,
+  stripCells,
   stripOf,
 } from '../data/format.ts';
 import {
@@ -136,6 +136,19 @@ function datesOf(month: string, today: string): string[] {
   return Array.from({ length }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`).filter(
     (date) => date <= today
   );
+}
+
+/**
+ * The months a series draws: from the first with a record or a failed read (an unknown month may
+ * hold records), so a year that began being recorded in October does not open on nine empty ones.
+ */
+function shownMonths(
+  months: readonly string[],
+  days: readonly { date: string }[],
+  failed: readonly string[]
+): string[] {
+  const first = [...days.map((day) => day.date.slice(0, 7)), ...failed].sort()[0] ?? '';
+  return first === '' ? [] : months.filter((month) => month >= first);
 }
 
 const list = (names: string[]) =>
@@ -287,15 +300,21 @@ function shippingYear(
   const days = history.days.filter(inYear(year));
   const failed = history.failed.filter((month) => month.startsWith(`${year}-`));
   const byDate = new Map(days.map((day) => [day.date, shippedCount(day)]));
-  const months = monthsOf(year, today).map((month): CalendarMonth => {
+  const shown = shownMonths(monthsOf(year, today), days, failed);
+  const dates = shown
+    .filter((month) => !failed.includes(month))
+    .flatMap((month) => datesOf(month, today));
+  const cells = stripCells(
+    dates.map((date) => ({ date, shipped: byDate.get(date) ?? null })),
+    pages
+  );
+  const months = shown.map((month): CalendarMonth => {
     const first = (new Date(at(`${month}-01`)).getUTCDay() + 6) % 7;
     return {
       month,
       name: nameOf(month),
       column: first + 1,
-      cells: failed.includes(month)
-        ? null
-        : datesOf(month, today).map((date) => stripCell(date, byDate.get(date) ?? null, pages)),
+      cells: failed.includes(month) ? null : cells.filter(({ date }) => date.startsWith(month)),
     };
   });
   const strip = stripOf(
@@ -358,7 +377,7 @@ function usageYear(
       empty: failed.length > 0 ? unread('Agent usage') : `No agent usage recorded in ${year}.`,
     };
   }
-  const rows = monthsOf(year, today).map((month): UsageRow => {
+  const rows = shownMonths(monthsOf(year, today), days, failed).map((month): UsageRow => {
     const name = nameOf(month);
     if (failed.includes(month)) return { name, state: 'unknown' };
     const recorded = days.filter((day) => day.date.startsWith(`${month}-`));

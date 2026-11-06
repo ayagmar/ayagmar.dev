@@ -17,7 +17,7 @@ export const getStaticPaths = (async () => {
 
 const { page } = Astro.props;
 const { shipping, usage, year } = page;
-const words = shipping.empty === null ? stripWords(shipping.strip) : null;
+const words = shipping.empty === null ? stripWords(shipping.strip, 'faint') : null;
 ---
 
 <Base title={year} description={page.description} noindex={!page.hasContent}>
