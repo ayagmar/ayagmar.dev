@@ -1,6 +1,7 @@
 ---
 import type { Envelope, ListeningSnapshot } from '@min7/contracts';
 import { nowPlaying, nowPlayingMarkup } from '../lib/listening.ts';
+import { statsWords } from '../lib/stats.ts';
 import Markup from './Markup.astro';
 
 interface Props {
@@ -19,7 +20,7 @@ const line =
 <!-- The sentence is announced politely and whole when it changes; the time after it ticks. -->
 <p class="now-playing">
   <span aria-live="polite" aria-atomic="true"
-    >{line === null ? 'No listening data yet' : <Markup nodes={line.words} />}</span
+    >{line === null ? statsWords.noListening : <Markup nodes={line.words} />}</span
   >{line?.at && (
     <>
       {' '}

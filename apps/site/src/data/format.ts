@@ -6,6 +6,7 @@ import type {
   ShippingSnapshot,
 } from '@min7/contracts';
 import { rabatTimeZone } from '@min7/contracts/rabat';
+import type { SiteProject } from '../lib/projects.ts';
 
 const plural = (count: number, one: string, many: string) =>
   `${count.toLocaleString('en')} ${count === 1 ? one : many}`;
@@ -28,7 +29,7 @@ export function describeEvent(event: ShippingEvent): string {
 }
 
 /** `2026-10-24` from an RFC 3339 timestamp, in UTC. */
-export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
+const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
 
 /**
  * `26 Oct, 09:00`, in Rabat: a time as pages show it without JavaScript, the same in every
@@ -46,6 +47,28 @@ export const rabatTime = (iso: string) =>
   }).format(Date.parse(iso));
 
 export const count = (value: number) => value.toLocaleString('en');
+
+/** A project's numbers the snapshot knows, in display order; empty when it knows none. */
+export function projectFacts({ live }: SiteProject) {
+  const release = live?.latestRelease ?? null;
+  const downloads = live?.npm?.monthlyDownloads ?? null;
+  return [
+    ...(live?.language == null ? [] : [{ label: 'Language', value: live.language }]),
+    ...(live?.stars == null ? [] : [{ label: 'Stars', value: count(live.stars) }]),
+    ...(release === null
+      ? []
+      : [
+          {
+            label: 'Latest release',
+            value: `${release.tag}, ${utcDay(release.publishedAt)}`,
+            release: { ...release, day: utcDay(release.publishedAt) },
+          },
+        ]),
+    ...(downloads === null
+      ? []
+      : [{ label: 'npm downloads, last 30 days', value: count(downloads) }]),
+  ];
+}
 
 /** The /stats line about projects. Unknown star counts are never added as zero. */
 export function projectsSummary(projects: readonly Pick<Project, 'stars'>[]): string {

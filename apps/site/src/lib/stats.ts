@@ -97,6 +97,10 @@ export const statsWords = {
   noShipping: 'No public activity to show yet.',
   stars: 'Stars on other repositories',
   noProjects: 'No project data yet.',
+  noListening: 'No listening data yet',
+  noLlmUsage: 'No data yet.',
+  sample: 'Sample data: this build shows the test fixtures, some of them made up.',
+  snapshot: 'Numbers from my own tools, as of the last build. The page keeps itself current.',
 };
 
 /** A week's scrobbles, or `unknown` when Last.fm did not answer that part. */

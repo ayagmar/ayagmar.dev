@@ -1,4 +1,5 @@
 import { z } from 'astro/zod';
+import { nowPage, site } from '../lib/site.ts';
 
 const text = z.string({ error: 'is required' }).trim().min(1, 'must not be empty');
 const url = z.url({ protocol: /^https$/, error: 'must be an https:// URL' });
@@ -91,3 +92,19 @@ export function formatMonth(value: string): string {
   const [year, monthNumber] = value.split('-');
   return `${months[Number(monthNumber) - 1]} ${year}`;
 }
+
+/** A role's or school's months as the page says them; a null end is the current one. */
+export const monthSpan = (start: string, end: string | null) => ({
+  start: formatMonth(start),
+  end: end === null ? 'present' : formatMonth(end),
+});
+
+/** The "Elsewhere" list on /about. */
+export const aboutLinks = (identity: About['identity']) => [
+  { href: nowPage.href, label: nowPage.label },
+  { href: `mailto:${site.email}`, label: site.email },
+  { href: identity.links.linkedin, label: 'LinkedIn' },
+  { href: identity.links.github, label: 'GitHub' },
+  { href: identity.links.x, label: 'X' },
+  { href: identity.links.lastfm, label: 'Last.fm' },
+];
