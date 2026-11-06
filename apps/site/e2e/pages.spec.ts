@@ -90,14 +90,17 @@ test('the console says hello once, on production only', async ({ page, baseURL }
   expect(logged[0]).toContain('https://github.com/ayagmar/ayagmar.dev');
 });
 
-// Catches a page leaving the one column (ADR 0037): /til sat 39 px left of every other page.
+// Catches a page leaving the one column (ADR 0037), by a different x or by losing `.column`: /til
+// sat 39 px left of every other page. Only home, /stats and the reader's own pages are off it.
 test('every page on the column starts its title at the same x', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
+  const offColumn = /^\/$|^\/stats$|^\/(?:writing|til)\/(?!tags(?:\/|$))/;
   const starts = new Map<string, number>();
-  for (const path of [...pages, notFoundPath]) {
+  for (const path of [...pages, '/day/2026-10-25', notFoundPath]) {
+    if (offColumn.test(path)) continue;
     await page.goto(path);
     const title = page.locator('.column h1');
-    if ((await title.count()) === 0) continue;
+    await expect(title, path).toHaveCount(1);
     starts.set(path, (await title.boundingBox())?.x ?? Number.NaN);
   }
   expect(starts.has('/til')).toBe(true);
