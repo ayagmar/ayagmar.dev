@@ -82,3 +82,50 @@ The `daily` table, the activity pull and `/v1/days` ship in signals; the strip r
 4. Rebuild the site once the count is above 0 (a merge to `main`, or a retry of the last site build in Workers Builds). A site built before that keeps the event-based strip until its next build.
 
 The llm-usage history fills with the next accepted push; `/v1/days/llm-usage?month=YYYY-MM` shows it.
+
+## Listening and weather days (ADR 0038)
+
+These need no migration and no new secret. Merging to `main` deploys them through Workers Builds, and recording starts on its own: weather at the next pull, listening in the first minutes of the next hour. A Worker rollback needs nothing either: the older version ignores the new rows and answers 404 on the two new routes.
+
+Check that days arrive. A Preview cannot show this, as cron triggers never run there.
+
+```sh
+curl -s 'https://api.ayagmar.dev/v1/days/listening?last=28' | jq '.data.days[-2:]'
+curl -s 'https://api.ayagmar.dev/v1/days/weather?last=28' | jq '.data.days[-2:]'
+```
+
+No listening row an hour after the deploy means the day reads fail: look for `day read failed` in Workers Logs. The pull's snapshot is not affected by that, so `/v1/health` stays clean. A block's `fetchedAt` is when the source was last collected, not when that day was: read `asOf` and each slot's `at`.
+
+### Backfilling past days
+
+Fills past dates of both series, one date a minute, in production only: cron triggers never run in Previews, and no key leaves the Worker. Wrangler needs a login with D1 access; nothing else is secret. The range includes both dates, must end before today in Rabat, starts no earlier than 2025-01-01 and spans at most 400 days. A date is fetched only when the backfill reaches it, so try one first:
+
+```sh
+just signals-backfill 2026-10-01 2026-10-01
+```
+
+A minute or two later, check the date and that the row says it finished (`json` is `null`):
+
+```sh
+curl -s 'https://api.ayagmar.dev/v1/days/listening?month=2026-10' | jq '.data.days[0]'
+curl -s 'https://api.ayagmar.dev/v1/days/weather?month=2026-10' | jq '.data.days[0]'
+pnpm --filter @min7/signals exec wrangler d1 execute DB --remote --command "SELECT described_date, step, json FROM pull_progress WHERE source = 'daily-backfill'"
+```
+
+Edge caching holds a month block for up to 60 seconds. Then arm the rest, which takes about a minute per date:
+
+```sh
+just signals-backfill 2026-10-02 2026-11-05
+```
+
+Workers Logs has one `backfill day` line per date. It stops by itself:
+
+- After the last date: `json` is `null`.
+- After 5 failed tries on a date: a `backfill stopped` line, and `json` holds `"stopped":true` with `next`, the date it stopped on. Fix the cause, then arm again from `next`.
+- On a range it refuses: a `backfill refused` line, no request made, `json` is `null`.
+
+Arming again is always safe, also over a running backfill and over dates already filled: a date only ever gains what it lacked, and a live weather slot is never replaced by an archived one. To cancel, arm nothing and clear the row's state:
+
+```sh
+pnpm --filter @min7/signals exec wrangler d1 execute DB --remote --command "UPDATE pull_progress SET json = 'null', step = step + 1 WHERE source = 'daily-backfill'"
+```

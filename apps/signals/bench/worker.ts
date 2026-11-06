@@ -3,9 +3,11 @@
 // signals' own work. Never deployed; scripts/signals-cpu.ts drives it.
 import { rawFixtures } from '@min7/contracts/fixtures';
 import { listening } from '../src/adapters/pull/listening.ts';
+import { readListeningDay } from '../src/adapters/pull/listening-days.ts';
 import { listeningHistory } from '../src/adapters/pull/listening-history.ts';
 import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
 import { shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
+import { weather } from '../src/adapters/pull/weather.ts';
 import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 
@@ -112,6 +114,55 @@ function listeningAnswers(): Answers {
     ['user.getrecenttracks week', JSON.stringify(ok.thisWeek.body)],
   ]);
 }
+
+/** Today and yesterday in Rabat. */
+function dayDates() {
+  const today = dateAt(Date.now() / 1000);
+  return [dateAt(startOf(today) - 1), today];
+}
+
+/** A day's range answer: one full scrobble and the track playing now on top. */
+const dayAnswer = (date: string) =>
+  JSON.stringify({
+    recenttracks: {
+      track: [
+        { ...fullScrobble('LTN', 'Playing', 0), date: undefined, '@attr': { nowplaying: 'true' } },
+        fullScrobble('LTN', 'Nowhere to Run', startOf(date) + 60),
+      ],
+      '@attr': { user: 'min7_', page: '1', perPage: '1', totalPages: '41', total: '41' },
+    },
+  });
+
+/** `listeningAnswers`, and the two dates a pull in the hourly window reads. */
+function listeningDayAnswers(): Answers {
+  const answers = listeningAnswers();
+  for (const date of dayDates()) answers.set(`day ${startOf(date)}`, dayAnswer(date));
+  return answers;
+}
+
+/** The listening pull inside its hourly window, whatever the time the bench runs at. */
+const listeningInWindow: typeof listening = {
+  ...listening,
+  async fetch(env, signal) {
+    const raw = await listening.fetch(env, signal);
+    if (raw.days !== undefined) return raw;
+    const key = env.LASTFM_API_KEY;
+    return {
+      ...raw,
+      days: await Promise.all(dayDates().map((date) => readListeningDay(date, key, signal))),
+    };
+  },
+};
+
+/** The date a backfill scenario reads. */
+const backfillDate = '2026-10-01';
+
+/** One date of a backfill: Last.fm's range and the real archive answer, as they come. */
+const backfillAnswers = (): Answers =>
+  new Map([
+    [`day ${startOf(backfillDate)}`, dayAnswer(backfillDate)],
+    ['archive', JSON.stringify(rawFixtures['open-meteo-archive'].ok.body)],
+  ]);
 
 /**
  * Monkeytype's answers near the adapter's 128 KiB cap (ADR 0033): in each mode, the four
@@ -228,6 +279,10 @@ const scenarios: Record<
     adapter?: PullAdapter;
     answers: () => Answers;
     seed?: () => ReturnType<typeof progress>;
+    /** The run must leave a row in `daily`. */
+    days?: boolean;
+    /** Arms one date of the backfill before each run, over stored snapshots. */
+    backfill?: boolean;
     /** The activity history and snapshot stored before each run. */
     activity?: () => ReturnType<typeof storedActivity>;
   }
@@ -235,6 +290,14 @@ const scenarios: Record<
   // A cron invocation with no adapter due: what every scenario's number is measured against.
   baseline: { answers: () => new Map() },
   listening: { adapter: listening, answers: listeningAnswers },
+  // The pulls that record days (ADR 0038): the hourly one, every weather pull, a backfill's date.
+  'listening-days': { adapter: listeningInWindow, answers: listeningDayAnswers, days: true },
+  weather: {
+    adapter: weather,
+    answers: () => new Map([['forecast', JSON.stringify(rawFixtures['open-meteo'].ok.body)]]),
+    days: true,
+  },
+  backfill: { answers: backfillAnswers, backfill: true, days: true },
   // The real answers (0.7 KiB), and answers near the adapter's body cap.
   monkeytype: {
     adapter: monkeytype,
@@ -298,17 +361,24 @@ async function answer(request: Request): Promise<Response> {
     const body = prepared?.get('activity');
     return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
   }
+  if (url.host === 'api.open-meteo.com' || url.host === 'archive-api.open-meteo.com') {
+    const body = prepared?.get(url.host === 'api.open-meteo.com' ? 'forecast' : 'archive');
+    return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
+  }
   if (url.host === 'api.monkeytype.com') {
     const body = prepared?.get(`monkeytype ${url.searchParams.get('mode')}`);
     return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
   }
   const form = new URLSearchParams(await request.text());
   const method = form.get('method') ?? '';
+  const span = Number(form.get('to')) - Number(form.get('from'));
   const key = form.has('page')
     ? `${method} ${form.get('from')} ${form.get('to')} ${form.get('page')}`
-    : form.has('from')
-      ? `${method} week`
-      : method;
+    : form.has('to') && span <= 25 * 3600
+      ? `day ${form.get('from')}`
+      : form.has('from')
+        ? `${method} week`
+        : method;
   const body = prepared?.get(key);
   return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
 }
@@ -343,6 +413,18 @@ export default {
               ).bind(JSON.stringify(activity.days)),
             ]),
       ]);
+      if (scenario.backfill === true) {
+        await env.DB.batch([
+          env.DB.prepare(
+            `INSERT INTO snapshots (source, json, fetched_at)
+             VALUES ('listening', '{}', '2000-01-01T00:00:00.000Z'), ('weather', '{}', '2000-01-01T00:00:00.000Z')`
+          ),
+          env.DB.prepare(
+            `INSERT INTO pull_progress (source, described_date, step, json)
+             VALUES ('daily-backfill', ?1, 1, json_object('next', ?1, 'to', ?1, 'tries', 0))`
+          ).bind(backfillDate),
+        ]);
+      }
       const seed = scenario.seed?.();
       if (seed !== undefined) {
         await env.DB.prepare(
@@ -358,6 +440,11 @@ export default {
     const row = await env.DB.prepare(
       'SELECT last_error_code, length(json) AS bytes FROM snapshots'
     ).first<{ last_error_code: string | null; bytes: number | null }>();
+    // A day read that fails is only logged, and would measure as cheap.
+    const days = await env.DB.prepare('SELECT count(*) AS n FROM daily').first<{ n: number }>();
+    if (scenario.days === true && days?.n === 0) {
+      return Response.json({ ...row, last_error_code: 'no_day_recorded' });
+    }
     // A step that saved its part reports `in_progress`: for the bench, a success.
     return Response.json(
       row?.last_error_code === 'in_progress' ? { ...row, last_error_code: null } : row

@@ -2,7 +2,6 @@
 import {
   type ListeningSnapshot,
   lastfmArtistSchema,
-  lastfmErrorSchema,
   lastfmRecentTracksSchema,
   lastfmTopArtistsSchema,
   lastfmTrackSchema,
@@ -11,18 +10,23 @@ import {
 import type { PullAdapter } from '../types.ts';
 import {
   checkSnapshot,
+  fromUnixSeconds,
   getJson,
   getOptionalJson,
   orNull,
   PullError,
-  parseBody,
   type Schema,
   type UpstreamResponse,
 } from './http.ts';
+import { lastfmEndpoint, lastfmUser, readLastfm } from './lastfm.ts';
+import {
+  type DayRead,
+  dayReadsDue,
+  listeningDaysHistory,
+  readListeningDay,
+} from './listening-days.ts';
 import { readSecret } from './secrets.ts';
 
-export const lastfmEndpoint = 'https://ws.audioscrobbler.com/2.0/';
-export const lastfmUser = 'min7_';
 const listLimit = 10;
 // Ten tracks with their image lists are about 10 KiB.
 const maxBytes = 128 * 1024;
@@ -33,6 +37,8 @@ export interface ListeningRaw {
   topArtists: UpstreamResponse | null;
   thisWeek: UpstreamResponse | null;
   lastWeek: UpstreamResponse | null;
+  /** The dates read for daily history; absent outside the hourly window (ADR 0038). */
+  days?: DayRead[];
 }
 
 const day = 24 * 60 * 60;
@@ -67,7 +73,8 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
     const thisMonday = weekStart(new Date());
     const lastMonday = thisMonday - 7 * day;
     // Only `@attr.total` of the weekly calls is read, so one item per page is enough.
-    const [recentTracks, topArtists, thisWeek, lastWeek] = await Promise.all([
+    const [days, recentTracks, topArtists, thisWeek, lastWeek] = await Promise.all([
+      Promise.all(dayReadsDue(Date.now()).map((date) => readListeningDay(date, apiKey, signal))),
       getJson(lastfmEndpoint, call('user.getrecenttracks', { limit: String(listLimit) })),
       getOptionalJson(
         lastfmEndpoint,
@@ -86,7 +93,13 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
         })
       ),
     ]);
-    return { recentTracks, topArtists, thisWeek, lastWeek };
+    return {
+      recentTracks,
+      topArtists,
+      thisWeek,
+      lastWeek,
+      ...(days.length === 0 ? {} : { days }),
+    };
   },
 
   normalize(raw) {
@@ -123,18 +136,9 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
       scrobbles: { thisWeek: weekTotal(raw.thisWeek), lastWeek: weekTotal(raw.lastWeek) },
     });
   },
-};
 
-/** A Last.fm answer checked against `schema`. Last.fm reports errors in the body, sometimes with HTTP 200. */
-export function readLastfm<T>(response: UpstreamResponse, schema: Schema<T>): T {
-  const failure = lastfmErrorSchema.safeParse(response.body);
-  if (failure.success) {
-    if (failure.data.error === 6) throw new PullError('upstream_not_found'); // no such user
-    if (failure.data.error === 29) throw new PullError('upstream_rate_limited', response.retryAt);
-    throw new PullError('upstream_error');
-  }
-  return parseBody(response, schema);
-}
+  history: (snapshot, raw) => listeningDaysHistory(snapshot, raw.days ?? []),
+};
 
 const readOptional = <T>(response: UpstreamResponse | null, schema: Schema<T>) =>
   response === null ? null : orNull(() => readLastfm(response, schema));
@@ -161,10 +165,6 @@ const lastfmPage = /^https:\/\/www\.last\.fm\/\S*$/;
 
 const lastfmUrl = (url: string | undefined) =>
   url !== undefined && lastfmPage.test(url) ? url : null;
-
-/** RFC 3339 in UTC without milliseconds, e.g. `2026-10-26T08:53:00Z`. */
-const fromUnixSeconds = (seconds: number) =>
-  new Date(seconds * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
 
 function weekTotal(response: UpstreamResponse | null): number | null {
   const parsed = readOptional(response, lastfmRecentTracksSchema);

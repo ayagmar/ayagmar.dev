@@ -3,11 +3,13 @@
 import { z } from 'zod';
 import { envelopeSchema } from './envelope.ts';
 import { rabatTimeZone } from './rabat.ts';
+import { listeningDaySchema } from './snapshots/listening.ts';
 import { llmUsageDaySchema } from './snapshots/llm-usage.ts';
 import { shippingActivityDaySchema } from './snapshots/shipping-activity.ts';
+import { weatherDaySchema } from './snapshots/weather.ts';
 
 /** Sources that keep daily history, each a series of `/v1/days`. */
-export const dailySources = ['shipping-activity', 'llm-usage'] as const;
+export const dailySources = ['shipping-activity', 'llm-usage', 'listening', 'weather'] as const;
 
 export type DailySource = (typeof dailySources)[number];
 
@@ -16,11 +18,14 @@ export const isDailySource = (value: string): value is DailySource =>
 
 /**
  * The zone each series' calendar days are in. repo-pulse counts UTC days; llm-usage-metrics
- * counts local days in Rabat (ADR 0014), which cannot be turned into UTC days.
+ * counts local days in Rabat (ADR 0014), which cannot be turned into UTC days. Listening and
+ * weather are days in Rabat too, the room's own (ADR 0038).
  */
 export const dailyZones = {
   'shipping-activity': 'UTC',
   'llm-usage': rabatTimeZone,
+  listening: rabatTimeZone,
+  weather: rabatTimeZone,
 } as const satisfies Record<DailySource, string>;
 
 /** The earliest `?month=` served: llm-usage's first push reaches 53 weeks back from late 2026. */
@@ -51,6 +56,18 @@ export const shippingActivityDaysEnvelopeSchema = envelopeSchema(
 export const llmUsageDaysEnvelopeSchema = envelopeSchema(
   z.literal('llm-usage'),
   block(dailyZones['llm-usage'], llmUsageDaySchema)
+);
+
+/** `/v1/days/listening`. */
+export const listeningDaysEnvelopeSchema = envelopeSchema(
+  z.literal('listening'),
+  block(dailyZones.listening, listeningDaySchema)
+);
+
+/** `/v1/days/weather`. */
+export const weatherDaysEnvelopeSchema = envelopeSchema(
+  z.literal('weather'),
+  block(dailyZones.weather, weatherDaySchema)
 );
 
 export type ShippingActivityDays = NonNullable<

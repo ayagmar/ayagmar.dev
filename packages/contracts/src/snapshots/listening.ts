@@ -100,3 +100,31 @@ export const listeningEnvelopeSchema = envelopeSchema(
   z.literal('listening'),
   listeningSnapshotSchema
 );
+
+const listeningDay = {
+  /** Last.fm's total for the date's range, read at `asOf`. Zero is a checked empty range. */
+  count: z.int().min(0),
+  /** The date's newest dated scrobble at `asOf`. Never what was playing, and null with zero. */
+  last: z
+    .object({
+      track: z.string().min(1).max(1024),
+      artist: z.string().min(1).max(1024),
+      playedAt: timestampSchema,
+    })
+    .nullable(),
+  /** When Last.fm was asked. Before the date's end in Rabat, the day was still open. */
+  asOf: timestampSchema,
+};
+
+/** A day of listening as stored in `daily`: its date is the row's key. */
+export const listeningStoredDaySchema = z.object(listeningDay);
+
+export type ListeningStoredDay = z.infer<typeof listeningStoredDaySchema>;
+
+/**
+ * A day of `/v1/days/listening` in Rabat (ADR 0038): a summary of the date, which says neither
+ * what played at an instant inside it nor that anything is playing.
+ */
+export const listeningDaySchema = z.object({ date: z.iso.date(), ...listeningDay });
+
+export type ListeningDay = z.infer<typeof listeningDaySchema>;

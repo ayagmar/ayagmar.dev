@@ -5,6 +5,7 @@ import { logEvent } from '../security/log.ts';
 import { deleteDeliveriesBefore } from '../storage/admission.ts';
 import { D1SnapshotStore } from '../storage/d1.ts';
 import type { SnapshotStore, SourceStatus } from '../storage/types.ts';
+import { runBackfill } from './backfill.ts';
 
 /** An upstream call that takes longer than this is abandoned and recorded as `timeout`. */
 const fetchTimeoutMs = 20_000;
@@ -51,7 +52,7 @@ async function pull(
     const raw = await adapter.fetch(env, AbortSignal.timeout(fetchTimeoutMs), previous);
     stage = 'normalize_failed';
     const snapshot = adapter.normalize(raw);
-    const history = adapter.history?.(snapshot);
+    const history = adapter.history?.(snapshot, raw);
     if (history === undefined) {
       stage = 'store_failed';
       await store.put(adapter.id, snapshot, new Date().toISOString());
@@ -111,4 +112,5 @@ export async function runScheduled(
     maxBatches: 10,
   });
   logEvent('log', 'cron run', { pulled: next?.adapter.id ?? null, deliveriesDeleted: deleted });
+  await runBackfill(env, scheduledTime);
 }

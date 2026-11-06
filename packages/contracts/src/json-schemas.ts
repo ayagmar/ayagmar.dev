@@ -1,5 +1,10 @@
 import type { z } from 'zod';
-import { llmUsageDaysEnvelopeSchema, shippingActivityDaysEnvelopeSchema } from './days.ts';
+import {
+  listeningDaysEnvelopeSchema,
+  llmUsageDaysEnvelopeSchema,
+  shippingActivityDaysEnvelopeSchema,
+  weatherDaysEnvelopeSchema,
+} from './days.ts';
 import { anyEnvelopeSchema } from './envelope.ts';
 import { desktopPushSchema } from './push/desktop.ts';
 import { llmUsagePushSchema } from './push/llm-usage.ts';
@@ -38,6 +43,8 @@ export const jsonSchemas: Readonly<Record<string, z.ZodType>> = {
   // Daily history blocks, `GET /v1/days/<series>` (ADR 0038).
   'days-shipping-activity': shippingActivityDaysEnvelopeSchema,
   'days-llm-usage': llmUsageDaysEnvelopeSchema,
+  'days-listening': listeningDaysEnvelopeSchema,
+  'days-weather': weatherDaysEnvelopeSchema,
   // Push bodies (ADR 0013, ADR 0014, ADR 0032).
   'push-llm-usage': llmUsagePushSchema,
   'push-trellis': trellisPushSchema,

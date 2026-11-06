@@ -48,6 +48,19 @@ export const openMeteoCurrentSchema = z.object({
   }),
 });
 
+/**
+ * `GET https://archive-api.open-meteo.com/v1/archive` for one date with `hourly=weather_code`,
+ * `timezone=GMT` and `timeformat=unixtime` (ADR 0038). An hour the models have not reached yet
+ * has a null code.
+ */
+export const openMeteoArchiveSchema = z.object({
+  hourly_units: z.object({ time: z.literal('unixtime'), weather_code: z.literal('wmo code') }),
+  hourly: z.object({
+    time: z.array(unixSeconds).max(48),
+    weather_code: z.array(wwCode.nullable()).max(48),
+  }),
+});
+
 // Normalized output: what `/v1/weather` serves.
 
 /**
@@ -76,3 +89,33 @@ export type WeatherSnapshot = z.infer<typeof weatherSnapshotSchema>;
 
 /** The `/v1/weather` response. */
 export const weatherEnvelopeSchema = envelopeSchema(z.literal('weather'), weatherSnapshotSchema);
+
+/**
+ * A code that stands for one part of a date in Rabat (ADR 0038). `at` is the instant it is for:
+ * a slot says what the weather was then, not all that part of the day. `live` came from the
+ * forecast pull, `archive` from a backfill, which reads another grid cell and other models.
+ */
+const weatherSlotSchema = z.object({
+  code: wwCode,
+  at: timestampSchema,
+  origin: z.enum(['live', 'archive']),
+});
+
+export type WeatherSlot = z.infer<typeof weatherSlotSchema>;
+
+const weatherSlots = {
+  /** Sun up, nearest 13:00 in Rabat. Null when nothing was recorded: unknown, never clear. */
+  day: weatherSlotSchema.nullable(),
+  /** Sun down, nearest 22:00 in Rabat. Null when nothing was recorded: unknown, never clear. */
+  night: weatherSlotSchema.nullable(),
+};
+
+/** A day of weather as stored in `daily`: its date is the row's key. */
+export const weatherStoredDaySchema = z.object(weatherSlots);
+
+export type WeatherStoredDay = z.infer<typeof weatherStoredDaySchema>;
+
+/** A day of `/v1/days/weather`: a summary of the date, not the weather at every instant. */
+export const weatherDaySchema = z.object({ date: z.iso.date(), ...weatherSlots });
+
+export type WeatherDay = z.infer<typeof weatherDaySchema>;

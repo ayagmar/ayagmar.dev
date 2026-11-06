@@ -2,11 +2,52 @@
 // good. The writes here are statements for a caller's D1 batch, so a day is stored together
 // with the snapshot that brought it, or not at all.
 import type { DailySource } from '@min7/contracts';
+import type { Schema } from '../adapters/pull/http.ts';
+import { logEvent } from '../security/log.ts';
 
 /** One day of a series to write: its date and its JSON as the stored-day schema has it. */
 export interface DailyRow {
   day: string;
   json: string;
+}
+
+/** What a pull or a backfill read of one date, before it meets what is stored. */
+export interface DayValue<T> {
+  date: string;
+  value: T;
+}
+
+const parsed = <T>(json: string, schema: Schema<T>) => {
+  try {
+    const result = schema.safeParse(JSON.parse(json));
+    return result.success ? result : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * The rows to write for `values`, given the stored JSON of their dates: each new date as it
+ * is, each stored one through `merge`, and only those that change. A stored row this version
+ * cannot read is left alone, since it may hold more than the new value does.
+ */
+export function mergedRows<T>(
+  values: readonly DayValue<T>[],
+  stored: ReadonlyMap<string, string>,
+  schema: Schema<T>,
+  merge: (date: string, stored: T, incoming: T) => T
+): DailyRow[] {
+  return values.flatMap(({ date, value }) => {
+    const old = stored.get(date);
+    if (old === undefined) return [{ day: date, json: JSON.stringify(value) }];
+    const before = parsed(old, schema);
+    if (before === null) {
+      logEvent('warn', 'stored day unreadable', { date });
+      return [];
+    }
+    const json = JSON.stringify(merge(date, before.data, value));
+    return json === old ? [] : [{ day: date, json }];
+  });
 }
 
 /**

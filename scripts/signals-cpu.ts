@@ -25,6 +25,9 @@ const warmRuns = 10;
 
 const allScenarios = [
   'listening',
+  'listening-days',
+  'weather',
+  'backfill',
   'history-first',
   'history-full-page',
   'history-last-of-24',

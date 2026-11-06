@@ -40,9 +40,10 @@ export interface PullAdapter<Raw = unknown, Snapshot = unknown> {
   normalize(raw: Raw): Snapshot;
   /**
    * For a source that keeps daily history (ADR 0038): what to store from the normalized pull.
-   * Its days and its snapshot are written in one batch, and only over an older answer.
+   * Its days and its snapshot are written in one batch, and only over an older answer. With
+   * undefined this pull has no days, and its snapshot is stored as any other's.
    */
-  history?(normalized: Snapshot): PullHistory;
+  history?(normalized: Snapshot, raw: Raw): PullHistory | undefined;
 }
 
 /** A pull adapter whose source keeps daily history. */

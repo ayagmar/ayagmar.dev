@@ -63,6 +63,10 @@ function retryAfter(value: string | null, now: number): number | undefined {
   return at > now ? Math.min(at, now + maxRetryAfterMs) : undefined;
 }
 
+/** RFC 3339 in UTC without milliseconds, e.g. `2026-10-26T08:53:00Z`. */
+export const fromUnixSeconds = (seconds: number) =>
+  new Date(seconds * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z');
+
 /** What the adapters need of a contracts schema, so signals does not import zod itself. */
 export interface Schema<T> {
   safeParse(value: unknown): { success: true; data: T } | { success: false };

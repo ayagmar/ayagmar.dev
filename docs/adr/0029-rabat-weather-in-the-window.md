@@ -1,6 +1,6 @@
 # 0029. Rabat weather in the window
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: code 3 (overcast) has its own layer (ADR 0034). Amended 2026-10-27: the credit moved from the home page to the colophon.
+Status: accepted, 2026-10-26. Amended 2026-10-26: code 3 (overcast) has its own layer (ADR 0034). Amended 2026-10-27: the credit moved from the home page to the colophon. Amended 2026-11-06: the code table moved to `@min7/contracts/weather-codes`, and each pull also offers its reading to the day's history (ADR 0038).
 
 ## Context
 

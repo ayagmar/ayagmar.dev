@@ -5,7 +5,15 @@ import {
   weatherSnapshotSchema,
 } from '@min7/contracts';
 import type { PullAdapter } from '../types.ts';
-import { checkSnapshot, getJson, PullError, parseBody, type UpstreamResponse } from './http.ts';
+import {
+  checkSnapshot,
+  fromUnixSeconds,
+  getJson,
+  PullError,
+  parseBody,
+  type UpstreamResponse,
+} from './http.ts';
+import { weatherDaysHistory } from './weather-days.ts';
 
 // Hassan Tower, Rabat, as in the site's room clock (apps/site/src/lib/sky.ts). Current values
 // only, no hourly or daily arrays, in fixed units and Unix time.
@@ -35,7 +43,7 @@ export const weather: PullAdapter<UpstreamResponse, WeatherSnapshot> = {
     // until it is too old to show.
     if (current.weather_code === null) throw new PullError('upstream_error');
     return checkSnapshot(weatherSnapshotSchema, {
-      observedAt: new Date(current.time * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      observedAt: fromUnixSeconds(current.time),
       weatherCode: current.weather_code,
       cloudCoverPercent: current.cloud_cover ?? null,
       precipitationMm: current.precipitation ?? null,
@@ -44,4 +52,6 @@ export const weather: PullAdapter<UpstreamResponse, WeatherSnapshot> = {
       temperatureC: current.temperature_2m ?? null,
     });
   },
+
+  history: weatherDaysHistory,
 };
