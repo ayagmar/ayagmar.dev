@@ -1,0 +1,27 @@
+---
+import type { StripCell } from '../data/format.ts';
+import { dayPath } from '../lib/days.ts';
+
+interface Props {
+  cell: StripCell;
+  /** 1 to 7: the column of the first day of a month in a year's calendar. */
+  column?: number | undefined;
+}
+
+const { cell, column } = Astro.props;
+---
+
+{/* A day with a page is a link to it. */}
+<li data-column={column}>
+  {cell.page ? (
+    <a href={dayPath(cell.date)}>
+      <i data-l={cell.level ?? 'none'}></i>
+      <span class="sr-only">{cell.label}</span>
+    </a>
+  ) : (
+    <>
+      <i data-l={cell.level ?? 'none'}></i>
+      <span class="sr-only">{cell.label}</span>
+    </>
+  )}
+</li>
