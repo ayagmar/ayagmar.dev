@@ -204,6 +204,44 @@ test.describe('the entrance', () => {
   });
 });
 
+// Catches the optional lighting taking the hotspot's own hover down with it: a browser that cannot
+// parse one selector drops its whole rule. Every `:has()` rule goes, as there, and a hotspot must
+// still light and show its label under the pointer and the keyboard. The list simply lights nothing.
+test('a hotspot lights by itself without :has()', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  const dropped = await page.evaluate(() => {
+    let count = 0;
+    const drop = (list: CSSRuleList, owner: CSSStyleSheet | CSSGroupingRule) => {
+      for (let i = list.length - 1; i >= 0; i -= 1) {
+        const rule = list[i];
+        if (rule instanceof CSSGroupingRule) drop(rule.cssRules, rule);
+        if (rule instanceof CSSStyleRule && rule.selectorText.includes(':has(')) {
+          owner.deleteRule(i);
+          count += 1;
+        }
+      }
+    };
+    for (const sheet of document.styleSheets) drop(sheet.cssRules, sheet);
+    return count;
+  });
+  expect(dropped).toBeGreaterThan(0);
+  const spot = page.locator('[data-room="monitor"]');
+  const label = spot.locator('span');
+  const unlit = await spot.evaluate((el) => getComputedStyle(el).borderTopColor);
+  await spot.hover();
+  await expect(label).toHaveCSS('opacity', '1');
+  expect(await spot.evaluate((el) => getComputedStyle(el).borderTopColor)).not.toBe(unlit);
+  await page.mouse.move(0, 0);
+  await expect(label).toHaveCSS('opacity', '0');
+  await page.locator('[data-room="notebook"]').focus();
+  await page.keyboard.press('Tab');
+  await expect(spot).toBeFocused();
+  await expect(label).toHaveCSS('opacity', '1');
+  await page.locator('[data-room-list="tea"]').hover();
+  await expect(page.locator('[data-room="tea"] span')).toHaveCSS('opacity', '0');
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 

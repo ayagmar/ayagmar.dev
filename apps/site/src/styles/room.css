@@ -353,6 +353,7 @@
 .hotspot {
   display: none;
   position: absolute;
+  --hotspot-lit: color-mix(in srgb, var(--lamp) 12%, transparent);
   /* WCAG 2.2 target size, in a window a classic scrollbar makes narrower. */
   min-width: 24px;
   min-height: 24px;
@@ -366,22 +367,33 @@
   }
 }
 
-/* Lit by its own pointer or focus, or by its row in the list under the scene. One line per
-   object in src/lib/room.ts; e2e/room.spec.ts walks them all. */
+/* Lit by its own pointer or focus. A rule of its own: one selector a browser cannot parse drops
+   its whole rule, and this must hold without `:has()`. */
 .hotspot:hover,
-.hotspot:focus-visible,
-main:has([data-room-list="corkboard"]:is(:hover, :focus-visible)) [data-room="corkboard"],
-main:has([data-room-list="frame"]:is(:hover, :focus-visible)) [data-room="frame"],
-main:has([data-room-list="notebook"]:is(:hover, :focus-visible)) [data-room="notebook"],
-main:has([data-room-list="monitor"]:is(:hover, :focus-visible)) [data-room="monitor"],
-main:has([data-room-list="keyboard"]:is(:hover, :focus-visible)) [data-room="keyboard"],
-main:has([data-room-list="tea"]:is(:hover, :focus-visible)) [data-room="tea"],
-main:has([data-room-list="record-player"]:is(:hover, :focus-visible)) [data-room="record-player"] {
+.hotspot:focus-visible {
   --label: 1;
   border-color: var(--lamp);
-  background: color-mix(in srgb, var(--lamp) 12%, transparent);
+  background: var(--hotspot-lit);
   outline: 2px solid var(--ground);
   outline-offset: 0;
+}
+
+/* Or by its row in the list under the scene, where `:has()` allows. One line per object in
+   src/lib/room.ts; e2e/room.spec.ts walks them all. */
+@supports selector(:has(*)) {
+  main:has([data-room-list="corkboard"]:is(:hover, :focus-visible)) [data-room="corkboard"],
+  main:has([data-room-list="frame"]:is(:hover, :focus-visible)) [data-room="frame"],
+  main:has([data-room-list="notebook"]:is(:hover, :focus-visible)) [data-room="notebook"],
+  main:has([data-room-list="monitor"]:is(:hover, :focus-visible)) [data-room="monitor"],
+  main:has([data-room-list="keyboard"]:is(:hover, :focus-visible)) [data-room="keyboard"],
+  main:has([data-room-list="tea"]:is(:hover, :focus-visible)) [data-room="tea"],
+  main:has([data-room-list="record-player"]:is(:hover, :focus-visible)) [data-room="record-player"] {
+    --label: 1;
+    border-color: var(--lamp);
+    background: var(--hotspot-lit);
+    outline: 2px solid var(--ground);
+    outline-offset: 0;
+  }
 }
 
 .hotspot span {
