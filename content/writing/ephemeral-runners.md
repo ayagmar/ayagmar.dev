@@ -6,7 +6,7 @@ updated: 2026-10-12
 summary: 'Placeholder draft for layout and tests. Fresh containers for every GitHub Actions job.'
 tags: [rust, ci]
 projects: [runnerd]
-art: { kind: dither, palette: night }
+art: ephemeral-runners.art.txt
 draft: true
 ---
 

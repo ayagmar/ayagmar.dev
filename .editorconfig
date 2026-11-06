@@ -13,3 +13,10 @@ trim_trailing_whitespace = false
 
 [justfile]
 indent_size = 4
+
+# A map is a rectangle; its rows end in the spaces that keep them one width.
+[*.art.txt]
+trim_trailing_whitespace = false
+
+[apps/site/src/art/*.txt]
+trim_trailing_whitespace = false

@@ -1224,25 +1224,35 @@ main:has(.toc) .reader ~ .project-card {
   margin: 0 0 1.5rem;
 }
 
-/* A faint edge in the text colour, so the art holds its shape on either ground. */
-.post-art svg,
+/* A faint edge in the text colour, so an image holds its shape on either ground. */
 .prose img {
   outline: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
   outline-offset: -1px;
 }
 
-/* Per-post art (ADR 0027): build-time SVG in the room's colours, its own background in both
-   themes. */
+/* Per-post art (ADR 0027): dots straight on the page, its own ground and the lamp's pool behind
+   them. Light by night; by day, ink. The SVG's attributes keep the night colours and paint a
+   plate for the link-preview card, which has no stylesheet. Every colour is one of the room's. */
 .post-art svg {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: calc(2 * var(--radius));
 }
 
-.post-art text {
-  font: 10px var(--mono);
-  white-space: pre;
+.art-dots .ground {
+  fill: transparent;
+}
+
+.art-dots .bright {
+  stroke: light-dark(#14172e, #f0e6c8);
+}
+
+.art-dots .dim {
+  stroke: light-dark(#968a70, #6470aa);
+}
+
+.art-dots .accent {
+  stroke: light-dark(#b06846, #fac468);
 }
 
 .prose {
@@ -1554,7 +1564,6 @@ main:has(.toc) .reader ~ .project-card {
   }
 
   /* At the screen edge, square corners. */
-  .reader .post-art svg,
   .reader pre {
     border-radius: 0;
   }

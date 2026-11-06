@@ -133,9 +133,8 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
   await expect(page.locator('.scene a').first()).toBeHidden();
 });
 
-// The three placeholder drafts carry the three kinds of art (ADR 0027): ascii, dither, pattern.
-// Their pages, and home listing them, are checked on the drafts build; the ascii one,
-// /writing/token-logs, in reader.spec.ts.
+// The three placeholder drafts carry art (ADR 0027). Their pages, and home listing them, are
+// checked on the drafts build; /writing/token-logs in reader.spec.ts.
 for (const [path, details] of [
   ['/', { tag: '@drafts' }],
   ['/writing/ephemeral-runners', { tag: '@drafts' }],
@@ -351,14 +350,28 @@ for (const colorScheme of ['light', 'dark'] as const) {
   });
 }
 
-// Catches art missing from a post that asks for it, or the wrong kind drawn.
-test('each post draws the art its frontmatter asks for', { tag: '@drafts' }, async ({ page }) => {
-  for (const [path, kind] of [
-    ['/writing/token-logs', 'ascii'],
-    ['/writing/ephemeral-runners', 'dither'],
-    ['/writing/cache-reads', 'pattern'],
-  ] as const) {
-    await page.goto(path);
-    await expect(page.locator(`.post-art svg.art-${kind}`)).toBeVisible();
-  }
-});
+// Catches art missing from a post that asks for it, drawn on a post that does not, or a tone that
+// matches the ground it sits on and leaves the figure invisible in one theme.
+for (const colorScheme of ['dark', 'light'] as const) {
+  test(`post art shows against the ${colorScheme} ground`, { tag: '@drafts' }, async ({ page }) => {
+    await page.emulateMedia({ colorScheme });
+    for (const path of [
+      '/writing/token-logs',
+      '/writing/ephemeral-runners',
+      '/writing/cache-reads',
+    ]) {
+      await page.goto(path);
+      await expect(page.locator('.post-art svg.art-dots')).toBeVisible();
+      const seen = await page.locator('.post-art svg').evaluate((svg) => ({
+        ground: getComputedStyle(document.body).backgroundColor,
+        plate: getComputedStyle(svg.querySelector('.ground') as Element).fill,
+        tones: [...svg.querySelectorAll('path')].map((path) => getComputedStyle(path).stroke),
+      }));
+      expect(seen.plate).toBe('rgba(0, 0, 0, 0)');
+      expect(seen.tones).toHaveLength(3);
+      expect(new Set([...seen.tones, seen.ground]).size).toBe(4);
+    }
+    await page.goto('/writing/ricing-niri');
+    await expect(page.locator('.post-art')).toHaveCount(0);
+  });
+}

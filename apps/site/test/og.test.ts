@@ -1,5 +1,6 @@
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
+import { renderArt } from '../src/lib/art.ts';
 import { buildOrigin } from '../src/lib/og.ts';
 import { renderOgCard } from '../src/lib/og-card.ts';
 
@@ -51,5 +52,30 @@ describe('link-preview card', () => {
     // The 120 px right margin and the 40 px under the text box stay empty.
     expect(await blank(png, { left: 1080, top: 0, width: 120, height: 630 })).toBe(true);
     expect(await blank(png, { left: 0, top: 590, width: 1200, height: 40 })).toBe(true);
+  });
+
+  // Catches art lost on the way through librsvg (a dash pattern it draws as nothing, a night plate
+  // dropped), or the room replaced on a post without art.
+  it('draws the night art on a post with art and the room on one without', async () => {
+    const cream = [240, 230, 200];
+    const creamPixels = async (art?: string) => {
+      const png = await renderOgCard({ title: 'A post', line: 'min7 · Writing', art });
+      const { data, info } = await sharp(png)
+        .extract({ left: 120, top: 56, width: 960, height: 320 })
+        .removeAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      let count = 0;
+      for (let at = 0; at < data.length; at += info.channels) {
+        if (cream.every((value, channel) => Math.abs((data[at + channel] ?? 0) - value) < 12))
+          count++;
+      }
+      return { count, corner: [...data.subarray(info.width * 160 * 3, info.width * 160 * 3 + 3)] };
+    };
+    const withArt = await creamPixels(renderArt('notebook'));
+    const without = await creamPixels();
+    expect(withArt.count).toBeGreaterThan(2000);
+    expect(without.count).toBeLessThan(withArt.count);
+    expect(withArt.corner).toEqual([13, 15, 30]);
   });
 });

@@ -241,13 +241,21 @@ site-build-preview:
     {{ site }} node scripts/seo-check.ts node_modules/.cache/preview
 
 # Site: rebuild the subset WOFF2 fonts in apps/site/src/fonts from the upstream releases (ADR 0026),
-# and the TrueType copies in src/fonts/ttf the link-preview images draw with (ADR 0027)
+# and the TrueType copy in src/fonts/ttf the link-preview images draw with (ADR 0027)
 fonts:
     cd apps/site && uv run --no-project --with fonttools==4.67.0 --with brotli==1.2.1 python scripts/fonts.py
 
 # Site: redraw the home page room, apps/site/src/assets/room-{night,day}.png (ADR 0026)
 scene:
     cd apps/site && uv run --no-project --with pillow==13.0.0 python scripts/scene.py
+
+# Site: redraw the room objects' text maps in apps/site/src/art (ADR 0027); the outputs are committed
+art-room:
+    cd apps/site && uv run --no-project --with pillow==13.0.0 --with numpy==2.5.4 --with scipy==1.18.1 python scripts/art_room.py
+
+# Site: an image to a text map beside a post, see docs/art.md: just art-map IMAGE my-post --dark .6
+art-map image slug *args:
+    uv run --no-project --with pillow==13.0.0 --with numpy==2.5.4 --with scipy==1.18.1 python apps/site/scripts/art_map.py "{{ image }}" "content/writing/{{ slug }}.art.txt" {{ args }}
 
 # Site: serve the built site through its Worker on http://localhost:8790
 site-serve:

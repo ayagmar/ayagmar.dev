@@ -18,7 +18,7 @@ export const GET: APIRoute<Awaited<ReturnType<typeof getStaticPaths>>[number]['p
   const png = await renderOgCard({
     title,
     line: `${site.name} · Writing`,
-    art: art === undefined ? undefined : renderArt(post.id, art),
+    art: art === undefined ? undefined : renderArt(art),
   });
   return new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } });
 };

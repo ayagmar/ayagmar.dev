@@ -2,7 +2,7 @@
 
 Downloads each release once into ~/.cache/min7-fonts, checks its sha256, subsets it to the
 characters the site uses and writes WOFF2 files into src/fonts/, plus TrueType copies of the
-roman and the mono in src/fonts/ttf/ for the build's link-preview images (src/lib/og-card.ts):
+roman in src/fonts/ttf/ for the build's link-preview images (src/lib/og-card.ts):
 the FreeType in sharp reads no WOFF2. The TrueType files never ship to a page. The outputs are
 committed; run this again only to change the character set or a font version: `just fonts`.
 """
@@ -19,8 +19,8 @@ from fontTools.ttLib import TTFont
 from fontTools.varLib import instancer
 
 OUT = Path(__file__).resolve().parent.parent / "src" / "fonts"
-# The faces the link-preview images draw with: the title's serif and the ascii art's mono.
-TTF = {"serif-roman.woff2", "mono.woff2"}
+# The face the link-preview images draw with: the title's serif.
+TTF = {"serif-roman.woff2"}
 CACHE = Path.home() / ".cache" / "min7-fonts"
 
 RELEASES = {

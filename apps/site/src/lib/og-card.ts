@@ -20,12 +20,11 @@ const muted = '#a59eae';
 const picture = { left: 120, top: 56, width: 960, height: 320 } as const;
 // The title and the line under it, from 36 px under the picture to 40 px above the bottom.
 const textBox = { top: 412, width: 960, height: 178 } as const;
-// Twice --radius, as post art has on the page (ADR 0037), at the picture's scale.
+// Twice --radius, as code blocks have on the page (ADR 0037), at the picture's scale.
 const corner = 8;
 
 const file = (dir: string | URL, path: string) => fileURLToPath(new URL(path, dir));
 const serif = file(srcDir, 'fonts/ttf/serif-roman.ttf');
-const mono = file(srcDir, 'fonts/ttf/mono.ttf');
 
 const markup = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -76,10 +75,7 @@ async function textBlock(title: string, line: string): Promise<Buffer> {
   return block.data;
 }
 
-/**
- * The 3:1 picture, scaled to 960x320 with square pixels: post art from its SVG (the ascii kind
- * set in the site's mono), or the night room at twice its size.
- */
+/** The 3:1 picture, scaled to 960x320: post art from its SVG, or the night room at twice its size. */
 async function pictureImage(art: string | undefined) {
   if (art === undefined) {
     return sharp(file(srcDir, 'assets/room-night.png'))
@@ -87,13 +83,7 @@ async function pictureImage(art: string | undefined) {
       .toBuffer();
   }
   const viewWidth = Number(/viewBox="0 0 (\d+) /.exec(art)?.[1]);
-  // The page styles the ascii kind's text from base.css (.post-art text); a lone SVG needs it
-  // inline, as the first child of the root element.
-  const svg = art.replace(
-    /^<svg\b[^>]*>/,
-    (open) => `${open}<style>text{font:10px "JetBrains Mono",monospace;white-space:pre}</style>`
-  );
-  return sharp(Buffer.from(svg), { density: (72 * picture.width) / viewWidth })
+  return sharp(Buffer.from(art), { density: (72 * picture.width) / viewWidth })
     .resize(picture.width, picture.height, { kernel: 'nearest' })
     .toBuffer();
 }
@@ -108,8 +98,6 @@ export async function renderOgCard(card: {
   line: string;
   art?: string | undefined;
 }): Promise<Buffer> {
-  // librsvg finds fonts through fontconfig, which knows the mono only once sharp has loaded it.
-  if (card.art !== undefined) await sharp({ text: { text: '.', fontfile: mono } }).toBuffer();
   const image = await sharp(await pictureImage(card.art))
     .composite([{ input: roundedMask, blend: 'dest-in' }])
     .png()

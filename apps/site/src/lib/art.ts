@@ -1,9 +1,11 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 /**
- * Per-post art (ADR 0027): a small picture above a post's title, drawn at build time as inline
- * SVG from the post's `art` frontmatter. The same slug, kind, seed and palette always give the
- * same bytes, and every colour comes from the room's palette, so each piece belongs to the
- * room. Only arithmetic that is exact in IEEE doubles is used (no Math.sin and friends), so no
- * JavaScript engine can draw it differently.
+ * Per-post art (ADR 0027): a figure above a post's title, drawn at build time as inline SVG from
+ * a text map: `#` bright, `.` dim, `+` amber, space empty. A post names one of the room's objects
+ * (src/art/) or a map beside it in content/writing. The map is a rectangle of cells on one fixed
+ * lattice, and the same map always gives the same bytes: every coordinate is a whole number.
  */
 
 /** The 41 colours of the room, the base palette of scripts/scene.py (a test keeps them equal). */
@@ -23,169 +25,115 @@ export const roomPalette = [
 const hex = (index: number) =>
   `#${(roomPalette[index] ?? roomPalette[0]).map((c) => c.toString(16).padStart(2, '0')).join('')}`;
 
-/** Ramps of room colours, dark to light, by the room's materials (indexes into roomPalette). */
-export const artPalettes = {
-  night: [0, 2, 4, 6, 37],
-  lamp: [14, 9, 11, 12, 13],
-  screen: [19, 20, 21, 22, 23],
-  zellige: [2, 31, 21, 34, 26],
-  wood: [14, 15, 16, 17, 18],
-} as const;
+export const roomObjects = [
+  'lamp',
+  'notebook',
+  'monitor',
+  'record',
+  'cat',
+  'window',
+  'tea',
+] as const;
 
-export const artKinds = ['ascii', 'dither', 'pattern'] as const;
+// Bundled, so the named objects are part of the build.
+const objectMaps: Record<string, string> = import.meta.glob('../art/*.txt', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
 
-export interface Art {
-  kind: (typeof artKinds)[number];
-  seed: number;
-  palette: keyof typeof artPalettes;
+// The content collection's base in src/content.config.ts; every build and test runs in apps/site.
+const postMap = (file: string) => {
+  const path = resolve('../../content/writing', file);
+  return existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+};
+
+const pitch = { x: 10, y: 16 };
+export const lattice = { cols: 144, rows: 30 };
+const size = { width: lattice.cols * pitch.x, height: lattice.rows * pitch.y };
+
+// Night colours as indexes into roomPalette. They are attributes because the link-preview card
+// draws the SVG alone; base.css overrides them on the page, where the plate is not painted.
+const tones = [
+  { char: '.', name: 'dim', color: 6, width: 3.4, drop: 2 },
+  { char: '#', name: 'bright', color: 26, width: 7.8, drop: 0 },
+  { char: '+', name: 'accent', color: 12, width: 7.8, drop: 0 },
+] as const;
+const ground = 1;
+
+const rowsOf = (text: string) => text.replace(/\n$/, '').split('\n');
+
+/** What is wrong with a map's text, or undefined. */
+export function mapProblem(text: string): string | undefined {
+  const rows = rowsOf(text);
+  if (rows.length > lattice.rows) return `has ${rows.length} rows, ${lattice.rows} at most`;
+  for (const [index, row] of rows.entries()) {
+    const stray = /[^#.+ ]/.exec(row)?.[0];
+    if (stray !== undefined)
+      return `row ${index + 1} has ${JSON.stringify(stray)}; a map uses only #, ., + and spaces`;
+    if (row.length > lattice.cols)
+      return `row ${index + 1} is ${row.length} wide, ${lattice.cols} at most`;
+    if (row.length !== rows[0]?.length)
+      return `row ${index + 1} is ${row.length} wide and row 1 is ${rows[0]?.length}; pad rows with spaces`;
+  }
+  return /[#.+]/.test(text) ? undefined : 'has no dots';
 }
 
-/** FNV-1a, 32 bits. */
-function hash(text: string): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
-  return h >>> 0;
+const isPostMap = (art: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*\.art\.txt$/.test(art);
+
+/** What is wrong with a post's `art` value, or undefined. `read` finds a map beside a post. */
+export function artProblem(art: string, read: (file: string) => string | undefined = postMap) {
+  const beside = isPostMap(art);
+  if (!beside && !roomObjects.some((name) => name === art))
+    return `must be one of ${roomObjects.join(', ')}, or a map beside the post like "my-post.art.txt"`;
+  const file = beside ? `content/writing/${art}` : `src/art/${art}.txt`;
+  const text = beside ? read(art) : objectMaps[`../art/${art}.txt`];
+  if (text === undefined) return `${file} does not exist`;
+  const problem = mapProblem(text);
+  return problem === undefined ? undefined : `${file} ${problem}`;
 }
 
-/** mulberry32: a small seeded generator of numbers in [0, 1). */
-function random(seed: number): () => number {
-  let a = seed;
-  return () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Smooth value noise on a `cols` by `rows` lattice, sampled at (x, y) in lattice units. */
-function noise(next: () => number, cols: number, rows: number) {
-  const lattice = Array.from({ length: (cols + 1) * (rows + 1) }, next);
-  const at = (i: number, j: number) => lattice[j * (cols + 1) + i] ?? 0;
-  const smooth = (f: number) => f * f * (3 - 2 * f);
-  return (x: number, y: number) => {
-    const i = Math.min(Math.floor(x), cols - 1);
-    const j = Math.min(Math.floor(y), rows - 1);
-    const fx = smooth(x - i);
-    const fy = smooth(y - j);
-    const top = at(i, j) + (at(i + 1, j) - at(i, j)) * fx;
-    const bottom = at(i, j + 1) + (at(i + 1, j + 1) - at(i, j + 1)) * fx;
-    return top + (bottom - top) * fy;
-  };
-}
-
-// The 8x8 Bayer matrix of scripts/scene.py.
-const bayer = [
-  [0, 32, 8, 40, 2, 34, 10, 42],
-  [48, 16, 56, 24, 50, 18, 58, 26],
-  [12, 44, 4, 36, 14, 46, 6, 38],
-  [60, 28, 52, 20, 62, 30, 54, 22],
-  [3, 35, 11, 43, 1, 33, 9, 41],
-  [51, 19, 59, 27, 49, 17, 57, 25],
-  [15, 47, 7, 39, 13, 45, 5, 37],
-  [63, 31, 55, 23, 61, 29, 53, 21],
-];
-
-/** A field over a `width` by `height` grid in [0, 1]: two octaves of noise over a slope. */
-function field(next: () => number, width: number, height: number) {
-  const low = noise(next, 4, 2);
-  const high = noise(next, 12, 4);
-  const slope = next() < 0.5 ? 1 : -1;
-  return (x: number, y: number) => {
-    const u = x / width;
-    const v = y / height;
-    const value =
-      0.5 +
-      0.55 * (low(u * 4, v * 2) - 0.5) +
-      0.3 * (high(u * 12, v * 4) - 0.5) +
-      0.3 * slope * (0.5 - v);
-    return Math.min(1, Math.max(0, value));
-  };
-}
-
-/** Rows of colour indexes as one stroked path per colour, skipping the background colour. */
-function runs(grid: number[][], ramp: readonly number[]): string {
-  const paths = new Map<number, string>();
-  grid.forEach((row, y) => {
-    let x = 0;
-    while (x < row.length) {
-      const level = row[x] ?? 0;
-      let end = x + 1;
-      while (end < row.length && row[end] === level) end++;
-      if (level !== 0) paths.set(level, `${paths.get(level) ?? ''}M${x} ${y}.5h${end - x}`);
-      x = end;
+/** One subpath per run of a tone's dots: a zero-length dash every pitch, round caps. */
+function dots(rows: string[], char: string, drop: number): string {
+  const left = Math.floor((lattice.cols - (rows[0]?.length ?? 0)) / 2);
+  const top = Math.floor((lattice.rows - rows.length) / 2);
+  let path = '';
+  rows.forEach((row, j) => {
+    let i = 0;
+    while (i < row.length) {
+      if (row[i] !== char) {
+        i++;
+        continue;
+      }
+      let end = i;
+      while (row[end + 1] === char) end++;
+      const x = (left + i) * pitch.x + pitch.x / 2;
+      const y = (top + j) * pitch.y + pitch.y / 2 + drop;
+      // One unit past the last dot, so rounding along the path cannot lose it.
+      path += `M${x} ${y}h${(end - i) * pitch.x + 1}`;
+      i = end + 1;
     }
   });
-  return [...paths.keys()]
-    .sort((a, b) => a - b)
-    .map((level) => `<path stroke="${hex(ramp[level] ?? 0)}" d="${paths.get(level)}"/>`)
+  return path;
+}
+
+/** A valid map as SVG. A map smaller than the lattice sits in the middle of it. */
+export function renderMap(text: string): string {
+  const rows = rowsOf(text);
+  const paths = tones
+    .map(({ char, name, color, width, drop }) => {
+      const d = dots(rows, char, drop);
+      return d === ''
+        ? ''
+        : `<path class="${name}" stroke="${hex(color)}" stroke-width="${width}" d="${d}"/>`;
+    })
     .join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" class="art-dots" viewBox="0 0 ${size.width} ${size.height}" aria-hidden="true" focusable="false"><rect class="ground" width="${size.width}" height="${size.height}" fill="${hex(ground)}"/><g fill="none" stroke-linecap="round" stroke-dasharray="0 ${pitch.x}">${paths}</g></svg>`;
 }
 
-const svg = (kind: string, width: number, height: number, ramp: readonly number[], body: string) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" class="art art-${kind}" viewBox="0 0 ${width} ${height}" aria-hidden="true" focusable="false" shape-rendering="crispEdges"><rect width="${width}" height="${height}" fill="${hex(ramp[0] ?? 0)}"/>${body}</svg>`;
-
-/** An ordered (Bayer 8x8) dither of a noise field onto the palette ramp. */
-function dither(next: () => number, ramp: readonly number[]): string {
-  const [width, height] = [96, 32];
-  const value = field(next, width, height);
-  const steps = ramp.length - 1;
-  const grid = Array.from({ length: height }, (_, y) =>
-    Array.from({ length: width }, (_, x) => {
-      const threshold = ((bayer[y % 8]?.[x % 8] ?? 0) + 0.5) / 64;
-      return Math.min(steps, Math.floor(value(x, y) * steps + threshold));
-    })
-  );
-  return svg('dither', width, height, ramp, runs(grid, ramp));
-}
-
-/** A zellige-like tile, symmetric across both axes and the diagonal, repeated. */
-function pattern(next: () => number, ramp: readonly number[], id: string): string {
-  const size = 8;
-  const cells = new Map<string, number>();
-  const tile = Array.from({ length: size }, (_, y) =>
-    Array.from({ length: size }, (_, x) => {
-      const a = Math.min(x, size - 1 - x);
-      const b = Math.min(y, size - 1 - y);
-      const key = `${Math.max(a, b)},${Math.min(a, b)}`;
-      if (!cells.has(key)) cells.set(key, Math.floor(next() * ramp.length));
-      return cells.get(key) ?? 0;
-    })
-  );
-  const body = `<defs><pattern id="${id}" width="${size}" height="${size}" patternUnits="userSpaceOnUse">${runs(tile, ramp)}</pattern></defs><rect width="96" height="32" fill="url(#${id})"/>`;
-  return svg('pattern', 96, 32, ramp, body);
-}
-
-/** The noise field as characters, darker to lighter glyphs, coloured by the ramp. */
-function ascii(next: () => number, ramp: readonly number[]): string {
-  const [cols, rows, cellWidth, cellHeight] = [48, 8, 6, 12];
-  const glyphs = ' .:-=+*#%@';
-  const value = field(next, cols, rows);
-  const lines = Array.from({ length: rows }, (_, y) => {
-    let line = '';
-    let x = 0;
-    while (x < cols) {
-      const glyph = (at: number) =>
-        Math.min(glyphs.length - 1, Math.floor(value(at, y) * glyphs.length));
-      const color = (at: number) =>
-        Math.ceil((glyph(at) * (ramp.length - 1)) / (glyphs.length - 1));
-      let end = x + 1;
-      while (end < cols && color(end) === color(x)) end++;
-      let text = '';
-      for (let at = x; at < end; at++) text += glyphs[glyph(at)];
-      line += `<tspan fill="${hex(ramp[color(x)] ?? 0)}">${text}</tspan>`;
-      x = end;
-    }
-    return `<text x="0" y="${y * cellHeight + 9}" textLength="${cols * cellWidth}" lengthAdjust="spacingAndGlyphs">${line}</text>`;
-  });
-  return svg('ascii', cols * cellWidth, rows * cellHeight, ramp, lines.join(''));
-}
-
-/** The post's art as an SVG string, for the `art` slot of PostHeader. */
-export function renderArt(slug: string, art: Art): string {
-  const next = random(hash(`${slug}:${art.seed}`));
-  const ramp = artPalettes[art.palette];
-  if (art.kind === 'dither') return dither(next, ramp);
-  if (art.kind === 'pattern') return pattern(next, ramp, `art-${slug}`);
-  return ascii(next, ramp);
+/** The post's art as an SVG string, for PostHeader. */
+export function renderArt(art: string): string {
+  const problem = artProblem(art);
+  if (problem !== undefined) throw new Error(`art: ${problem}`);
+  return renderMap((isPostMap(art) ? postMap(art) : objectMaps[`../art/${art}.txt`]) ?? '');
 }

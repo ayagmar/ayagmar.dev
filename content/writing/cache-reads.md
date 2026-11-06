@@ -5,7 +5,7 @@ date: 2026-10-24
 summary: 'Placeholder draft for layout and tests. Estimating cached tokens when the log leaves them out.'
 tags: [llm]
 projects: [llm-usage-metrics]
-art: { kind: pattern, palette: zellige, seed: 3 }
+art: record
 draft: true
 ---
 

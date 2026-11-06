@@ -24,7 +24,7 @@ const { title, date, updated, tags, draft, projects = [] } = post.data;
 ---
 
 <header class="post-header">
-  {art !== undefined && <figure class="post-art" data-pagefind-ignore set:html={art} />}
+  {art !== undefined && <figure class="post-art" set:html={art} />}
   <h1>{title}</h1>
   {draft && (
     <p>

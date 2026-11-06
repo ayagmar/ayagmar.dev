@@ -81,7 +81,7 @@ const structuredData = [
     <PostHeader
       post={post}
       receipt={receipt}
-      art={art === undefined ? undefined : renderArt(post.id, art)}
+      art={art === undefined ? undefined : renderArt(art)}
     />
     <SeriesLine current={post.id} parts={series} />
     <Toc headings={headings} />
