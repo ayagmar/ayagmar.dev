@@ -18,8 +18,9 @@ export interface Budgets {
     /** Bytes of every font file in the build together. */
     fonts: number;
     /**
-     * Modules a page imports dynamically only after a user action, so they are not counted.
-     * Every other dynamic import counts: it can run as soon as the page loads.
+     * Modules a page imports dynamically only after a user action, so they are not counted on
+     * the page; `*` stands for a build hash, and an allowance still caps one. Every other dynamic
+     * import counts: it can run as soon as the page loads.
      */
     onDemand: string[];
     /**
@@ -190,15 +191,16 @@ function pageUrl(page: string): string {
 
 export function measure(dist: string, limits: Budgets['static'] = budgets.static): Report {
   const problems: string[] = [];
+  const matches = (glob: string, file: string) =>
+    new RegExp(
+      `^${glob
+        .split('*')
+        .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+        .join('[^/]*')}$`
+    ).test(`/${file}`);
   const allowanceFor = (file: string) =>
-    limits.allowances.find(({ file: glob }) =>
-      new RegExp(
-        `^${glob
-          .split('*')
-          .map((part) => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
-          .join('[^/]*')}$`
-      ).test(`/${file}`)
-    );
+    limits.allowances.find(({ file: glob }) => matches(glob, file));
+  const onDemand = (file: string) => limits.onDemand.some((glob) => matches(glob, file));
   /** The distinct files each allowance matched, across pages: it covers one. */
   const allowedFiles = new Map(limits.allowances.map((a) => [a, new Set<string>()]));
   const all = files(dist);
@@ -284,7 +286,7 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     }
     for (const [, , specifier = ''] of code.matchAll(dynamicImport)) {
       const target = resolve(specifier, from, where);
-      if (target && !limits.onDemand.includes(`/${target}`)) jsClosure(target, into);
+      if (target && !onDemand(target)) jsClosure(target, into);
     }
   };
   const jsClosure = (file: string, into: Set<string>) => {
@@ -393,6 +395,15 @@ export function measure(dist: string, limits: Budgets['static'] = budgets.static
     }
     if (weight > limits.pageWeight) {
       problems.push(`${page}: weighs ${weight} B (gzip, no fonts), budget ${limits.pageWeight} B`);
+    }
+  }
+
+  for (const file of all.filter(onDemand)) {
+    const allowance = allowanceFor(file);
+    if (allowance && size(file) > allowance.bytes) {
+      problems.push(
+        `${file}: ${size(file)} B (gzip), over the ${allowance.bytes} B allowance for the ${allowance.name}`
+      );
     }
   }
 
