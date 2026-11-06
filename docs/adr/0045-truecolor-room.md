@@ -1,6 +1,6 @@
 # 0045. The room in truecolor for terminals
 
-Status: accepted, 2026-11-06. Amends ADR 0027 and ADR 0040. Amended 2026-11-06: `RoomFacts` gave way to `roomState` (ADR 0043), and `room.json` carries the room's seed instead of the two envelopes; the Worker reads its frame after the answers, as the sky now comes from the same state.
+Status: accepted, 2026-11-06. Amends ADR 0027 and ADR 0040. Amended 2026-11-06: `RoomFacts` gave way to `roomState` (ADR 0043), and `room.json` carries the room's seed instead of the two envelopes; the Worker reads its frame after the answers, as the sky now comes from the same state, and decides what plays after that last read, keeping the frame's sky.
 
 ## Context
 

@@ -505,7 +505,11 @@ describe('the seed', () => {
     }));
     const data = { ...usageSnapshot, days } as LlmUsageSnapshot;
     const builtAt = at + buildDaysLater * dayMs;
-    const seedLater = roomSeed({ ...built, builtAt, usage: envelope('llm-usage' as const, data, at) });
+    const seedLater = roomSeed({
+      ...built,
+      builtAt,
+      usage: envelope('llm-usage' as const, data, at),
+    });
     const moment: RoomMoment = { kind: 'built', instant: builtAt };
     const seededScreen = roomState(seededInputs(seedLater, true), moment).screen;
     const wholeUsage = reading({ days, monthTokens: data.monthToDate.totalTokens }, at);
@@ -550,7 +554,10 @@ describe('the seed', () => {
 
   // Catches empty pushes spending the six slots, so real work is dropped and the room says quiet.
   it('counts only what ships towards its six', () => {
-    const feed = [...repos.map((repo, index) => push(repo, hours(index), 0)), merge('ayagmar/x', hours(8))];
+    const feed = [
+      ...repos.map((repo, index) => push(repo, hours(index), 0)),
+      merge('ayagmar/x', hours(8)),
+    ];
     const { seededState, wholeState } = seededPins(feed);
     expect(seededState.pins.words).toBe('Shipped to x on 26 Oct');
     expect(seededState.pins).toEqual(wholeState.pins);

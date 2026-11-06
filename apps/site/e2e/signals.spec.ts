@@ -247,7 +247,9 @@ const expectRested = async (page: Page, when: string, track = 'Which Will') => {
   expect(await disc(page)).toBe('none');
   expect(await sceneRecord(page)).toEqual({ state: 'resting', strip: undefined });
   await expect(page.locator('[data-room="record-player"]')).toHaveAccessibleName(
-    new RegExp(`^Record player: music\\. Last played ${track} by Nick Drake · \\d+ Oct, \\d\\d:\\d\\d\\.$`)
+    new RegExp(
+      `^Record player: music\\. Last played ${track} by Nick Drake · \\d+ Oct, \\d\\d:\\d\\d\\.$`
+    )
   );
 };
 

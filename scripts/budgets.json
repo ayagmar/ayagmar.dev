@@ -36,7 +36,7 @@
       {
         "name": "listening reads",
         "file": "/_astro/heat.*.js",
-        "bytes": 1950
+        "bytes": 2010
       },
       {
         "name": "agent reads",
