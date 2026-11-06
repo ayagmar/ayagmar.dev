@@ -1058,8 +1058,14 @@ time[data-ago] {
   display: block;
 }
 
+/* A day with no record steps back in the views that are mostly such days: a year and the LLM
+   usage year. Fainter than a recorded zero, and each view's caption says so (ADR 0037, 0041). */
 .heat i[data-l="none"] {
-  /* A day with no record (ADR 0038): an outline, so it never reads as a quiet day. */
+  background: color-mix(in oklab, var(--rule) 30%, transparent);
+}
+
+/* On the 28-day strip it is an outline, so it never reads as a quiet day (ADR 0038). */
+.ship-heat i[data-l="none"] {
   background: transparent;
   outline: 1px solid var(--fg-2);
   outline-offset: -1px;

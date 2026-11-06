@@ -61,9 +61,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
       page,
     }) => {
       await page.goto('/stats');
-      const heats = await page.locator('.heat').all();
-      expect(heats).toHaveLength(2);
-      for (const heat of heats) await check(heat);
+      await expect(page.locator('.heat')).toHaveCount(2);
+      await check(page.locator('.ship-heat'));
+      await check(page.locator('.llm-heat'), false);
     });
 
     // Catches the year's calendar drifting from the strip's levels.

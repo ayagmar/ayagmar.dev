@@ -181,13 +181,6 @@ const words = shipping.empty === null ? stripWords(shipping.strip, 'faint') : nu
   display: block;
 }
 
-/* A day with no record inside a shown month steps back: most of a young year is such days, and
-   outlines would outweigh what was recorded. Its label still says "no record" (ADR 0041). */
-.heat.year-heat i[data-l="none"] {
-  background: color-mix(in oklab, var(--rule) 30%, transparent);
-  outline: none;
-}
-
 .year-heat li[data-column="2"] {
   grid-column-start: 2;
 }

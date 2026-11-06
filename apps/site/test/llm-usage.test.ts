@@ -127,15 +127,34 @@ describe('heatmap', () => {
     expect(heat.cells.at(-1)?.date).toBe('2026-10-26');
   });
 
+  // Catches a date the snapshot does not hold drawn as a recorded zero: it would claim a quiet day
+  // nobody knows about, in the build and in the live panel, which share this markup.
+  it('draws a missing date apart from a recorded zero, and says so', () => {
+    const days = [
+      { date: '2026-10-24', costUsd: null, totalTokens: 0 },
+      { date: '2026-10-26', costUsd: null, totalTokens: 500 },
+    ];
+    const squares = (nodes: Markup[]): Record<string, string>[] =>
+      nodes.flatMap((node) =>
+        typeof node === 'string'
+          ? []
+          : [...(node.tag === 'i' ? [node.attrs] : []), ...squares(node.children)]
+      );
+    const panel = llmUsagePanel({ ...ok, days }, taken);
+    const levels = squares(panel).map((square) => square['data-l']);
+    expect(levels.slice(-3)).toEqual(['0', 'none', '1']);
+    expect(words(panel)).toContain('27 Oct 2025 – 26 Oct 2026; faint days have no record');
+  });
+
   // Catches levels scaled to the busiest day, which washes out every other day.
-  it('levels days by quartile, zero and missing days at 0', () => {
+  it('levels days by quartile, zero days at 0 and missing days unknown', () => {
     const days = [100, 200, 300, 400, 1_000_000, 0].map((totalTokens, i) => ({
       date: `2026-10-${String(20 + i).padStart(2, '0')}`,
       costUsd: null,
       totalTokens,
     }));
     const heat = heatmap(days, '2026-10-26');
-    expect(heat.cells.slice(-7).map((cell) => cell.level)).toEqual([1, 1, 2, 3, 4, 0, 0]);
+    expect(heat.cells.slice(-7).map((cell) => cell.level)).toEqual([1, 1, 2, 3, 4, 0, null]);
     expect(heat.activeDays).toBe(5);
     expect(heat.busiest?.date).toBe('2026-10-24');
   });

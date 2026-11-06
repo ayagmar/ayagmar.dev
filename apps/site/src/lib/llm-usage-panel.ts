@@ -4,7 +4,7 @@
  */
 import type { LlmUsageSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
-import { heatLevels } from './heat.ts';
+import { heatLevels, noRecordSentence, noRecordWords } from './heat.ts';
 import { el, type Markup } from './markup.ts';
 
 const hourMs = 3_600_000;
@@ -74,7 +74,8 @@ export function dateRange(from: string, to: string): string {
 
 /**
  * The year heatmap: a cell per day for the 53 weeks ending on `end`, a column per week from
- * Monday, and a level from 0 (no tokens or no bucket) to 4 (src/lib/heat.ts).
+ * Monday, and a level (src/lib/heat.ts): null for a date the snapshot does not hold, 0 for one it
+ * holds with no tokens, then 1 to 4. A missing date is unknown, never a quiet day.
  */
 export function heatmap(days: LlmUsageSnapshot['days'], end: string, weeks = 53) {
   const last = utcDate(end);
@@ -86,7 +87,7 @@ export function heatmap(days: LlmUsageSnapshot['days'], end: string, weeks = 53)
     const date = isoDate(time);
     cells.push({ date, tokens: byDate.get(date) });
   }
-  const levels = heatLevels(cells.map((cell) => cell.tokens ?? 0));
+  const levels = heatLevels(cells.map((cell) => cell.tokens ?? null));
   const busiest = cells.reduce<(typeof cells)[number] | undefined>(
     (top, cell) => ((cell.tokens ?? 0) > (top?.tokens ?? 0) ? cell : top),
     undefined
@@ -96,7 +97,8 @@ export function heatmap(days: LlmUsageSnapshot['days'], end: string, weeks = 53)
     to: end,
     activeDays: levels.filter(Boolean).length,
     busiest,
-    cells: cells.map((cell, index) => ({ ...cell, level: levels[index] ?? 0 })),
+    gaps: levels.includes(null),
+    cells: cells.map((cell, index) => ({ ...cell, level: levels[index] ?? null })),
   };
 }
 
@@ -213,10 +215,11 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
   );
   if (days.length === 0) return [period, longest];
   const heat = heatmap(days, date);
-  const summary =
+  const summary = `${
     heat.activeDays === 0 || !heat.busiest?.tokens
       ? `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: none.`
-      : `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${fullDate.format(utcDate(heat.busiest.date))} with ${tokens(heat.busiest.tokens)}.`;
+      : `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${fullDate.format(utcDate(heat.busiest.date))} with ${tokens(heat.busiest.tokens)}.`
+  }${heat.gaps ? ` ${noRecordSentence('faint')}` : ''}`;
   return [
     period,
     longest,
@@ -235,7 +238,7 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
           { class: 'heat-cells', role: 'img', 'aria-label': summary },
           ...heat.cells.map(({ date: day, tokens: count, level }) =>
             el('i', {
-              'data-l': String(level),
+              'data-l': String(level ?? 'none'),
               ...(count === undefined
                 ? {}
                 : { title: `${dayMonth.format(utcDate(day))}: ${tokens(count)}` }),
@@ -249,7 +252,7 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
         el(
           'span',
           {},
-          `${fullDate.format(utcDate(heat.from))} – ${fullDate.format(utcDate(heat.to))}`
+          `${fullDate.format(utcDate(heat.from))} – ${fullDate.format(utcDate(heat.to))}${heat.gaps ? `; ${noRecordWords('faint')}` : ''}`
         )
       )
     ),

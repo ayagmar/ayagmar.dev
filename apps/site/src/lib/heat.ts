@@ -6,6 +6,13 @@
  */
 export type HeatLevel = 0 | 1 | 2 | 3 | 4;
 
+/** What a heat view's caption says of its days without a record, by how it draws them. */
+export const noRecordWords = (look: 'outlined' | 'faint') => `${look} days have no record`;
+
+/** The same as a sentence of its own, for a view's text alternative. */
+export const noRecordSentence = (look: 'outlined' | 'faint') =>
+  `${look === 'faint' ? 'Faint' : 'Outlined'} days have no record.`;
+
 /**
  * A level per day, in order: null for a day without a record, 0 for a recorded zero, and 1 to 4
  * for the quartile of the non-zero days shown. Equal counts share a level.

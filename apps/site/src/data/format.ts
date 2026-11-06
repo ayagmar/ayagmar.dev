@@ -7,7 +7,7 @@ import type {
   ShippingSnapshot,
 } from '@min7/contracts';
 import { rabatTimeZone } from '@min7/contracts/rabat';
-import { type HeatLevel, heatLevels } from '../lib/heat.ts';
+import { type HeatLevel, heatLevels, noRecordSentence, noRecordWords } from '../lib/heat.ts';
 import type { SiteProject } from '../lib/projects.ts';
 
 const plural = (count: number, one: string, many: string) =>
@@ -174,10 +174,10 @@ export function stripOf(cells: StripCell[], countedAt: string): ShippingStrip | 
  */
 export function stripWords(strip: ShippingStrip, gap: 'outlined' | 'faint' = 'outlined') {
   const range = strip.from === strip.to ? strip.from : `${strip.from} to ${strip.to}`;
-  const gaps = strip.gaps ? ` ${gap === 'faint' ? 'Faint' : 'Outlined'} days have no record.` : '';
+  const gaps = strip.gaps ? ` ${noRecordSentence(gap)}` : '';
   return {
     label: `Shipping activity from ${range}: ${strip.busy} ${strip.busy === 1 ? 'day' : 'days'} with something shipped.${gaps} Counted up to ${strip.countedAt}, drawn when this page was built.`,
-    squares: `One square a day, ${range}${strip.gaps ? `; ${gap} days have no record` : ''}`,
+    squares: `One square a day, ${range}${strip.gaps ? `; ${noRecordWords(gap)}` : ''}`,
     counted: `Counted up to ${strip.countedAt}`,
   };
 }
