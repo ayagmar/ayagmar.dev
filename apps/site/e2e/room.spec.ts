@@ -122,7 +122,7 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
 
   for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const hotspot of await page.locator('.scene a').all()) {
+    for (const hotspot of await page.locator('.scene a:visible').all()) {
       await expect(hotspot).toHaveAccessibleName(/.+: .+/);
       const box = await hotspot.boundingBox();
       expect(box?.width, `${width}px`).toBeGreaterThanOrEqual(24);
@@ -130,7 +130,35 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
     }
   }
   await page.setViewportSize({ width: 320, height: 800 });
-  await expect(page.locator('.scene a').first()).toBeHidden();
+  await expect(page.locator('.scene a:visible')).toHaveCount(0);
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  // Catches the room scaling down to a 390x130 strip, pixels that stop being square, a crop that
+  // scrolls the page sideways, and hotspots hanging off the edge of the view.
+  test('the room is cropped at twice its pixels, and the list still reaches everything', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const scene = await page.locator('.scene').boundingBox();
+    expect([scene?.width, scene?.height]).toEqual([960, 320]);
+    const view = await page.evaluate(() => [
+      document.documentElement.scrollWidth,
+      document.documentElement.clientWidth,
+    ]);
+    expect(view).toEqual([390, 390]);
+    const spots = await page.locator('.scene a:visible').all();
+    const shown = await Promise.all(spots.map((spot) => spot.getAttribute('data-room')));
+    expect(shown).toEqual(['notebook', 'monitor', 'keyboard']);
+    for (const spot of spots) {
+      const box = await spot.boundingBox();
+      expect(box?.x).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+    }
+    await expect(page.locator('[data-room-list]:visible')).toHaveCount(7);
+  });
 });
 
 // The three placeholder drafts carry the three kinds of art (ADR 0027): ascii, dither, pattern.
