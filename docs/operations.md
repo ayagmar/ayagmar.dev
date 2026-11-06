@@ -94,7 +94,13 @@ curl -s 'https://api.ayagmar.dev/v1/days/listening?last=28' | jq '.data.days[-2:
 curl -s 'https://api.ayagmar.dev/v1/days/weather?last=28' | jq '.data.days[-2:]'
 ```
 
-No listening row an hour after the deploy means the day reads fail: look for `day read failed` in Workers Logs. The pull's snapshot is not affected by that, so `/v1/health` stays clean. A block's `fetchedAt` is when the source was last collected, not when that day was: read `asOf` and each slot's `at`.
+Whether a series is recording is on `/v1/health`, under `days`, apart from the source's own row: a failing day read leaves the snapshot and `sources` clean.
+
+```sh
+curl -s https://api.ayagmar.dev/v1/health | jq '.days'
+```
+
+`lastErrorCode` with `lastErrorDate` is the latest failure, and stays until a pull records every date it read. `stale: true` means nothing recorded for 3 hours (listening) or 45 minutes (weather); listening is also stale until the first hour after a deploy. `upstream_malformed` for listening means Last.fm's range answer differs from what `readRangePage` checks; `upstream_future` for weather means Open-Meteo dated a reading ahead of the clock, and it was not recorded. Workers Logs has a `day read failed` line for each, with the code. Days missed while failing stay missing until a backfill covers them. A block's `fetchedAt` is when the source was last collected, not when that day was: read `asOf` and each slot's `at`.
 
 ### Backfilling past days
 

@@ -1,6 +1,6 @@
 import { type DailySource, type SourceId, sourceIdSchema } from '@min7/contracts';
 import type { PullHistory } from '../adapters/types.ts';
-import { type DailyRow, pullDaysStatement } from './daily.ts';
+import { type DailyRow, dayStatusStatement, pullDaysStatement } from './daily.ts';
 import type { SnapshotStore, SourceStatus, StoredSnapshot } from './types.ts';
 
 type StatusRow = {
@@ -130,6 +130,12 @@ export class D1SnapshotStore implements SnapshotStore {
       if (merged.days.length > 0) {
         write.push(pullDaysStatement(this.db, source, merged.days, writeId, at, attempt));
       }
+      if (history.outcome?.code === null) {
+        write.push(dayStatusStatement(this.db, source, history.outcome, writeId, attempt));
+      }
+    }
+    if (history.outcome != null && history.outcome.code !== null) {
+      write.push(dayStatusStatement(this.db, source, history.outcome, null, attempt));
     }
     await this.db.batch([
       ...write,

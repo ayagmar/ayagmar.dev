@@ -81,20 +81,27 @@ export const weatherDayValues = (
  * dated ahead of the clock is not recorded: it would sit nearer its slot's aim than any real
  * reading could, for good. The snapshot is another matter, and the site judges it by itself.
  */
-export function weatherDaysHistory(snapshot: WeatherSnapshot): PullHistory | undefined {
+export function weatherDaysHistory(snapshot: WeatherSnapshot): PullHistory {
+  const date = rabatDate(Date.parse(snapshot.observedAt));
+  const fetchedAt = new Date().toISOString();
   if (Date.parse(snapshot.observedAt) > Date.now() + maxUpstreamAheadMs) {
     logEvent('warn', 'day read failed', { source: 'weather', code: 'upstream_future' });
-    return undefined;
+    return {
+      fetchedAt,
+      dates: null,
+      outcome: { date, code: 'upstream_future' },
+      merge: () => ({ snapshot, days: [] }),
+    };
   }
-  const date = rabatDate(Date.parse(snapshot.observedAt));
   const slot = { code: snapshot.weatherCode, at: snapshot.observedAt, origin: 'live' } as const;
   const values = weatherDayValues(date, {
     day: snapshot.isDay === true ? slot : null,
     night: snapshot.isDay === false ? slot : null,
   });
   return {
-    fetchedAt: new Date().toISOString(),
+    fetchedAt,
     dates: { from: date, to: date },
+    ...(values.length === 0 ? {} : { outcome: { date, code: null } }),
     merge: (stored) => ({
       snapshot,
       days: mergedRows(values, stored.days, weatherStoredDaySchema, mergeWeatherDay),

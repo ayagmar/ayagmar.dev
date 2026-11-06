@@ -353,6 +353,135 @@ describe('the listening pull', () => {
   });
 });
 
+type Recording = {
+  series: string;
+  lastSuccessAt: string | null;
+  stale: boolean;
+  lastErrorCode: string | null;
+  lastErrorAt: string | null;
+  lastErrorDate: string | null;
+};
+const recording = async (series: string) => {
+  const body = await (await fetchApi('/v1/health')).json<{ days: Recording[] }>();
+  return body.days.find((day) => day.series === series);
+};
+
+describe('whether days are being recorded', () => {
+  const badPage = () => {
+    const body = page({ total: 0 });
+    body.recenttracks['@attr'].perPage = '50';
+    return body;
+  };
+  /** Every day range answers `body`; the snapshot's own reads stay valid. */
+  const dayRanges = (body: ReturnType<typeof page>) =>
+    network.use(
+      http.post(lastfmUrl, async ({ request }) => {
+        const form = await request.clone().formData();
+        const span = Number(form.get('to')) - Number(form.get('from'));
+        return form.has('to') && span <= 25 * 3600 ? HttpResponse.json(body) : undefined;
+      }),
+      ...upstreamHandlers()
+    );
+
+  // Catches the failure the snapshot hides: Last.fm's range metadata differing from what the
+  // reader checks, hour after hour, while /v1/listening and its health stay clean.
+  it('shows a lasting failure apart from the source, keeps it across good pulls, then recovers', async () => {
+    dayRanges(badPage());
+    await pullListening('2026-10-26T09:01:00Z');
+    await pullListening('2026-10-26T09:30:00Z');
+    await pullListening('2026-10-26T10:01:00Z');
+
+    expect(await dayCount()).toBe(0);
+    expect((await sourceHealth('listening'))?.lastErrorCode).toBeNull();
+    expect(await recording('listening')).toEqual({
+      series: 'listening',
+      lastSuccessAt: null,
+      stale: true,
+      lastErrorCode: 'upstream_malformed',
+      lastErrorAt: '2026-10-26T10:01:00.000Z',
+      lastErrorDate: '2026-10-25',
+    });
+
+    lastfm({ '2026-10-26': { total: 2, newest: scrobbleAt('2026-10-26T08:00:00Z', 'Back') } });
+    await pullListening('2026-10-26T11:01:00Z');
+    expect(await recording('listening')).toMatchObject({
+      lastSuccessAt: '2026-10-26T11:01:00.000Z',
+      stale: false,
+      lastErrorCode: null,
+      lastErrorDate: null,
+    });
+    expect((await listeningDay('2026-10-26'))?.count).toBe(2);
+  });
+
+  // Catches a half-failed pull reported as a success because one of its dates recorded.
+  it('reports the date that failed when the other recorded, and keeps the last success', async () => {
+    lastfm({});
+    await pullListening('2026-10-26T09:01:00Z');
+    lastfm({ '2026-10-25': null });
+    await pullListening('2026-10-26T10:01:00Z');
+    expect(await recording('listening')).toMatchObject({
+      lastSuccessAt: '2026-10-26T09:01:00.000Z',
+      lastErrorCode: 'upstream_unreachable',
+      lastErrorDate: '2026-10-25',
+    });
+  });
+
+  // Catches a reading refused as impossible passing for a recording weather series.
+  it('shows a weather reading refused for its date, and recovers', async () => {
+    await pullWeather('2026-11-06T12:00:00Z', {
+      code: 61,
+      isDay: 1,
+      observedAt: '2026-11-08T13:00:00Z',
+    });
+    expect(await recording('weather')).toMatchObject({
+      lastErrorCode: 'upstream_future',
+      lastErrorDate: '2026-11-08',
+    });
+    await pullWeather('2026-11-06T12:15:00Z', { code: 2, isDay: 1 });
+    expect(await recording('weather')).toMatchObject({
+      lastSuccessAt: '2026-11-06T12:15:00.000Z',
+      lastErrorCode: null,
+    });
+  });
+
+  // Catches a success recorded for days that were never written: its fence lost to a backfill.
+  it('claims no success for a pull whose write was refused', async () => {
+    await seedSnapshots();
+    const store = new D1SnapshotStore(env.DB);
+    const batch = env.DB.batch.bind(env.DB);
+    let landed: Promise<boolean> | undefined;
+    const db = Object.create(env.DB, {
+      batch: {
+        value: async (statements: D1PreparedStatement[]) => {
+          await landed;
+          return batch(statements);
+        },
+      },
+    }) as D1Database;
+    const day = '2026-10-26';
+    const json = JSON.stringify({ count: 1, last: null, asOf: '2026-11-06T09:00:00.000Z' });
+    await new D1SnapshotStore(db).putDated(
+      'listening',
+      {
+        fetchedAt: '2026-11-06T09:30:00.000Z',
+        dates: { from: day, to: day },
+        outcome: { date: day, code: null },
+        merge: () => {
+          landed = store.mergeDays(
+            'listening',
+            day,
+            () => [{ day, json }],
+            '2026-11-06T09:31:00.000Z'
+          );
+          return { snapshot: {}, days: [{ day, json }] };
+        },
+      },
+      '2026-11-06T09:30:00.000Z'
+    );
+    expect((await recording('listening'))?.lastSuccessAt).toBeNull();
+  });
+});
+
 describe('the listening merge', () => {
   const stored: ListeningStoredDay = {
     count: 5,

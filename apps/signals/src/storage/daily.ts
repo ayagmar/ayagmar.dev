@@ -117,6 +117,99 @@ export function pushedDaysStatement(
     .bind(push.source, push.now, push.deliveryId, push.producer, push.bodySha256, push.since);
 }
 
+/** How one attempt to record a series' days went: `code` is null when every date recorded. */
+export interface DayOutcome {
+  date: string;
+  code: string | null;
+}
+
+/** The series whose recording can fail while their snapshot carries on (ADR 0038). */
+export const recordedSeries = ['listening', 'weather'] as const satisfies readonly DailySource[];
+
+type RecordedSeries = (typeof recordedSeries)[number];
+
+/** Whether a series is recording, as `/v1/health` shows it. */
+export interface DayStatus {
+  lastSuccessAt: string | null;
+  lastErrorCode: string | null;
+  lastErrorAt: string | null;
+  lastErrorDate: string | null;
+}
+
+/** Its row in `pull_progress`, beside the pulls' own: no migration, and old Workers ignore it. */
+const statusRow = (series: string) => `days:${series}`;
+
+/**
+ * Records `outcome` for `series`. A success counts only if the snapshot row carries `writeId`,
+ * as its days do, and clears the error; a failure keeps `lastSuccessAt`, and nothing but a
+ * later success clears it, so a working snapshot cannot hide days that are not being kept.
+ */
+export function dayStatusStatement(
+  db: D1Database,
+  series: DailySource,
+  outcome: DayOutcome,
+  writeId: string | null,
+  at: string
+): D1PreparedStatement {
+  const source = statusRow(series);
+  if (outcome.code === null) {
+    const status: DayStatus = {
+      lastSuccessAt: at,
+      lastErrorCode: null,
+      lastErrorAt: null,
+      lastErrorDate: null,
+    };
+    return db
+      .prepare(
+        `INSERT INTO pull_progress (source, described_date, step, json)
+         SELECT ?1, ?2, 1, ?3
+         WHERE EXISTS (SELECT 1 FROM snapshots WHERE source = ?4 AND write_id = ?5)
+         ON CONFLICT (source) DO UPDATE SET
+           described_date = excluded.described_date, step = step + 1, json = excluded.json`
+      )
+      .bind(source, outcome.date, JSON.stringify(status), series, writeId);
+  }
+  const status: DayStatus = {
+    lastSuccessAt: null,
+    lastErrorCode: outcome.code,
+    lastErrorAt: at,
+    lastErrorDate: outcome.date,
+  };
+  return db
+    .prepare(
+      `INSERT INTO pull_progress (source, described_date, step, json)
+       VALUES (?1, ?2, 1, ?3)
+       ON CONFLICT (source) DO UPDATE SET
+         described_date = excluded.described_date, step = step + 1,
+         json = json_set(pull_progress.json, '$.lastErrorCode', ?4, '$.lastErrorAt', ?5,
+                         '$.lastErrorDate', ?2)`
+    )
+    .bind(source, outcome.date, JSON.stringify(status), outcome.code, at);
+}
+
+/** Each recorded series' status; one that has recorded nothing yet is all null. */
+export async function readDayStatuses(
+  db: D1Database
+): Promise<{ series: RecordedSeries; status: DayStatus }[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT source, json FROM pull_progress WHERE source IN (${recordedSeries.map(() => '?').join(', ')})`
+    )
+    .bind(...recordedSeries.map(statusRow))
+    .all<{ source: string; json: string }>();
+  const stored = new Map(results.map(({ source, json }) => [source, json]));
+  return recordedSeries.map((series) => {
+    const json = stored.get(statusRow(series));
+    return {
+      series,
+      status:
+        json === undefined
+          ? { lastSuccessAt: null, lastErrorCode: null, lastErrorAt: null, lastErrorDate: null }
+          : (JSON.parse(json) as DayStatus),
+    };
+  });
+}
+
 /** The stored days of `source` from `from` to `to`, oldest first, with their values parsed. */
 export async function readDays(
   db: D1Database,

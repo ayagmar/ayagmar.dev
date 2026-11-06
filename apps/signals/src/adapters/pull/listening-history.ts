@@ -12,7 +12,7 @@ import { D1ProgressStore } from '../../storage/progress.ts';
 import type { SourceStatus } from '../../storage/types.ts';
 import type { PullAdapter } from '../types.ts';
 import { checkSnapshot, getJson, PullError, type UpstreamResponse } from './http.ts';
-import { lastfmEndpoint, lastfmUser, readLastfm, readRangePage } from './lastfm.ts';
+import { lastfmEndpoint, lastfmForm, readLastfm, readRangePage } from './lastfm.ts';
 import { readSecret } from './secrets.ts';
 
 /** `user.getInfo` is about 1 KiB. */
@@ -233,14 +233,11 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
     let state: State | undefined;
     if (saved?.describedDate === describedDate) state = readState(saved.state, describedDate);
 
-    // The key goes in the POST form, out of the URL that Workers traces record.
-    const form = (method: string, params: Record<string, string> = {}) =>
-      new URLSearchParams({ method, user: lastfmUser, api_key: apiKey, format: 'json', ...params });
     if (state === undefined) {
       const registration = await getJson(lastfmEndpoint, {
         signal,
         maxBytes: infoMaxBytes,
-        form: form('user.getinfo'),
+        form: lastfmForm(apiKey, 'user.getinfo'),
       });
       state = { firstYear: registrationYear(registration, describedDate), read: 0, years: [] };
     }
@@ -254,7 +251,7 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
       const page = await getJson(lastfmEndpoint, {
         signal,
         maxBytes: pageMaxBytes,
-        form: form('user.getrecenttracks', {
+        form: lastfmForm(apiKey, 'user.getrecenttracks', {
           limit: String(historyPageLimit),
           page: '1',
           from: String(day.from),

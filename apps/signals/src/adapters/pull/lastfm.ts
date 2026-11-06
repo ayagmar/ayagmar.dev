@@ -6,6 +6,10 @@ import { PullError, parseBody, type Schema, type UpstreamResponse } from './http
 export const lastfmEndpoint = 'https://ws.audioscrobbler.com/2.0/';
 export const lastfmUser = 'min7_';
 
+/** A POST form for `method`: the key stays out of the URLs that Workers traces record. */
+export const lastfmForm = (apiKey: string, method: string, params: Record<string, string> = {}) =>
+  new URLSearchParams({ method, user: lastfmUser, api_key: apiKey, format: 'json', ...params });
+
 /** A Last.fm answer checked against `schema`. Last.fm reports errors in the body, sometimes with HTTP 200. */
 export function readLastfm<T>(response: UpstreamResponse, schema: Schema<T>): T {
   const failure = lastfmErrorSchema.safeParse(response.body);

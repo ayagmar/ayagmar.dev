@@ -68,8 +68,8 @@ async function fillDate(env: Env, date: string, now: number) {
     readListeningDay(date, apiKey, signal),
     getJson(archiveUrl(date), { signal, maxBytes: archiveMaxBytes }),
   ]);
-  const listeningValues = listeningDayValues([listening]);
-  if (listeningValues.length === 0) throw new PullError('upstream_error');
+  const { values: listeningValues, failure } = listeningDayValues([listening]);
+  if (failure !== undefined) throw failure.error;
   const weatherValues = weatherDayValues(date, weatherDayOf(date, archive));
 
   const store = new D1SnapshotStore(env.DB);

@@ -1,5 +1,5 @@
 import type { DailySource, SourceId } from '@min7/contracts';
-import type { DailyRow } from '../storage/daily.ts';
+import type { DailyRow, DayOutcome } from '../storage/daily.ts';
 import type { SourceStatus } from '../storage/types.ts';
 
 /** What is stored for a source that keeps daily history, as a dated pull's merge reads it. */
@@ -16,6 +16,8 @@ export interface PullHistory {
   fetchedAt: string;
   /** The answer's dates that may hold a day; what is stored for them is given to `merge`. */
   dates: { from: string; to: string } | null;
+  /** How recording went, for a series whose days can fail apart from its snapshot. */
+  outcome?: DayOutcome;
   /**
    * The snapshot to store and the days to write, given what is stored. Called only when the
    * answer is newer than the stored one; days whose JSON would not change can be left out.

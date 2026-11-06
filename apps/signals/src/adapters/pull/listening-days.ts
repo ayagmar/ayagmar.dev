@@ -12,11 +12,11 @@ import type { PullHistory } from '../types.ts';
 import {
   checkSnapshot,
   fromUnixSeconds,
-  getOptionalJson,
-  orNull,
+  getJson,
+  PullError,
   type UpstreamResponse,
 } from './http.ts';
-import { lastfmEndpoint, lastfmUser, readRangePage } from './lastfm.ts';
+import { lastfmEndpoint, lastfmForm, readRangePage } from './lastfm.ts';
 
 /** One item is enough: `total` is the count and the newest comes first. */
 const rangeLimit = 1;
@@ -30,12 +30,12 @@ const rangeMaxBytes = 16 * 1024;
  */
 const windowMinutes = 5;
 
-/** A date's answer: null is a request that failed. */
+/** A date's answer, or why the request failed. */
 export interface DayRead {
   date: string;
   /** Unix ms just before asking, so a read that crossed midnight counts as open. */
   at: number;
-  response: UpstreamResponse | null;
+  answer: UpstreamResponse | PullError;
 }
 
 const rangeOf = (date: string) => ({
@@ -53,7 +53,7 @@ export function dayReadsDue(now: number): string[] {
   return [rabatDate((rabatDayStart(today) - 1) * 1000), today];
 }
 
-/** Asks Last.fm for `date`. The key goes in the POST form, out of URLs that traces record. */
+/** Asks Last.fm for `date`. A failed request is an outcome here, not a failed pull. */
 export async function readListeningDay(
   date: string,
   apiKey: string,
@@ -61,27 +61,28 @@ export async function readListeningDay(
 ): Promise<DayRead> {
   const { from, to } = rangeOf(date);
   const at = Date.now();
-  const response = await getOptionalJson(lastfmEndpoint, {
-    signal,
-    maxBytes: rangeMaxBytes,
-    form: new URLSearchParams({
-      method: 'user.getrecenttracks',
-      user: lastfmUser,
-      api_key: apiKey,
-      format: 'json',
-      limit: String(rangeLimit),
-      from: String(from),
-      to: String(to),
-    }),
-  });
-  return { date, at, response };
+  try {
+    const answer = await getJson(lastfmEndpoint, {
+      signal,
+      maxBytes: rangeMaxBytes,
+      form: lastfmForm(apiKey, 'user.getrecenttracks', {
+        limit: String(rangeLimit),
+        from: String(from),
+        to: String(to),
+      }),
+    });
+    return { date, at, answer };
+  } catch (error) {
+    if (error instanceof PullError) return { date, at, answer: error };
+    throw error;
+  }
 }
 
 /**
  * What an answer says of its date. A checked empty range is `{ count: 0, last: null }`: a
  * recorded zero. Anything unreadable throws a `PullError`, and nothing is written for it.
  */
-function listeningDayOf({ date, at, response }: DayRead & { response: UpstreamResponse }) {
+function listeningDayOf(date: string, at: number, response: UpstreamResponse) {
   const { total, scrobbles } = readRangePage(rangeOf(date), response, rangeLimit);
   const [newest] = scrobbles;
   return checkSnapshot(listeningStoredDaySchema, {
@@ -128,34 +129,43 @@ export function mergeListeningDay(
   return { count, last, asOf };
 }
 
-/** The readable answers of `reads`; each one that failed is logged and writes nothing. */
-export function listeningDayValues(reads: readonly DayRead[]): DayValue<ListeningStoredDay>[] {
-  return reads.flatMap((read) => {
-    const { response } = read;
-    const value = response === null ? null : orNull(() => listeningDayOf({ ...read, response }));
-    if (value === null) {
-      logEvent('warn', 'day read failed', { source: 'listening', date: read.date });
-      return [];
+/** What `reads` came to: the readable days, and the first that could not be read, with why. */
+export function listeningDayValues(reads: readonly DayRead[]) {
+  const values: DayValue<ListeningStoredDay>[] = [];
+  let failure: { date: string; error: PullError } | undefined;
+  for (const { date, at, answer } of reads) {
+    try {
+      if (answer instanceof PullError) throw answer;
+      values.push({ date, value: listeningDayOf(date, at, answer) });
+    } catch (error) {
+      if (!(error instanceof PullError)) throw error;
+      logEvent('warn', 'day read failed', { source: 'listening', date, code: error.code });
+      failure ??= { date, error };
     }
-    return [{ date: read.date, value }];
-  });
+  }
+  return { values, failure };
 }
 
 /**
  * What a listening pull stores besides its snapshot, or undefined with no day read: then the
- * pull is the plain `put` it always was. The day's failure never costs the snapshot.
+ * pull is the plain `put` it always was. A day's failure never costs the snapshot, and is
+ * reported as the recording's own outcome, which the snapshot's success does not clear.
  */
 export function listeningDaysHistory(
   snapshot: ListeningSnapshot,
   reads: readonly DayRead[]
 ): PullHistory | undefined {
-  const values = listeningDayValues(reads);
+  const last = reads.at(-1);
+  if (last === undefined) return undefined;
+  const { values, failure } = listeningDayValues(reads);
   const [first] = values;
-  const last = values.at(-1);
-  if (first === undefined || last === undefined) return undefined;
   return {
     fetchedAt: new Date().toISOString(),
-    dates: { from: first.date, to: last.date },
+    dates: first === undefined ? null : { from: first.date, to: values.at(-1)?.date ?? first.date },
+    outcome:
+      failure === undefined
+        ? { date: last.date, code: null }
+        : { date: failure.date, code: failure.error.code },
     merge: (stored) => ({
       snapshot,
       days: mergedRows(values, stored.days, listeningStoredDaySchema, mergeListeningDay),

@@ -18,7 +18,7 @@ import {
   type Schema,
   type UpstreamResponse,
 } from './http.ts';
-import { lastfmEndpoint, lastfmUser, readLastfm } from './lastfm.ts';
+import { lastfmEndpoint, lastfmForm, readLastfm } from './lastfm.ts';
 import {
   type DayRead,
   dayReadsDue,
@@ -57,18 +57,10 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
   async fetch(env, signal) {
     const apiKey = readSecret(env, 'LASTFM_API_KEY');
     if (apiKey === undefined) throw new PullError('not_configured');
-    // Last.fm takes its parameters, the API key included, as a POST form too, which keeps
-    // the key out of the request URL that Workers traces record.
     const call = (method: string, params: Record<string, string>) => ({
       signal,
       maxBytes,
-      form: new URLSearchParams({
-        method,
-        user: lastfmUser,
-        api_key: apiKey,
-        format: 'json',
-        ...params,
-      }),
+      form: lastfmForm(apiKey, method, params),
     });
     const thisMonday = weekStart(new Date());
     const lastMonday = thisMonday - 7 * day;
