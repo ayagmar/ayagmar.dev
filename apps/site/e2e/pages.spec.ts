@@ -89,3 +89,17 @@ test('the console says hello once, on production only', async ({ page, baseURL }
   expect(logged[0]).toContain('https://ayagmar.dev/colophon');
   expect(logged[0]).toContain('https://github.com/ayagmar/ayagmar.dev');
 });
+
+// Catches a page leaving the one column (ADR 0037): /til sat 39 px left of every other page.
+test('every page on the column starts its title at the same x', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const starts = new Map<string, number>();
+  for (const path of [...pages, notFoundPath]) {
+    await page.goto(path);
+    const title = page.locator('.column h1');
+    if ((await title.count()) === 0) continue;
+    starts.set(path, (await title.boundingBox())?.x ?? Number.NaN);
+  }
+  expect(starts.has('/til')).toBe(true);
+  expect(new Set(starts.values()).size, JSON.stringify([...starts])).toBe(1);
+});

@@ -21,7 +21,7 @@ const feeds = feedPaths({ til: true });
   feed={{ til: true }}
 >
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
-  <div class="reader">
+  <div class="reader column">
     <h1>Today I learned</h1>
     {notes.length === 0 ? (
       <p>Nothing published yet.</p>

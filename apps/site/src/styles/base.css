@@ -1094,8 +1094,9 @@ time[data-ago] {
    run to the screen edge, scrolling inside themselves. The lamp is the charm: a warm pool
    behind the title, a dithered pixel edge where its light falls off, a tile star at breaks. */
 
-/* The lamp's pool, behind the top of the page, header included so it has no edge. */
-body:has(.reader) {
+/* The lamp's pool, behind the top of the page, header included so it has no edge. /til is a list
+   on the one column, so it has none (ADR 0037). */
+body:has(.reader:not(.column)) {
   background:
     radial-gradient(
       ellipse 46rem 24rem at 50% -2rem,
@@ -1117,6 +1118,10 @@ body:has(.reader) {
 
 .reader > * {
   grid-column: 1;
+}
+
+.reader.column {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* The project card under a post is as wide as the post: the text, and the contents beside it. */
