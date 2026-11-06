@@ -55,6 +55,40 @@ describe('links in a copy', () => {
     expect(absoluteLinks('[/x](/x)', '/writing/post')).toBe('[/x](https://ayagmar.dev/x)');
   });
 
+  // Catches the destination being found by its text: a title that repeats it was rewritten and
+  // the link left relative.
+  it('rewrites the destination, not a title that repeats it', () => {
+    expect(absoluteLinks('[a](/about "Read /about")', '/writing/post')).toBe(
+      '[a](https://ayagmar.dev/about "Read /about")'
+    );
+    expect(absoluteLinks('[d]: /about "Read /about"\n\n[d]', '/writing/post')).toBe(
+      '[d]: https://ayagmar.dev/about "Read /about"\n\n[d]'
+    );
+  });
+
+  // Catches an edit past the end of the link, in the prose after it.
+  it('leaves prose that repeats the destination alone', () => {
+    expect(absoluteLinks('[a](/x)/x', '/writing/post')).toBe('[a](https://ayagmar.dev/x)/x');
+  });
+
+  // Catches syntax a plain search or a naive scan reads wrongly: brackets and code in a label,
+  // parentheses, escapes and angle brackets in a destination, an image inside a link.
+  it('reads every form a destination can take', () => {
+    const cases = [
+      ['[a [b] `]`](/x)', '[a [b] `]`](https://ayagmar.dev/x)'],
+      ['[a](/x_(y) "t")', '[a](https://ayagmar.dev/x_(y) "t")'],
+      ['[a](</x y>)', '[a](<https://ayagmar.dev/x%20y>)'],
+      ['[a](/x\\(y)', '[a](https://ayagmar.dev/x(y)'],
+      ['[![i](/i.png)](/b)', '[![i](https://ayagmar.dev/i.png)](https://ayagmar.dev/b)'],
+      ['[a](https://e.example)', '[a](https://e.example)'],
+      ['<https://e.example>', '<https://e.example>'],
+      ['[a](mailto:hello@ayagmar.dev)', '[a](mailto:hello@ayagmar.dev)'],
+    ];
+    for (const [body, expected] of cases) {
+      expect(absoluteLinks(body ?? '', '/writing/post')).toBe(expected);
+    }
+  });
+
   // Catches a section link that lands on nothing: a note's ids carry its name (ADR 0028).
   it('sends a fragment to the page with the ids it uses', () => {
     expect(noteArticle(note('first', '[s](#setup)')).idPrefix).toBe('first-');
@@ -156,7 +190,16 @@ describe('list pages', () => {
     const text = renderTilText([note('one', 'First [body](/x).'), note('two', 'Second body.')]);
     expect(text).toContain('First [body](https://ayagmar.dev/x).');
     expect(text).toContain('Second body.');
-    expect(text).toContain('2026-10-25  https://ayagmar.dev/til/two');
+    expect(text).toContain('2026-10-25\nhttps://ayagmar.dev/til/two\n');
+  });
+
+  // Catches a Preview's draft note reading as published on /til, which marks it (TilNote.astro).
+  it('mark a draft note and give its tags, as the page does', () => {
+    const draft = note('one', 'Body.');
+    draft.data = { ...draft.data, draft: true, tags: ['bash', 'niri'] };
+    expect(renderTilText([draft])).toContain(
+      'A note\nDraft, 2026-10-25\nTags: bash, niri\nhttps://ayagmar.dev/til/one\n'
+    );
   });
 });
 

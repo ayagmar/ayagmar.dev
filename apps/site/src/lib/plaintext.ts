@@ -3,7 +3,7 @@ import type { About } from '../data/about.ts';
 import { aboutLinks, formatMonth, monthSpan } from '../data/about.ts';
 import { projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
-import { absoluteLinks, articleDates, noteArticle, textBody } from './article.ts';
+import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
 import { feedPaths } from './feed.ts';
 import { postCount, postsAbout, projectLinks, projectPath, type SiteProject } from './projects.ts';
 import { nav, nowPage, site, siteUrl } from './site.ts';
@@ -128,7 +128,8 @@ export function renderTilText(notes: readonly Note[]): string {
       : articles.flatMap((article, index) => [
           ...(index === 0 ? [] : [rule]),
           article.title,
-          `${articleDates(article)}  ${siteUrl}${article.path}`,
+          ...articleMeta(article),
+          `${siteUrl}${article.path}`,
           '',
           textBody(article),
         ])),
