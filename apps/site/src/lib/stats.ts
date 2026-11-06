@@ -99,6 +99,14 @@ export const statsWords = {
   noProjects: 'No project data yet.',
 };
 
+/** The words only the build uses, kept apart so they stay out of the browser's script. */
+export const statsBuildWords = {
+  noListening: 'No listening data yet',
+  noLlmUsage: 'No data yet.',
+  sample: 'Sample data: this build shows the test fixtures, some of them made up.',
+  snapshot: 'Numbers from my own tools, as of the last build. The page keeps itself current.',
+};
+
 /** A week's scrobbles, or `unknown` when Last.fm did not answer that part. */
 export const weekCount = (scrobbles: number | null) =>
   scrobbles === null ? 'unknown' : scrobbles.toLocaleString('en');

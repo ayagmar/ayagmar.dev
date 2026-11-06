@@ -55,6 +55,13 @@ export function siteProjects(
     });
 }
 
+/** Where a project lives: its repository, its own site and its npm package. */
+export const projectLinks = ({ repo, repoUrl, homepage, npmUrl }: SiteProject) => [
+  { href: repoUrl, label: `${repo} on GitHub` },
+  ...(homepage === null ? [] : [{ href: homepage, label: new URL(homepage).host }]),
+  ...(npmUrl === null ? [] : [{ href: npmUrl, label: 'npm package' }]),
+];
+
 /** The posts about one project, in the order given (newest first for the published set). */
 export const postsAbout = <P extends Post>(posts: readonly P[], slug: ProjectSlug): P[] =>
   posts.filter((post) => post.data.projects.includes(slug));

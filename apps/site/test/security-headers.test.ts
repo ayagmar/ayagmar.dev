@@ -16,6 +16,18 @@ describe('_headers', () => {
     );
   });
 
+  // Catches a text copy read as Latin-1: Cloudflare serves assets without a charset, wrangler dev
+  // with one, so only the rule itself can show this.
+  it('names the charset of the text and Markdown copies and keeps them out of search', () => {
+    const file = renderHeadersFile({});
+    expect(file).toContain(
+      '/*.md\n  X-Robots-Tag: noindex\n  Content-Type: text/markdown; charset=utf-8\n'
+    );
+    expect(file).toContain(
+      '/*.txt\n  X-Robots-Tag: noindex\n  Content-Type: text/plain; charset=utf-8\n'
+    );
+  });
+
   it('never allows inline scripts by keyword', () => {
     const csp = contentSecurityPolicy({ scripts: ['sha256-abc'], styles: ['sha256-def'] });
     expect(csp).not.toContain('unsafe-inline');

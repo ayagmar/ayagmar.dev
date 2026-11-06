@@ -68,6 +68,16 @@ export function renderHeadersFile(headers: Record<string, string>): string {
       path,
       '  Cache-Control: public, max-age=86400',
     ]),
+    // The text and Markdown copies (ADR 0040) leave search to the HTML pages. Workers static
+    // assets send text/plain with no charset, though `wrangler dev` adds one, and these are UTF-8.
+    ...[
+      ['/*.md', 'text/markdown'],
+      ['/*.txt', 'text/plain'],
+    ].flatMap(([path, type]) => [
+      path as string,
+      '  X-Robots-Tag: noindex',
+      `  Content-Type: ${type}; charset=utf-8`,
+    ]),
     '',
   ];
   const tooLong = lines.find((line) => line.length >= maxHeaderLine);

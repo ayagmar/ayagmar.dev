@@ -1,5 +1,5 @@
 ---
-import { count, utcDay } from '../data/format.ts';
+import { projectFacts } from '../data/format.ts';
 import type { SiteProject } from '../lib/projects.ts';
 
 interface Props {
@@ -7,43 +7,26 @@ interface Props {
 }
 
 const { project } = Astro.props;
-const { live } = project;
-const release = live?.latestRelease ?? null;
-const downloads = live?.npm?.monthlyDownloads ?? null;
-const known =
-  live !== null &&
-  (live.language !== null || live.stars !== null || release !== null || downloads !== null);
+const facts = projectFacts(project);
 ---
 
-{known ? (
+{facts.length > 0 ? (
   <dl class="project-stats">
-    {live?.language != null && (
+    {facts.map((fact) => (
       <>
-        <dt>Language</dt>
-        <dd>{live.language}</dd>
-      </>
-    )}
-    {live?.stars != null && (
-      <>
-        <dt>Stars</dt>
-        <dd>{count(live.stars)}</dd>
-      </>
-    )}
-    {release !== null && (
-      <>
-        <dt>Latest release</dt>
+        <dt>{fact.label}</dt>
         <dd>
-          <a href={release.url}>{release.tag}</a>,{' '}
-          <time datetime={release.publishedAt}>{utcDay(release.publishedAt)}</time>
+          {'release' in fact && fact.release !== undefined ? (
+            <>
+              <a href={fact.release.url}>{fact.release.tag}</a>,{' '}
+              <time datetime={fact.release.publishedAt}>{fact.release.day}</time>
+            </>
+          ) : (
+            fact.value
+          )}
         </dd>
       </>
-    )}
-    {downloads !== null && (
-      <>
-        <dt>npm downloads, last 30 days</dt>
-        <dd>{count(downloads)}</dd>
-      </>
-    )}
+    ))}
   </dl>
 ) : (
   <p class="project-stats-empty">No live numbers for {project.slug} right now.</p>

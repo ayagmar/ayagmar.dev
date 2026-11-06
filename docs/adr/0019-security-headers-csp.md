@@ -19,7 +19,7 @@ Details:
 - Pagefind compiles WebAssembly (`'wasm-unsafe-eval'`) and runs its search in a same-origin worker, `/pagefind/pagefind-worker.js`, allowed by `worker-src 'self'`. The worker script is served with the same policy.
 - The policy is delivered only as a header, never as a `<meta>` tag, so there is exactly one policy. Astro's built-in `security.csp` was not used: it writes a per-page meta policy whose hashes differ from page to page.
 - `renderHeadersFile` throws if any `_headers` line reaches 2000 characters, the limit Cloudflare applies; a unit test covers it.
-- The site Worker fetches both the HTML and `index.txt` through the `ASSETS` binding, which applies `_headers`, so its responses carry the same headers (verified against `wrangler dev`).
+- The site Worker fetches the HTML and the text and Markdown copies (ADR 0040) through the `ASSETS` binding, which applies `_headers`, so its responses carry the same headers (verified against `wrangler dev`).
 - Shiki is off because its `style=""` attributes violate `style-src` (ADR 0004).
 
 Playwright runs every page against `wrangler dev` and fails on any `securitypolicyviolation` event or CSP console error, and asserts the headers on HTML, `index.txt`, a 404 and the terminal response.

@@ -32,3 +32,5 @@ export const usesSchema = z.strictObject({
     )
     .min(1, 'must list at least one machine'),
 });
+
+export type Uses = z.output<typeof usesSchema>;
