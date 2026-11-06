@@ -590,7 +590,7 @@ test.describe('LLM usage', () => {
     ]);
     await expect(body(page).getByRole('img')).toHaveAttribute(
       'aria-label',
-      'Tokens per day from 27 Oct 2025 to 26 Oct 2026: 11 days with use, the busiest 20 Oct 2026 with 3.1M. Faint days have no record.'
+      'Tokens per day from 27 Oct 2025 to 26 Oct 2026: 11 days with use, the busiest 20 Oct 2026 with 3.1M. Some days have no record.'
     );
     await expect(body(page).locator('.heat-cap')).toContainText('faint days have no record');
     await expect(usage(page, 'llm-usage')).not.toContainText('$');

@@ -12,6 +12,7 @@ import {
   tokens,
 } from '../src/lib/llm-usage-panel.ts';
 import type { Markup } from '../src/lib/markup.ts';
+import { markupLines } from '../src/lib/markup-text.ts';
 
 const ok = snapshotFixtures['llm-usage'].ok as LlmUsageSnapshot;
 const taken = '2026-10-26T08:00:00Z';
@@ -143,7 +144,11 @@ describe('heatmap', () => {
     const panel = llmUsagePanel({ ...ok, days }, taken);
     const levels = squares(panel).map((square) => square['data-l']);
     expect(levels.slice(-3)).toEqual(['0', 'none', '1']);
-    expect(words(panel)).toContain('27 Oct 2025 – 26 Oct 2026; faint days have no record');
+    expect(words(panel)).toContain('Squares: faint days have no record');
+    // Catches words about how a square looks reaching the copy that has no squares.
+    const copy = markupLines(panel).join('\n');
+    expect(copy).toContain('with 500. Some days have no record.');
+    expect(copy).not.toContain('faint');
   });
 
   // Catches levels scaled to the busiest day, which washes out every other day.

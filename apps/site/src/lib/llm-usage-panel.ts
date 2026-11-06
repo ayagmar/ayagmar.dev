@@ -4,7 +4,7 @@
  */
 import type { LlmUsageSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
-import { heatLevels, noRecordSentence, noRecordWords } from './heat.ts';
+import { heatLevels, noRecordWords } from './heat.ts';
 import { el, type Markup } from './markup.ts';
 
 const hourMs = 3_600_000;
@@ -219,7 +219,7 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
     heat.activeDays === 0 || !heat.busiest?.tokens
       ? `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: none.`
       : `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${fullDate.format(utcDate(heat.busiest.date))} with ${tokens(heat.busiest.tokens)}.`
-  }${heat.gaps ? ` ${noRecordSentence('faint')}` : ''}`;
+  }${heat.gaps ? ' Some days have no record.' : ''}`;
   return [
     period,
     longest,
@@ -252,8 +252,13 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
         el(
           'span',
           {},
-          `${fullDate.format(utcDate(heat.from))} – ${fullDate.format(utcDate(heat.to))}${heat.gaps ? `; ${noRecordWords('faint')}` : ''}`
-        )
+          `${fullDate.format(utcDate(heat.from))} – ${fullDate.format(utcDate(heat.to))}`
+        ),
+        // How the squares look means nothing to a screen reader or the text copy: their words are
+        // in the summary above.
+        ...(heat.gaps
+          ? [el('span', { 'aria-hidden': 'true' }, `Squares: ${noRecordWords('faint')}`)]
+          : [])
       )
     ),
   ];
