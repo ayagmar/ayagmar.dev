@@ -147,10 +147,14 @@ export const pinSlots = 6;
 /** The framed screen's columns, a week each. */
 export const screenWeeks = 11;
 
-const isShipped = (event: ShippingEvent) =>
+/** What counts as shipping: stars are attention, and an empty push is no work. */
+export const isShipped = (event: ShippingEvent) =>
   event.type === 'release' ||
   event.type === 'merge' ||
   (event.type === 'push' && event.commits > 0);
+
+/** A push or merge: what the code did, unlike a release. */
+export const isCode = ({ type }: ShippingEvent) => type === 'push' || type === 'merge';
 
 /** Which pin an event belongs to. */
 export const pinKey = (event: ShippingEvent) => `${event.repo} ${utcDay(event.at)}`;
@@ -183,7 +187,7 @@ function pinsAt(reading: RoomInputs['shipping'], { kind, instant }: RoomMoment):
         kind === 'past'
         ? null
         : `Nothing shipped lately, as of ${dayWords(rabatDate(reading.at))}`;
-  const latest = events.find((event) => event.type === 'push' || event.type === 'merge') ?? null;
+  const latest = events.find(isCode) ?? null;
   return { pins, latest, words };
 }
 

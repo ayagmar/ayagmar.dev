@@ -465,6 +465,74 @@ describe('the seed', () => {
     expect(roomState(seededInputs(seed, true), moment)).toEqual(roomState(whole, moment));
   });
 
+  const release = (repo: string, at: string): ShippingEvent => ({
+    type: 'release',
+    repo,
+    at,
+    url: `https://github.com/${repo}/releases/1`,
+    tag: 'v1',
+  });
+  const hours = (count: number) => iso(noon - count * 3_600_000);
+  const seededPins = (feed: ShippingEvent[]) => {
+    const shipping = { ...built.shipping, data: { events: feed, starHistory: [] } };
+    const moment: RoomMoment = { kind: 'built', instant: noon };
+    const seededState = roomState(seededInputs(roomSeed({ ...built, shipping }), true), moment);
+    const wholeState = roomState({ ...whole, shipping: reading({ events: feed }) }, moment);
+    return { seededState, wholeState };
+  };
+  const repos = [0, 1, 2, 3, 4, 5].map((index) => `ayagmar/r${index}`);
+
+  // Catches trimming that changes a pin: a later release in a kept repository's day must make it
+  // a release, however many other days sit between them in the feed.
+  it('keeps every event of a pin it keeps', () => {
+    const feed = [
+      ...repos.map((repo, index) => push(repo, hours(index))),
+      push('ayagmar/seventh', hours(7)),
+      release('ayagmar/r0', hours(9)),
+    ];
+    const { seededState, wholeState } = seededPins(feed);
+    expect(seededState.pins.pins[0]).toEqual({
+      repo: 'ayagmar/r0',
+      date: '2026-10-26',
+      kind: 'release',
+      count: 2,
+    });
+    expect(seededState.pins).toEqual(wholeState.pins);
+  });
+
+  // Catches empty pushes spending the six slots, so real work is dropped and the room says quiet.
+  it('counts only what ships towards its six', () => {
+    const feed = [...repos.map((repo, index) => push(repo, hours(index), 0)), merge('ayagmar/x', hours(8))];
+    const { seededState, wholeState } = seededPins(feed);
+    expect(seededState.pins.words).toBe('Shipped to x on 26 Oct');
+    expect(seededState.pins).toEqual(wholeState.pins);
+  });
+
+  // Catches /room losing its latest commit when the newest pins are all releases.
+  it('keeps the newest code event past release-only pins', () => {
+    const feed = [
+      ...repos.map((repo, index) => release(repo, hours(index))),
+      push('ayagmar/older', hours(8)),
+    ];
+    const { seededState, wholeState } = seededPins(feed);
+    expect(seededState.pins.latest).toEqual(feed.at(-1));
+    expect(seededState.pins).toEqual(wholeState.pins);
+  });
+
+  // Catches any interleaving the three above miss.
+  it('pins the same as the whole snapshot over generated feeds', () => {
+    const next = seeded(11);
+    const makers = [merge, push, (repo: string, at: string) => push(repo, at, 0), release];
+    for (let run = 0; run < 300; run++) {
+      const feed = Array.from({ length: 50 }, (_, index) => {
+        const make = makers[next(4)] as (repo: string, at: string) => ShippingEvent;
+        return make(`ayagmar/r${next(9)}`, hours(index * (1 + next(3))));
+      }).sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
+      const { seededState, wholeState } = seededPins(feed);
+      expect(seededState.pins).toEqual(wholeState.pins);
+    }
+  });
+
   // Catches a cost reaching the page's HTML through the seed, or the terminal's JSON (ADR 0014).
   it('carries no cost', () => {
     const text = JSON.stringify(seed);

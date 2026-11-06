@@ -11,6 +11,8 @@ import type {
 } from '@min7/contracts';
 import { instantMs } from './live.ts';
 import {
+  isCode,
+  isShipped,
   type Origin,
   pinKey,
   pinSlots,
@@ -21,15 +23,12 @@ import {
 } from './room-state.ts';
 import { dayMs, isoDate } from './words.ts';
 
-/** The events the newest pins are made of. Stars never reach the room. */
+/** Every event of the newest pins, wherever it sits in the feed, and the newest code event. */
 function pinEvents(events: readonly ShippingEvent[]): ShippingEvent[] {
-  const pins = new Set<string>();
-  return events
-    .filter(({ type }) => type !== 'stars')
-    .filter((event) => {
-      pins.add(pinKey(event));
-      return pins.size <= pinSlots;
-    });
+  const shipped = events.filter(isShipped);
+  const pins = new Set([...new Set(shipped.map(pinKey))].slice(0, pinSlots));
+  const latest = shipped.find(isCode);
+  return shipped.filter((event) => pins.has(pinKey(event)) || event === latest);
 }
 
 interface BuiltRoom {
