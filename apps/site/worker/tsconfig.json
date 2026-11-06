@@ -2,7 +2,8 @@
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    "lib": ["ES2024", "DOM"],
     "types": []
   },
-  "include": ["index.ts", "worker-configuration.d.ts"]
+  "include": ["index.ts", "room.ts", "worker-configuration.d.ts"]
 }

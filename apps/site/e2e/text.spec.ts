@@ -54,6 +54,62 @@ test.describe('terminal clients', () => {
   });
 });
 
+test.describe('the room in colour', () => {
+  // Catches the room leaving the Worker broken, a line past 80 columns, or a listed command that
+  // gives a terminal anything but text.
+  test('prints 80 columns and commands that work', async ({ request }) => {
+    const response = await get(request, '/room', { 'User-Agent': curl, Accept: '*/*' });
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toBe('text/plain; charset=utf-8');
+    expect(response.headers()['x-content-type-options']).toBe('nosniff');
+    expect(response.headers().vary).toMatch(/\bAccept\b.*\bUser-Agent\b/);
+    const lines = (await response.text()).split('\n');
+    const shown = lines.map((line) => line.replace(/\p{Cc}\[[0-9;]*m/gu, ''));
+    expect(shown.slice(0, 13)).toEqual(Array(13).fill('▀'.repeat(80)));
+    for (const line of shown) expect([...line].length).toBeLessThanOrEqual(80);
+    expect(shown.at(-2)).toBe('Without colour: curl ayagmar.dev');
+    const paths = shown.flatMap((line) => /^ {2}curl ayagmar\.dev(\/\w+)$/.exec(line)?.[1] ?? []);
+    expect(paths).toEqual(['/writing', '/til', '/projects', '/stats', '/about', '/now']);
+    for (const path of paths) {
+      const page = await get(request, path, { 'User-Agent': curl, Accept: '*/*' });
+      expect(page.status(), path).toBe(200);
+      expect(page.headers()['content-type'], path).toBe('text/plain; charset=utf-8');
+    }
+  });
+
+  // Catches escape codes reaching a client that never asked for them: the plain copy has none.
+  test('is only ever asked for', async ({ request }) => {
+    const plain = await (await get(request, '/', { 'User-Agent': curl })).text();
+    expect(plain).not.toContain('\x1b');
+    expect(plain).toContain('curl ayagmar.dev/room\n');
+    for (const headers of [
+      { 'User-Agent': browser, Accept: browserAccept },
+      { 'User-Agent': curl, Accept: 'text/markdown' },
+    ]) {
+      const response = await get(request, '/room', headers);
+      expect(response.status()).toBe(307);
+      expect(response.headers().location).toBe('/');
+      expect(response.headers().vary).toMatch(/User-Agent/);
+    }
+  });
+
+  // Catches HEAD printing the room's body.
+  test('HEAD has no body', async ({ request }) => {
+    const response = await request.head('/room', { headers: { 'User-Agent': curl } });
+    expect(response.status()).toBe(200);
+    expect(await response.text()).toBe('');
+  });
+
+  // Catches a Preview pointing its readers at production.
+  test('names the Preview on a Preview', { tag: '@drafts' }, async ({ request }) => {
+    const origin = 'https://feat-e2e-preview-min7-site.ayagmar.workers.dev';
+    const room = await (await get(request, '/room', { 'User-Agent': curl })).text();
+    expect(room).toContain(`  curl ${origin}/writing\n`);
+    expect(room.endsWith(`Without colour: curl ${origin}\n`)).toBe(true);
+    expect(await (await request.get('/index.txt')).text()).toContain(`curl ${origin}/room\n`);
+  });
+});
+
 test.describe('Accept', () => {
   const page = '/about';
   for (const [accept, type] of [
