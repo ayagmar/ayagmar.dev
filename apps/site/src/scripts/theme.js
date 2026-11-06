@@ -42,13 +42,17 @@
     }
   };
 
-  root.dataset.themeSwitch = '';
-  apply(stored());
-  shortcuts(stored('shortcuts'));
-  document.addEventListener('DOMContentLoaded', () => {
+  const sync = () => {
     apply(stored());
     shortcuts(stored('shortcuts'));
-  });
+  };
+
+  root.dataset.themeSwitch = '';
+  sync();
+  document.addEventListener('DOMContentLoaded', sync);
+  // A page back from the back/forward cache still has the theme it was left with, and the page
+  // change would fade into it. pageshow comes before that fade's first frame (ADR 0042).
+  addEventListener('pageshow', (event) => event.persisted && sync());
   const choose = (choice) => {
     store(key, choice === 'auto' ? null : choice);
     apply(choice);

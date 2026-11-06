@@ -1,6 +1,6 @@
 # 0037. The quiet room
 
-Status: accepted, 2026-11-01. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
+Status: accepted, 2026-11-01. Amended 2026-11-06: a page change fades in 160 ms (ADR 0042). Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
 
 ## Context
 
