@@ -64,14 +64,19 @@ test.describe('the out-of-date notice follows the reader clock', () => {
 // Catches the notice being decided once at load: a tab left open, or a page restored from the
 // back/forward cache, crosses the 90-day line while no script runs again. The clock is installed
 // so timers are fake; setSystemTime jumps it without firing any, so an event alone must do it.
+// It is paused before the page loads: a running clock would cross the line during a slow load.
 test.describe('the out-of-date notice follows the clock while the page stays', () => {
   const notice = (page: import('@playwright/test').Page) => page.getByText(/may be out of date/);
   const lastFresh = '2027-01-27T23:59:59Z';
   const stale = '2027-01-28T00:00:02Z';
+  const pause = async (page: import('@playwright/test').Page) => {
+    await page.clock.install({ time: '2027-01-27T23:00:00Z' });
+    await page.clock.pauseAt(lastFresh);
+  };
 
   // Catches the threshold passing with the page open and nothing noticing.
   test('appears when the 90 days run out while the page is open', async ({ page }) => {
-    await page.clock.install({ time: lastFresh });
+    await pause(page);
     await page.goto('/now');
     await expect(notice(page)).toBeHidden();
     await page.clock.runFor(3000);
@@ -88,7 +93,7 @@ test.describe('the out-of-date notice follows the clock while the page stays', (
     // Catches a returning reader seeing no warning on a page that is now old, and a warning that
     // stays after the reader's clock is corrected.
     test(`follows the clock both ways on ${name}`, async ({ page }) => {
-      await page.clock.install({ time: lastFresh });
+      await pause(page);
       await page.goto('/now');
       await expect(notice(page)).toBeHidden();
       await page.clock.setSystemTime(stale);
