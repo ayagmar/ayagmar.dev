@@ -89,9 +89,8 @@ test('home loads one scene, one window and two fonts', async ({ page }) => {
       .filter((name) => name !== undefined)
       .sort()
   );
-  // Which window depends on the time in Rabat; there is exactly one. The cat comes in from 02:00
-  // to 05:00 there, so it is no part of this count.
-  expect(assets.filter((name) => !/^(window|cat)-/.test(name))).toEqual([
+  // Which window depends on the time in Rabat; there is exactly one.
+  expect(assets.filter((name) => !name.startsWith('window-'))).toEqual([
     'mono',
     'room-day',
     'serif-roman',
