@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { get as httpGet } from 'node:http';
 import { join } from 'node:path';
 import type { APIRequestContext } from '@playwright/test';
+import { terminalCells } from '../src/lib/terminal-room.ts';
 import { notes, posts } from './content.ts';
 import { expect, notFoundPath, test } from './fixtures.ts';
 
@@ -66,7 +67,7 @@ test.describe('the room in colour', () => {
     const lines = (await response.text()).split('\n');
     const shown = lines.map((line) => line.replace(/\p{Cc}\[[0-9;]*m/gu, ''));
     expect(shown.slice(0, 13)).toEqual(Array(13).fill('▀'.repeat(80)));
-    for (const line of shown) expect([...line].length).toBeLessThanOrEqual(80);
+    for (const line of shown) expect(terminalCells(line)).toBeLessThanOrEqual(80);
     expect(shown.at(-2)).toBe('Without colour: curl ayagmar.dev');
     const paths = shown.flatMap((line) => /^ {2}curl ayagmar\.dev(\/\w+)$/.exec(line)?.[1] ?? []);
     expect(paths).toEqual(['/writing', '/til', '/projects', '/stats', '/about', '/now']);

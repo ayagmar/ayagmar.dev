@@ -11,6 +11,7 @@ import {
   roomFacts,
   scene,
   shrink,
+  terminalCells,
   terminalLine,
 } from '../src/lib/terminal-room.ts';
 import { terminalRoom } from '../worker/room.ts';
@@ -81,18 +82,38 @@ describe('the words', () => {
       ...listening,
       nowPlaying: { track: 'a\x1b[2Jb\x9b1m‮', artist: 'c\x07d', album: null, url: null },
     };
+    const merge = {
+      type: 'merge',
+      repo: 'ayagmar/x',
+      at: '2026-10-26T21:00:00Z',
+      url: 'https://github.com/ayagmar/x/pull/1',
+      number: 1,
+      title: 'e\x1b]0;f\x07g',
+    } as const;
     const output = renderTerminalRoom(blank, roomFacts(night), {
       ...text,
       listening: { data: hostile, fetchedAt: '2026-10-26T21:59:00Z', now: true },
+      shipping: { ...shipping, events: [merge] },
     });
     expect(words(output).join('\n')).not.toMatch(/\p{Cc}(?<!\n)|\p{Cf}/u);
     expect(words(output)).toContain('Now playing a[2Jb1m by cd');
+    expect(words(output).join('\n')).toContain('x merged #1: e]0;fg');
   });
 
-  // Catches a long line wrapping under the room.
-  it('cut a long line at 80 columns', () => {
-    expect(terminalLine('x'.repeat(81))).toBe(`${'x'.repeat(79)}…`);
-    expect(terminalLine('x'.repeat(80))).toBe('x'.repeat(80));
+  // Catches a long line wrapping under the room, which counting characters misses for CJK and
+  // emoji, or a cut through the middle of a character made of several.
+  it.each([
+    ['ascii', 'x'.repeat(81), `${'x'.repeat(79)}…`],
+    ['ascii that fits', 'x'.repeat(80), 'x'.repeat(80)],
+    ['CJK', '音'.repeat(41), `${'音'.repeat(39)}…`],
+    ['CJK that fits', '音'.repeat(40), '音'.repeat(40)],
+    ['emoji', '🎧'.repeat(41), `${'🎧'.repeat(39)}…`],
+    ['a flag', '🇲🇦'.repeat(41), `${'🇲🇦'.repeat(39)}…`],
+    ['combining marks', 'e\u0301'.repeat(80), 'e\u0301'.repeat(80)],
+    ['combining marks cut', 'e\u0301'.repeat(81), `${'e\u0301'.repeat(79)}…`],
+  ])('cut %s at 80 cells', (_, line, cut) => {
+    expect(terminalLine(line)).toBe(cut);
+    expect(terminalCells(cut)).toBeLessThanOrEqual(80);
   });
 
   // Catches a Preview's commands sending the reader to production, or cut short by a long name.

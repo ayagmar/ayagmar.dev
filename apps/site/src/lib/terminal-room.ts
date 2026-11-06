@@ -133,16 +133,36 @@ function halfBlocks(frame: Uint8Array): string[] {
   return lines;
 }
 
+const graphemes = new Intl.Segmenter('en', { granularity: 'grapheme' });
+
+/** East Asian Wide and Fullwidth blocks, emoji, and text made emoji by a variation selector. */
+const wide =
+  /\p{Emoji_Presentation}|\uFE0F|[\u1100-\u115F\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE6F\uFF00-\uFF60\uFFE0-\uFFE6\u{20000}-\u{3FFFD}]/u;
+
+/** How many terminal cells a grapheme takes: combining marks ride on their base. */
+const graphemeCells = (grapheme: string) => (wide.test(grapheme) ? 2 : 1);
+
+/** How many terminal cells `text` takes. */
+export const terminalCells = (text: string) =>
+  [...graphemes.segment(text)].reduce((sum, { segment }) => sum + graphemeCells(segment), 0);
+
 /**
  * One line a terminal can show safely. Track and pull request titles are other people's text:
  * a control character in one would reach the reader's terminal as a command, so none get
- * through, nor the invisible format characters that could reorder the line.
+ * through, nor the invisible format characters that could reorder the line. A longer line than
+ * the picture is cut between graphemes, by cells rather than characters, for titles in CJK.
  */
 export function terminalLine(text: string): string {
-  const characters = [...text.replace(/[\p{Cc}\p{Cf}]/gu, '')];
-  return characters.length <= columns
-    ? characters.join('')
-    : `${characters.slice(0, columns - 1).join('')}…`;
+  const clean = text.replace(/[\p{Cc}\p{Cf}]/gu, '');
+  if (terminalCells(clean) <= columns) return clean;
+  let line = '';
+  let cells = 1;
+  for (const { segment } of graphemes.segment(clean)) {
+    cells += graphemeCells(segment);
+    if (cells > columns) break;
+    line += segment;
+  }
+  return `${line}…`;
 }
 
 /** A listening answer to word, `now` while it still describes this moment. */
