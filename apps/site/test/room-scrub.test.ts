@@ -1,7 +1,7 @@
 import { daysFixtures, historyFixtures } from '@min7/contracts/fixtures';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dateBack, dayFacts, type Lookup, readBlock, type Series } from '../src/lib/room-day.ts';
-import { scrubber } from '../src/lib/room-scrub.ts';
+import { dateAt, scrubber, valueAt } from '../src/lib/room-scrub.ts';
 import type { PastDay } from '../src/lib/room-state.ts';
 
 // The scrub's rules (ADR 0044) over generated sequences: the network is the only thing mocked,
@@ -184,6 +184,32 @@ describe('a failed month', () => {
     scrub.go('2026-10-18');
     await settle();
     expect(listening()).toBe(2);
+  });
+});
+
+describe('the slider across midnight', () => {
+  const anchor = '2026-11-06';
+  const today = '2026-11-07';
+
+  // Catches a step read against the new day: from 5 Nov, Left must reach 4 Nov, and Right the day
+  // that has just become yesterday, not now.
+  it('applies a step on the axis it was made on', () => {
+    const held = valueAt('2026-11-05', anchor);
+    expect(held).toBe(-1);
+    expect(dateAt(held - 1, anchor, today)).toBe('2026-11-04');
+    expect(dateAt(held + 1, anchor, today)).toBe('2026-11-06');
+  });
+
+  // Catches the held date drifting a day when the axis moves.
+  it('keeps the held date when the axis moves', () => {
+    expect(dateAt(valueAt('2026-11-05', today), today, today)).toBe('2026-11-05');
+    expect(valueAt(null, today)).toBe(0);
+  });
+
+  // Catches today offered as a finished day.
+  it('reads today, and anything after it, as now', () => {
+    expect(dateAt(0, today, today)).toBe(null);
+    expect(dateAt(0, anchor, anchor)).toBe(null);
   });
 });
 

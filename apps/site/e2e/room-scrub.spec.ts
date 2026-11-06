@@ -172,6 +172,28 @@ test('survives a failed load of its code', async ({ page }) => {
   await expect(page.locator('.room-scrub-failed')).toBeHidden();
 });
 
+// Catches a step read against a new day before the slider catches up: at midnight, the held date
+// must stay and Left and Right must mean one day from it, with the interval never having fired.
+test('keeps its date and its steps across midnight', async ({ page }) => {
+  await page.clock.install({ time: '2026-10-27T23:00:00Z' });
+  await page.clock.pauseAt('2026-10-27T23:59:50Z');
+  await page.goto('/');
+  await goBack(page, 2);
+  await expect(slider(page)).toHaveAttribute('aria-valuetext', 'Sunday 25 October');
+
+  await page.clock.setSystemTime('2026-10-28T00:00:05Z');
+  await page.keyboard.press('ArrowLeft');
+  await expect(slider(page)).toHaveAttribute('aria-valuetext', 'Saturday 24 October');
+  await expect(slider(page)).toHaveValue('-4');
+
+  await page.clock.setSystemTime('2026-10-29T00:00:05Z');
+  await page.evaluate(() =>
+    window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))
+  );
+  await expect(slider(page)).toHaveAttribute('aria-valuetext', 'Saturday 24 October');
+  await expect(slider(page)).toHaveValue('-5');
+});
+
 // Catches the scrub on a browser whose zone rules still run Morocco at +01: at 23:30 UTC it thinks
 // tomorrow has begun, so today would be offered as a finished day.
 test("offers no past days without Rabat's current rules", async ({ page }) => {

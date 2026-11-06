@@ -5,7 +5,15 @@
  * date it belongs to: there is nothing to cancel, and nothing of a date the reader has left to
  * show.
  */
-import { dayFacts, type Lookup, monthsFor, readBlock, type Series } from './room-day.ts';
+import {
+  dateBack,
+  dayFacts,
+  daysBack,
+  type Lookup,
+  monthsFor,
+  readBlock,
+  type Series,
+} from './room-day.ts';
 import type { PastDay } from './room-state.ts';
 
 /** How long a date must hold before its months are asked for: a drag asks only where it rests. */
@@ -14,6 +22,19 @@ const settleMs = 200;
 const sayMs = 800;
 /** How long a failed month is left alone, so a source that is down is not asked at every date. */
 const retryMs = 60_000;
+
+/**
+ * What the slider's `value` asks for: days back from `anchor`, the today its numbers were set
+ * against, which may have passed. A date that has not ended by `today` is now, null.
+ */
+export function dateAt(value: number, anchor: string, today: string): string | null {
+  const date = dateBack(anchor, -value);
+  return date < today ? date : null;
+}
+
+/** The slider's value for `date`, null being now, on the axis anchored at `today`. */
+export const valueAt = (date: string | null, today: string) =>
+  date === null ? 0 : -daysBack(date, today);
 
 export interface ScrubPorts {
   /** The body `/v1/days/<series>?month=<month>` answers with, undefined if the request failed. */

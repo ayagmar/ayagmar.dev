@@ -10,9 +10,9 @@ import { dayPath } from '../lib/day-words.ts';
 import { ask } from '../lib/live.ts';
 import { toNode } from '../lib/markup.ts';
 import { hotspotWords, type RoomObject, roomObjects } from '../lib/room.ts';
-import { dateBack, dateTitle, dayInstant, daysBack } from '../lib/room-day.ts';
+import { dateTitle, dayInstant, daysBack } from '../lib/room-day.ts';
 import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
-import { scrubber } from '../lib/room-scrub.ts';
+import { dateAt, scrubber, valueAt } from '../lib/room-scrub.ts';
 import {
   changedParts,
   type PastDay,
@@ -39,6 +39,7 @@ export function startScrub(
   const idle = title.textContent;
   const { from, daysSrc } = root.dataset as { from: string; daysSrc: string };
   const today = () => rabatDate(Date.now());
+  let anchor = today();
   let shown: string | null = null;
   let pages = new Set<string>();
 
@@ -117,26 +118,32 @@ export function startScrub(
     },
   });
 
-  /** Keeps the slider's ends and place true as the days pass. */
-  function sync() {
-    const now = today();
-    slider.min = String(-daysBack(from, now));
-    if (shown !== null) slider.value = String(-daysBack(shown, now));
+  /** Moves the axis to today, keeping the date held: a new day must not change what a step means. */
+  function rebase() {
+    anchor = today();
+    slider.min = String(-daysBack(from, anchor));
+    slider.value = String(valueAt(shown, anchor));
   }
 
   function moved() {
-    const days = -Number(slider.value);
-    scrub.go(days === 0 ? null : dateBack(today(), days));
+    scrub.go(dateAt(Number(slider.value), anchor, today()));
+    rebase();
   }
 
   slider.addEventListener('input', moved);
+  // Before the browser applies a key or a press, so the step starts from today's axis.
+  slider.addEventListener('keydown', rebase);
+  slider.addEventListener('pointerdown', rebase);
   back.addEventListener('click', () => {
     slider.value = '0';
     scrub.go(null);
     status.textContent = 'Back to now.';
     slider.focus();
   });
-  setInterval(sync, 60_000);
+  setInterval(rebase, 60_000);
+  addEventListener('focus', rebase);
+  addEventListener('pageshow', rebase);
+  document.addEventListener('visibilitychange', rebase);
 
   // Which dates have a page is the build's to say; without it no day links, and nothing else changes.
   ask('/day/index.json').then((body) => {
@@ -149,5 +156,5 @@ export function startScrub(
   failed.hidden = true;
   // The slider may have moved while this file loaded.
   if (slider.value !== '0') moved();
-  else sync();
+  else rebase();
 }
