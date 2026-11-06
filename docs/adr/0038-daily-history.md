@@ -1,6 +1,6 @@
 # 0038. Daily history
 
-Status: accepted, 2026-11-01. Amended 2026-11-01 before release: shipping days merge per repository and count instead of by one total, 35 days hourly and 400 once a UTC date, a second request after an incomplete answer, each pull's attempt recorded before it runs, days bound to the snapshot write that brought them, and `last=28` cached only until midnight. Amended 2026-11-06: `readHistory` names the months that failed, for the year pages (ADR 0041). Amended 2026-11-06: `listening` and `weather` join the table, with their own merge rules and a bounded backfill; see "Listening and weather". Amends ADR 0009 (a seventh adapter), ADR 0010 (a table, a route, budgets), ADR 0014 (llm-usage days are also kept in history) and ADR 0034 (the shipping strip's data).
+Status: accepted, 2026-11-01. Amended 2026-11-01 before release: shipping days merge per repository and count instead of by one total, 35 days hourly and 400 once a UTC date, a second request after an incomplete answer, each pull's attempt recorded before it runs, days bound to the snapshot write that brought them, and `last=28` cached only until midnight. Amended 2026-11-06: `readHistory` names the months that failed, for the year pages (ADR 0041). Amended 2026-11-06: `listening` and `weather` join the table, with their own merge rules and a bounded backfill; see "Listening and weather". Amends ADR 0009 (a seventh adapter), ADR 0010 (a table, a route, budgets), ADR 0014 (llm-usage days are also kept in history) and ADR 0034 (the shipping strip's data). Amended 2026-11-06: the site reads `listening` and `weather` too, for the room's scrub (ADR 0044).
 
 ## Context
 
@@ -85,7 +85,7 @@ The room will scrub through past days (ADR 0044), and both sources kept only a s
 - Weather: slots merge on their own. A known code beats an unknown one, whatever its time; then live beats archive; then the instant nearest the slot's aim; a tie keeps what is stored. Nothing empties a slot.
 - A stored row this version cannot read is left alone and logged.
 
-**Block freshness.** A block's `fetchedAt` and `stale` come from the source's snapshot as for the other series, so they say how recently the source was collected, not that an old day is complete. `asOf`, and a slot's `at`, say that. `/v1/days/listening` and `/v1/days/weather` have their own frozen schemas (`days-listening.output.json`, `days-weather.output.json`); no earlier frozen file changed. The site reads neither yet: `DaysBlocks` in `apps/site/src/data/reader.ts` lists what it does read.
+**Block freshness.** A block's `fetchedAt` and `stale` come from the source's snapshot as for the other series, so they say how recently the source was collected, not that an old day is complete. `asOf`, and a slot's `at`, say that. `/v1/days/listening` and `/v1/days/weather` have their own frozen schemas (`days-listening.output.json`, `days-weather.output.json`); no earlier frozen file changed. The site reads both for the room's scrub (ADR 0044): `DaysBlocks` in `apps/site/src/data/reader.ts` lists what it reads.
 
 ### Backfill
 

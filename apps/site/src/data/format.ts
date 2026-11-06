@@ -1,11 +1,11 @@
 import type {
   Envelope,
   Project,
-  ShippingActivityDay,
   ShippingActivityDays,
   ShippingEvent,
   ShippingSnapshot,
 } from '@min7/contracts';
+import { shippedCount } from '../lib/day-words.ts';
 import { type HeatLevel, heatLevels, noRecordSentence, noRecordWords } from '../lib/heat.ts';
 import { plural } from '../lib/plural.ts';
 import type { SiteProject } from '../lib/projects.ts';
@@ -99,9 +99,6 @@ const timeLabel = new Intl.DateTimeFormat('en-GB', {
 });
 
 /** What a square counts: pushes, merges and releases. Stars are attention, not shipping. */
-export const shippedCount = (day: Pick<ShippingActivityDay, 'pushes' | 'merges' | 'releases'>) =>
-  day.pushes + day.merges + day.releases;
-
 /** `3 pushes, merges and releases`, what a count of `shippedCount` says. */
 export const shippedWords = (count: number) =>
   plural(count, 'push, merge or release', 'pushes, merges and releases');

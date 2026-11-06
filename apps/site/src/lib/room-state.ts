@@ -6,38 +6,20 @@
  * A moment is one of three kinds. `live` is this instant, seen with a clock: only it can say a
  * record is playing. `built` is the build, whose page must hold for as long as it is served: it
  * has no clock, so no sky or lamp, and its objects carry the time they were observed. `past` is a
- * moment already over: a dated event or scrobble counts only if it came before it, and a daily
- * total for its own date says nothing, as the total may hold the hours after it.
+ * date already over (ADR 0044): the clock draws its sky and the shelf its posts, and everything
+ * else comes from that date's records, which say what the day came to, not what held at the
+ * instant. Those are worded in src/lib/room-day.ts, which home loads only when a reader scrubs.
  */
 import type { ListeningSnapshot, ShippingEvent } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 import { type HeatLevel, heatmap } from './heat.ts';
-import { type NowPlayingLine, nowPlaying, nowPlayingWords } from './listening.ts';
+import type { NowPlayingLine } from './listening.ts';
 import type { Answer } from './live.ts';
 import { plural } from './plural.ts';
-import {
-  isCatHour,
-  isLate,
-  type Moon,
-  moonAt,
-  moonShown,
-  rabatTime,
-  type Sky,
-  skyAt,
-  windowWords,
-} from './sky.ts';
-import { readWeather, type Weather } from './weather.ts';
-import {
-  dateRange,
-  dayMs,
-  dayWords,
-  isoDate,
-  rabatStamp,
-  repoName,
-  tokens,
-  utcDate,
-  utcDay,
-} from './words.ts';
+import { roomClock } from './room-clock.ts';
+import type { Moon, Sky } from './sky.ts';
+import type { Weather } from './weather.ts';
+import { dateRange, dayWords, rabatStamp, repoName, tokens, utcDay } from './words.ts';
 
 /** Where a reading came from: the browser's or Worker's own request, the build, or fixtures. */
 export type Origin = 'live' | 'build' | 'sample';
@@ -80,10 +62,16 @@ export interface RoomInputs {
   weather: unknown;
 }
 
-export interface RoomMoment {
-  kind: 'live' | 'built' | 'past';
-  instant: number;
+/** What a date's records say, from `dayFacts` (src/lib/room-day.ts). */
+export interface PastDay extends Pick<RoomState, 'pins' | 'screen' | 'record'> {
+  weather: Weather | null;
+  /** What the window adds about the weather, known or not; absent while it is being read. */
+  weatherWords: string | undefined;
 }
+
+export type RoomMoment =
+  | { kind: 'live' | 'built'; instant: number }
+  | { kind: 'past'; instant: number; day: PastDay };
 
 interface RoomWindow {
   sky: Sky;
@@ -107,7 +95,7 @@ interface RoomBook {
 }
 
 /** One repository on one UTC day, by the biggest thing that happened there. */
-interface RoomPin {
+export interface RoomPin {
   repo: string;
   date: string;
   kind: 'release' | 'merge' | 'push';
@@ -161,11 +149,9 @@ export const pinKey = (event: ShippingEvent) => `${event.repo} ${utcDay(event.at
 
 const kinds = ['push', 'merge', 'release'];
 
-function pinsAt(reading: RoomInputs['shipping'], { kind, instant }: RoomMoment): RoomState['pins'] {
+function pinsAt(reading: RoomInputs['shipping']): RoomState['pins'] {
   if (reading === null) return { pins: [], latest: null, words: null };
-  const events = reading.data.events.filter(
-    (event) => isShipped(event) && (kind !== 'past' || Date.parse(event.at) <= instant)
-  );
+  const events = reading.data.events.filter(isShipped);
   const byPin = new Map<string, RoomPin>();
   for (const event of events) {
     const type = event.type as RoomPin['kind'];
@@ -183,10 +169,7 @@ function pinsAt(reading: RoomInputs['shipping'], { kind, instant }: RoomMoment):
   const words =
     newest !== undefined
       ? `Shipped to ${repoName(newest.repo)} on ${dayWords(newest.date)}`
-      : // The snapshot holds only the newest events, so an empty past proves nothing.
-        kind === 'past'
-        ? null
-        : `Nothing shipped lately, as of ${dayWords(rabatDate(reading.at))}`;
+      : `Nothing shipped lately, as of ${dayWords(rabatDate(reading.at))}`;
   const latest = events.find(isCode) ?? null;
   return { pins, latest, words };
 }
@@ -208,19 +191,12 @@ function shelfAt(posts: readonly RoomPost[], { instant }: RoomMoment): RoomState
 
 const earlier = (a: string, b: string) => (a < b ? a : b);
 
-function screenAt(
-  reading: RoomInputs['usage'],
-  { kind, instant }: RoomMoment
-): RoomState['screen'] {
+function screenAt(reading: RoomInputs['usage'], { instant }: RoomMoment): RoomState['screen'] {
   if (reading === null) return { cells: [], words: null };
   const observed = rabatDate(reading.at);
-  const today = rabatDate(instant);
-  const end = earlier(observed, today);
-  // A day still running, or one a past moment sits inside, has no total to show.
-  const closed = kind === 'past' ? isoDate(utcDate(today) - dayMs) : end;
-  const days = reading.data.days.filter(({ date }) => date <= closed);
-  const cells = heatmap(days, end, screenWeeks).cells.map(({ date, level }) => ({ date, level }));
-  const last = earlier(closed, end);
+  const last = earlier(observed, rabatDate(instant));
+  const days = reading.data.days.filter(({ date }) => date <= last);
+  const cells = heatmap(days, last, screenWeeks).cells.map(({ date, level }) => ({ date, level }));
   const range = dateRange(`${last.slice(0, 8)}01`, last);
   const { monthTokens } = reading.data;
   // The observation's own day was still running when it was taken.
@@ -236,78 +212,23 @@ function screenAt(
   return { cells, words: `${tokens(total)} tokens${whole ? '' : ' on record'}, ${range}${asOf}` };
 }
 
-function recordAt(
-  reading: RoomInputs['listening'],
-  { kind, instant }: RoomMoment
-): RoomState['record'] {
-  const unknown = { state: 'unknown', line: null, words: null } as const;
-  if (reading === null) return unknown;
-  let { data } = reading;
-  if (kind === 'past') {
-    // The current track is dated when the answer was taken: after this moment, it never played.
-    data = {
-      nowPlaying: reading.at <= instant ? data.nowPlaying : null,
-      recent: data.recent.filter(({ playedAt }) => Date.parse(playedAt) <= instant),
-    };
-    if (data.nowPlaying === null && data.recent.length === 0) return unknown;
-  }
-  const now =
-    kind === 'live' &&
-    reading.origin === 'live' &&
-    reading.currentUntil !== null &&
-    instant <= reading.currentUntil;
-  const line = nowPlaying(data, reading.fetchedAt, now);
-  return { state: line.playing ? 'playing' : 'resting', line, words: nowPlayingWords(line) };
-}
-
-function clockAt(
-  { knowsRabat, weather: body }: RoomInputs,
-  { kind, instant }: RoomMoment
-): Pick<RoomState, 'window' | 'lamp'> {
-  if (kind === 'built') return { window: null, lamp: null };
-  const sky = skyAt(instant);
-  const moon = moonAt(instant);
-  // The weather has no record: a past moment shows a clear window and makes no claim.
-  const weather = (kind === 'live' ? readWeather(body, instant) : undefined) ?? null;
-  return {
-    window: {
-      sky,
-      moon,
-      moonShown: moonShown(sky, moon),
-      weather,
-      label: windowWords(sky, moon, weather?.words),
-    },
-    lamp: {
-      late: knowsRabat && isLate(instant),
-      cat: knowsRabat && isCatHour(instant),
-      time: rabatTime(instant),
-    },
-  };
-}
-
 /** The room at `moment`, from `inputs` alone: the same arguments always give the same state. */
 export function roomState(
   inputs: RoomInputs,
-  moment: RoomMoment & { kind: 'live' | 'past' }
+  moment: Exclude<RoomMoment, { kind: 'built' }> | { kind: 'live'; instant: number }
 ): ClockedRoom;
 export function roomState(inputs: RoomInputs, moment: RoomMoment): RoomState;
 export function roomState(inputs: RoomInputs, moment: RoomMoment): RoomState {
   const { shipping, usage, listening, posts } = inputs;
+  const past = moment.kind === 'past' ? moment.day : null;
   return {
     sample: [shipping, usage, listening].some((reading) => reading?.origin === 'sample'),
-    ...clockAt(inputs, moment),
+    ...roomClock(inputs, moment),
     shelf: shelfAt(posts, moment),
-    pins: pinsAt(shipping, moment),
-    screen: screenAt(usage, moment),
-    record: recordAt(listening, moment),
+    pins: past?.pins ?? pinsAt(shipping),
+    screen: past?.screen ?? screenAt(usage, moment),
   };
 }
-
-/** Which parts of the room differ, for a renderer that redraws only those. */
-export const changedParts = (from: RoomState, to: RoomState) =>
-  (Object.keys(to) as (keyof RoomState)[]).filter(
-    (part) => JSON.stringify(from[part]) !== JSON.stringify(to[part])
-  );
 
 /** What the build hands the browser and the terminal: the inputs its own room was drawn from. */
 export interface RoomSeed {
@@ -318,15 +239,4 @@ export interface RoomSeed {
   inputs: Pick<RoomInputs, 'posts' | 'shipping' | 'usage' | 'listening'>;
 }
 
-/** The whole set `roomState` needs, from a seed and what only the reader knows. */
-export const seededInputs = (seed: RoomSeed, knowsRabat: boolean): RoomInputs => ({
-  ...seed.inputs,
-  knowsRabat,
-  weather: undefined,
-});
-
-/** `answer` as a reading from this renderer's own request. */
-export const liveReading = <Data>(
-  { data, fetchedAt, at }: Answer<Data>,
-  currentUntil: number | null
-): Reading<Data> => ({ data, fetchedAt, at, origin: 'live', currentUntil });
+export { changedParts, liveReading, seededInputs } from './room-clock.ts';

@@ -72,7 +72,7 @@ test('without JavaScript the page follows the system theme and hides the switch'
   // The objects are the build's, the words on them dated, and the record rests.
   await expect(page.locator('.room-pins li').first()).toBeVisible();
   await expect(page.locator('.room-screen i[data-l="4"]').first()).toBeVisible();
-  await expect(page.locator('.scene')).not.toHaveAttribute('data-record', /.*/);
+  await expect(page.locator('.scene')).toHaveAttribute('data-record', 'resting');
   await expect(page.locator('[data-room="frame"]')).toHaveAccessibleName(
     /^Framed screen: LLM usage\. .+ tokens, .+, as of .+\.$/
   );

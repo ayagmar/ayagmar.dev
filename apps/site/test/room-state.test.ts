@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { readListening } from '../src/lib/listening.ts';
 import { follow } from '../src/lib/live.ts';
 import { hotspotWords, roomObjects } from '../src/lib/room.ts';
+import { dayFacts } from '../src/lib/room-day.ts';
 import { roomSeed } from '../src/lib/room-seed.ts';
 import {
   changedParts,
@@ -46,7 +47,12 @@ const inputs = (over: Partial<RoomInputs> = {}): RoomInputs => ({
 });
 
 const live = (instant = noon): RoomMoment & { kind: 'live' } => ({ kind: 'live', instant });
-const past = (instant: number): RoomMoment & { kind: 'past' } => ({ kind: 'past', instant });
+/** A past moment whose records have not been read yet. */
+const past = (instant: number): RoomMoment & { kind: 'past' } => ({
+  kind: 'past',
+  instant,
+  day: dayFacts(rabatDate(instant), () => 'waiting'),
+});
 
 const recent = (playedAt: string, name = 'Old song') => ({ ...track, track: name, playedAt });
 const merge = (repo: string, at: string, number = 1): ShippingEvent => ({
@@ -135,34 +141,9 @@ describe('the record', () => {
     ['not current', reading(snapshot, noon, 'live', null), live(noon), 'resting'],
     ['the build', reading(snapshot, noon, 'build', noon + limit), live(noon), 'resting'],
     ['fixtures', reading(snapshot, noon, 'sample', noon + limit), live(noon), 'resting'],
-    ['past', reading(snapshot, noon, 'live', noon + limit), past(noon + 1), 'resting'],
+    ['past', reading(snapshot, noon, 'live', noon + limit), past(noon + 1), 'unknown'],
   ] as const)('%s', (_, listening, moment, state) => {
     expect(roomState(inputs({ listening }), moment).record.state).toBe(state);
-  });
-
-  // Catches a past moment showing a track from after it, as `nowPlaying` prefers the current one
-  // and dates it when the answer was taken.
-  it('never reaches past its moment', () => {
-    const listening = reading(
-      {
-        nowPlaying: track,
-        recent: [recent('2026-10-26T11:30:00Z', 'Newer'), recent('2026-10-26T09:00:00Z', 'Older')],
-      },
-      noon,
-      'live',
-      noon + limit
-    );
-    const at = past(Date.parse('2026-10-26T10:00:00Z'));
-    expect(roomState(inputs({ listening }), at).record).toMatchObject({
-      state: 'resting',
-      words: 'Last played Older by Nick Drake · 26 Oct, 09:00',
-    });
-    const before = past(Date.parse('2026-10-26T08:00:00Z'));
-    expect(roomState(inputs({ listening }), before).record).toEqual({
-      state: 'unknown',
-      line: null,
-      words: null,
-    });
   });
 
   // Catches a hotspot making a present claim from an old empty answer the panel dates: the build's,
@@ -325,11 +306,8 @@ describe('the corkboard', () => {
     expect(words).toBe('Shipped to a on 26 Oct');
   });
 
-  // Catches a past moment showing what shipped after it, or calling an empty list a quiet time:
-  // the snapshot holds only the newest events.
+  // Catches a live room calling an unread feed a quiet time.
   it('tells unknown from empty', () => {
-    const shipping = reading({ events: [merge('ayagmar/a', '2026-10-26T10:00:00Z')] });
-    expect(roomState(inputs({ shipping }), past(noon - 3 * 3_600_000)).pins.words).toBe(null);
     expect(roomState(inputs(), live()).pins.words).toBe(null);
     expect(roomState(inputs({ shipping: reading({ events: [] }) }), live()).pins.words).toBe(
       'Nothing shipped lately, as of 26 Oct'
@@ -396,10 +374,10 @@ describe('the framed screen', () => {
     ['every day zero', october(25, 0), '0 tokens, 1–25 Oct'],
     ['nothing held', [['2026-09-25', 5]], null],
   ] as [string, [string, number][], string | null][])(
-    'a past moment words %s',
+    'a clock behind the source words %s',
     (_, rows, words) => {
       const usageInput = usage(rows, Date.parse('2026-10-26T18:00:00Z'), 61_250_000);
-      const at = past(Date.parse('2026-10-26T09:00:00Z'));
+      const at = live(Date.parse('2026-10-25T09:00:00Z'));
       expect(roomState(inputs({ usage: usageInput }), at).screen.words).toBe(words);
     }
   );
@@ -409,23 +387,6 @@ describe('the framed screen', () => {
     expect(
       roomState(inputs({ usage: usage([['2026-10-26', 300_000]]) }), live()).screen.words
     ).toBe('300.0K tokens on record, 1–26 Oct, as of 26 Oct, 12:00');
-  });
-
-  // Catches afternoon tokens in a morning: a snapshot at 18:00 holds all of its day, so a past
-  // moment that day may show no total for it, and the day before is closed and needs no as-of.
-  it('makes no claim about the day a past moment sits inside', () => {
-    const rows: [string, number][] = [
-      ['2026-10-25', 2_000_000],
-      ['2026-10-26', 7_000_000],
-    ];
-    const evening = Date.parse('2026-10-26T18:00:00Z');
-    const { cells, words } = roomState(
-      inputs({ usage: usage(rows, evening) }),
-      past(Date.parse('2026-10-26T09:00:00Z'))
-    ).screen;
-    expect(cells.at(-1)).toEqual({ date: '2026-10-26', level: null });
-    expect(cells.at(-2)?.level).toBe(1);
-    expect(words).toBe('2.0M tokens on record, 1–25 Oct');
   });
 
   // Catches a Rabat day taken for a UTC one: before 20 September Morocco ran an hour ahead.
