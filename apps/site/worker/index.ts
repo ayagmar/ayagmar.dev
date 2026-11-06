@@ -1,7 +1,10 @@
 // Runs only for the pages in assets.run_worker_first (ADR 0040): a request that prefers Markdown
 // gets the page's `.md` copy or else its `.txt` one, a terminal client its `.txt` copy, and
 // everything else, or any page without that copy, the static page. The copies are assets, so
-// every answer carries the headers from dist/_headers.
+// every answer carries the headers from dist/_headers. /room is the exception: a terminal asked
+// for colour, which is rendered per request (ADR 0045), and everyone else goes to the home page.
+
+import { terminalRoom } from './room.ts';
 
 const terminalAgent = /^(curl|wget|httpie|xh)\//i;
 
@@ -36,10 +39,18 @@ function prefersMarkdown(accept: string | null) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const terminal = terminalAgent.test(request.headers.get('user-agent') ?? '');
     const markdown = prefersMarkdown(request.headers.get('accept'));
+    if (url.pathname === '/room') {
+      const response =
+        terminal && !markdown
+          ? await terminalRoom(request, env.ASSETS, (work) => ctx.waitUntil(work))
+          : new Response(null, { status: 307, headers: { Location: '/' } });
+      response.headers.append('Vary', 'Accept, User-Agent');
+      return response;
+    }
     const copies = [...(markdown ? ['.md'] : []), ...(markdown || terminal ? ['.txt'] : [])];
     const stem = url.pathname === '/' ? '/index' : url.pathname;
     let response: Response | undefined;

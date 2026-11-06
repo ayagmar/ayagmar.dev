@@ -1,6 +1,6 @@
 # 0027. Room details and per-post art
 
-Status: accepted, 2026-10-26. Amended 2026-11-06: the room follows the sky in either theme, and the cat has one layer. Amended 2026-11-01: a post's art also draws its link-preview image (see Link previews below). Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco. Amended 2026-10-26: the now-playing island became a page script shared with /stats (ADR 0015); the record's rules below hold, and a hung request now ends after a 5 s deadline.
+Status: accepted, 2026-10-26. Amended 2026-11-06: the room also prints in truecolor at `/room` (ADR 0045), follows the sky in either theme, and the cat has one layer. Amended 2026-11-01: a post's art also draws its link-preview image (see Link previews below). Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco. Amended 2026-10-26: the now-playing island became a page script shared with /stats (ADR 0015); the record's rules below hold, and a hung request now ends after a 5 s deadline.
 
 ## Context
 
@@ -138,7 +138,7 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 
 - The home page runs a 1.5 KB module script; every other page is unchanged apart from 0.6 KB more theme script, the keys list with its switch, the Keys button and the comment.
 - A device clock that is wrong shows a wrong sky, moon and lamp (accepted above).
-- Moving the window in `scene.py` means moving the moon's centre (122, 25) in `room.ts`.
+- Moving the window in `scene.py` means moving `moonDisc` in `sky.ts`.
 - Changing `art.ts` changes every post's art; the golden files make that a deliberate `vitest run -u`.
 - Visitors with tzdata older than 2026c see the theme's lamp and no note until their browser updates.
 - If Morocco changes its clocks again, `knowsRabatTime()` in `sky.ts` must follow the new rules, or every browser loses the lamp and the note.

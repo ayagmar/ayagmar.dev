@@ -220,10 +220,10 @@ describe('list pages', () => {
 
   // Catches the text copy of home keeping an empty band, or staying empty once there are posts.
   it('leave a section out of index.txt until it has content', () => {
-    const empty = renderPlainText([], [], []);
+    const empty = renderPlainText([], [], [], 'https://ayagmar.dev');
     expect(empty).not.toMatch(/^(Writing|TIL)$/m);
     expect(empty).not.toContain('Nothing published');
-    const full = renderPlainText([post('p')], [note('n', 'Body.')], []);
+    const full = renderPlainText([post('p')], [note('n', 'Body.')], [], 'https://ayagmar.dev');
     expect(full).toMatch(/^Writing\n {2}2026-10-24 {2}A post$/m);
     expect(full).toMatch(/^TIL\n {2}2026-10-25 {2}A note$/m);
   });

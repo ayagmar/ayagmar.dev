@@ -40,7 +40,7 @@ export function capped(
 }
 
 // The time, then the event in one element, so the two make the log's columns (base.css).
-const shippingItem = (event: ShippingEvent) =>
+export const shippingItem = (event: ShippingEvent) =>
   el(
     'li',
     {},

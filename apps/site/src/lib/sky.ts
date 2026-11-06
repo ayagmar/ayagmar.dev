@@ -116,20 +116,42 @@ export function moonAt(time: number): Moon {
   };
 }
 
+/** The moon's disc in the scene's 480x160 pixels, over the window (scripts/scene.py). */
+export const moonDisc = { x: 122, y: 25, r: 6 } as const;
+
+/** The moon's colour in the scene's palette. */
+export const moonColour = '#e8e8fa';
+
+/** The moon is in the window at dusk and at night; one this thin would be a pixel or none. */
+export const moonShown = (sky: Sky, moon: Moon) => sky !== 'day' && moon.fraction >= 0.03;
+
+/** The sentence the window says, `weather` being the words of `readWeather` if there are any. */
+export const windowWords = (sky: Sky, moon: Moon, weather?: string) =>
+  `Through the window: ${sky === 'day' ? 'daylight over Rabat' : `${sky} over Rabat, a ${moon.name}`}${weather ? `, ${weather}` : ''}.`;
+
 /**
- * The lit part of a pixel moon of radius `r` centred on (`x`, `y`), as an SVG path of unit
- * squares, run by run. Seen from the northern hemisphere: a waxing moon is lit on the right.
+ * Calls `run` for each row of the lit part of the pixel moon, with where it starts in the scene's
+ * pixels and how long it is. Seen from the northern hemisphere: a waxing moon is lit on the right.
+ * A callback rather than a list keeps the room script inside its allowance (ADR 0017).
  */
-export function moonPath(moon: Moon, x: number, y: number, r: number): string {
-  let path = '';
+export function moonRuns(moon: Moon, run: (x: number, y: number, width: number) => void): void {
+  const { x, y, r } = moonDisc;
   for (let row = -r; row < r; row++) {
     const half = Math.sqrt(r * r - (row + 0.5) ** 2);
     const edge = (1 - 2 * moon.fraction) * half;
     const [from, to] = moon.waxing ? [edge, half] : [-half, -edge];
     const start = Math.ceil(from - 0.5);
     const end = Math.floor(to - 0.5);
-    if (end >= start) path += `M${x + start} ${y + row}h${end - start + 1}v1h${start - end - 1}z`;
+    if (end >= start) run(x + start, y + row, end - start + 1);
   }
+}
+
+/** The lit part of the pixel moon as an SVG path of unit squares. */
+export function moonPath(moon: Moon): string {
+  let path = '';
+  moonRuns(moon, (x, y, width) => {
+    path += `M${x} ${y}h${width}v1h${-width}z`;
+  });
   return path;
 }
 
