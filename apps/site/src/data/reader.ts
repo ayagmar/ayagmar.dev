@@ -56,6 +56,16 @@ interface DaysBlocks {
 /** A day of `series`' history, as `/v1/days/<series>` serves it. */
 export type DayOf<Series extends DailySource> = DaysBlocks[Series]['days'][number];
 
+/** A series' daily history as far as it could be read. */
+export interface SeriesHistory<Day> {
+  /** The recorded days of the months that loaded, oldest first. */
+  days: Day[];
+  /** The months, `YYYY-MM`, that did not load: unknown, not empty. */
+  failed: string[];
+  /** The newest `fetchedAt` among the blocks, null when none had one. */
+  fetchedAt: string | null;
+}
+
 /** Every month `/v1/days` serves for `series` at `now`: from the first to the current one there. */
 function historyMonths(series: DailySource, now: Date): string[] {
   const current = (
@@ -201,7 +211,9 @@ export function createReader(options: ReaderOptions) {
 
   /** The `?month=` block of `series` from the fixtures: their days in that month. */
   async function monthFromFixtures(series: DailySource, month: string) {
-    const { fixturesCapturedAt, daysFixtures } = await import('@min7/contracts/fixtures');
+    const { fixturesCapturedAt, daysFixtures, historyFixtures } = await import(
+      '@min7/contracts/fixtures'
+    );
     const block = daysFixtures[series].ok;
     const [year = 0, index = 0] = month.split('-').map(Number);
     return daysSchemas[series].parse({
@@ -213,42 +225,48 @@ export function createReader(options: ReaderOptions) {
         zone: block.zone,
         from: `${month}-01`,
         to: new Date(Date.UTC(year, index, 0)).toISOString().slice(0, 10),
-        days: block.days.filter((day) => day.date.startsWith(`${month}-`)),
+        days: [...historyFixtures[series].ok.days, ...block.days].filter((day) =>
+          day.date.startsWith(`${month}-`)
+        ),
       },
     }) as Envelope<unknown>;
   }
 
-  const histories = new Map<DailySource, Promise<{ days: unknown[] } | null>>();
+  const histories = new Map<DailySource, Promise<SeriesHistory<unknown>>>();
 
   /**
-   * All of `series`' daily history (ADR 0038), for the day pages and receipts: one
+   * All of `series`' daily history (ADR 0038), for the day and year pages and the receipts: one
    * `?month=YYYY-MM` block for each month signals serves, read once per build, the days oldest
-   * first. Null unless every block came back with data: a month that failed to load would make
-   * every count over it look smaller than it was.
+   * first. A month that failed to load is named in `failed`, never read as a month without days:
+   * every count over it would look smaller than it was.
    */
   async function readHistory<Series extends DailySource>(
     series: Series
-  ): Promise<{ days: DayOf<Series>[] } | null> {
+  ): Promise<SeriesHistory<DayOf<Series>>> {
     let pending = histories.get(series);
     if (pending === undefined) {
+      const months = historyMonths(series, now());
       pending = Promise.all(
-        historyMonths(series, now()).map((month) =>
+        months.map((month) =>
           mode === 'fixtures'
             ? monthFromFixtures(series, month)
             : fromApi(series, `${apiBase}/v1/days/${series}?month=${month}`, daysSchemas[series])
         )
       ).then((blocks) => {
-        const days: unknown[] = [];
-        for (const { data } of blocks) {
-          if (data === null) return null;
-          days.push(...(data as { days: unknown[] }).days);
+        const history: SeriesHistory<unknown> = { days: [], failed: [], fetchedAt: null };
+        for (const [index, { data, fetchedAt }] of blocks.entries()) {
+          if (data === null) history.failed.push(months[index] as string);
+          else history.days.push(...(data as { days: unknown[] }).days);
+          if (fetchedAt !== null && fetchedAt > (history.fetchedAt ?? '')) {
+            history.fetchedAt = fetchedAt;
+          }
         }
-        return { days };
+        return history;
       });
       histories.set(series, pending);
     }
     // Each block was read with `series`' own schema.
-    return (await pending) as { days: DayOf<Series>[] } | null;
+    return (await pending) as SeriesHistory<DayOf<Series>>;
   }
 
   return { read, readDays, readHistory };

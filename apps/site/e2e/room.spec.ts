@@ -89,13 +89,13 @@ test('home loads one scene, one window and two fonts', async ({ page }) => {
       .filter((name) => name !== undefined)
       .sort()
   );
-  // Which window depends on the time in Rabat; there is exactly one.
-  expect(assets.filter((name) => !name.startsWith('window-'))).toEqual([
-    'mono',
-    'room-day',
-    'serif-roman',
-  ]);
+  // Which window depends on the time in Rabat; there is exactly one. So does the cat: it loads
+  // from 02:00 to 05:00 there, and only in the page's theme. A fixed clock is no way out, since
+  // Playwright's clock leaves `performance` without its entries.
+  const timed = /^(?:window|cat)-/;
+  expect(assets.filter((name) => !timed.test(name))).toEqual(['mono', 'room-day', 'serif-roman']);
   expect(assets.filter((name) => name.startsWith('window-'))).toHaveLength(1);
+  expect(assets.filter((name) => name === 'cat-night')).toEqual([]);
 });
 
 const roomLinks = (page: Page) =>

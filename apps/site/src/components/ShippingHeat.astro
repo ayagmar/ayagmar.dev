@@ -1,6 +1,6 @@
 ---
-import type { ShippingStrip } from '../data/format.ts';
-import { dayPath } from '../lib/days.ts';
+import { type ShippingStrip, stripWords } from '../data/format.ts';
+import HeatDay from './HeatDay.astro';
 
 interface Props {
   /** From `shippingStrip` (src/data/format.ts): drawn once, with the page (ADR 0038). */
@@ -8,38 +8,16 @@ interface Props {
 }
 
 const { strip } = Astro.props;
-const range = strip.from === strip.to ? strip.from : `${strip.from} to ${strip.to}`;
-const gaps = strip.gaps ? ' Outlined days have no record.' : '';
+const words = stripWords(strip);
 ---
 
 <figure class="heat ship-heat">
-  {/* A list of the days, oldest first; a day with a page is a link to it. */}
-  <ol
-    class="heat-cells"
-    aria-label={`Shipping activity from ${range}: ${strip.busy} ${strip.busy === 1 ? 'day' : 'days'} with something shipped.${gaps} Counted up to ${strip.countedAt}, drawn when this page was built.`}
-  >
-    {strip.cells.map((cell) => {
-      const square = <i data-l={cell.level ?? 'none'}></i>;
-      const label = <span class="sr-only">{cell.label}</span>;
-      return (
-        <li>
-          {cell.page ? (
-            <a href={dayPath(cell.date)}>
-              {square}
-              {label}
-            </a>
-          ) : (
-            <>
-              {square}
-              {label}
-            </>
-          )}
-        </li>
-      );
-    })}
+  {/* A list of the days, oldest first. */}
+  <ol class="heat-cells" aria-label={words.label}>
+    {strip.cells.map((cell) => <HeatDay cell={cell} />)}
   </ol>
   <figcaption class="heat-cap">
-    <span>One square a day, {range}{strip.gaps ? '; outlined days have no record' : ''}</span>
-    <span>Counted up to {strip.countedAt}</span>
+    <span>{words.squares}</span>
+    <span>{words.counted}</span>
   </figcaption>
 </figure>

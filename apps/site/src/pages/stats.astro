@@ -18,12 +18,14 @@ import { typingWords } from '../lib/typing.ts';
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 // Drawn once, with the page (ADR 0038); the live script redraws only the list under it.
+const { dates, years } = await getDays();
 const strip = shippingStrip(
   await signals.readDays('shipping-activity'),
   shipping,
   new Date(),
-  (await getDays()).dates
+  dates
 );
+const latestYear = years.at(-1);
 const projects = await signals.read('projects');
 const typing = await signals.read('monkeytype');
 const llmUsage = await signals.read('llm-usage');
@@ -129,6 +131,11 @@ const featured = featuredProjects.map((project) => project.repo);
         <h2 id="shipping">Shipping</h2>
         {/* Built once: the live script redraws only the list under it (ADR 0034). */}
         {strip !== null && <ShippingHeat strip={strip} />}
+        {latestYear !== undefined && (
+          <p>
+            <a href={latestYear.path}>All of {latestYear.year}</a>
+          </p>
+        )}
         <div class="shipping-body">
           {shipping.data === null ? (
             <p>{words.noShipping}</p>

@@ -5,6 +5,7 @@ import { repoName } from '../../data/format.ts';
 import Base from '../../layouts/Base.astro';
 import { dayZones } from '../../lib/days.ts';
 import { getDays } from '../../lib/posts.ts';
+import { yearPath } from '../../lib/years.ts';
 
 // A page per date with a recorded day or something published (src/lib/days.ts). They are thin,
 // so they stay out of search and the sitemap (docs/seo.md).
@@ -15,6 +16,7 @@ export const getStaticPaths = (async () => {
 
 const { day } = Astro.props;
 const { shipping, usage } = day;
+const year = day.date.slice(0, 4);
 ---
 
 <Base title={day.title} description={day.description} noindex>
@@ -76,6 +78,8 @@ const { shipping, usage } = day;
     </section>
 
     <Sample />
+
+    <p><a href={yearPath(year)}>All of {year}</a></p>
 
     <nav class="day-nav" aria-label="Other days">
       {day.previous !== null && (

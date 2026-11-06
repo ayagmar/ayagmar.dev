@@ -1,0 +1,280 @@
+---
+import type { GetStaticPaths } from 'astro';
+import HeatDay from '../components/HeatDay.astro';
+import Sample from '../components/Sample.astro';
+import YearFacts from '../components/YearFacts.astro';
+import { stripWords } from '../data/format.ts';
+import Base from '../layouts/Base.astro';
+import { dayZones } from '../lib/days.ts';
+import { getDays } from '../lib/posts.ts';
+
+// A page per calendar year with history (src/lib/years.ts). A year that only says it could not
+// be read stays out of search and the sitemap (docs/seo.md, ADR 0041).
+export const getStaticPaths = (async () => {
+  const { years } = await getDays();
+  return years.map((page) => ({ params: { year: page.year }, props: { page } }));
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const { shipping, usage, year } = page;
+const words = shipping.empty === null ? stripWords(shipping.strip) : null;
+---
+
+<Base title={year} description={page.description} noindex={!page.hasContent}>
+  <article class="column day year">
+    <h1>{year}</h1>
+    <p class="caption">
+      What shipped, how much the coding agents ran, and what was published{page.current
+        ? ' so far'
+        : ''}.
+    </p>
+
+    <section aria-labelledby="year-shipped">
+      <h2 id="year-shipped">Shipped</h2>
+      <p class="day-zone">{dayZones.shipping}</p>
+      {shipping.empty !== null ? (
+        <p>{shipping.empty}</p>
+      ) : (
+        <>
+          <figure class="heat year-heat" aria-label={words?.label}>
+            <div class="year-months">
+              {shipping.months.map((month) => (
+                <div class="year-month">
+                  <h3 id={`m-${month.month}`}>{month.name}</h3>
+                  {month.cells === null ? (
+                    <p class="year-unknown">Could not be read.</p>
+                  ) : (
+                    <ol class="heat-cells" aria-labelledby={`m-${month.month}`}>
+                      {month.cells.map((cell, index) => (
+                        <HeatDay cell={cell} column={index === 0 ? month.column : undefined} />
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              ))}
+            </div>
+            <figcaption class="heat-cap">
+              <span>{words?.squares}; a row is a week, Monday first</span>
+              <span>{words?.counted}</span>
+            </figcaption>
+          </figure>
+          <YearFacts facts={shipping.facts} />
+          {shipping.notes.map((note) => (
+            <p class="caption">{note}</p>
+          ))}
+        </>
+      )}
+    </section>
+
+    <section aria-labelledby="year-agents">
+      <h2 id="year-agents">Agent usage</h2>
+      <p class="day-zone">{dayZones.usage}</p>
+      {usage.empty !== null ? (
+        <p>{usage.empty}</p>
+      ) : (
+        <>
+          <table class="year-usage">
+            <thead>
+              <tr>
+                <th scope="col">Month</th>
+                <th scope="col">Tokens</th>
+                <th scope="col">Agent time, estimated</th>
+                <th scope="col">Days used</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usage.rows.map((row) => (
+                <tr>
+                  <th scope="row">{row.name}</th>
+                  {row.state === 'recorded' ? (
+                    <>
+                      <td>{row.tokens}</td>
+                      <td>{row.time ?? 'Not known'}</td>
+                      <td>{row.days}</td>
+                    </>
+                  ) : (
+                    <td class="year-none" colspan="3">
+                      {row.state === 'unknown' ? 'Could not be read' : 'No record'}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+            {usage.total !== null && (
+              <tfoot>
+                <tr>
+                  <th scope="row">{usage.total.name}</th>
+                  <td>{usage.total.tokens}</td>
+                  <td>{usage.total.time ?? 'Not known'}</td>
+                  <td>{usage.total.days}</td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+          <YearFacts facts={usage.facts} />
+          {usage.notes.map((note) => (
+            <p class="caption">{note}</p>
+          ))}
+        </>
+      )}
+    </section>
+
+    <section aria-labelledby="year-published">
+      <h2 id="year-published">Published</h2>
+      {page.published.length === 0 ? (
+        <p>Nothing published.</p>
+      ) : (
+        <ul class="log">
+          {page.published.map((entry) => (
+            <li>
+              <time datetime={entry.date}>{entry.date}</time>
+              <span>
+                {entry.kind}: <a href={entry.path}>{entry.title}</a>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <Sample />
+
+    <nav class="day-nav" aria-label="Other years">
+      {page.previous !== null && (
+        <a href={page.previous.path} rel="prev">
+          ← {page.previous.title}
+        </a>
+      )}
+      {page.next !== null && (
+        <a href={page.next.path} rel="next">
+          {page.next.title} →
+        </a>
+      )}
+    </nav>
+  </article>
+</Base>
+
+<style is:global>
+/* Twelve small months, not one 53-week grid: a square that is a link needs 24px around it (WCAG
+   2.5.8), which 53 columns never have in the reading column, and a month reflows whole, three
+   across on a wide screen and one under the other on a phone. */
+.year-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: 1.25rem 1.5rem;
+}
+
+.year-month h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.year-heat .heat-cells {
+  grid-template-columns: repeat(7, 1.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.year-heat a,
+.year-heat i {
+  display: block;
+}
+
+.year-heat li[data-column="2"] {
+  grid-column-start: 2;
+}
+
+.year-heat li[data-column="3"] {
+  grid-column-start: 3;
+}
+
+.year-heat li[data-column="4"] {
+  grid-column-start: 4;
+}
+
+.year-heat li[data-column="5"] {
+  grid-column-start: 5;
+}
+
+.year-heat li[data-column="6"] {
+  grid-column-start: 6;
+}
+
+.year-heat li[data-column="7"] {
+  grid-column-start: 7;
+}
+
+.year-unknown,
+.year-none {
+  color: var(--fg-2);
+  font-size: 0.875rem;
+}
+
+.year-facts {
+  margin: 1.25rem 0 0;
+}
+
+.year-facts div {
+  display: grid;
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  gap: 0 1rem;
+  padding-block: 0.45rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.year-facts dt {
+  color: var(--fg-2);
+}
+
+.year-facts dd {
+  margin: 0;
+  font: 400 0.875rem / 1.6 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.year-usage {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.year-usage th,
+.year-usage td {
+  padding: 0.35rem 0.5rem 0.35rem 0;
+  border-bottom: 1px solid var(--rule);
+  text-align: start;
+  vertical-align: baseline;
+}
+
+.year-usage thead th {
+  color: var(--fg-2);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.year-usage tbody th,
+.year-usage tfoot th {
+  font-weight: 400;
+}
+
+.year-usage td {
+  font: 400 0.875rem / 1.5 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.year-usage td.year-none {
+  font-family: inherit;
+}
+
+.year-usage tfoot th,
+.year-usage tfoot td {
+  font-weight: 600;
+}
+
+@media (max-width: 29.99rem) {
+  .year-facts div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+</style>

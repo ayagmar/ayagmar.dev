@@ -1,0 +1,24 @@
+---
+import type { Fact } from '../lib/years.ts';
+
+interface Props {
+  facts: Fact[];
+}
+
+const { facts } = Astro.props;
+---
+
+{facts.length > 0 && (
+  <dl class="year-facts">
+    {facts.map((fact) => (
+      <div>
+        <dt>{fact.label}</dt>
+        <dd>
+          {fact.value.map((part) =>
+            part.path === null ? part.text : <a href={part.path}>{part.text}</a>
+          )}
+        </dd>
+      </div>
+    ))}
+  </dl>
+)}

@@ -10,7 +10,7 @@ import {
   type ProjectSlug,
   type ShippingActivityDay,
 } from '@min7/contracts';
-import { count, repoName } from '../data/format.ts';
+import { count, repoName, shippedCount } from '../data/format.ts';
 import { hours, tokens } from './llm-usage-panel.ts';
 import { projectPath } from './projects.ts';
 
@@ -22,6 +22,10 @@ export interface History {
   usage: readonly LlmUsageDay[] | null;
 }
 
+/** A series as `History` holds it: one failed month makes all of it unknown to a count. */
+export const wholeSeries = <Day>(series: { days: readonly Day[]; failed: readonly string[] }) =>
+  series.failed.length > 0 ? null : series.days;
+
 /** A post or note, as a day page lists it. */
 export interface Published {
   /** Its `date`, `YYYY-MM-DD`. */
@@ -31,11 +35,14 @@ export interface Published {
   kind: 'Post' | 'Note';
 }
 
-type Counts = Pick<ShippingActivityDay, 'pushes' | 'commits' | 'merges' | 'releases' | 'stars'>;
+export type Counts = Pick<
+  ShippingActivityDay,
+  'pushes' | 'commits' | 'merges' | 'releases' | 'stars'
+>;
 
 export const dayPath = (date: string) => `/day/${date}`;
 
-const plural = (value: number, one: string, many: string) =>
+export const plural = (value: number, one: string, many: string) =>
   `${count(value)} ${value === 1 ? one : many}`;
 
 const at = (date: string) => Date.parse(`${date}T00:00:00Z`);
@@ -53,10 +60,10 @@ const shortDate = new Intl.DateTimeFormat('en-GB', {
 });
 
 /** `12 Oct 2026`. */
-const short = (date: string) => shortDate.format(at(date));
+export const short = (date: string) => shortDate.format(at(date));
 
 /** `12–26 Oct 2026`, `28 Sept–4 Oct 2026`, `28 Dec 2026–3 Jan 2027`, or `12 Oct 2026`. */
-function range(from: string, to: string): string {
+export function range(from: string, to: string): string {
   if (from === to) return short(from);
   if (from.slice(0, 4) !== to.slice(0, 4)) return `${short(from)}–${short(to)}`;
   const start =
@@ -68,7 +75,7 @@ function range(from: string, to: string): string {
 
 /** What shipped, `2 merges · 5 commits in 1 push · 1 release`; empty for nothing. Stars are
  * attention, not shipping, as on the strip. */
-function shipped({ merges, commits, pushes, releases }: Counts): string {
+export function shipped({ merges, commits, pushes, releases }: Counts): string {
   return [
     merges > 0 && plural(merges, 'merge', 'merges'),
     pushes > 0 && `${plural(commits, 'commit', 'commits')} in ${plural(pushes, 'push', 'pushes')}`,
@@ -78,10 +85,7 @@ function shipped({ merges, commits, pushes, releases }: Counts): string {
     .join(' · ');
 }
 
-/** Pushes, merges and releases: what the strip counts as shipping (stars are attention). */
-const shipping = (day: Counts) => day.pushes + day.merges + day.releases;
-
-const repoHref = (repo: string) => {
+export const repoHref = (repo: string) => {
   const project = featuredProjects.find((entry) => entry.repo === repo);
   return project === undefined ? `https://github.com/${repo}` : projectPath(project.slug);
 };
@@ -125,8 +129,12 @@ export const dayZones = {
   usage: 'Counted over the day in Rabat (Africa/Casablanca).',
 } as const;
 
+/** Said when counts include repositories they do not name. */
+export const unnamedRepos = 'Some of it was in repositories not named here.';
+
 /** Said in place of a section whose series could not be read whole at build time. */
-const unread = (what: string) => `${what} history could not be read when this page was built.`;
+export const unread = (what: string) =>
+  `${what} history could not be read when this page was built.`;
 
 function shippingSection(day: ShippingActivityDay | undefined, loaded: boolean): ShippingSection {
   if (!loaded) return { empty: unread('Shipping') };
@@ -141,7 +149,7 @@ function shippingSection(day: ShippingActivityDay | undefined, loaded: boolean):
     empty: null,
     total,
     repos,
-    unnamed: day.reposComplete ? null : 'Some of it was in repositories not named here.',
+    unnamed: day.reposComplete ? null : unnamedRepos,
   };
 }
 
@@ -247,7 +255,7 @@ export function postReceipt(
       for (const entry of counted) {
         merges += entry.merges;
         commits += entry.commits;
-        if (shipping(entry) > 0) active.add(day.date);
+        if (shippedCount(entry) > 0) active.add(day.date);
       }
     }
     parts.push(plural(merges, 'PR merged', 'PRs merged'), plural(commits, 'commit', 'commits'));
