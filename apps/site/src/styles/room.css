@@ -305,6 +305,9 @@
 .hotspot {
   display: none;
   position: absolute;
+  /* WCAG 2.2 target size, in a window a classic scrollbar makes narrower. */
+  min-width: 24px;
+  min-height: 24px;
   border: 2px dashed transparent;
   text-decoration: none;
 }

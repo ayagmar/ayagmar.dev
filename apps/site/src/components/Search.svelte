@@ -89,7 +89,11 @@ const href = (url: string) => url.replace(/\.html$/, '');
     Search <kbd>/</kbd><kbd>Ctrl K</kbd>
   </button>
 {:else}
-  <a href="/writing">Browse writing</a>
+  <!-- With scripts on, base.css shows only the second span, the button's face (ADR 0042). -->
+  <a href="/writing">
+    <span class="search-no-script">Browse writing</span>
+    <span class="search-script">Search <kbd>/</kbd><kbd>Ctrl K</kbd></span>
+  </a>
 {/if}
 
 <dialog bind:this={dialog} aria-labelledby="search-title">

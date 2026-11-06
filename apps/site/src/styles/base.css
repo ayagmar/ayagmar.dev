@@ -64,6 +64,9 @@
   /* The reading size of a post, set on .reader and .prose so 66ch is the same width in both. */
   --read-size: clamp(1.125rem, 1.05rem + 0.35vw, 1.3125rem);
   --pixel: 3px;
+  /* A page change (ADR 0042): a little longer than a hover's 120 ms, as the whole column fades. */
+  --page-change: 160ms;
+  --page-change-ease: ease-out;
 
   /* What the current surface draws with; panels and paper override these four. */
   --bg: var(--ground);
@@ -463,6 +466,34 @@ h1 + .caption,
 /* The search island's link before it hydrates. */
 .site-tools astro-island > a {
   font-size: 0.9375rem;
+}
+
+.search-script {
+  display: none;
+}
+
+/* With scripts on, the link is drawn as the button it will become, so a new page's header does
+   not change when the island hydrates, up to 2 s later (ADR 0042). data-theme-switch is set before
+   the first paint; without it the link stays a plain "Browse writing". */
+:root[data-theme-switch] .search-script {
+  display: inline;
+}
+
+:root[data-theme-switch] .search-no-script {
+  display: none;
+}
+
+:root[data-theme-switch] .site-tools astro-island > a {
+  display: inline-block;
+  border: 1px solid transparent;
+  padding: 0.25rem 0.7rem;
+  color: var(--muted);
+  font: 500 0.9375rem / 1.2 var(--serif);
+  text-decoration: none;
+}
+
+:root[data-theme-switch] .site-tools astro-island > a:hover {
+  color: var(--text);
 }
 
 /* The keyboard hint is for a keyboard: not on phones or tablets. */
@@ -2128,6 +2159,39 @@ dialog li p {
 dialog mark {
   background: color-mix(in srgb, var(--lamp) 35%, transparent);
   color: inherit;
+}
+
+/* A page change (ADR 0042): the column fades and the header holds still. All of it sits under
+   no-preference, so reduced motion gets a plain load. The header's group does not animate: a page
+   left scrolled down would otherwise slide it in from above the window. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  /* A page too short to scroll would otherwise centre the header half a scrollbar to the right.
+     Overlay scrollbars get no gutter, so phones keep their width. */
+  :root {
+    scrollbar-gutter: stable;
+  }
+
+  .site-header {
+    view-transition-name: site-header;
+  }
+
+  ::view-transition-group(root) {
+    animation-duration: var(--page-change);
+    animation-timing-function: var(--page-change-ease);
+  }
+
+  ::view-transition-group(site-header),
+  ::view-transition-new(site-header) {
+    animation: none;
+  }
+
+  ::view-transition-old(site-header) {
+    display: none;
+  }
 }
 
 /* biome-ignore-start lint/complexity/noImportantStyles: reduced motion must beat any component style. */
