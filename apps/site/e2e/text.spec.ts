@@ -67,6 +67,8 @@ test.describe('Accept', () => {
     ['text/*;q=1, text/markdown;q=0.9', 'text/html'],
     ['*/*, text/markdown', 'text/html'],
     ['text/markdown;q=0, */*', 'text/html'],
+    ['text/html;charset=iso-8859-1;q=0, */*;q=1, text/markdown;q=0.5', 'text/html'],
+    ['text/markdown;charset=iso-8859-1', 'text/html'],
     [';;;,,q=', 'text/html'],
     ['application/json', 'text/html'],
     [browserAccept, 'text/html'],
@@ -77,6 +79,8 @@ test.describe('Accept', () => {
     ['text/html;q=0.5, text/markdown;q=0.9', 'text/plain'],
     ['text/*;q=1, text/html;q=0.1, text/markdown;q=0.9, application/xhtml+xml;q=0.1', 'text/plain'],
     ['text/html;q=0, */*;q=0.9, text/markdown;q=0.5', 'text/plain'],
+    ['text/html;charset=utf-8;q=0, */*;q=1, text/markdown;q=0.5', 'text/plain'],
+    ['text/markdown;charset=utf-8', 'text/plain'],
   ] as const) {
     // Catches a parser that answers a browser or crawler with a copy, or misses a real preference.
     test(`"${accept}" gets ${type} from a page without Markdown`, async ({ request }) => {

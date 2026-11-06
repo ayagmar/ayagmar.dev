@@ -9,15 +9,22 @@ const terminalAgent = /^(curl|wget|httpie|xh)\//i;
  * Whether Markdown beats HTML for `accept`. Each is rated by the most specific range that matches
  * it (RFC 9110 12.5.1), zero ranges included, so a wildcard cannot undo an exclusion. Markdown
  * must be named outright, which no browser does, and win on q, or tie and be listed first. A
- * range whose q does not parse is dropped, so a malformed header means HTML.
+ * range whose q does not parse is dropped, so a malformed header means HTML, and so is one with a
+ * parameter neither copy has: both are UTF-8 and have no others.
  */
 function prefersMarkdown(accept: string | null) {
   const ranges = (accept ?? '').split(',').flatMap((range) => {
     const [type = '', ...params] = range.split(';').map((part) => part.trim().toLowerCase());
     const weight = params.find((param) => /^q\s*=/.test(param))?.replace(/^q\s*=\s*/, '') ?? '1';
-    return /^(0(\.\d{0,3})?|1(\.0{0,3})?)$/.test(weight) ? [{ type, q: Number(weight) }] : [];
+    const others = params.filter((param) => param !== '' && !/^q\s*=/.test(param));
+    return /^(0(\.\d{0,3})?|1(\.0{0,3})?)$/.test(weight) &&
+      others.every((param) => /^charset="?utf-8"?$/.test(param))
+      ? [{ type, q: Number(weight), specific: others.length > 0 }]
+      : [];
   });
-  const named = (type: string) => ranges.find((range) => range.type === type);
+  const named = (type: string) =>
+    ranges.find((range) => range.type === type && range.specific) ??
+    ranges.find((range) => range.type === type);
   const markdown = named('text/markdown');
   if (markdown === undefined || markdown.q === 0) return false;
   const html = named('text/html') ?? named('text/*') ?? named('*/*');
