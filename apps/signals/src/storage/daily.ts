@@ -125,7 +125,7 @@ export interface DayOutcome {
 }
 
 /** The series whose recording can fail while their snapshot carries on (ADR 0038). */
-export const recordedSeries = ['listening', 'weather'] as const satisfies readonly DailySource[];
+const recordedSeries = ['listening', 'weather'] as const satisfies readonly DailySource[];
 
 type RecordedSeries = (typeof recordedSeries)[number];
 

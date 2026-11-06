@@ -4,7 +4,7 @@ import { lastfmErrorSchema, lastfmHistoryPageSchema } from '@min7/contracts';
 import { PullError, parseBody, type Schema, type UpstreamResponse } from './http.ts';
 
 export const lastfmEndpoint = 'https://ws.audioscrobbler.com/2.0/';
-export const lastfmUser = 'min7_';
+const lastfmUser = 'min7_';
 
 /** A POST form for `method`: the key stays out of the URLs that Workers traces record. */
 export const lastfmForm = (apiKey: string, method: string, params: Record<string, string> = {}) =>
