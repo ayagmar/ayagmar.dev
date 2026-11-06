@@ -63,6 +63,8 @@ export type RoomListening = Pick<ListeningSnapshot, 'nowPlaying' | 'recent'>;
 /** Only tokens and dates: costs stay out of the room by never entering it (ADR 0014). */
 interface RoomUsage {
   days: { date: string; totalTokens: number }[];
+  /** The source's own total for the month it was read in, or null if it reports none. */
+  monthTokens: number | null;
 }
 
 export interface RoomInputs {
@@ -215,13 +217,19 @@ function screenAt(
   const days = reading.data.days.filter(({ date }) => date <= closed);
   const cells = heatmap(days, end, screenWeeks).cells.map(({ date, level }) => ({ date, level }));
   const last = earlier(closed, end);
+  const range = dateRange(`${last.slice(0, 8)}01`, last);
+  const { monthTokens } = reading.data;
+  // The observation's own day was still running when it was taken.
+  const asOf = last === observed ? `, as of ${rabatStamp(reading.fetchedAt)}` : '';
+  if (last === observed && monthTokens !== null) {
+    return { cells, words: `${tokens(monthTokens)} tokens, ${range}${asOf}` };
+  }
   const month = days.filter(({ date }) => date.startsWith(last.slice(0, 7)));
   if (month.length === 0) return { cells, words: null };
   const total = month.reduce((sum, { totalTokens }) => sum + totalTokens, 0);
-  const range = dateRange(`${last.slice(0, 8)}01`, last);
-  // The observation's own day was still running when it was taken.
-  const asOf = last === observed ? `, as of ${rabatStamp(reading.fetchedAt)}` : '';
-  return { cells, words: `${tokens(total)} tokens, ${range}${asOf}` };
+  // A sum of the days held speaks for the period only if it holds every one of them.
+  const whole = month.length === Number(last.slice(8));
+  return { cells, words: `${tokens(total)} tokens${whole ? '' : ' on record'}, ${range}${asOf}` };
 }
 
 const lineWords = ({ lead, track }: NowPlayingLine) =>

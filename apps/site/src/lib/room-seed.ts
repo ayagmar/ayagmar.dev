@@ -61,7 +61,8 @@ export function roomSeed(built: BuiltRoom): RoomSeed {
     inputs: {
       posts: built.posts.toReversed(),
       shipping: reading(built.shipping, ({ events }) => ({ events: pinEvents(events) })),
-      usage: reading(built.usage, ({ days }) => ({
+      usage: reading(built.usage, ({ days, monthToDate }) => ({
+        monthTokens: monthToDate.totalTokens,
         days: days
           .filter(({ date }) => date >= from)
           .map(({ date, totalTokens }) => ({ date, totalTokens })),

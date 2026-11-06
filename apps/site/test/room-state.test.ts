@@ -314,8 +314,8 @@ describe('the corkboard', () => {
 });
 
 describe('the framed screen', () => {
-  const usage = (rows: [string, number][], at = noon) =>
-    reading({ days: rows.map(([date, totalTokens]) => ({ date, totalTokens })) }, at);
+  const usage = (rows: [string, number][], at = noon, monthTokens: number | null = null) =>
+    reading({ days: rows.map(([date, totalTokens]) => ({ date, totalTokens })), monthTokens }, at);
 
   // Catches a missing day drawn as a quiet day, a recorded zero lost, and a screen that ends
   // after what it observed.
@@ -348,16 +348,43 @@ describe('the framed screen', () => {
     expect(new Date(`${cells[0]?.date}T00:00:00Z`).getUTCDay()).toBe(1);
   });
 
-  // Catches an open day's bucket read as a day's total: an old page must say when it looked.
-  it('says as of when, while the day it counts was running', () => {
-    const rows: [string, number][] = [
-      ['2026-10-01', 1_000_000],
-      ['2026-10-26', 300_000],
-      ['2026-09-30', 9_000_000],
-    ];
-    expect(roomState(inputs({ usage: usage(rows) }), live()).screen.words).toBe(
-      '1.3M tokens, 1–26 Oct, as of 26 Oct, 12:00'
+  const october = (last: number, totalTokens: number) =>
+    Array.from({ length: last }, (_, index): [string, number] => [
+      `2026-10-${String(index + 1).padStart(2, '0')}`,
+      totalTokens,
+    ]);
+
+  // Catches sparse days summed into a month's figure: the source's own total is the claim, and an
+  // old page must say when it looked, as the day it counts was still running.
+  it("says the source's month, as of when it looked", () => {
+    const rows: [string, number][] = [['2026-10-26', 300_000]];
+    expect(roomState(inputs({ usage: usage(rows, noon, 61_250_000) }), live()).screen.words).toBe(
+      '61.3M tokens, 1–26 Oct, as of 26 Oct, 12:00'
     );
+  });
+
+  // Catches a sum over missing days passing for the whole period, and a lone recorded zero passing
+  // for an unknown month: missing is never zero.
+  it.each([
+    ['sparse days', [['2026-10-25', 2_000_000]], '2.0M tokens on record, 1–25 Oct'],
+    ['one recorded zero', [['2026-10-25', 0]], '0 tokens on record, 1–25 Oct'],
+    ['every day held', october(25, 1_000_000), '25.0M tokens, 1–25 Oct'],
+    ['every day zero', october(25, 0), '0 tokens, 1–25 Oct'],
+    ['nothing held', [['2026-09-25', 5]], null],
+  ] as [string, [string, number][], string | null][])(
+    'a past moment words %s',
+    (_, rows, words) => {
+      const usageInput = usage(rows, Date.parse('2026-10-26T18:00:00Z'), 61_250_000);
+      const at = past(Date.parse('2026-10-26T09:00:00Z'));
+      expect(roomState(inputs({ usage: usageInput }), at).screen.words).toBe(words);
+    }
+  );
+
+  // Catches a source with no month figure losing its qualifier while its day is open.
+  it('qualifies recorded days when the source reports no month', () => {
+    expect(
+      roomState(inputs({ usage: usage([['2026-10-26', 300_000]]) }), live()).screen.words
+    ).toBe('300.0K tokens on record, 1–26 Oct, as of 26 Oct, 12:00');
   });
 
   // Catches afternoon tokens in a morning: a snapshot at 18:00 holds all of its day, so a past
@@ -374,7 +401,7 @@ describe('the framed screen', () => {
     ).screen;
     expect(cells.at(-1)).toEqual({ date: '2026-10-26', level: null });
     expect(cells.at(-2)?.level).toBe(1);
-    expect(words).toBe('2.0M tokens, 1–25 Oct');
+    expect(words).toBe('2.0M tokens on record, 1–25 Oct');
   });
 
   // Catches a Rabat day taken for a UTC one: before 20 September Morocco ran an hour ahead.
@@ -425,7 +452,10 @@ describe('the seed', () => {
   const whole = inputs({
     posts: seed.inputs.posts,
     shipping: reading({ events }),
-    usage: reading({ days: usageSnapshot.days }),
+    usage: reading({
+      days: usageSnapshot.days,
+      monthTokens: usageSnapshot.monthToDate.totalTokens,
+    }),
     listening: reading(built.listening.data),
   });
 
