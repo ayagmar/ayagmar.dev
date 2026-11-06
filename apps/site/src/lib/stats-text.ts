@@ -12,7 +12,6 @@ import {
   type ProjectsSnapshot,
   type ShippingSnapshot,
 } from '@min7/contracts';
-import { rabatTime } from '../data/format.ts';
 import { nowPlaying, nowPlayingMarkup } from './listening.ts';
 import { listeningBody } from './listening-panel.ts';
 import { freshnessWords } from './live.ts';
@@ -22,6 +21,7 @@ import { sampleNote, site, siteUrl } from './site.ts';
 import { statsBuildWords, statsWords as words } from './stats.ts';
 import { projectsBody, shippingBody, typingBody } from './stats-panels.ts';
 import { typingWords } from './typing.ts';
+import { rabatStamp } from './words.ts';
 
 export interface StatsSources {
   listening: Envelope<ListeningSnapshot, 'listening'>;
@@ -36,7 +36,7 @@ function freshness(envelope: Envelope<unknown>, sample: boolean): string[] {
   if (envelope.data === null || envelope.fetchedAt === null) return [];
   return sample
     ? [sampleNote]
-    : [`${freshnessWords(!envelope.stale)}${rabatTime(envelope.fetchedAt)} (Rabat time)`];
+    : [`${freshnessWords(!envelope.stale)}${rabatStamp(envelope.fetchedAt)} (Rabat time)`];
 }
 
 /** What `curl ayagmar.dev/stats` prints: each panel's numbers as of the build. */

@@ -4,15 +4,13 @@
  * home page script (src/scripts/room.ts) and the tests share them.
  */
 import { type WeatherState, weatherCodes } from '@min7/contracts/weather-codes';
+import { skewMs } from './live.ts';
 
 /**
  * How old weather may be, from when signals fetched it and from the time Open-Meteo says it
  * is for: `staleAfterSeconds.weather` in contracts, which the browser does not import (zod).
  */
 export const weatherMaxAgeMs = 45 * 60_000;
-
-/** A server clock up to this far ahead of the visitor's is still believable. */
-const skewMs = 2 * 60_000;
 
 export interface Weather {
   state: WeatherState;

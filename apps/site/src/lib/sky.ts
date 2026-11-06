@@ -10,13 +10,15 @@
  * offset, since Morocco's offset has changed with Ramadan and, in 2026, by decree.
  */
 
-// Hassan Tower, Rabat. Africa/Casablanca is the IANA zone for all of Morocco.
-const rabat = { lat: 34.024, lon: -6.8228, timeZone: 'Africa/Casablanca' } as const;
+import { rabatTimeZone } from '@min7/contracts/rabat';
+import { dayMs } from './words.ts';
+
+// Hassan Tower, Rabat.
+const rabat = { lat: 34.024, lon: -6.8228 } as const;
 
 const rad = Math.PI / 180;
 const sin = (deg: number) => Math.sin(deg * rad);
 const cos = (deg: number) => Math.cos(deg * rad);
-const dayMs = 86_400_000;
 
 /** Julian centuries since J2000.0 (UT; the difference from TT is about a minute). */
 const centuries = (time: number) => (time / dayMs + 2440587.5 - 2451545) / 36525;
@@ -156,21 +158,21 @@ export function moonPath(moon: Moon): string {
 }
 
 // en-GB's short time is `HH:mm` on a 24-hour clock.
-const clock = new Intl.DateTimeFormat('en-GB', { timeZone: rabat.timeZone, timeStyle: 'short' });
+const clock = new Intl.DateTimeFormat('en-GB', { timeZone: rabatTimeZone, timeStyle: 'short' });
 
 /** The time in Rabat, `03:12`. */
 export const rabatTime = (time: number) => clock.format(time);
 
-/**
- * Whether the browser's tzdata knows Morocco's current rules: +00 for good since 2026-09-20
- * 01:00 UTC (tzdata 2026c). An older browser still says +01 and would put the lamp an hour off,
- * so the room then leaves the lamp and the note alone. If Morocco changes its clocks again,
- * this check moves with the new rules.
- */
-export const knowsRabatTime = () => rabatTime(Date.UTC(2026, 9, 1, 12)) === '12:00';
+const rabatHour = (time: number) => Number(rabatTime(time).slice(0, 2));
 
 /** Between 02:00 and 07:00 in Rabat the lamp is turned down: probably asleep. */
 export function isLate(time: number): boolean {
-  const hour = Number(rabatTime(time).slice(0, 2));
+  const hour = rabatHour(time);
   return hour >= 2 && hour < 7;
+}
+
+/** Between 02:00 and 05:00 in Rabat a cat sleeps on the windowsill. */
+export function isCatHour(time: number): boolean {
+  const hour = rabatHour(time);
+  return hour >= 2 && hour < 5;
 }
