@@ -107,6 +107,6 @@ describe('shippingStrip', () => {
     });
     expect(html).toContain('One square a day, 12 Oct to 26 Oct');
     expect(html.match(/<i data-l=/g)).toHaveLength(28);
-    expect(html).toContain('Nothing to show yet.');
+    expect(html).not.toContain('Nothing to show');
   });
 });

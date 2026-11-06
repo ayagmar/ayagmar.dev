@@ -95,27 +95,30 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
   </nav>
 
   <div class="home-panels">
-    <section class="paper" aria-labelledby="writing">
-      <div class="panel-head">
-        <h2 id="writing">Writing</h2>
-        {notes.length === 0 ? <a href="/writing">All writing</a> : <a href="/til">All notes</a>}
-      </div>
-      {notes.length === 0 ? (
-        <PostList posts={posts} />
-      ) : (
-        <>
-          <p class="home-notes-lede">No posts yet. The latest short notes, from TIL:</p>
-          <ul class="home-notes">
-            {notes.map((note) => (
-              <li>
-                <time datetime={isoDay(note.data.date)}>{isoDay(note.data.date)}</time>
-                <a href={notePath(note.id)}>{note.data.title}</a>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </section>
+    {/* A section appears once it has something in it; the room still leads to its page. */}
+    {(posts.length > 0 || notes.length > 0) && (
+      <section class="paper" aria-labelledby="writing">
+        <div class="panel-head">
+          <h2 id="writing">Writing</h2>
+          {notes.length === 0 ? <a href="/writing">All writing</a> : <a href="/til">All notes</a>}
+        </div>
+        {notes.length === 0 ? (
+          <PostList posts={posts} />
+        ) : (
+          <>
+            <p class="home-notes-lede">No posts yet. The latest short notes, from TIL:</p>
+            <ul class="home-notes">
+              {notes.map((note) => (
+                <li>
+                  <time datetime={isoDay(note.data.date)}>{isoDay(note.data.date)}</time>
+                  <a href={notePath(note.id)}>{note.data.title}</a>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
+    )}
 
     <section class="panel m-screen" aria-labelledby="projects">
       <div class="panel-head">
@@ -149,14 +152,16 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
         {listening.data !== null && <Sample />}
       </section>
 
-      <section class="panel m-cork" aria-labelledby="shipping">
-        <div class="panel-head">
-          <h2 id="shipping">Shipping</h2>
-          <a href="/stats#shipping">More</a>
-        </div>
-        <HomeShipping strip={strip} events={recentlyShipped} />
-        {(shipping.data !== null || strip !== null) && <Sample />}
-      </section>
+      {(strip !== null || recentlyShipped.length > 0) && (
+        <section class="panel m-cork" aria-labelledby="shipping">
+          <div class="panel-head">
+            <h2 id="shipping">Shipping</h2>
+            <a href="/stats#shipping">More</a>
+          </div>
+          <HomeShipping strip={strip} events={recentlyShipped} />
+          <Sample />
+        </section>
+      )}
     </div>
   </div>
 </Base>
