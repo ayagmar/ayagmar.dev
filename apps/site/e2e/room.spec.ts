@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { skyAt } from '../src/lib/sky.ts';
 import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 // The page background of each theme (--ground in base.css).
@@ -92,7 +93,8 @@ test('home loads one scene, one window and two fonts', async ({ page }) => {
   // Which window depends on the time in Rabat; there is exactly one. So does the cat: it loads
   // from 02:00 to 05:00 there, and only in the page's theme. A fixed clock is no way out, since
   // Playwright's clock leaves `performance` without its entries.
-  const timed = /^(?:window|cat)-/;
+  // The night scene comes over the day one after dark, so it is timed too, but only then.
+  const timed = skyAt(Date.now()) === 'day' ? /^(?:window|cat)-/ : /^(?:window|cat|room-night)/;
   expect(assets.filter((name) => !timed.test(name))).toEqual(['mono', 'room-day', 'serif-roman']);
   expect(assets.filter((name) => name.startsWith('window-'))).toHaveLength(1);
   expect(assets.filter((name) => name === 'cat-night')).toEqual([]);
@@ -337,8 +339,8 @@ test.describe('the room keeps Rabat time', () => {
   });
 
   // Catches the cat missing its hours or waiting for a reload, moving the page when it comes,
-  // a note the keyboard cannot reach or cut off by the scene's edge on a phone, and art from the
-  // other theme.
+  // a note the keyboard cannot reach or cut off by the scene's edge on a phone, and a sunlit cat
+  // in the Day theme: these hours are always dark.
   test('a cat sleeps on the sill from 02:00 to 05:00, and says so on focus', async ({ page }) => {
     const cat = page.getByRole('img', { name: /cat asleep on the windowsill/ });
     const art = () =>
@@ -367,12 +369,37 @@ test.describe('the room keeps Rabat time', () => {
     }
     await expectNoAxeViolations(page, '.room');
     await page.emulateMedia({ colorScheme: 'light' });
-    expect(await art()).toBe('cat-day');
+    expect(await art()).toBe('cat-night');
     await expectNoAxeViolations(page, '.room');
 
     await page.clock.runFor(3 * 60 * 60_000);
     await expect(cat).toBeHidden();
   });
+
+  // Catches sunlit walls beside a night window, a layer that hides the window, and the theme
+  // itself changing: only the room follows the sky.
+  for (const [time, sky, opacity] of [
+    ['2026-10-26T12:00:00Z', 'day', null],
+    ['2026-10-26T17:55:00Z', 'dusk', '0.5'],
+    ['2026-10-26T21:00:00Z', 'night', '0.85'],
+  ] as const) {
+    test(`the Day theme's room follows a ${sky} sky`, async ({ page }) => {
+      await visit(page, time, 'light');
+      const layer = await page.locator('.room-art.day').evaluate((art) => {
+        const after = getComputedStyle(art, '::after');
+        return after.content === 'none' ? null : after.opacity;
+      });
+      expect(layer).toBe(opacity);
+      expect(await background(page)).toBe(ground.day);
+      expect(await room(page)).toMatchObject({ sky, window: `window-${sky}` });
+      const order = await page.evaluate(() => {
+        const art = document.querySelector('.room-art.day') as Element;
+        const view = document.querySelector('.room-window') as Element;
+        return art.compareDocumentPosition(view) === Node.DOCUMENT_POSITION_FOLLOWING;
+      });
+      expect(order).toBe(true);
+    });
+  }
 
   test('just after sunset the window shows dusk', async ({ page }) => {
     await visit(page, '2026-10-26T17:55:00Z', 'dark');

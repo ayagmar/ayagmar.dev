@@ -111,6 +111,37 @@
   background-image: url("../assets/room-night-dim.png");
 }
 
+/* The theme is the reader's, the sky is Rabat's. Day theme after dark would put sunlit walls
+   beside a night window, so the lit room comes over the day one, under the window: part way at
+   dusk, nearly whole at night. Only then does the second scene download. */
+.scene:is([data-sky="dusk"], [data-sky="night"]) .room-art.day::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../assets/room-night.png") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  opacity: 0.85;
+}
+
+.scene[data-sky="dusk"] .room-art.day::after {
+  opacity: 0.5;
+}
+
+.scene[data-late] .room-art.day::after {
+  background-image: url("../assets/room-night-dim.png");
+}
+
+/* And the other way round: in Night theme a noon window glares out of the dark room. */
+:root[data-theme="night"] .scene[data-sky="day"] :is(.room-window, .room-weather) {
+  filter: brightness(0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="day"]) .scene[data-sky="day"] :is(.room-window, .room-weather) {
+    filter: brightness(0.7);
+  }
+}
+
 /* The weather over the window (ADR 0029), set by src/scripts/room.ts from signals: above the
    sky and the moon, below the hotspots. Each layer is the full scene, like the window's,
    transparent but for the weather; dusk shows the night one. Clear weather is the sky as it
@@ -234,9 +265,9 @@
 }
 
 /* The cat on the windowsill between 02:00 and 05:00 (ADR 0027), by src/scripts/room.ts's hour:
-   above the view and its weather, lit as the room of the shown theme. Its spot covers the cat's
-   pixels (scripts/scene.py) and shows the note above it on hover and focus, like a hotspot's
-   label. Only the shown layer is downloaded. */
+   above the view and its weather, lit by the turned-down lamp in either theme, since these hours
+   are always dark. Its spot covers the cat's pixels (scripts/scene.py) and shows the note above
+   it on hover and focus, like a hotspot's label. */
 /* Without the script, out of its hours, or with outdated time zone rules (no `data-late`), there
    is no cat to see or focus. */
 .scene:not([data-late]:is([data-hour="02"], [data-hour="03"], [data-hour="04"])) .room-cat {
@@ -249,16 +280,6 @@
   background: url("../assets/cat-night.png") center / 100% 100% no-repeat;
   image-rendering: pixelated;
   pointer-events: none;
-}
-
-:root[data-theme="day"] .room-cat {
-  background-image: url("../assets/cat-day.png");
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="night"]) .room-cat {
-    background-image: url("../assets/cat-day.png");
-  }
 }
 
 .room-cat-spot {
