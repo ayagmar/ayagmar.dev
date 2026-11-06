@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { get as httpGet } from 'node:http';
 import { join } from 'node:path';
 import type { APIRequestContext } from '@playwright/test';
-import { posts } from './content.ts';
+import { notes, posts } from './content.ts';
 import { expect, notFoundPath, test } from './fixtures.ts';
 
 const dist = join(import.meta.dirname, '..', 'dist');
@@ -205,12 +205,23 @@ test.describe('search engines', () => {
 });
 
 test.describe('drafts on the production build', () => {
-  const drafts = posts.filter((post) => post.draft);
+  const drafts = [
+    ...posts.filter((post) => post.draft).map(({ slug }) => `/writing/${slug}`),
+    ...notes.filter((note) => note.draft).map(({ slug }) => `/til/${slug}`),
+  ];
+  const lists = textPages.filter((path) => !/^\/(writing|til)\/./.test(path));
 
-  // Catches a draft's copy being built, or its slug reaching a list an agent reads.
+  // Catches a draft's copy being built, or its slug reaching any text an agent reads. Notes are
+  // covered here once one exists; test/text-drafts.test.ts builds one regardless.
   test('are 404 in every variant and listed nowhere', async ({ request }) => {
-    for (const { slug } of drafts) {
-      for (const path of [`/writing/${slug}`, `/writing/${slug}.md`, `/writing/${slug}.txt`]) {
+    expect(lists).toEqual(expect.arrayContaining(['/', '/til', '/projects/runnerd']));
+    const texts = await Promise.all(
+      [...lists.map((path) => `${path === '/' ? '/index' : path}.txt`), '/llms.txt'].map(
+        async (path) => [path, await (await request.get(path)).text()] as const
+      )
+    );
+    for (const draft of drafts) {
+      for (const path of [draft, `${draft}.md`, `${draft}.txt`]) {
         for (const headers of [
           { 'User-Agent': browser },
           { 'User-Agent': curl },
@@ -219,9 +230,7 @@ test.describe('drafts on the production build', () => {
           expect((await get(request, path, headers)).status(), path).toBe(404);
         }
       }
-      for (const path of ['/llms.txt', '/writing.txt', '/til.txt', '/projects.txt']) {
-        expect(await (await request.get(path)).text(), path).not.toContain(slug);
-      }
+      for (const [path, text] of texts) expect(text, path).not.toContain(draft);
     }
   });
 });
