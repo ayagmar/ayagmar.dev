@@ -729,6 +729,28 @@ h1 + .caption,
   font-weight: 600;
 }
 
+/* The end of a post is small print, set below the text it follows: the reply link, the comments
+   and the project block inherit the reader's large size otherwise, and outweigh the last
+   paragraph (ADR 0037). */
+.reply,
+.m-comments,
+.reader ~ .project-card {
+  color: var(--fg-2);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.m-comments h2,
+.reader ~ .project-card h2 {
+  margin-block-end: 0.35rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.reader ~ .project-card :is(.project-summary, h3) {
+  font-size: inherit;
+}
+
 .reply {
   margin-block: 2rem 0;
 }
@@ -736,7 +758,8 @@ h1 + .caption,
 /* Comments under a post or note (ADR 0036). The giscus iframe is added by comments.ts on a press;
    the status line keeps two lines so loading, ready and failed do not move what follows. */
 .m-comments {
-  margin-block-start: 3rem;
+  margin-block-start: 2rem;
+  padding-block-start: 1.25rem;
 }
 
 .comments-actions {

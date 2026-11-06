@@ -1,6 +1,6 @@
 # 0037. The quiet room
 
-Status: accepted, 2026-11-01. Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp; home's list steps back on a wide screen. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
+Status: accepted, 2026-11-01. Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp; home's list steps back on a wide screen; a post ends in small print. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
 
 ## Context
 
@@ -11,6 +11,8 @@ After the quiet windows (ADR 0034) the owner still found the site cartoony and g
 **The room is the only picture.** Everything under it is type, hairlines and space. `.panel` and `.paper` are sections, not boxes: a 1 px `--rule` above, the heading, and room around it. No title bars, file names, coloured squares, fills or gradients. The section that holds a page's title has no rule. The material classes (`m-screen` and the rest) only name the room's object a section belongs to.
 
 **One reading column.** Every page but home and /stats reads in one centred column, `--column` (42 rem, about 70 characters of the 17 px serif), the same axis as a post: /writing, /til, a post, /projects, a project, /skills, /uses, /now, /about, /colophon and the 404. Lists in it are quiet rows on hairlines with a muted label on the right: a post's date, a project's post count and status, a skill's version, what a tool on /uses is. A short page keeps its footer at the bottom of the window (the body is a flex column).
+
+**A post ends quietly.** Reply by email, Comments and the project block are small print in the muted colour, under headings at the size of the text, so nothing after the last paragraph outweighs it.
 
 **Logs have a time column.** Shipping events and recent tracks are one `.log`: the time in a fixed 7.5 rem column of muted mono on the left, the event or track beside it; under 30 rem the time sits over its row. The time comes first in the markup (`src/lib/stats-panels.ts`, `src/lib/listening-panel.ts`), so the build and a live answer draw the same row.
 
