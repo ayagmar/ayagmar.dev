@@ -98,6 +98,7 @@ import listeningHistorySnapshotTies from '../fixtures/listening-history/snapshot
   type: 'json',
 };
 import llmUsageDaysOk from '../fixtures/llm-usage/days/ok.json' with { type: 'json' };
+import llmUsageHistoryOk from '../fixtures/llm-usage/history/ok.json' with { type: 'json' };
 import llmUsagePushMinimal from '../fixtures/llm-usage/push/accept/minimal.json' with {
   type: 'json',
 };
@@ -189,6 +190,9 @@ import shippingSnapshotPartial from '../fixtures/shipping/snapshot/partial.json'
   type: 'json',
 };
 import shippingActivityDaysOk from '../fixtures/shipping-activity/days/ok.json' with {
+  type: 'json',
+};
+import shippingActivityHistoryOk from '../fixtures/shipping-activity/history/ok.json' with {
   type: 'json',
 };
 import shippingActivitySnapshotOk from '../fixtures/shipping-activity/snapshot/ok.json' with {
@@ -390,5 +394,19 @@ export const daysFixtures = {
   },
   'llm-usage': {
     ok: llmUsageDaysOk,
+  },
+} as const;
+
+/**
+ * The days before `daysFixtures`' block, for the year pages: more than one block holds, so these
+ * are read month by month. They stop before the block's window, so the strip's outlined days
+ * stay outlined.
+ */
+export const historyFixtures = {
+  'shipping-activity': {
+    ok: shippingActivityHistoryOk,
+  },
+  'llm-usage': {
+    ok: llmUsageHistoryOk,
   },
 } as const;

@@ -1,10 +1,11 @@
 import { getCollection } from 'astro:content';
 import { PUBLIC_SHOW_DRAFTS } from 'astro:env/server';
 import { signals } from '../data/signals.ts';
-import { dayPages, type History, type Published } from './days.ts';
+import { dayPages, type History, type Published, wholeSeries } from './days.ts';
 import { siteProjects } from './projects.ts';
 import { notePath } from './til.ts';
 import { isoDay, postPath, publishedEntries } from './writing.ts';
+import { yearPages } from './years.ts';
 
 const showDrafts = PUBLIC_SHOW_DRAFTS === '1';
 
@@ -33,8 +34,9 @@ export async function getProjects() {
 }
 
 /**
- * The daily history, read whole (ADR 0038), and the day pages it and the published writing
- * make (src/lib/days.ts): for the day pages, the strip's links and the receipts.
+ * The daily history, read whole (ADR 0038), and the day and year pages it and the published
+ * writing make (src/lib/days.ts, src/lib/years.ts): for those pages, the strip's links and the
+ * receipts.
  */
 export async function getDays() {
   const [shipping, usage, posts, notes] = await Promise.all([
@@ -43,7 +45,7 @@ export async function getDays() {
     getPosts(),
     getNotes(),
   ]);
-  const history: History = { shipping: shipping?.days ?? null, usage: usage?.days ?? null };
+  const history: History = { shipping: wholeSeries(shipping), usage: wholeSeries(usage) };
   const published: Published[] = [
     ...posts.map((post) => ({
       date: isoDay(post.data.date),
@@ -59,5 +61,11 @@ export async function getDays() {
     })),
   ];
   const pages = dayPages(history, published);
-  return { history, pages, dates: new Set(pages.map((page) => page.date)) };
+  const dates = new Set(pages.map((page) => page.date));
+  return {
+    history,
+    pages,
+    dates,
+    years: yearPages({ shipping, usage }, published, new Date(), dates),
+  };
 }

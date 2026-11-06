@@ -1,6 +1,7 @@
 import type {
   Envelope,
   Project,
+  ShippingActivityDay,
   ShippingActivityDays,
   ShippingEvent,
   ShippingSnapshot,
@@ -60,8 +61,8 @@ export function projectsSummary(projects: readonly Pick<Project, 'stars'>[]): st
 
 const dayMs = 24 * 60 * 60 * 1000;
 
-/** One day of the shipping strip: its UTC date and level 0 to 4, or null for no record. */
-interface StripCell {
+/** One day of the shipping strip or a year's calendar: its UTC date and level 0 to 4, or null for no record. */
+export interface StripCell {
   date: string;
   level: 0 | 1 | 2 | 3 | 4 | null;
   /** What the square says to a screen reader: `26 Oct: 3 pushes, merges and releases`. */
@@ -101,34 +102,32 @@ const timeLabel = new Intl.DateTimeFormat('en-GB', {
 const level = (shipped: number): 0 | 1 | 2 | 3 | 4 =>
   shipped === 0 ? 0 : shipped === 1 ? 1 : shipped === 2 ? 2 : shipped < 5 ? 3 : 4;
 
-/**
- * The strip's 28 UTC days ending on `end`, each with what shipped that day (pushes, merges and
- * releases; stars are attention, not shipping) or null when nothing was recorded for it.
- * Null when no day of the strip has a record.
- */
-function strip(
-  end: string,
-  shipped: (date: string) => number | null,
-  countedAt: string,
+/** What a square counts: pushes, merges and releases. Stars are attention, not shipping. */
+export const shippedCount = (day: Pick<ShippingActivityDay, 'pushes' | 'merges' | 'releases'>) =>
+  day.pushes + day.merges + day.releases;
+
+/** `3 pushes, merges and releases`, what a count of `shippedCount` says. */
+export const shippedWords = (count: number) =>
+  plural(count, 'push, merge or release', 'pushes, merges and releases');
+
+/** One UTC day's square; `shipped` is null when nothing was recorded for it. */
+export function stripCell(
+  date: string,
+  shipped: number | null,
   pages: ReadonlySet<string>
-): ShippingStrip | null {
-  const last = Date.parse(`${end}T00:00:00Z`);
-  const cells = Array.from({ length: 28 }, (_, i): StripCell => {
-    const date = new Date(last - (27 - i) * dayMs).toISOString().slice(0, 10);
-    const count = shipped(date);
-    const what =
-      count === null
-        ? 'no record'
-        : count === 0
-          ? 'nothing shipped'
-          : plural(count, 'push, merge or release', 'pushes, merges and releases');
-    return {
-      date,
-      level: count === null ? null : level(count),
-      label: `${dayLabel.format(Date.parse(date))}: ${what}`,
-      page: pages.has(date),
-    };
-  });
+): StripCell {
+  const what =
+    shipped === null ? 'no record' : shipped === 0 ? 'nothing shipped' : shippedWords(shipped);
+  return {
+    date,
+    level: shipped === null ? null : level(shipped),
+    label: `${dayLabel.format(Date.parse(date))}: ${what}`,
+    page: pages.has(date),
+  };
+}
+
+/** What a run of squares says. Null when none of them has a record. */
+export function stripOf(cells: StripCell[], countedAt: string): ShippingStrip | null {
   const recorded = cells.filter((cell) => cell.level !== null);
   const first = recorded[0];
   const latest = recorded.at(-1);
@@ -141,6 +140,35 @@ function strip(
     busy: recorded.filter((cell) => (cell.level ?? 0) > 0).length,
     countedAt: `${timeLabel.format(Date.parse(countedAt))} UTC`,
   };
+}
+
+/** The words around a run of squares: its list's name and its caption's two lines. */
+export function stripWords(strip: ShippingStrip) {
+  const range = strip.from === strip.to ? strip.from : `${strip.from} to ${strip.to}`;
+  const gaps = strip.gaps ? ' Outlined days have no record.' : '';
+  return {
+    label: `Shipping activity from ${range}: ${strip.busy} ${strip.busy === 1 ? 'day' : 'days'} with something shipped.${gaps} Counted up to ${strip.countedAt}, drawn when this page was built.`,
+    squares: `One square a day, ${range}${strip.gaps ? '; outlined days have no record' : ''}`,
+    counted: `Counted up to ${strip.countedAt}`,
+  };
+}
+
+/**
+ * The strip's 28 UTC days ending on `end`, each with what shipped that day, or null when nothing
+ * was recorded for it. Null when no day of the strip has a record.
+ */
+function strip(
+  end: string,
+  shipped: (date: string) => number | null,
+  countedAt: string,
+  pages: ReadonlySet<string>
+): ShippingStrip | null {
+  const last = Date.parse(`${end}T00:00:00Z`);
+  const cells = Array.from({ length: 28 }, (_, i) => {
+    const date = new Date(last - (27 - i) * dayMs).toISOString().slice(0, 10);
+    return stripCell(date, shipped(date), pages);
+  });
+  return stripOf(cells, countedAt);
 }
 
 /**
@@ -157,9 +185,7 @@ export function shippingStrip(
   pages: ReadonlySet<string>
 ): ShippingStrip | null {
   if (history.data !== null && history.fetchedAt !== null) {
-    const days = new Map(
-      history.data.days.map((day) => [day.date, day.pushes + day.merges + day.releases])
-    );
+    const days = new Map(history.data.days.map((day) => [day.date, shippedCount(day)]));
     const fromHistory = strip(
       history.data.to,
       (date) => days.get(date) ?? null,

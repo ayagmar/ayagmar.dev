@@ -1,6 +1,6 @@
 # 0038. Daily history
 
-Status: accepted, 2026-11-01. Amended 2026-11-01 before release: shipping days merge per repository and count instead of by one total, 35 days hourly and 400 once a UTC date, a second request after an incomplete answer, each pull's attempt recorded before it runs, days bound to the snapshot write that brought them, and `last=28` cached only until midnight. Amends ADR 0009 (a seventh adapter), ADR 0010 (a table, a route, budgets), ADR 0014 (llm-usage days are also kept in history) and ADR 0034 (the shipping strip's data).
+Status: accepted, 2026-11-01. Amended 2026-11-01 before release: shipping days merge per repository and count instead of by one total, 35 days hourly and 400 once a UTC date, a second request after an incomplete answer, each pull's attempt recorded before it runs, days bound to the snapshot write that brought them, and `last=28` cached only until midnight. Amended 2026-11-06: `readHistory` names the months that failed, for the year pages (ADR 0041). Amends ADR 0009 (a seventh adapter), ADR 0010 (a table, a route, budgets), ADR 0014 (llm-usage days are also kept in history) and ADR 0034 (the shipping strip's data).
 
 ## Context
 
