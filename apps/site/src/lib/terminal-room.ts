@@ -4,24 +4,10 @@
  * into frames (src/pages/terminal/) and the site Worker renders one per request (worker/room.ts).
  * Every word comes from the module that words it for the page.
  */
-import type { ListeningSnapshot, ShippingEvent, ShippingSnapshot } from '@min7/contracts';
-import { nowPlaying, nowPlayingMarkup } from './listening.ts';
-import { el } from './markup.ts';
 import { inline } from './markup-text.ts';
+import type { ClockedRoom } from './room-state.ts';
 import { curlTarget, identityLines, sampleNote, textPages } from './site.ts';
-import {
-  isLate,
-  knowsRabatTime,
-  type Moon,
-  moonAt,
-  moonColour,
-  moonRuns,
-  moonShown,
-  rabatTime,
-  type Sky,
-  skyAt,
-  windowWords,
-} from './sky.ts';
+import { moonColour, moonRuns } from './sky.ts';
 import { shippingItem } from './stats-panels.ts';
 
 /** The scene is 480x160. One cell is 6x6 of its pixels, so 80 columns; its last 4 rows go. */
@@ -41,26 +27,8 @@ export const frames = {
 
 export type Frame = keyof typeof frames;
 
-/** What the picture shows at an instant. The one input a later room model has to supply. */
-export interface RoomFacts {
-  sky: Sky;
-  moon: Moon;
-  /** The lamp is turned down. */
-  late: boolean;
-  /** The time in Rabat, `03:12`. */
-  time: string;
-}
-
-/** As src/scripts/room.ts reads them: outdated tzdata leaves the lamp alone. */
-export const roomFacts = (time: number): RoomFacts => ({
-  sky: skyAt(time),
-  moon: moonAt(time),
-  late: knowsRabatTime() && isLate(time),
-  time: rabatTime(time),
-});
-
 /** The terminal has no theme, so the sky picks the room: the lamp is on from dusk. */
-export const frameFor = ({ sky, late }: RoomFacts): Frame =>
+export const frameFor = ({ window: { sky }, lamp: { late } }: ClockedRoom): Frame =>
   sky === 'day' ? 'day' : late ? `${sky}-dim` : sky;
 
 /** The mean colour of each cell of a 480x160 RGB image, as `columns` by `rows` RGB pixels. */
@@ -88,8 +56,8 @@ const moonRgb = [1, 3, 5].map((at) => Number.parseInt(moonColour.slice(at, at + 
  * `frame` with the moon laid over it. The scene's 12-pixel disc covers about two cells a side,
  * so the phase shows as how bright they are; the words under the picture name it.
  */
-function withMoon(frame: Uint8Array, { sky, moon }: RoomFacts): Uint8Array {
-  if (!moonShown(sky, moon)) return frame;
+function withMoon(frame: Uint8Array, { moon, moonShown }: ClockedRoom['window']): Uint8Array {
+  if (!moonShown) return frame;
   const lit = new Map<number, number>();
   moonRuns(moon, (x, y, width) => {
     for (let at = x; at < x + width; at++) {
@@ -165,48 +133,22 @@ export function terminalLine(text: string): string {
   return `${line}…`;
 }
 
-/** A listening answer to word, `now` while it still describes this moment. */
-interface RoomListening {
-  data: ListeningSnapshot;
-  fetchedAt: string;
-  now: boolean;
-}
-
-/** The newest event with commits in it: stars and releases say nothing about the code. */
-const latestCommit = ({ events }: ShippingSnapshot) =>
-  events.find((event: ShippingEvent) => event.type === 'push' || event.type === 'merge');
-
-function listeningLine({ data, fetchedAt, now }: RoomListening): string {
-  const { words, at } = nowPlayingMarkup(nowPlaying(data, fetchedAt, now));
-  return inline(el('p', {}, ...words, ' ', ...(at === null ? [] : [at]))).trim();
-}
-
-export interface RoomText {
-  listening: RoomListening | undefined;
-  shipping: ShippingSnapshot | undefined;
-  /** The answers are the build's fixtures: a line says so. */
-  sample: boolean;
-  /** Where this copy is served, so its commands work on a Preview. */
-  origin: string;
-}
-
 /** The answer to `curl ayagmar.dev/room`, ending in how to get it without colour. */
 export function renderTerminalRoom(
   frame: Uint8Array,
-  facts: RoomFacts,
-  { listening, shipping, sample, origin }: RoomText
+  { window, lamp, record, pins, sample }: ClockedRoom,
+  origin: string
 ): string {
-  const commit = shipping === undefined ? undefined : latestCommit(shipping);
   const target = curlTarget(origin);
   return [
-    ...halfBlocks(withMoon(frame, facts)),
+    ...halfBlocks(withMoon(frame, window)),
     '',
     ...identityLines,
     '',
-    `It is ${facts.time} in Rabat.`,
-    windowWords(facts.sky, facts.moon),
-    ...(listening === undefined ? [] : [terminalLine(listeningLine(listening))]),
-    ...(commit === undefined ? [] : [terminalLine(`Shipped ${inline(shippingItem(commit))}`)]),
+    `It is ${lamp.time} in Rabat.`,
+    window.label,
+    ...(record.words === null ? [] : [terminalLine(record.words)]),
+    ...(pins.latest === null ? [] : [terminalLine(`Shipped ${inline(shippingItem(pins.latest))}`)]),
     ...(sample ? [sampleNote] : []),
     '',
     ...textPages.map(({ href }) => `  curl ${target}${href}`),

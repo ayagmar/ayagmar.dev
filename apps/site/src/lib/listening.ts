@@ -4,8 +4,9 @@
  */
 import type { ListeningSnapshot } from '@min7/contracts';
 import { artistUrl, trackUrl } from './lastfm.ts';
-import { type Answer, instantMs, list, text, whole } from './live.ts';
+import { instantMs, list, text, whole } from './live.ts';
 import { el, type Markup, toNode, when } from './markup.ts';
+import { rabatStamp } from './words.ts';
 
 /** A Last.fm page, or null. Links only; the site never loads from Last.fm. */
 const lastfm = (value: unknown) =>
@@ -60,7 +61,7 @@ export interface NowPlayingLine {
  * with when. The build cannot know, so it always says `Last played`.
  */
 export function nowPlaying(
-  { nowPlaying: current, recent }: ListeningSnapshot,
+  { nowPlaying: current, recent }: Pick<ListeningSnapshot, 'nowPlaying' | 'recent'>,
   fetchedAt: string,
   now: boolean
 ): NowPlayingLine {
@@ -103,6 +104,15 @@ export function nowPlayingMarkup(line: NowPlayingLine): { words: Markup[]; at: M
   };
 }
 
+/**
+ * The line as plain text, for the room's hotspot and the terminal: `Last played Which Will by
+ * Nick Drake · 26 Oct, 09:00`. A line that does not describe now keeps its date, as on the page.
+ */
+export function nowPlayingWords({ lead, track, at, when }: NowPlayingLine): string {
+  const sentence = track === null ? lead : `${lead} ${track.track} by ${track.artist}`;
+  return at === null ? sentence : `${sentence} · ${when}${rabatStamp(at)}`;
+}
+
 // What the line's live region says now, so it is announced only when that changes.
 let said = '';
 
@@ -110,12 +120,7 @@ let said = '';
  * Updates the page's `.now-playing` line in place. The track sentence is a polite live region
  * announced whole when it changes; the time after it ticks every minute outside it.
  */
-export function renderNowPlaying(
-  line: HTMLElement,
-  { data, fetchedAt }: Answer<ListeningSnapshot>,
-  now: boolean
-): void {
-  const current = nowPlaying(data, fetchedAt, now);
+export function renderNowPlaying(line: HTMLElement, current: NowPlayingLine): void {
   const { words, at } = nowPlayingMarkup(current);
   const sentence = line.firstElementChild as HTMLElement;
   const key = JSON.stringify(words);

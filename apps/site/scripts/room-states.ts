@@ -1,7 +1,8 @@
 // `just room-states`: every state of the home page room on one contact sheet, under an ignored
 // directory, so a mismatch between two layers shows side by side. Never shipped. It drives the
 // built home page itself, so the markup, room.css and room.ts are the real ones, and picks its
-// instants with the same src/lib/sky.ts. Only the weather is set by hand: the build reads none.
+// instants with the same src/lib/sky.ts. Only the weather and a playing record are set by hand: the
+// build reads neither.
 import { mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
@@ -45,6 +46,7 @@ interface State {
   label: string;
   time: number;
   weather?: string;
+  record?: string;
 }
 
 const states: State[] = [
@@ -53,6 +55,8 @@ const states: State[] = [
   { label: 'night', time: sky('night') },
   { label: '03:00, cat and late note', time: start + 3 * hourMs },
   { label: '06:00, late note', time: start + 6 * hourMs },
+  { label: 'day, record playing', time: sky('day'), record: 'playing' },
+  { label: 'night, record playing', time: sky('night'), record: 'playing' },
   ...(['day', 'dusk', 'night'] as const).flatMap((name) =>
     weathers.map((weather) => ({ label: `${name}, ${weather}`, time: sky(name), weather }))
   ),
@@ -82,9 +86,13 @@ const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 async function shot(page: Page, state: State): Promise<Buffer> {
   await page.clock.setFixedTime(state.time);
   await page.goto(origin);
-  await page.locator('.scene').evaluate((scene, weather) => {
-    if (weather !== undefined) (scene as HTMLElement).dataset.weather = weather;
-  }, state.weather);
+  await page.locator('.scene').evaluate(
+    (scene, { weather, record }) => {
+      if (weather !== undefined) (scene as HTMLElement).dataset.weather = weather;
+      if (record !== undefined) (scene as HTMLElement).dataset.record = record;
+    },
+    { weather: state.weather, record: state.record }
+  );
   await page.waitForLoadState('networkidle');
   return page.locator('.scene').screenshot();
 }

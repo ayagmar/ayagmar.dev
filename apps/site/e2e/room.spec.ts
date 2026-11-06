@@ -69,6 +69,13 @@ test('without JavaScript the page follows the system theme and hides the switch'
   // The room stays the static night scene: no sky from a clock, no moon, no note.
   await expect(page.locator('.scene')).not.toHaveAttribute('data-sky', /.*/);
   await expect(page.locator('.room-note')).toBeHidden();
+  // The objects are the build's, the words on them dated, and the record rests.
+  await expect(page.locator('.room-pins li').first()).toBeVisible();
+  await expect(page.locator('.room-screen i[data-l="4"]').first()).toBeVisible();
+  await expect(page.locator('.scene')).not.toHaveAttribute('data-record', /.*/);
+  await expect(page.locator('[data-room="frame"]')).toHaveAccessibleName(
+    /^Framed screen: LLM usage\. .+ tokens, .+, as of .+\.$/
+  );
   // The keys button would open nothing.
   await expect(page.getByRole('button', { name: 'Keys' })).toBeHidden();
   await context.close();
@@ -141,6 +148,35 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
   await page.setViewportSize({ width: 320, height: 800 });
   await expect(page.locator('.scene a:visible')).toHaveCount(0);
 });
+
+// Catches a spine turned into a link or a tab stop (too small a target, ADR 0043), a draft on the
+// published shelf, and a Notebook that says something other than what the shelf holds. The count
+// comes from /writing, the list the shelf must equal.
+for (const [build, details] of [
+  ['published', {}],
+  ['drafts', { tag: '@drafts' }],
+] as const) {
+  test(
+    `the shelf holds the ${build} build's posts and says so on the Notebook`,
+    details,
+    async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.goto('/writing');
+      const titles = await page.locator('ul.posts > li > a').allTextContents();
+      await page.goto('/');
+      const spines = page.locator('.room-books li');
+      await expect(spines).toHaveCount(Math.min(titles.length, 19));
+      if (build === 'drafts') expect(titles.length).toBeGreaterThan(0);
+      await expect(page.locator('.room-books a, .room-books [tabindex]')).toHaveCount(0);
+      await expect(page.locator('.scene a')).toHaveCount(7);
+      await expect(page.locator('[data-room="notebook"]')).toHaveAccessibleName(
+        titles.length === 0
+          ? 'Notebook: writing. No posts yet.'
+          : new RegExp(`^Notebook: writing\\. ${titles.length} posts?, newest: .+\\.$`)
+      );
+    }
+  );
+}
 
 // Catches an object in the list that lights nothing: the rule names each object, so a new one in
 // src/lib/room.ts needs its line in room.css. Also a row lighting the wrong object, or two.

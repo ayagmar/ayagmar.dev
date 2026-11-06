@@ -1,6 +1,6 @@
 # 0029. Rabat weather in the window
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: code 3 (overcast) has its own layer (ADR 0034). Amended 2026-10-27: the credit moved from the home page to the colophon.
+Status: accepted, 2026-10-26. Amended 2026-11-06: the room asks through `poll`, so a tab that comes back asks once its last request is a minute old, up to one request a minute instead of four an hour; the allowance is 4.35 KB, a decision the owner took for the room's model (ADR 0043). Amended 2026-10-26: code 3 (overcast) has its own layer (ADR 0034). Amended 2026-10-27: the credit moved from the home page to the colophon.
 
 ## Context
 

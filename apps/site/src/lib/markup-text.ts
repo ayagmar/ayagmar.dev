@@ -2,8 +2,9 @@
  * Markup (src/lib/markup.ts) written out as text, for the copies that have no page around them:
  * /stats as text and the terminal room. A time reads as it does without JavaScript, in Rabat.
  */
-import { rabatTime } from '../data/format.ts';
+
 import type { Element, Markup } from './markup.ts';
+import { rabatStamp } from './words.ts';
 
 const lineTags = new Set(['p', 'h3', 'caption', 'figcaption', 'tr', 'li']);
 
@@ -12,7 +13,7 @@ export function inline(node: Markup): string {
   if (typeof node === 'string') return node;
   if (node.attrs['aria-hidden'] === 'true' || node.tag === 'summary') return '';
   if (node.attrs.role === 'img') return node.attrs['aria-label'] ?? '';
-  if (node.tag === 'time' && 'data-ago' in node.attrs) return rabatTime(node.attrs.datetime ?? '');
+  if (node.tag === 'time' && 'data-ago' in node.attrs) return rabatStamp(node.attrs.datetime ?? '');
   return node.children.reduce<{ text: string; after: boolean }>(
     ({ text, after }, child) => {
       const part = inline(child);

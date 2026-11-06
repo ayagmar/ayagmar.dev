@@ -3,7 +3,7 @@
  * build time, as the no-JS fallback and first paint; a panel marked with `data-live` is then
  * replaced by a newer valid answer from `/v1/<source>` and its times read relative to now.
  * Adding a source is a reader for its data and a renderer for its panel. Shared by the home
- * page's now-playing script and the /stats and /uses scripts; nothing here loads zod or the
+ * page's room script and the /stats and /uses scripts; nothing here loads zod or the
  * contracts' schemas.
  */
 
@@ -188,8 +188,8 @@ export interface Answer<Data> {
   stale: boolean;
 }
 
-// A server clock up to this far ahead of the reader's is still believable.
-const skewMs = 2 * 60_000;
+/** A server clock up to this far ahead of the reader's is still believable. */
+export const skewMs = 2 * 60_000;
 
 /**
  * The answer in `body` if it is a `/v1/<source>` envelope the page may show at `now`: this
@@ -224,17 +224,52 @@ export const isCurrent = <Data>(
 ): answer is Answer<Data> =>
   answer !== undefined && !answer.stale && time - answer.at <= limit && !(answer.at < shownAt);
 
+/** What a source's reader knows after a refresh. */
+export interface Followed<Data> {
+  /** The accepted answer: the build's, with no data, until a request brings a better one. */
+  shown: Omit<Answer<Data>, 'data'> & { data?: Data };
+  /** `shown` is within the source's threshold of now. */
+  fresh: boolean;
+  /** The latest request brought `shown`, and it is fresh: it still describes now. */
+  now: boolean;
+}
+
+/**
+ * The one rule for which answer a source shows, without the page: a function to call after each
+ * refresh with what `poll` hands over. Only a current answer replaces what is shown: valid, not
+ * flagged stale by signals, within the threshold of `limit` ms, and at least as new. Anything
+ * else keeps it, and then the answer no longer describes now. `builtAt` is when the build's
+ * snapshot was taken, absent when it had none.
+ */
+export function follow<Data>(
+  source: string,
+  limit: number,
+  read: (data: unknown) => Data | undefined,
+  builtAt: string | undefined
+) {
+  let shown: Followed<Data>['shown'] = {
+    fetchedAt: builtAt ?? '',
+    at: instantMs(builtAt, true) ?? Number.NaN,
+    stale: false,
+  };
+  return (body: unknown, time: number, failed: boolean): Followed<Data> => {
+    const answer = readAnswer(body, source, read, time);
+    const current = isCurrent(answer, limit, time, shown.at);
+    if (current) shown = answer;
+    const fresh = time - shown.at <= limit;
+    return { shown, fresh, now: fresh && !failed && current };
+  };
+}
+
 /**
  * Keeps the panel `[data-live=<source>]` current. Its HTML is the build's snapshot, taken at
  * `data-fetched-at` (absent when the build had none), and `data-stale-after` gives the
  * source's threshold in seconds. In api mode `data-live-src` names the endpoint, asked every
- * `everyMs` while the page is visible. Only a current answer replaces what is shown, through
- * `render`: valid, not flagged stale by signals, within the threshold, and at least as new.
- * Anything else keeps it. Whatever is shown is labelled with its age, and called out of date
- * once older than the threshold. `render` is told whether the answer still describes now:
- * fresh, and brought by the latest request, not a failure or any answer that did not replace
- * what is shown. `relabel`, if given, runs with `tick` every time, whatever is shown: for times
- * the panel reads relative to now its own way.
+ * `everyMs` while the page is visible. Which answer shows is `follow`'s rule, and a new one
+ * goes through `render`. Whatever is shown is labelled with its age, and called out of date
+ * once older than the threshold. `render` is told whether the answer still describes now.
+ * `relabel`, if given, runs with `tick` every time, whatever is shown: for times the panel reads
+ * relative to now its own way.
  */
 export function live<Data>(
   source: string,
@@ -247,21 +282,10 @@ export function live<Data>(
   if (!panel) return;
   const { liveSrc, fetchedAt, staleAfter } = panel.dataset;
   const freshness = panel.querySelector<HTMLElement>('.freshness');
-  const limit = Number(staleAfter) * 1000;
-  // The build's snapshot until an answer replaces it.
-  let shown: Omit<Answer<Data>, 'data'> & { data?: Data } = {
-    fetchedAt: fetchedAt ?? '',
-    at: instantMs(fetchedAt, true) ?? Number.NaN,
-    stale: false,
-  };
+  const refreshed = follow(source, Number(staleAfter) * 1000, read, fetchedAt);
   let drawn = '';
   poll(liveSrc, everyMs, (body, time, failed) => {
-    const answer = readAnswer(body, source, read, time);
-    const current = isCurrent(answer, limit, time, shown.at);
-    if (current) shown = answer;
-    const fresh = time - shown.at <= limit;
-    // Now only while the latest request brought a current answer, the one shown.
-    const now = fresh && !failed && current;
+    const { shown, fresh, now } = refreshed(body, time, failed);
     const key = `${shown.at} ${fresh} ${now}`;
     if (key !== drawn && shown.fetchedAt) {
       drawn = key;

@@ -5,11 +5,13 @@ import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
 import Sample from '../components/Sample.astro';
 import { shippingStrip } from '../data/format.ts';
+import { roomSeed } from '../data/room.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
 import { getDays, getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
-import { roomObjects } from '../lib/room.ts';
+import { catName, catNote, hotspotWords, roomObjects } from '../lib/room.ts';
+import { roomState, seededInputs } from '../lib/room-state.ts';
 import { site } from '../lib/site.ts';
 import { moonColour } from '../lib/sky.ts';
 import { person, website } from '../lib/structured-data.ts';
@@ -33,7 +35,9 @@ const strip = shippingStrip(
   (await getDays()).dates
 );
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
-const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift until five.';
+const seed = await roomSeed();
+// The page is the room's `built` moment: no clock, so no sky, and every object carries its date.
+const room = roomState(seededInputs(seed, true), { kind: 'built', instant: seed.builtAt });
 ---
 
 <Base structuredData={[website(), person(about.data.identity)]}>
@@ -44,6 +48,7 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
     <div
       class="scene"
       data-weather-src={signalsMode === 'api' ? `${signalsApiBase}/v1/weather` : undefined}
+      data-room-seed={JSON.stringify(seed)}
     >
       <span
         class="room-art night"
@@ -55,6 +60,23 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
         role="img"
         aria-label="A pixel-art desk in Morocco, in a whitewashed room; an arched window looks out over rooftops and Hassan Tower. The window's own label says what the sky is doing."
       ></span>
+      {/* What the room holds, from its state (ADR 0043): picture only, as each hotspot says it. */}
+      <ul class="room-pins room-lit" aria-hidden="true">
+        {room.pins.pins.map((pin) => (
+          <li data-kind={pin.kind}>
+            {Array.from({ length: Math.min(pin.count, 3) }, () => (
+              <i></i>
+            ))}
+          </li>
+        ))}
+      </ul>
+      <div class="room-screen heat room-lit" aria-hidden="true">
+        {room.screen.cells.map((cell) => <i data-l={cell.level ?? 'none'}></i>)}
+      </div>
+      <ol class="room-books room-lit" aria-hidden="true">
+        {room.shelf.books.map((book) => <li data-tone={book.tone}></li>)}
+      </ol>
+      <span class="room-record" aria-hidden="true"></span>
       <!-- The room's clock (ADR 0027): src/scripts/room.ts fills these in by Rabat time. -->
       <span class="room-window"></span>
       <svg class="room-moon" viewBox="0 0 480 160" preserveAspectRatio="none" aria-hidden="true">
@@ -62,23 +84,21 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
       </svg>
       <span class="room-weather" aria-hidden="true"></span>
       <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Rabat.</p>
-      {/* Shown 02:00 to 05:00 in Rabat (room.css, by the hour src/scripts/room.ts sets). The art
-          is a layer of the whole scene; the spot over the cat holds its name and the note shown
-          on hover and focus. */}
+      {/* Shown 02:00 to 05:00 in Rabat, by `data-cat`. The art is a layer of the whole scene; the
+          spot over the cat holds its name and the note shown on hover and focus. */}
       <span class="room-cat">
         {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so the keyboard gets the note a pointer gets on hover (WCAG 1.4.13); it does nothing else. */}
         <span class="room-cat-spot" tabindex="0" role="img" aria-label={catName}>
-          <span aria-hidden="true">The cat keeps the night shift until five.</span>
+          <span aria-hidden="true">{catNote}</span>
         </span>
       </span>
       {roomObjects.map((item) => (
         <a class="hotspot" href={item.href} data-room={item.id}>
-          <span>
-            {item.object}: {item.section}
-          </span>
+          <span>{hotspotWords(item, room)}</span>
         </a>
       ))}
     </div>
+    {room.sample && <Sample />}
     <!-- Open-Meteo's CC BY 4.0 credit is on the colophon, linked from the footer (ADR 0029). -->
   </section>
 
@@ -170,8 +190,4 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
 
 <script>
 import '../scripts/room.ts';
-</script>
-
-<script>
-import '../scripts/now-playing.ts';
 </script>

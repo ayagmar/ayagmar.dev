@@ -9,13 +9,13 @@
 
 import type { ListeningSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
-import { readListening, renderNowPlaying } from '../lib/listening.ts';
+import { nowPlaying, readListening, renderNowPlaying } from '../lib/listening.ts';
 import { listeningBody } from '../lib/listening-panel.ts';
 import { type Answer, live } from '../lib/live.ts';
 import { readLlmUsageSnapshot } from '../lib/llm-usage.ts';
 import { llmUsagePanel } from '../lib/llm-usage-panel.ts';
 import { type Markup, toNode } from '../lib/markup.ts';
-import { knowsRabatDate } from '../lib/rabat-date.ts';
+import { knowsRabat } from '../lib/rabat-date.ts';
 import { readProjects, readShipping } from '../lib/stats.ts';
 import { projectsBody, shippingBody, typingBody } from '../lib/stats-panels.ts';
 import { readMonkeytype, relabelDays } from '../lib/typing.ts';
@@ -45,7 +45,10 @@ function body<Data>(
 // describes now, so it is redrawn every time.
 const listening = body<ListeningSnapshot>('.listening-body', ({ data }) => listeningBody(data));
 live('listening', minute, readListening, (panel, answer, now) => {
-  renderNowPlaying(panel.querySelector('.now-playing') as HTMLElement, answer, now);
+  renderNowPlaying(
+    panel.querySelector('.now-playing') as HTMLElement,
+    nowPlaying(answer.data, answer.fetchedAt, now)
+  );
   listening(panel, answer);
 });
 
@@ -87,11 +90,11 @@ const llmUsage = document.querySelector<HTMLElement>('[data-live="llm-usage"]');
 live(
   'llm-usage',
   15 * minute,
-  (data) => (knowsRabatDate() ? readLlmUsageSnapshot(data) : undefined),
+  (data) => (knowsRabat() ? readLlmUsageSnapshot(data) : undefined),
   body('.llm-usage-body', ({ data, fetchedAt }) => llmUsagePanel(data, fetchedAt)),
   (now) => {
     if (!llmUsage?.dataset.liveSrc) return;
-    const today = knowsRabatDate() ? rabatDate(now) : undefined;
+    const today = knowsRabat() ? rabatDate(now) : undefined;
     for (const block of llmUsage.querySelectorAll<HTMLElement>('[data-rabat-date]')) {
       block.hidden = block.dataset.rabatDate !== today;
     }
