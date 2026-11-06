@@ -17,7 +17,8 @@ export interface DayValue<T> {
   value: T;
 }
 
-const parsed = <T>(json: string, schema: Schema<T>) => {
+/** A stored day's JSON read by `schema`, or null when it cannot be. */
+export const parsedDay = <T>(json: string, schema: Schema<T>) => {
   try {
     const result = schema.safeParse(JSON.parse(json));
     return result.success ? result : null;
@@ -40,7 +41,7 @@ export function mergedRows<T>(
   return values.flatMap(({ date, value }) => {
     const old = stored.get(date);
     if (old === undefined) return [{ day: date, json: JSON.stringify(value) }];
-    const before = parsed(old, schema);
+    const before = parsedDay(old, schema);
     if (before === null) {
       logEvent('warn', 'stored day unreadable', { date });
       return [];

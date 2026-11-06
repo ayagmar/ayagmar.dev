@@ -19,6 +19,7 @@ import {
 import { readSecret } from '../adapters/pull/secrets.ts';
 import {
   archiveUrl,
+  hasBothSlots,
   mergeWeatherDay,
   weatherDayOf,
   weatherDayValues,
@@ -39,6 +40,8 @@ const maxDays = 400;
 const maxTries = 5;
 /** Between tries when the upstream names no time of its own. */
 const retryMs = 5 * 60_000;
+/** Between tries when the archive has not reached a slot's hour: it updates every 6 hours. */
+const incompleteRetryMs = 60 * 60_000;
 /** Sources whose `Retry-After` also binds the backfill: the same two upstreams. */
 const cooldownSources: readonly SourceId[] = ['listening', 'listening-history', 'weather'];
 
@@ -90,6 +93,7 @@ async function fillDate(env: Env, date: string, now: number) {
 
   const store = new D1SnapshotStore(env.DB);
   const at = new Date(now).toISOString();
+  let weatherDay: string | undefined;
   const committed =
     (await store.mergeDays(
       'listening',
@@ -100,11 +104,17 @@ async function fillDate(env: Env, date: string, now: number) {
     (await store.mergeDays(
       'weather',
       date,
-      (stored) => mergedRows(weatherValues, stored, weatherStoredDaySchema, mergeWeatherDay),
+      (stored) => {
+        const rows = mergedRows(weatherValues, stored, weatherStoredDaySchema, mergeWeatherDay);
+        weatherDay = rows[0]?.json ?? stored.get(date);
+        return rows;
+      },
       at
     ));
   // A live pull won the fence. Merges only add, so reading the date again is safe.
   if (!committed) throw new PullError('upstream_error');
+  // What was there is kept, and the date stays open: only both slots finish it.
+  if (!hasBothSlots(weatherDay)) throw new PullError('upstream_incomplete');
 }
 
 async function step(
@@ -140,7 +150,8 @@ async function step(
   } catch (error) {
     if (!(error instanceof PullError)) throw error;
     logEvent('warn', 'backfill failed', { date: state.next, code: error.code });
-    const notBefore = error.retryAt ?? now + retryMs;
+    const wait = error.code === 'upstream_incomplete' ? incompleteRetryMs : retryMs;
+    const notBefore = error.retryAt ?? now + wait;
     await progress.save(claimed, describedDate, { ...claim, notBefore, code: error.code });
     return;
   }

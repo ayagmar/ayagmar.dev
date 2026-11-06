@@ -775,6 +775,77 @@ describe('the backfill', () => {
     expect(await dayCount()).toBe(0);
   });
 
+  // Catches a date marked done with its weather missing: the archive had not reached the hour,
+  // and nothing would ever come back for it.
+  it.each([
+    ['one slot', (hour: number) => (hour < 20 ? 3 : null), { day: { code: 3 }, night: null }],
+    ['both slots', () => null, undefined],
+  ])(
+    'keeps a date open while the archive lacks %s, and finishes when it comes',
+    async (_, codes, partial) => {
+      await seedSnapshots();
+      await arm('2026-10-01', '2026-10-02');
+      lastfm({});
+      archiveAnswers((_date, hour) => codes(hour));
+      await tick('2026-11-06T10:00:30Z');
+      const state = await backfillState();
+      expect(state).toMatchObject({ next: '2026-10-01', tries: 1, code: 'upstream_incomplete' });
+      expect(state.notBefore).toBe(Date.parse('2026-11-06T11:00:30Z'));
+      if (partial === undefined) expect(await weatherDay('2026-10-01')).toBeUndefined();
+      else expect(await weatherDay('2026-10-01')).toMatchObject(partial);
+
+      await tick('2026-11-06T10:30:30Z');
+      expect((await backfillState()).tries).toBe(1);
+
+      network.resetHandlers();
+      lastfm({});
+      archiveAnswers(() => 1);
+      await tick('2026-11-06T11:00:30Z');
+      expect(await backfillState()).toMatchObject({ next: '2026-10-02', tries: 0 });
+      expect((await weatherDay('2026-10-01'))?.night?.code).toBe(1);
+    }
+  );
+
+  // Catches a date that never fills being reported finished, once its tries are spent.
+  it('reports a date the archive never reaches as stopped, not finished', async () => {
+    await seedSnapshots();
+    await arm('2026-10-01', '2026-10-01');
+    lastfm({});
+    archiveAnswers(() => null);
+    for (let hours = 0; hours < 7; hours++) {
+      await tick(new Date(Date.parse('2026-11-06T10:00:30Z') + hours * 3_600_000).toISOString());
+    }
+    expect(await backfillState()).toMatchObject({
+      next: '2026-10-01',
+      code: 'upstream_incomplete',
+      stopped: true,
+    });
+  });
+
+  // Catches slots filled by a live pull counted as missing: the date needs no archive for them.
+  it('finishes a date whose slots are already in history', async () => {
+    await pullWeather('2026-10-01T12:30:00Z', { code: 61, isDay: 1 });
+    await pullWeather('2026-10-01T21:30:00Z', { code: 0, isDay: 0 });
+    await seedSnapshots();
+    await arm('2026-10-01', '2026-10-01');
+    lastfm({});
+    archiveAnswers(() => null);
+    await tick('2026-11-06T10:00:30Z');
+    expect(await backfillState()).toBeNull();
+    expect((await weatherDay('2026-10-01'))?.day?.origin).toBe('live');
+  });
+
+  // Catches an answer for another date read as a day with nothing in it.
+  it('counts an answer for another date as a failure, and writes no weather', async () => {
+    await seedSnapshots();
+    await arm('2026-10-01', '2026-10-01');
+    lastfm({});
+    network.use(http.get(archiveUrl, () => HttpResponse.json(archive('2026-10-09', () => 3))));
+    await tick('2026-11-06T10:00:30Z');
+    expect(await backfillState()).toMatchObject({ tries: 1, code: 'upstream_malformed' });
+    expect(await weatherDay('2026-10-01')).toBeUndefined();
+  });
+
   // Catches a refusal repeated every minute until its five tries are gone, with an hour asked
   // for. Each tick is a fresh invocation, so the wait has to come from storage.
   it.each([

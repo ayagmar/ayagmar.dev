@@ -124,10 +124,10 @@ Edge caching holds a month block for up to 60 seconds. Then arm the rest, which 
 just signals-backfill 2026-10-02 2026-11-05
 ```
 
-Workers Logs has one `backfill day` line per date. It stops by itself:
+Workers Logs has one `backfill day` line per date. It waits by itself: `notBefore` in `json` is the Unix ms of the next try, a time the upstream gave with `Retry-After`, an hour when the archive lacks an hour, else 5 minutes. A cooldown already recorded for `listening`, `listening-history` or `weather` holds it too. Waiting asks nothing and spends no try. It stops by itself:
 
 - After the last date: `json` is `null`.
-- After 5 failed tries on a date: a `backfill stopped` line, and `json` holds `"stopped":true` with `next`, the date it stopped on. Fix the cause, then arm again from `next`.
+- After 5 failed tries on a date: a `backfill stopped` line, and `json` holds `"stopped":true` with `next`, the date it stopped on, and `code`, why. Fix the cause, then arm again from `next`. `upstream_incomplete` means the archive never reached one of that date's two hours: what it did have is kept, and the date is incomplete, not done.
 - On a range it refuses: a `backfill refused` line, no request made, `json` is `null`.
 
 Arming again is always safe, also over a running backfill and over dates already filled: a date only ever gains what it lacked, and a live weather slot is never replaced by an archived one. To cancel, arm nothing and clear the row's state:

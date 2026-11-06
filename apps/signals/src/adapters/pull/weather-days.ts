@@ -11,7 +11,7 @@ import {
 import { rabatDate, rabatDayStart } from '@min7/contracts/rabat';
 import { weatherCodes } from '@min7/contracts/weather-codes';
 import { logEvent } from '../../security/log.ts';
-import { type DayValue, mergedRows } from '../../storage/daily.ts';
+import { type DayValue, mergedRows, parsedDay } from '../../storage/daily.ts';
 import type { PullHistory } from '../types.ts';
 import {
   checkSnapshot,
@@ -121,16 +121,25 @@ export const archiveUrl = (date: string) =>
   })}`;
 
 /**
- * What the archive says of `date`, its two hours picked by instant. An hour it has no code for
- * leaves that slot null: a day the models have not reached is unknown, not clear.
+ * What the archive says of `date`, its two hours picked by instant. An hour with a null code
+ * leaves that slot null: a day the models have not reached is unknown, not clear. An answer
+ * without those hours is not about this date at all, and fails.
  */
 export function weatherDayOf(date: string, response: UpstreamResponse): WeatherStoredDay {
   const { hourly } = parseBody(response, openMeteoArchiveSchema);
   if (hourly.time.length !== hourly.weather_code.length) throw new PullError('upstream_malformed');
   const slot = (name: Slot) => {
     const at = target(date, name);
-    const code = hourly.weather_code[hourly.time.indexOf(at)] ?? null;
+    const index = hourly.time.indexOf(at);
+    if (index === -1) throw new PullError('upstream_malformed');
+    const code = hourly.weather_code[index] ?? null;
     return code === null ? null : ({ code, at: fromUnixSeconds(at), origin: 'archive' } as const);
   };
   return checkSnapshot(weatherStoredDaySchema, { day: slot('day'), night: slot('night') });
+}
+
+/** Whether a stored day's JSON has both its slots: what a backfilled date must end up with. */
+export function hasBothSlots(json: string | undefined): boolean {
+  const day = json === undefined ? null : parsedDay(json, weatherStoredDaySchema);
+  return day != null && day.data.day !== null && day.data.night !== null;
 }
