@@ -1,5 +1,6 @@
 import type { ProjectsSnapshot } from '@min7/contracts';
 import { fixturesCapturedAt, snapshotFixtures } from '@min7/contracts/fixtures';
+import { type MdastNode, markdownToMdast } from 'satteri';
 import { describe, expect, it } from 'vitest';
 import {
   absoluteLinks,
@@ -34,6 +35,18 @@ const note = (id: string, body: string): Note => ({
   body,
   data: { title: 'A note', date: new Date('2026-10-25'), tags: [], draft: false },
 });
+
+/** The link destinations of `markdown` as a parser reads them, and its text outside them. */
+function parsed(markdown: string) {
+  const destinations: string[] = [];
+  const read = (node: MdastNode): string => {
+    if ('url' in node) destinations.push(node.url);
+    if ('children' in node) return node.children.map((child) => read(child as MdastNode)).join('');
+    return node.type === 'text' || node.type === 'inlineCode' ? node.value : '';
+  };
+  const text = read(markdownToMdast(markdown));
+  return { destinations, text };
+}
 
 describe('links in a copy', () => {
   // Catches a relative link in a post that points nowhere once the text is read in a terminal.
@@ -71,22 +84,34 @@ describe('links in a copy', () => {
     expect(absoluteLinks('[a](/x)/x', '/writing/post')).toBe('[a](https://ayagmar.dev/x)/x');
   });
 
-  // Catches syntax a plain search or a naive scan reads wrongly: brackets and code in a label,
-  // parentheses, escapes and angle brackets in a destination, an image inside a link.
-  it('reads every form a destination can take', () => {
-    const cases = [
-      ['[a [b] `]`](/x)', '[a [b] `]`](https://ayagmar.dev/x)'],
-      ['[a](/x_(y) "t")', '[a](https://ayagmar.dev/x_(y) "t")'],
-      ['[a](</x y>)', '[a](<https://ayagmar.dev/x%20y>)'],
-      ['[a](/x\\(y)', '[a](https://ayagmar.dev/x(y)'],
-      ['[![i](/i.png)](/b)', '[![i](https://ayagmar.dev/i.png)](https://ayagmar.dev/b)'],
-      ['[a](https://e.example)', '[a](https://e.example)'],
-      ['<https://e.example>', '<https://e.example>'],
-      ['[a](mailto:hello@ayagmar.dev)', '[a](mailto:hello@ayagmar.dev)'],
+  // Catches syntax a plain search or a naive scan reads wrongly, and a target written back so it
+  // no longer parses as the same link: brackets and code in a label, parentheses, escapes and
+  // angle brackets in a destination, an image inside a link. Read back through the parser,
+  // since the text of a broken link can look right.
+  it('keeps every form of destination a link to the same place', () => {
+    const site = 'https://ayagmar.dev';
+    const cases: [body: string, destinations: string[], text: string][] = [
+      ['[a [b] `]`](/x)', [`${site}/x`], 'a [b] ]'],
+      ['[a](/x_(y) "t")', [`${site}/x_(y)`], 'a'],
+      ['[a](</x y>)', [`${site}/x%20y`], 'a'],
+      ['[a](</x(y>)', [`${site}/x(y`], 'a'],
+      ['[a](/x\\(y)', [`${site}/x(y`], 'a'],
+      ['[a](/x\\)y) after', [`${site}/x)y`], 'a after'],
+      ['[a](#x\\)y)', [`${site}/writing/post#x)y`], 'a'],
+      ['[d]\n\n[d]: /x\\)y', [`${site}/x)y`], 'd'],
+      ['[![i](/i.png)](/b)', [`${site}/b`, `${site}/i.png`], ''],
+      ['[a](https://e.example)', ['https://e.example'], 'a'],
+      ['<https://e.example>', ['https://e.example'], 'https://e.example'],
+      ['[a](mailto:hello@ayagmar.dev)', ['mailto:hello@ayagmar.dev'], 'a'],
     ];
-    for (const [body, expected] of cases) {
-      expect(absoluteLinks(body ?? '', '/writing/post')).toBe(expected);
+    for (const [body, destinations, text] of cases) {
+      expect(parsed(absoluteLinks(body, '/writing/post')), body).toEqual({ destinations, text });
     }
+  });
+
+  // Catches `<...>` wrapped a second time, which makes the brackets part of the destination.
+  it('writes an angle-bracket destination back once', () => {
+    expect(absoluteLinks('[a](</x y>)', '/writing/post')).toBe('[a](<https://ayagmar.dev/x%20y>)');
   });
 
   // Catches a section link that lands on nothing: a note's ids carry its name (ADR 0028).

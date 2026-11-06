@@ -115,7 +115,11 @@ export function absoluteLinks(body: string, path: string, idPrefix = ''): string
       {
         start: start + at.start,
         end: start + at.end,
-        text: url.startsWith('#') ? `${page}#${idPrefix}${url.slice(1)}` : new URL(url, page).href,
+        // Valid in a bare destination and inside `<...>`, whose brackets stay outside this edit.
+        text: new URL(
+          url.startsWith('#') ? `${page}#${idPrefix}${url.slice(1)}` : url,
+          page
+        ).href.replace(/[\\()<>]/g, '\\$&'),
       },
     ];
   });
