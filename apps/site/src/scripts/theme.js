@@ -51,11 +51,18 @@
   sync();
   // The first page of a tab's session marks it, so home's entrance (room.css) plays only when home
   // is that page. Set before the first paint and only here, so nothing waits on it without
-  // scripts, and blocked storage means no entrance (ADR 0037).
+  // scripts, and blocked storage means no entrance. The attribute lives only while the entrance
+  // runs: left on, a change of motion preference or a restored page would play it again (ADR 0037).
   try {
-    if (!sessionStorage.getItem('arrived')) {
-      sessionStorage.setItem('arrived', '1');
-      if (location.pathname === '/') root.dataset.entrance = '';
+    if (!sessionStorage.arrived) {
+      sessionStorage.arrived = 1;
+      if (location.pathname === '/' && !matchMedia('(prefers-reduced-motion)').matches) {
+        root.dataset.entrance = '';
+        const retire = () => delete root.dataset.entrance;
+        addEventListener('pagehide', retire);
+        addEventListener('animationcancel', retire);
+        addEventListener('animationend', (e) => e.target.matches('.room-list') && retire());
+      }
     }
   } catch {
     // No storage: no way to tell a first visit, so no entrance.

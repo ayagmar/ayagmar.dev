@@ -16,6 +16,7 @@ const firstFrame = async (page: Page) => {
 declare global {
   interface Window {
     firstFrame: string;
+    entrances: number;
   }
 }
 
@@ -173,14 +174,27 @@ test('hovering or focusing a row of the list lights its object in the room', asy
 // Catches the entrance replaying on a reload or a return to home, playing on arrival from another
 // page, moving anything for readers who asked for less motion, or hiding the name without scripts.
 test.describe('the entrance', () => {
+  const armed = (page: Page) => page.locator('html[data-entrance]');
   const name = (page: Page) =>
     page.locator('.intro').evaluate((intro) => getComputedStyle(intro).animationName);
+  /** Counts the entrance's animations in each new document, as the first may end before a read. */
+  const countStarts = (page: Page) =>
+    page.addInitScript(() => {
+      window.entrances = 0;
+      document.addEventListener('animationstart', (event) => {
+        if (event.animationName === 'arrive') window.entrances += 1;
+      });
+    });
+  const starts = (page: Page) => page.evaluate(() => window.entrances);
 
   test('plays once, only when home opens the session', async ({ page }) => {
+    await countStarts(page);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
-    expect(await name(page)).toBe('arrive');
+    await expect.poll(() => starts(page)).toBe(3);
     await page.reload();
+    await page.waitForLoadState('load');
+    expect(await starts(page)).toBe(0);
     expect(await name(page)).toBe('none');
     await page.goto('/about');
     await page.goto('/');
@@ -195,9 +209,41 @@ test.describe('the entrance', () => {
     expect(await name(page)).toBe('none');
   });
 
-  test('stays still with reduced motion', async ({ page }) => {
+  // Catches a trigger left on <html>: the animation comes back with the preference and hides the
+  // name again, long after the page settled.
+  test('cannot replay when the motion preference changes after it ends', async ({ page }) => {
+    await countStarts(page);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    await expect.poll(() => starts(page)).toBe(3);
+    await expect(armed(page)).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    expect(await name(page)).toBe('none');
+    expect(await starts(page)).toBe(3);
+  });
+
+  // Catches a page left mid-entrance coming back from the back/forward cache still armed. A real
+  // restore needs a cache Playwright's browser has off, so the events are synthetic (ADR 0042).
+  test('leaving retires it, so a restored page stays still', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    await page.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    });
+    await expect(armed(page)).toHaveCount(0);
+    expect(await name(page)).toBe('none');
+  });
+
+  // Catches a trigger left dormant for a reader who starts with reduced motion and later turns
+  // it off: nothing ends it, as nothing ever ran.
+  test('stays still with reduced motion, and is not left waiting', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
+    expect(await name(page)).toBe('none');
+    await expect(armed(page)).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     expect(await name(page)).toBe('none');
   });
 
