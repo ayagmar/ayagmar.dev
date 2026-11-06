@@ -3,7 +3,13 @@
 import { readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
-import { daysFixtures, pushFixtures, rawFixtures, snapshotFixtures } from '../src/fixtures.ts';
+import {
+  daysFixtures,
+  historyFixtures,
+  pushFixtures,
+  rawFixtures,
+  snapshotFixtures,
+} from '../src/fixtures.ts';
 
 const root = join(import.meta.dirname, '..', 'fixtures');
 
@@ -13,6 +19,7 @@ it('registers every fixture file in src/fixtures.ts', () => {
     snapshot: {},
     push: {},
     days: {},
+    history: {},
   };
   for (const source of readdirSync(root, { withFileTypes: true })) {
     if (!source.isDirectory()) continue;
@@ -34,4 +41,5 @@ it('registers every fixture file in src/fixtures.ts', () => {
   expect(registered(snapshotFixtures)).toEqual(onDisk.snapshot);
   expect(registered(pushFixtures)).toEqual(onDisk.push);
   expect(registered(daysFixtures)).toEqual(onDisk.days);
+  expect(registered(historyFixtures)).toEqual(onDisk.history);
 });
