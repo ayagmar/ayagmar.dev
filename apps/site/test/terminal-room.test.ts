@@ -165,11 +165,15 @@ describe('the Worker', () => {
   let stored: Map<string, Response>;
   let failing: { match?: string; body?: string; put?: boolean };
   let writes: Promise<unknown>[];
+  let onFrame: () => void;
 
   const assets = (signals: string | null) => ({
     fetch: async (request: Request) => {
       const { pathname } = new URL(request.url);
-      if (pathname.endsWith('.rgb')) return new Response(blank);
+      if (pathname.endsWith('.rgb')) {
+        onFrame();
+        return new Response(blank);
+      }
       if (pathname === '/terminal/room.json') {
         return Response.json({
           origin: 'https://ayagmar.dev',
@@ -207,6 +211,7 @@ describe('the Worker', () => {
     stored = new Map();
     failing = {};
     writes = [];
+    onFrame = () => undefined;
     vi.spyOn(Date, 'now').mockImplementation(() => clock);
     vi.stubGlobal('caches', {
       open: async () => ({
@@ -270,6 +275,17 @@ describe('the Worker', () => {
       answer('shipping', shipping)
     );
     expect((await room()).body).not.toContain('Now playing');
+  });
+
+  // Catches the limit being checked before the frame's read, the last wait before rendering.
+  it('checks the limit after a frame read that crosses it', async () => {
+    server.use(answer('listening', playing, start - limit + 1_000), answer('shipping', shipping));
+    onFrame = () => {
+      clock = start + 2_000;
+    };
+    const { body } = await room();
+    expect(body).not.toContain('Now playing');
+    expect(body).toContain('\nLast played Live track by Live artist');
   });
 
   // Catches an entry cached before a deploy replacing what the newer build knows.

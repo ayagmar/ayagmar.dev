@@ -84,26 +84,30 @@ export async function terminalRoom(
           latest('listening', base, origin, later),
           latest('shipping', base, origin, later),
         ]);
-  // Read after the waits above: an answer can pass its limit during them, or while cached.
-  const now = Date.now();
-  const heard = readAnswer(listening, 'listening', readListening, now);
-  const shipped = readAnswer(shipping, 'shipping', readShipping, now);
   const limit = seed.listeningLimitMs;
-  const current = isCurrent(heard, limit, now, seed.inputs.listening?.at ?? Number.NaN);
-  const state = roomState(
-    {
-      ...seededInputs(seed, knowsRabat()),
-      listening: newest(
-        heard && liveReading(heard, current ? heard.at + limit : null),
-        seed.inputs.listening
-      ),
-      shipping: newest(shipped && liveReading(shipped, null), seed.inputs.shipping),
-    },
-    { kind: 'live', instant: now }
-  );
-  const frame = await asset(`/terminal/${frameFor(state)}.rgb`).then((response) =>
+  const stateAt = (now: number) => {
+    const heard = readAnswer(listening, 'listening', readListening, now);
+    const shipped = readAnswer(shipping, 'shipping', readShipping, now);
+    const current = isCurrent(heard, limit, now, seed.inputs.listening?.at ?? Number.NaN);
+    return roomState(
+      {
+        ...seededInputs(seed, knowsRabat()),
+        listening: newest(
+          heard && liveReading(heard, current ? heard.at + limit : null),
+          seed.inputs.listening
+        ),
+        shipping: newest(shipped && liveReading(shipped, null), seed.inputs.shipping),
+      },
+      { kind: 'live', instant: now }
+    );
+  };
+  const drawn = stateAt(Date.now());
+  const frame = await asset(`/terminal/${frameFor(drawn)}.rgb`).then((response) =>
     response.arrayBuffer()
   );
+  // Read after every wait: an answer can pass its limit during them, or while cached. The sky stays
+  // the frame's, so the picture and the sentence under it describe one instant.
+  const state = { ...stateAt(Date.now()), window: drawn.window, lamp: drawn.lamp };
   const body = renderTerminalRoom(new Uint8Array(frame), state, built.origin);
   const headers = new Headers(plain.headers);
   headers.delete('ETag');
