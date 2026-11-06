@@ -20,6 +20,9 @@ import {
   type UpstreamResponse,
 } from './http.ts';
 
+/** Hassan Tower, Rabat, as in the site's room clock (apps/site/src/lib/sky.ts). */
+export const rabatPoint = { latitude: '34.0240', longitude: '-6.8228' };
+
 type Slot = 'day' | 'night';
 
 /** Seconds after the date's start each slot aims for: the sun is up at 13:00 and down at 22:00. */
@@ -89,8 +92,7 @@ export function weatherDaysHistory(snapshot: WeatherSnapshot): PullHistory {
 /** The archive's URL for one date: the same place as the forecast pull, no key. */
 export const archiveUrl = (date: string) =>
   `https://archive-api.open-meteo.com/v1/archive?${new URLSearchParams({
-    latitude: '34.0240',
-    longitude: '-6.8228',
+    ...rabatPoint,
     start_date: date,
     end_date: date,
     hourly: 'weather_code',

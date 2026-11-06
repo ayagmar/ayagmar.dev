@@ -13,13 +13,11 @@ import {
   parseBody,
   type UpstreamResponse,
 } from './http.ts';
-import { weatherDaysHistory } from './weather-days.ts';
+import { rabatPoint, weatherDaysHistory } from './weather-days.ts';
 
-// Hassan Tower, Rabat, as in the site's room clock (apps/site/src/lib/sky.ts). Current values
-// only, no hourly or daily arrays, in fixed units and Unix time.
+// Current values only, no hourly or daily arrays, in fixed units and Unix time.
 const url = `https://api.open-meteo.com/v1/forecast?${new URLSearchParams({
-  latitude: '34.0240',
-  longitude: '-6.8228',
+  ...rabatPoint,
   current: 'weather_code,cloud_cover,precipitation,wind_speed_10m,is_day,temperature_2m',
   temperature_unit: 'celsius',
   wind_speed_unit: 'kmh',
