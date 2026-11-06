@@ -130,6 +130,9 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
             Back to now
           </button>
         </div>
+        <p class="room-scrub-failed" role="alert" hidden>
+          The past days could not be loaded. Move the slider to try again.
+        </p>
         <ul class="room-scrub-facts" hidden></ul>
         <p class="sr-only" role="status"></p>
       </div>

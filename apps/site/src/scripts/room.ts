@@ -96,12 +96,19 @@ let woken = false;
 const wake = () => {
   if (woken) return;
   woken = true;
-  import('./room-scrub.ts').then((module) =>
-    module.startScrub(scrub as HTMLElement, scene, inputs, (state) => {
-      past = state;
-      show(Date.now());
-    })
-  );
+  import('./room-scrub.ts')
+    .then((module) =>
+      module.startScrub(scrub as HTMLElement, scene, inputs, (state) => {
+        past = state;
+        show(Date.now());
+      })
+    )
+    .catch(() => {
+      // The room stays live; the next touch asks again.
+      woken = false;
+      (scrub?.querySelector('input') as HTMLInputElement).value = '0';
+      (scrub?.querySelector('.room-scrub-failed') as HTMLElement).hidden = false;
+    });
 };
 for (const touch of ['focusin', 'pointerdown', 'input']) scrub?.addEventListener(touch, wake);
 

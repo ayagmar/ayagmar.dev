@@ -150,6 +150,28 @@ declare global {
   }
 }
 
+// Catches a deploy or a dropped connection on first touch leaving a slider that moves and does
+// nothing: the room stays live, the control says so, and the next touch asks again.
+test('survives a failed load of its code', async ({ page }) => {
+  let blocked = true;
+  await page.route('**/_astro/room-scrub.*.js', (route) =>
+    blocked ? route.abort() : route.continue()
+  );
+  await open(page);
+  await expect(page.locator('.room-window')).toHaveAttribute('aria-label', /Through the window/);
+  const before = await drawing(page);
+  await goBack(page, 1);
+  await expect(page.getByRole('alert').filter({ hasText: 'could not be loaded' })).toBeVisible();
+  await expect(slider(page)).toHaveValue('0');
+  await expect(slider(page)).toHaveAttribute('aria-valuetext', 'Now');
+  expect(await drawing(page)).toEqual(before);
+
+  blocked = false;
+  await page.keyboard.press('ArrowLeft');
+  await expect(slider(page)).toHaveAttribute('aria-valuetext', 'Monday 26 October');
+  await expect(page.locator('.room-scrub-failed')).toBeHidden();
+});
+
 // Catches the scrub on a browser whose zone rules still run Morocco at +01: at 23:30 UTC it thinks
 // tomorrow has begun, so today would be offered as a finished day.
 test("offers no past days without Rabat's current rules", async ({ page }) => {

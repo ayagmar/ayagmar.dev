@@ -1,9 +1,9 @@
 // The scrub control under the room (ADR 0044), loaded on first touch: it reads the slider, draws
 // the parts of the room only a past day changes, and lists what the day's records say. Which date
 // shows and what it says are src/lib/room-scrub.ts's and src/lib/room-day.ts's; this file renders.
-// The slider counts days back from today, so 0 is always now and the page needs no script to
-// start at the right end, and its keys are the browser's own: arrows, Home and End. The keys 1
-// to 7 ignore an input (room.ts), so they cannot meet.
+// The slider counts days back from `anchor`, today when its numbers were last set, so it starts
+// at the right end with no script. Its keys are the browser's own: arrows, Home and End. The keys
+// 1 to 7 ignore an input (room.ts), so they cannot meet.
 
 import { rabatDate } from '@min7/contracts/rabat';
 import { dayPath } from '../lib/day-words.ts';
@@ -35,6 +35,7 @@ export function startScrub(
   const back = root.querySelector('.room-scrub-now') as HTMLButtonElement;
   const facts = root.querySelector('.room-scrub-facts') as HTMLElement;
   const status = root.querySelector('[role="status"]') as HTMLElement;
+  const failed = root.querySelector('.room-scrub-failed') as HTMLElement;
   const idle = title.textContent;
   const { from, daysSrc } = root.dataset as { from: string; daysSrc: string };
   const today = () => rabatDate(Date.now());
@@ -145,7 +146,8 @@ export function startScrub(
     read.hidden = shown === null || !pages.has(shown);
   });
 
-  sync();
+  failed.hidden = true;
   // The slider may have moved while this file loaded.
   if (slider.value !== '0') moved();
+  else sync();
 }

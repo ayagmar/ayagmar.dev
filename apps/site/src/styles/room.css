@@ -1126,6 +1126,12 @@
   display: none;
 }
 
+.room-scrub-failed {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
 .room-scrub-facts {
   margin: 0.5rem 0 0;
   padding: 0;
