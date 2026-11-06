@@ -86,7 +86,9 @@
    (src/lib/art.ts). They are the lit things in the room, and dim with its lamp. */
 .scene {
   --room-paper: #d8c8a0;
+  --room-paper-shade: #968a70;
   --room-amber: #fac468;
+  --room-amber-shade: #de964e;
   --room-ink: #241614;
   --room-tack: #be4038;
   --room-spine: #804840;
@@ -129,19 +131,23 @@
   height: 22.5%;
 }
 
+/* One shaded pixel in four, two art pixels apart: the room's dither, so paper sits in the scene. */
 .room-pins li {
+  --note: var(--room-paper);
+  --note-shade: var(--room-paper-shade);
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 12%;
   margin: 8%;
   padding: 24% 12% 0;
-  background: var(--room-paper);
+  background: conic-gradient(var(--note-shade) 25%, var(--note) 0) 0 0 / 18% 16%;
 }
 
 .room-pins li[data-kind="release"] {
+  --note: var(--room-amber);
+  --note-shade: var(--room-amber-shade);
   margin: 0;
-  background: var(--room-amber);
 }
 
 .room-pins li::before {
