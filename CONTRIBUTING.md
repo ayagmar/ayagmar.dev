@@ -26,13 +26,14 @@ Any other field fails the build, so a typo such as `sumary:` does not pass silen
 
 A series counts the posts the build shows: published ones in production, drafts too in Previews. A series with one part shown has no line.
 
-`art` draws a small picture above the title at build time, in the room's colours ([ADR 0027](docs/adr/0027-room-details-and-per-post-art.md)):
+`art` draws a figure in dots above the title at build time ([ADR 0027](docs/adr/0027-room-details-and-per-post-art.md)). Name one of the room's objects, or a map file beside the post:
 
 ```yaml
-art: { kind: dither, palette: night, seed: 2 }
+art: lamp
+art: my-post.art.txt
 ```
 
-`kind` is `ascii`, `dither` or `pattern`. `palette` is `night` (the default), `lamp`, `screen`, `zellige` or `wood`. `seed` is a whole number, 0 by default; change it until you like the picture. The same post and seed always give the same picture.
+The objects are `lamp`, `notebook`, `monitor`, `record`, `cat`, `window` and `tea`. [docs/art.md](docs/art.md) shows how to make a map.
 
 `receipts` puts one line under the post's header with what the daily history recorded over a range of days, both ends included: PRs merged, commits, agent tokens and the days with any of them.
 
