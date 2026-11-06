@@ -258,7 +258,7 @@ test.describe('the entrance', () => {
 
 // Catches the optional lighting taking the hotspot's own hover down with it: a browser that cannot
 // parse one selector drops its whole rule. Every `:has()` rule goes, as there, and a hotspot must
-// still light and show its label under the pointer and the keyboard. The list simply lights nothing.
+// still light and show its label under the pointer and the keyboard. The list then lights nothing.
 test('a hotspot lights by itself without :has()', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');

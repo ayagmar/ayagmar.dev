@@ -387,7 +387,8 @@
   main:has([data-room-list="monitor"]:is(:hover, :focus-visible)) [data-room="monitor"],
   main:has([data-room-list="keyboard"]:is(:hover, :focus-visible)) [data-room="keyboard"],
   main:has([data-room-list="tea"]:is(:hover, :focus-visible)) [data-room="tea"],
-  main:has([data-room-list="record-player"]:is(:hover, :focus-visible)) [data-room="record-player"] {
+  main:has([data-room-list="record-player"]:is(:hover, :focus-visible))
+    [data-room="record-player"] {
     --label: 1;
     border-color: var(--lamp);
     background: var(--hotspot-lit);
