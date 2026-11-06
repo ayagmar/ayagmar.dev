@@ -78,9 +78,11 @@ const structuredData = [
 <Base {title} description={summary} {image} {structuredData} noindex={draft}>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
-    <PostHeader post={post} receipt={receipt}>
-      {art !== undefined && <Fragment slot="art" set:html={renderArt(post.id, art)} />}
-    </PostHeader>
+    <PostHeader
+      post={post}
+      receipt={receipt}
+      art={art === undefined ? undefined : renderArt(post.id, art)}
+    />
     <SeriesLine current={post.id} parts={series} />
     <Toc headings={headings} />
     <div class="prose">
