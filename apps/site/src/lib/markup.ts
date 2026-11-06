@@ -41,6 +41,6 @@ export function toNode(markup: Markup): Node {
     ? document.createElementNS('http://www.w3.org/2000/svg', markup.tag)
     : document.createElement(markup.tag);
   for (const [name, value] of Object.entries(markup.attrs)) element.setAttribute(name, value);
-  element.append(...markup.children.map(toNode));
+  for (const child of markup.children) element.appendChild(toNode(child));
   return element;
 }

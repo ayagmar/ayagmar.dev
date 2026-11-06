@@ -46,6 +46,8 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
                                                               /v1/listening-history and
                                                               /v1/llm-usage, /uses script reads
                                                               /v1/desktop and /v1/llm-usage
+                                                     site Worker: /room reads /v1/listening and
+                                                              /v1/shipping, kept a minute
 ```
 
 Every read API response is an envelope from `contracts`:
@@ -90,6 +92,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Shipping strip: history or event fallback, caption (ADR 0038)             | `apps/site/src/data/format.ts` (`shippingStrip`), `src/components/ShippingHeat.astro`                                                              |
 | Day pages and receipts: what a date, project or post range counted        | `apps/site/src/lib/days.ts`, `src/data/reader.ts` (`readHistory`), `src/pages/day/[date].astro`                                                    |
 | Year pages: calendar, facts, usage by month (ADR 0041)                    | `apps/site/src/lib/years.ts`, `src/pages/[year].astro`, `src/components/{HeatDay,YearFacts}.astro`                                                 |
+| Heat levels of every heat view, their ramp (ADR 0037)                     | `apps/site/src/lib/heat.ts`, `--heat-1` to `--heat-4` in `src/styles/base.css`                                                                     |
 | Push admission (replay, interval, ordering in one D1 batch)               | `apps/signals/src/storage/admission.ts`                                                                                                            |
 | Push intake: body cap, auth order, projection per producer                | `apps/signals/src/intake/`                                                                                                                         |
 | Public labels for habit and agent ids                                     | `apps/signals/src/intake/public-labels.ts`                                                                                                         |
@@ -111,6 +114,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/markup.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                                                |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                                                |
 | Site Worker (which copy a request gets, ADR 0040)                         | `apps/site/worker/index.ts`                                                                                                                        |
+| The room in a terminal: frames, words, live answers (ADR 0045)            | `apps/site/src/lib/terminal-room.ts`, `src/pages/terminal/`, `worker/room.ts`                                                                      |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                                                        |
 | About page data, its schema                                               | `content/about.json`, `apps/site/src/data/about.ts`                                                                                                |
 | Skills shelf: data, schema, sync script, page (ADR 0031)                  | `content/skills.json`, `apps/site/src/lib/{skills-schema,skills}.ts`, `src/pages/skills.astro`, `scripts/skills-sync.ts`                           |
@@ -119,6 +123,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Page changes, cross-document view transitions (ADR 0042)                  | `apps/site/src/styles/base.css`, last rules before the reduced-motion block; `src/scripts/theme.js`                                                |
 | Home page room: scene, hotspots, list                                     | `apps/site/src/lib/room.ts`, `src/styles/room.css`, `src/assets/room-*.png` (drawn by `scripts/scene.py`)                                          |
 | Room clock: sun, moon, Rabat time, the late cat (ADR 0027)                | `apps/site/src/lib/sky.ts`, `src/scripts/room.ts`, `src/assets/{window,cat}-*.png`                                                                 |
+| Contact sheet of every room state, never shipped (`just room-states`)     | `apps/site/scripts/room-states.ts`, written to `apps/site/.room-states/`                                                                           |
 | Weather in the window: code table, art (ADR 0029)                         | `packages/contracts/src/weather-codes.ts`, `apps/site/src/lib/weather.ts`, `src/scripts/room.ts`, `src/assets/weather-*.png`                       |
 | On this day: Rabat dates, history check (ADR 0030)                        | `packages/contracts/src/rabat.ts`, `apps/site/src/lib/history.ts`, `src/scripts/history.ts`                                                        |
 | Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,llm-usage,llm-usage-panel,stats-panels,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`                            |
@@ -136,4 +141,4 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post and note bodies) into `dist/pagefind/`.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
-In production, Workers static assets serve `dist/`. The site Worker runs only for the pages with a copy ([ADR 0040](docs/adr/0040-text-and-markdown-copies.md)): a request whose `Accept` prefers Markdown gets the page's `.md` or else its `.txt`, a `curl`, `wget`, HTTPie or `xh` user agent its `.txt`, anything else the HTML page. `index.txt` starts with the room in ASCII. Every response comes from the assets binding, so it carries the `_headers` rules, plus `Vary: Accept, User-Agent`. The `.md` and `.txt` URLs themselves are plain assets, marked `noindex`.
+In production, Workers static assets serve `dist/`. The site Worker runs only for the pages with a copy ([ADR 0040](docs/adr/0040-text-and-markdown-copies.md)): a request whose `Accept` prefers Markdown gets the page's `.md` or else its `.txt`, a `curl`, `wget`, HTTPie or `xh` user agent its `.txt`, anything else the HTML page. `index.txt` starts with the room in ASCII. Every response comes from the assets binding, so it carries the `_headers` rules, plus `Vary: Accept, User-Agent`. The `.md` and `.txt` URLs themselves are plain assets, marked `noindex`. `/room` is the one answer the Worker renders: a terminal client gets the room in truecolor with the sky, the track and the latest commit as they are now, anyone else a redirect to `/` ([ADR 0045](docs/adr/0045-truecolor-room.md)).

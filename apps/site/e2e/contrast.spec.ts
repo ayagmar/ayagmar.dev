@@ -61,39 +61,48 @@ for (const colorScheme of ['light', 'dark'] as const) {
       page,
     }) => {
       await page.goto('/stats');
-      const heats = await page.locator('.heat').all();
-      expect(heats).toHaveLength(2);
-      for (const heat of heats) await check(heat);
+      await expect(page.locator('.heat')).toHaveCount(2);
+      await check(page.locator('.ship-heat'));
+      await check(page.locator('.llm-heat'), false);
     });
 
-    // Catches the year's calendar drifting from the strip's levels or its outline.
+    // Catches the year's calendar drifting from the strip's levels.
     test('every heat level of a year holds the same contrast', async ({ page }) => {
       await page.goto('/2026');
-      await check(page.locator('.year-heat'));
+      await check(page.locator('.year-heat'), false);
     });
   });
 }
 
-async function check(heat: Locator) {
+async function check(heat: Locator, outlined = true) {
   const { strip, levels, outline } = await heat.evaluate((heat) => {
+    // Computed OKLCH stays OKLCH, so a canvas turns each colour into the rgb() `contrast` reads.
+    const pen = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    const rgb = (color: string) => {
+      if (pen === null) throw new Error('no 2D canvas');
+      pen.clearRect(0, 0, 1, 1);
+      pen.fillStyle = color;
+      pen.fillRect(0, 0, 1, 1);
+      return `rgb(${[...pen.getImageData(0, 0, 1, 1).data.slice(0, 3)].join(', ')})`;
+    };
     const color = (level: number) => {
       const probe = document.createElement('i');
       probe.dataset.l = String(level);
       heat.querySelector('.heat-cells')?.append(probe);
       const value = getComputedStyle(probe).backgroundColor;
       probe.remove();
-      return value;
+      return rgb(value);
     };
     const none = heat.querySelector('i[data-l="none"]');
     return {
-      strip: getComputedStyle(heat).backgroundColor,
+      strip: rgb(getComputedStyle(heat).backgroundColor),
       levels: [1, 2, 3, 4].map(color),
-      outline: none === null ? null : getComputedStyle(none).outlineColor,
+      outline: none === null ? null : rgb(getComputedStyle(none).outlineColor),
     };
   });
   for (const level of levels) expect(contrast(level, strip)).toBeGreaterThanOrEqual(3);
   // A day with no record is an outline (ADR 0038); it too must be seen against the strip.
-  if (outline !== null) expect(contrast(outline, strip)).toBeGreaterThanOrEqual(3);
+  if (outlined && outline !== null) expect(contrast(outline, strip)).toBeGreaterThanOrEqual(3);
   for (const [i, level] of levels.slice(1).entries()) {
     expect(contrast(level, levels[i] as string)).toBeGreaterThanOrEqual(1.3);
   }

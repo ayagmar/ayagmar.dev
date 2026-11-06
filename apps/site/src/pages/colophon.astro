@@ -15,7 +15,7 @@ const analytics = analyticsToken(WORKERS_CI_BRANCH) !== undefined;
   <div class="paper column t-colophon">
     <h1>Colophon</h1>
     <p>
-      Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No cookies.
+      Built with Astro and Svelte, served by Cloudflare Workers. Search by Pagefind. No cookies.{' '}
       {analytics ? (
         <>
           Visits are counted by Cloudflare Web Analytics, the one third-party script, which uses no
@@ -26,12 +26,16 @@ const analytics = analyticsToken(WORKERS_CI_BRANCH) !== undefined;
       )}
     </p>
     <p>
+      Your browser keeps your theme and shortcut choices, and for the length of a tab a note that
+      home's entrance has played. None of it is sent anywhere.
+    </p>
+    <p>
       Comments under posts and notes are GitHub Discussions, shown by{' '}
       <a href="https://giscus.app/">giscus</a>. They load from giscus.app only when you press "Show
       comments".
     </p>
     <p>
-      This build:
+      This build:{' '}
       {isCommit ? (
         <a href={`${repo}/commit/${COMMIT_SHA}`}>
           <code>{COMMIT_SHA.slice(0, 12)}</code>
@@ -43,7 +47,8 @@ const analytics = analyticsToken(WORKERS_CI_BRANCH) !== undefined;
     <p>
       Set in Source Serif 4, with JetBrains Mono for dates, numbers and code, both self-hosted. The
       room on the home page is drawn by a script, pixel by pixel; no photos. It is the only picture
-      on the site; the rest is type and hairlines.
+      on the site; the rest is type and hairlines. <code>curl ayagmar.dev/room</code> prints it in a
+      terminal in truecolor, with the sky over Rabat as it is now.
     </p>
     <p><a href={repo}>Source</a> (code MIT, writing all rights reserved).</p>
     <p>

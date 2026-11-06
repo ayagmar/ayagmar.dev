@@ -20,3 +20,4 @@ worker-configuration.d.ts
 .lighthouse/
 .stryker-tmp/
 **/reports/mutation/
+.room-states/

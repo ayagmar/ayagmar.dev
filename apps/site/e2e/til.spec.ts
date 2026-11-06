@@ -23,9 +23,10 @@ test.describe('without published notes', () => {
     );
   });
 
-  test('index.txt says the TIL section is empty', async ({ request }) => {
+  // Catches the text copy of home keeping a band the page has dropped.
+  test('index.txt leaves the TIL section out', async ({ request }) => {
     const text = await (await request.get('/index.txt')).text();
-    expect(text).toMatch(/\nTIL\n {2}Nothing published yet\.\n/);
+    expect(text).not.toMatch(/^TIL$/m);
   });
 });
 
