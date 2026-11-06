@@ -162,6 +162,46 @@ test('hovering or focusing a row of the list lights its object in the room', asy
   }
 });
 
+// Catches the entrance replaying on a reload or a return to home, playing on arrival from another
+// page, moving anything for readers who asked for less motion, or hiding the name without scripts.
+test.describe('the entrance', () => {
+  const name = (page: Page) =>
+    page.locator('.intro').evaluate((intro) => getComputedStyle(intro).animationName);
+
+  test('plays once, only when home opens the session', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    expect(await name(page)).toBe('arrive');
+    await page.reload();
+    expect(await name(page)).toBe('none');
+    await page.goto('/about');
+    await page.goto('/');
+    expect(await name(page)).toBe('none');
+  });
+
+  test('does not play when the session starts on another page', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/about');
+    await page.getByRole('link', { name: 'min7' }).first().click();
+    await expect(page).toHaveURL(/\/$/);
+    expect(await name(page)).toBe('none');
+  });
+
+  test('stays still with reduced motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    expect(await name(page)).toBe('none');
+  });
+
+  test('never hides the name without JavaScript', async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto(`${baseURL}/`);
+    await expect(page.locator('.intro')).toHaveCSS('opacity', '1');
+    await context.close();
+  });
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
@@ -306,7 +346,8 @@ test.describe('the room keeps Rabat time', () => {
         .locator('.room-cat')
         .evaluate((layer) => getComputedStyle(layer).backgroundImage.match(/cat-\w+/)?.[0]);
     await page.clock.install({ time: '2026-10-26T01:59:30Z' });
-    await page.emulateMedia({ colorScheme: 'dark' });
+    // Still, so the name's position below is not the entrance's.
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await page.goto('/');
     await expect(page.locator('.scene')).toHaveAttribute('data-sky', 'night');
     await expect(cat).toBeHidden();

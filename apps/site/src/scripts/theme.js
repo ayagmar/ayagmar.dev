@@ -49,6 +49,17 @@
 
   root.dataset.themeSwitch = '';
   sync();
+  // The first page of a tab's session marks it, so home's entrance (room.css) plays only when home
+  // is that page. Set before the first paint and only here, so nothing waits on it without
+  // scripts, and blocked storage means no entrance (ADR 0037).
+  try {
+    if (!sessionStorage.getItem('arrived')) {
+      sessionStorage.setItem('arrived', '1');
+      if (location.pathname === '/') root.dataset.entrance = '';
+    }
+  } catch {
+    // No storage: no way to tell a first visit, so no entrance.
+  }
   document.addEventListener('DOMContentLoaded', sync);
   // A page back from the back/forward cache still has the theme it was left with, and the page
   // change would fade into it. pageshow comes before that fade's first frame (ADR 0042).

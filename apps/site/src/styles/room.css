@@ -516,6 +516,30 @@ main:has([data-room-list="record-player"]:is(:hover, :focus-visible)) [data-room
   );
 }
 
+/* The first page of a session (src/scripts/theme.js): the name, the role and the list follow the
+   lamp in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the attribute
+   exists only with scripts, so nothing is hidden without them. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-entrance] :is(.intro, .intro span, .room-list) {
+    animation: arrive 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
+  }
+
+  :root[data-entrance] .intro span {
+    animation-delay: 0.48s;
+  }
+
+  :root[data-entrance] .room-list {
+    animation-delay: 0.56s;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+
 /* Two columns on phones, four on tablets, then every object in one row. An odd one out on a
    phone takes the whole last row rather than half of it. */
 .room-list {

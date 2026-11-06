@@ -1,6 +1,6 @@
 # 0037. The quiet room
 
-Status: accepted, 2026-11-01. Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp; home's list steps back on a wide screen; a post ends in small print. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
+Status: accepted, 2026-11-01. Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp; home's list steps back on a wide screen; a post ends in small print; home has an entrance once per session. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
 
 ## Context
 
@@ -32,7 +32,11 @@ After the quiet windows (ADR 0034) the owner still found the site cartoony and g
 - `tabular-nums` on every time, number and data cell, so a ticking "3 minutes ago" or a column of counts does not shift.
 - Concentric corners: controls (inputs, buttons, `kbd`, inline code) take `--radius` (4 px); the dialogs and the Menu popover, with 1 rem of padding, take `--radius` plus 1 rem, so a Close button or the search field in a corner sits concentric with it. Code blocks and post art take twice `--radius`, and square corners where they run to a phone's edge.
 - Post art and images in posts have a 1 px outline in the text colour at 10%, so they hold their edge on either ground.
-- Hover changes colour with a 120 ms transition, never a keyframe animation, so it stays interruptible. The transition applies only while hovered, so a change of theme recolours the page in one frame. The dialogs and the Menu open without animation. The reduced-motion rule takes every transition and animation to nothing.
+- Hover changes colour with a 120 ms transition, never a keyframe animation, so it stays interruptible. The transition applies only while hovered, so a change of theme recolours the page in one frame. The dialogs and the Menu open without animation. The one authored entrance is home's, below. The reduced-motion rule takes every transition and animation to nothing.
+
+**The entrance.** The lamp's switch-on is the site's best moment, so on the first page of a session, if that page is home, the name, the role and the list follow it in, 80 ms apart from 0.4 s, by opacity and 6 px of `translate`. It runs behind the lamp, ends before it, and never touches layout. `theme.js` sets `data-entrance` before the first paint, so without scripts or with blocked storage nothing is hidden and nothing plays; the animation sits under `prefers-reduced-motion: no-preference`. Any first page marks the session, so a reload, a return to home and arriving through a view transition all stay still.
+
+It needs one flag in `sessionStorage`, `arrived`. No ADR rules storage out: ADR 0026 and 0027 keep the reader's choices in `localStorage`, and the "no local storage" of ADR 0019 is about Cloudflare's beacon. The flag is not a cookie, is never sent, holds no identifier and ends with the tab, and the colophon says so. The way without storage, `document.referrer` plus the navigation type, would replay it on every return from outside the site, which the entrance must not do.
 
 **Contrast.** On the ground, muted text is 6.6:1 by day and 7.5:1 at night, the lamp 6.5:1 and 10.6:1, rose 6.6:1 and 8.3:1. `--line`, the edge of inputs, buttons and the dialogs, is at least 3.3:1 against the ground and the dialog surface (`e2e/contrast.spec.ts`).
 
