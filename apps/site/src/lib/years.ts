@@ -16,7 +16,7 @@ import {
   type StripCell,
   shippedCount,
   shippedWords,
-  stripCell,
+  stripCells,
   stripOf,
 } from '../data/format.ts';
 import {
@@ -287,15 +287,21 @@ function shippingYear(
   const days = history.days.filter(inYear(year));
   const failed = history.failed.filter((month) => month.startsWith(`${year}-`));
   const byDate = new Map(days.map((day) => [day.date, shippedCount(day)]));
-  const months = monthsOf(year, today).map((month): CalendarMonth => {
+  const shown = monthsOf(year, today);
+  const dates = shown
+    .filter((month) => !failed.includes(month))
+    .flatMap((month) => datesOf(month, today));
+  const cells = stripCells(
+    dates.map((date) => ({ date, shipped: byDate.get(date) ?? null })),
+    pages
+  );
+  const months = shown.map((month): CalendarMonth => {
     const first = (new Date(at(`${month}-01`)).getUTCDay() + 6) % 7;
     return {
       month,
       name: nameOf(month),
       column: first + 1,
-      cells: failed.includes(month)
-        ? null
-        : datesOf(month, today).map((date) => stripCell(date, byDate.get(date) ?? null, pages)),
+      cells: failed.includes(month) ? null : cells.filter(({ date }) => date.startsWith(month)),
     };
   });
   const strip = stripOf(

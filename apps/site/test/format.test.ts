@@ -77,7 +77,7 @@ describe('shippingStrip', () => {
     expect(level('2026-10-19')).toBeNull();
     expect(level('2026-10-20')).toBe(1);
     expect(level('2026-10-27')).toBe(0);
-    expect(level('2026-10-29')).toBe(2);
+    expect(level('2026-10-29')).toBe(4);
     expect(level('2026-10-30')).toBeNull();
     expect(strip).toMatchObject({
       from: '20 Oct',

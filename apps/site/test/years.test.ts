@@ -96,7 +96,12 @@ describe('the calendar', () => {
   // Thursday, 1 Sep 2024 a Sunday; 1 Jan 2025 a Wednesday, so its week starts in 2024.
   it('lays each month out in Monday-first weeks, with the right number of days', () => {
     const pages = yearPages(
-      history([shipped('2024-02-29'), shipped('2025-02-28')]),
+      history([
+        shipped('2024-01-01'),
+        shipped('2024-02-29'),
+        shipped('2025-01-01'),
+        shipped('2025-02-28'),
+      ]),
       [],
       after,
       none
@@ -126,7 +131,7 @@ describe('the calendar', () => {
       { date: '2026-03-01', level: 0, label: '1 Mar: nothing shipped', page: false },
       {
         date: '2026-03-02',
-        level: 4,
+        level: 1,
         label: '2 Mar: 5 pushes, merges and releases',
         page: true,
       },
@@ -327,8 +332,8 @@ describe('facts', () => {
     expect(year.notes).toEqual([
       'June could not be read when this page was built, so the totals are left out.',
     ]);
-    expect(year.months[5]).toMatchObject({ name: 'June', cells: null });
-    expect(year.months[4]?.cells?.at(-1)?.level).toBe(1);
+    expect(year.months.find((month) => month.name === 'June')?.cells).toBeNull();
+    expect(year.months.find((month) => month.name === 'May')?.cells?.at(-1)?.level).toBe(1);
     expect(facts(calendar(page(pages, '2026')).facts)['Shipped on record']).toBe(
       '2 commits in 1 push on 1 day'
     );
@@ -495,21 +500,31 @@ describe('generated histories', () => {
       now,
       none
     );
-    const scale = (shippedThatDay: number) =>
-      shippedThatDay >= 5 ? 4 : Math.min(shippedThatDay, 3);
     for (const entry of pages) {
       const unknown = failed.some((month) => month.startsWith(entry.year));
       if (entry.shipping.empty !== null) continue;
       expect(entry.shipping.facts.length === 0).toBe(
         unknown || !dates.some((date) => date.startsWith(entry.year))
       );
+      // Levels are quantiles of the year, so a busier day is never drawn quieter than a slower one.
+      const seen: [number, number][] = [];
       for (const month of entry.shipping.months) {
         expect(month.cells === null).toBe(failed.includes(month.month));
         for (const cell of month.cells ?? []) {
           expect(cell.date <= today).toBe(true);
           const shippedThatDay = counts.get(cell.date);
-          expect(cell.level).toBe(shippedThatDay === undefined ? null : scale(shippedThatDay));
+          if (shippedThatDay === undefined) expect(cell.level).toBeNull();
+          else {
+            expect(cell.level === 0).toBe(shippedThatDay === 0);
+            seen.push([shippedThatDay, cell.level ?? -1]);
+          }
         }
+      }
+      seen.sort(([a, x], [b, y]) => a - b || x - y);
+      for (const [index, [count, level]] of seen.entries()) {
+        const [lastCount = 0, lastLevel = 0] = seen[index - 1] ?? [];
+        expect(level).toBeGreaterThanOrEqual(lastLevel);
+        if (count === lastCount && index > 0) expect(level).toBe(lastLevel);
       }
       if (entry.usage.empty === null) expect(entry.usage.total === null).toBe(unknown);
     }

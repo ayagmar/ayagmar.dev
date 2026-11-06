@@ -4,6 +4,7 @@
  */
 import type { LlmUsageSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
+import { heatLevels } from './heat.ts';
 import { el, type Markup } from './markup.ts';
 
 const hourMs = 3_600_000;
@@ -73,8 +74,7 @@ export function dateRange(from: string, to: string): string {
 
 /**
  * The year heatmap: a cell per day for the 53 weeks ending on `end`, a column per week from
- * Monday, and a level from 0 (no tokens or no bucket) to 4. The levels are the quartiles of
- * the days with tokens, so one huge day does not wash out the rest.
+ * Monday, and a level from 0 (no tokens or no bucket) to 4 (src/lib/heat.ts).
  */
 export function heatmap(days: LlmUsageSnapshot['days'], end: string, weeks = 53) {
   const last = utcDate(end);
@@ -86,8 +86,7 @@ export function heatmap(days: LlmUsageSnapshot['days'], end: string, weeks = 53)
     const date = isoDate(time);
     cells.push({ date, tokens: byDate.get(date) });
   }
-  const used = cells.flatMap(({ tokens: count }) => (count ? [count] : [])).sort((a, b) => a - b);
-  const quartiles = [0.25, 0.5, 0.75].map((q) => used[Math.floor(q * (used.length - 1))] as number);
+  const levels = heatLevels(cells.map((cell) => cell.tokens ?? 0));
   const busiest = cells.reduce<(typeof cells)[number] | undefined>(
     (top, cell) => ((cell.tokens ?? 0) > (top?.tokens ?? 0) ? cell : top),
     undefined
@@ -95,12 +94,9 @@ export function heatmap(days: LlmUsageSnapshot['days'], end: string, weeks = 53)
   return {
     from: isoDate(first),
     to: end,
-    activeDays: used.length,
+    activeDays: levels.filter(Boolean).length,
     busiest,
-    cells: cells.map((cell) => ({
-      ...cell,
-      level: cell.tokens ? 1 + quartiles.filter((q) => (cell.tokens as number) > q).length : 0,
-    })),
+    cells: cells.map((cell, index) => ({ ...cell, level: levels[index] ?? 0 })),
   };
 }
 
