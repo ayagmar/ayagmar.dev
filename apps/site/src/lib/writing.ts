@@ -1,9 +1,10 @@
 import type { WritingFrontmatter } from './writing-schema.ts';
 
-/** A post as every renderer sees it; `id` is the file name without `.md`. */
+/** A post as every renderer sees it; `id` is the file name without `.md`, `body` its Markdown. */
 export interface Post {
   id: string;
   data: WritingFrontmatter;
+  body?: string | undefined;
 }
 
 export const postPath = (id: string) => `/writing/${id}`;

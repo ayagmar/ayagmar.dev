@@ -68,6 +68,8 @@ export function renderHeadersFile(headers: Record<string, string>): string {
       path,
       '  Cache-Control: public, max-age=86400',
     ]),
+    // The text and Markdown copies (ADR 0040) leave search to the HTML pages.
+    ...['/*.md', '/*.txt'].flatMap((path) => [path, '  X-Robots-Tag: noindex']),
     '',
   ];
   const tooLong = lines.find((line) => line.length >= maxHeaderLine);
