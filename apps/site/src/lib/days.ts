@@ -10,9 +10,11 @@ import {
   type ProjectSlug,
   type ShippingActivityDay,
 } from '@min7/contracts';
-import { count, repoName, shippedCount } from '../data/format.ts';
-import { hours, tokens } from './llm-usage-panel.ts';
+import { shippedCount } from '../data/format.ts';
+import { hours } from './llm-usage-panel.ts';
+import { plural } from './plural.ts';
 import { projectPath } from './projects.ts';
+import { dayMs, repoName, tokens, utcDate } from './words.ts';
 
 /** The history the build read; a series is null when it could not be read whole. */
 export interface History {
@@ -42,10 +44,6 @@ export type Counts = Pick<
 
 export const dayPath = (date: string) => `/day/${date}`;
 
-export const plural = (value: number, one: string, many: string) =>
-  `${count(value)} ${value === 1 ? one : many}`;
-
-const at = (date: string) => Date.parse(`${date}T00:00:00Z`);
 const longDate = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
   day: 'numeric',
@@ -60,7 +58,7 @@ const shortDate = new Intl.DateTimeFormat('en-GB', {
 });
 
 /** `12 Oct 2026`. */
-export const short = (date: string) => shortDate.format(at(date));
+export const short = (date: string) => shortDate.format(utcDate(date));
 
 /** `12–26 Oct 2026`, `28 Sept–4 Oct 2026`, `28 Dec 2026–3 Jan 2027`, or `12 Oct 2026`. */
 export function range(from: string, to: string): string {
@@ -176,9 +174,9 @@ export function dayPages(history: History, published: readonly Published[]): Day
     ...new Set([...shippingDays.keys(), ...usageDays.keys(), ...published.map((p) => p.date)]),
   ].sort();
   const link = (date: string | undefined) =>
-    date === undefined ? null : { path: dayPath(date), title: longDate.format(at(date)) };
+    date === undefined ? null : { path: dayPath(date), title: longDate.format(utcDate(date)) };
   return dates.map((date, index) => {
-    const title = longDate.format(at(date));
+    const title = longDate.format(utcDate(date));
     return {
       date,
       title,
@@ -267,7 +265,7 @@ export function postReceipt(
   }
   parts.push(plural(active.size, 'active day', 'active days'));
 
-  const length = (at(to) - at(from)) / 86_400_000 + 1;
+  const length = (utcDate(to) - utcDate(from)) / dayMs + 1;
   const gaps = shippingDays.length < length || usageDays.length < length;
   const where = repos === null ? '' : `, ${repos.map(repoName).join(', ')}`;
   return `${range(from, to)}${where}: ${parts.join(' · ')}${gaps ? ' (some days have no record)' : ''}`;

@@ -5,6 +5,7 @@
  */
 import { kernelReleasePattern, niriVersionPattern } from '@min7/contracts/desktop';
 import { instantMs } from './live.ts';
+import { plural } from './plural.ts';
 
 /** `staleAfterSeconds.desktop` in contracts (which loads zod); a test keeps them equal. */
 export const desktopStaleAfterMs = 2 * 24 * 60 * 60 * 1000;
@@ -37,11 +38,11 @@ export function readDesktop(body: unknown, now: number): DesktopFacts | undefine
   return { fetchedAt, kernel, niri, bootedAt };
 }
 
-const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? '' : 's'}`;
-
 /** `3 days`, `5 hours`, `under an hour`: time since `bootedAt`, rounded down. */
 export function uptime(bootedAt: string, now: number): string {
   const hours = Math.floor((now - Date.parse(bootedAt)) / 3_600_000);
   if (hours < 1) return 'under an hour';
-  return hours < 24 ? plural(hours, 'hour') : plural(Math.floor(hours / 24), 'day');
+  return hours < 24
+    ? plural(hours, 'hour', 'hours')
+    : plural(Math.floor(hours / 24), 'day', 'days');
 }

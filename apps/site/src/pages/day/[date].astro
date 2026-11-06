@@ -1,10 +1,10 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import Sample from '../../components/Sample.astro';
-import { repoName } from '../../data/format.ts';
 import Base from '../../layouts/Base.astro';
 import { dayZones } from '../../lib/days.ts';
 import { getDays } from '../../lib/posts.ts';
+import { repoName } from '../../lib/words.ts';
 import { yearPath } from '../../lib/years.ts';
 
 // A page per date with a recorded day or something published (src/lib/days.ts). They are thin,

@@ -11,7 +11,6 @@ import type { LlmUsageDay, ShippingActivityDay } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 import {
   count,
-  repoName,
   type ShippingStrip,
   type StripCell,
   shippedCount,
@@ -23,7 +22,6 @@ import {
   type Counts,
   dayPath,
   type Published,
-  plural,
   range,
   repoHref,
   shipped,
@@ -31,7 +29,9 @@ import {
   unnamedRepos,
   unread,
 } from './days.ts';
-import { hours, tokens } from './llm-usage-panel.ts';
+import { hours } from './llm-usage-panel.ts';
+import { plural } from './plural.ts';
+import { dayMs, isoDate, repoName, tokens, utcDate } from './words.ts';
 
 /** A series as the build read it (`readHistory`). */
 interface Series<Day> {
@@ -116,10 +116,7 @@ export interface YearPage {
 export const yearPath = (year: string) => `/${year}`;
 
 const monthName = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'long' });
-const dayMs = 86_400_000;
-const at = (date: string) => Date.parse(`${date}T00:00:00Z`);
-const isoDate = (time: number) => new Date(time).toISOString().slice(0, 10);
-const nameOf = (month: string) => monthName.format(at(`${month}-01`));
+const nameOf = (month: string) => monthName.format(utcDate(`${month}-01`));
 const inYear = (year: string) => (entry: { date: string }) => entry.date.startsWith(`${year}-`);
 
 /** The months of `year` that have begun on `today`. */
@@ -193,15 +190,15 @@ function longestRun(active: ReadonlySet<string>, year: string): string | null {
   for (let i = 0; i < dates.length; i += 1) {
     const next = dates[i + 1];
     const date = dates[i] as string;
-    if (next !== undefined && at(next) - at(date) === dayMs) continue;
+    if (next !== undefined && utcDate(next) - utcDate(date) === dayMs) continue;
     if (best === null || i - start + 1 > best.length) {
       best = { from: dates[start] as string, to: date, length: i - start + 1 };
     }
     start = i + 1;
   }
   if (best === null) return null;
-  const before = best.from === `${year}-01-01` && active.has(isoDate(at(best.from) - dayMs));
-  const after = best.to === `${year}-12-31` && active.has(isoDate(at(best.to) + dayMs));
+  const before = best.from === `${year}-01-01` && active.has(isoDate(utcDate(best.from) - dayMs));
+  const after = best.to === `${year}-12-31` && active.has(isoDate(utcDate(best.to) + dayMs));
   return [
     `${plural(best.length, 'day', 'days')}, ${range(best.from, best.to)}`,
     before && `on from ${Number(year) - 1}`,
@@ -309,7 +306,7 @@ function shippingYear(
     pages
   );
   const months = shown.map((month): CalendarMonth => {
-    const first = (new Date(at(`${month}-01`)).getUTCDay() + 6) % 7;
+    const first = (new Date(utcDate(`${month}-01`)).getUTCDay() + 6) % 7;
     return {
       month,
       name: nameOf(month),

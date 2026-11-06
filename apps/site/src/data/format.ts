@@ -6,15 +6,10 @@ import type {
   ShippingEvent,
   ShippingSnapshot,
 } from '@min7/contracts';
-import { rabatTimeZone } from '@min7/contracts/rabat';
 import { type HeatLevel, heatLevels, noRecordSentence, noRecordWords } from '../lib/heat.ts';
+import { plural } from '../lib/plural.ts';
 import type { SiteProject } from '../lib/projects.ts';
-
-const plural = (count: number, one: string, many: string) =>
-  `${count.toLocaleString('en')} ${count === 1 ? one : many}`;
-
-/** `ayagmar/runnerd` -> `runnerd`. */
-export const repoName = (repo: string) => repo.slice(repo.indexOf('/') + 1);
+import { dayMs, utcDay } from '../lib/words.ts';
 
 /** What happened, in a few words, for a shipping event. */
 export function describeEvent(event: ShippingEvent): string {
@@ -29,24 +24,6 @@ export function describeEvent(event: ShippingEvent): string {
       return `gained ${plural(event.gained, 'star', 'stars')} (${event.total.toLocaleString('en')} total)`;
   }
 }
-
-/** `2026-10-24` from an RFC 3339 timestamp, in UTC. */
-const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
-
-/**
- * `26 Oct, 09:00`, in Rabat: a time as pages show it without JavaScript, the same in every
- * browser and no longer than the relative times the page's script puts in its place
- * (src/lib/live.ts), so the swap moves nothing.
- */
-export const rabatTime = (iso: string) =>
-  new Intl.DateTimeFormat('en-GB', {
-    timeZone: rabatTimeZone,
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).format(Date.parse(iso));
 
 export const count = (value: number) => value.toLocaleString('en');
 
@@ -82,8 +59,6 @@ export function projectsSummary(projects: readonly Pick<Project, 'stars'>[]): st
     ? `${head}, ${total} stars in total.`
     : `${head}, at least ${total} stars; GitHub did not answer for ${missing}.`;
 }
-
-const dayMs = 24 * 60 * 60 * 1000;
 
 /** One day of the shipping strip or a year's calendar: its UTC date and level 0 to 4, or null for no record. */
 export interface StripCell {

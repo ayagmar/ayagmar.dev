@@ -1,5 +1,5 @@
 ---
-import { rabatTime } from '../data/format.ts';
+import { rabatStamp } from '../lib/words.ts';
 
 interface Props {
   /** An RFC 3339 instant. */
@@ -11,4 +11,4 @@ const { iso } = Astro.props;
 
 <!-- Without JavaScript the time in Rabat; src/lib/live.ts rewrites it relative to now, with
      the exact time in the reader's own zone as its title (ADR 0015). -->
-<time datetime={iso} data-ago title="Rabat time">{rabatTime(iso)}</time>
+<time datetime={iso} data-ago title="Rabat time">{rabatStamp(iso)}</time>

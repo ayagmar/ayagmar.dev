@@ -3,16 +3,11 @@
 import type { LlmUsageSnapshot } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
-import {
-  dateRange,
-  heatmap,
-  hours,
-  llmUsagePanel,
-  share,
-  tokens,
-} from '../src/lib/llm-usage-panel.ts';
+import { heatmap } from '../src/lib/heat.ts';
+import { hours, llmUsagePanel, share } from '../src/lib/llm-usage-panel.ts';
 import type { Markup } from '../src/lib/markup.ts';
 import { markupLines } from '../src/lib/markup-text.ts';
+import { dateRange, tokens } from '../src/lib/words.ts';
 
 const ok = snapshotFixtures['llm-usage'].ok as LlmUsageSnapshot;
 const taken = '2026-10-26T08:00:00Z';
