@@ -17,10 +17,12 @@ import { upstreamHandlers } from '@min7/contracts/testing';
 import { setupNetwork } from '@msw/cloudflare';
 import { HttpResponse, http } from 'msw';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { pullAdapters } from '../src/adapters/pull/index.ts';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { dayReadsDue, mergeListeningDay } from '../src/adapters/pull/listening-days.ts';
 import { weather } from '../src/adapters/pull/weather.ts';
 import { mergeWeatherDay, weatherDayOf } from '../src/adapters/pull/weather-days.ts';
+import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import { D1SnapshotStore } from '../src/storage/d1.ts';
 import { clearState, fetchApi, snapshotRow, sourceHealth } from './helpers.ts';
@@ -911,6 +913,84 @@ describe('the backfill', () => {
       expect(await backfillState()).toBeNull();
     }
   );
+
+  // Catches an old invocation finishing over a newer arming: its save must lose, in both cases.
+  it.each([
+    ['armed again', () => arm('2026-10-05', '2026-10-06'), { next: '2026-10-05', tries: 0 }],
+    [
+      'cancelled',
+      () =>
+        env.DB.prepare(
+          "UPDATE pull_progress SET json = 'null', step = step + 1 WHERE source = 'daily-backfill'"
+        ).run(),
+      null,
+    ],
+  ])('leaves a backfill %s while a date was being read', async (_, change, expected) => {
+    await seedSnapshots();
+    await arm('2026-10-01', '2026-10-02');
+    network.use(
+      http.post(lastfmUrl, async () => {
+        await change();
+        return HttpResponse.json(page({ total: 0 }));
+      })
+    );
+    archiveAnswers(() => 3);
+    await tick('2026-11-06T10:00:30Z');
+    const state = await backfillState();
+    if (expected === null) expect(state).toBeNull();
+    else expect(state).toMatchObject(expected);
+  });
+
+  /** The real registry's schedule, each fetch answering at once and noted in `pulls`. */
+  const standIns = (pulls: { id: string; at: number }[]): PullAdapter[] =>
+    pullAdapters.map(({ id, intervalSeconds, dueAt }) => ({
+      id,
+      intervalSeconds,
+      // The history's rule needs its snapshot's date; its midnight is `cron.test.ts`'s.
+      ...(id === 'listening-history' ? {} : { dueAt }),
+      fetch: async () => {
+        pulls.push({ id, at: Date.now() });
+        return {};
+      },
+      normalize: (raw: unknown) => raw,
+    }));
+
+  // Catches a date sharing a run with a pull (near the CPU limit it would lose every time),
+  // a turn taken at midnight, and listening starved out of its hourly window.
+  it('takes turns of its own, away from midnight, and listening keeps its window', {
+    timeout: 60_000,
+  }, async () => {
+    const minute = 60_000;
+    const start = Date.parse('2026-10-26T21:00:00Z');
+    const midnight = Date.parse('2026-10-27T00:00:00Z');
+    await arm('2026-03-01', '2026-09-30');
+    const pulls: { id: string; at: number }[] = [];
+    const adapters = standIns(pulls);
+    const dates: number[] = [];
+    network.use(
+      http.post(lastfmUrl, () => {
+        dates.push(Date.now());
+        return HttpResponse.json(page({ total: 0 }));
+      })
+    );
+    archiveAnswers(() => 3);
+
+    for (let run = 0; run < 6 * 60; run++) {
+      const before = pulls.length + dates.length;
+      await runScheduled(withKey, adapters, at(new Date(start + run * minute).toISOString()));
+      expect(pulls.length + dates.length - before, `run ${run}`).toBe(1);
+    }
+
+    expect(dates.length).toBeGreaterThan(100);
+    expect(dates.filter((time) => time >= midnight && time < midnight + 15 * minute)).toEqual([]);
+    const listeningAt = pulls.filter(({ id }) => id === 'listening').map(({ at: time }) => time);
+    const gaps = listeningAt.slice(1).map((time, i) => time - (listeningAt[i] ?? 0));
+    expect(Math.max(...gaps.slice(5))).toBeLessThanOrEqual(5 * minute);
+    for (let hour = start + 60 * minute; hour < start + 6 * 60 * minute; hour += 60 * minute) {
+      const inWindow = listeningAt.some((time) => time >= hour && time < hour + 5 * minute);
+      expect(inWindow, new Date(hour).toISOString()).toBe(true);
+    }
+  });
 
   // Catches an unbounded or mistyped arming: a range ending today, or reversed, or over a year.
   it.each([

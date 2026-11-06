@@ -154,8 +154,8 @@ const listeningInWindow: typeof listening = {
   },
 };
 
-/** The date a backfill scenario reads. */
-const backfillDate = '2026-10-01';
+/** The date a backfill scenario reads: the real archive answer's. */
+const backfillDate = '2026-11-04';
 
 /** One date of a backfill: Last.fm's range and the real archive answer, as they come. */
 const backfillAnswers = (): Answers =>
@@ -297,7 +297,9 @@ const scenarios: Record<
     answers: () => new Map([['forecast', JSON.stringify(rawFixtures['open-meteo'].ok.body)]]),
     days: true,
   },
-  backfill: { answers: backfillAnswers, backfill: true, days: true },
+  // Through the scheduler, with the real listening adapter just pulled: the run's turn goes to
+  // the backfill and the adapter does not run, so this is one whole backfill turn.
+  backfill: { adapter: listening, answers: backfillAnswers, backfill: true, days: true },
   // The real answers (0.7 KiB), and answers near the adapter's body cap.
   monkeytype: {
     adapter: monkeytype,
@@ -420,6 +422,9 @@ export default {
              VALUES ('listening', '{}', '2000-01-01T00:00:00.000Z'), ('weather', '{}', '2000-01-01T00:00:00.000Z')`
           ),
           env.DB.prepare(
+            "UPDATE snapshots SET last_attempt_at = ? WHERE source = 'listening'"
+          ).bind(Date.now() - 60_000),
+          env.DB.prepare(
             `INSERT INTO pull_progress (source, described_date, step, json)
              VALUES ('daily-backfill', ?1, 1, json_object('next', ?1, 'to', ?1, 'tries', 0))`
           ).bind(backfillDate),
@@ -442,6 +447,7 @@ export default {
     ).first<{ last_error_code: string | null; bytes: number | null }>();
     // A day read that fails is only logged, and would measure as cheap.
     const days = await env.DB.prepare('SELECT count(*) AS n FROM daily').first<{ n: number }>();
+    // Run outside a date's first 15 minutes in Rabat, when a backfill takes no turn.
     if (scenario.days === true && days?.n === 0) {
       return Response.json({ ...row, last_error_code: 'no_day_recorded' });
     }

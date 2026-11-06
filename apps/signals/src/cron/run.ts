@@ -5,7 +5,7 @@ import { logEvent } from '../security/log.ts';
 import { deleteDeliveriesBefore } from '../storage/admission.ts';
 import { D1SnapshotStore } from '../storage/d1.ts';
 import type { SnapshotStore, SourceStatus } from '../storage/types.ts';
-import { runBackfill } from './backfill.ts';
+import { dueBackfill, runBackfill } from './backfill.ts';
 
 /** An upstream call that takes longer than this is abandoned and recorded as `timeout`. */
 const fetchTimeoutMs = 20_000;
@@ -14,6 +14,11 @@ const fetchTimeoutMs = 20_000;
  * few seconds into the previous minute must not push the next one back a whole minute.
  */
 const scheduleSlackMs = 30_000;
+/**
+ * A backfill takes the turn only from an adapter less overdue than this: one that has waited
+ * out a skipped minute is past it, so listening runs at least every other minute (ADR 0038).
+ */
+const backfillGivesWayMs = 30_000;
 /** Deliveries older than this are forgotten; ADR 0011 explains why that is safe. */
 const deliveryRetentionMs = 7 * 24 * 60 * 60 * 1000;
 
@@ -75,7 +80,8 @@ async function pull(
 }
 
 /**
- * One cron run: at most one pull adapter, then old push deliveries in bounded batches.
+ * One cron run: at most one pull adapter or one date of an armed backfill, then old push
+ * deliveries in bounded batches.
  * Workers Free allows 10 ms of CPU and 50 subrequests per invocation, and one cold adapter
  * can need most of that (ADR 0009), so adapters never share an invocation. The one that runs
  * is the most overdue: never tried first, then the one furthest past the time it is due,
@@ -105,12 +111,14 @@ export async function runScheduled(
       next = { adapter, overdueMs };
     }
   }
-  if (next) await pull(next.adapter, env, store, statuses.get(next.adapter.id));
+  const backfill = await dueBackfill(env, statuses, scheduledTime);
+  if (backfill !== undefined && (next === undefined || next.overdueMs < backfillGivesWayMs)) {
+    await runBackfill(env, backfill, scheduledTime);
+  } else if (next) await pull(next.adapter, env, store, statuses.get(next.adapter.id));
 
   const deleted = await deleteDeliveriesBefore(env.DB, scheduledTime - deliveryRetentionMs, {
     batchSize: 500,
     maxBatches: 10,
   });
   logEvent('log', 'cron run', { pulled: next?.adapter.id ?? null, deliveriesDeleted: deleted });
-  await runBackfill(env, statuses, scheduledTime);
 }

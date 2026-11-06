@@ -236,8 +236,7 @@ describe('scheduled', () => {
           await store.recordFailure(id, 'upstream_error', at.toISOString());
         } else await store.put(id, {}, at.toISOString());
       }
-      // An armed backfill runs after each pull and takes no adapter's turn (ADR 0038). Its
-      // requests fail here, so it keeps trying through these minutes.
+      // An armed backfill takes no turn in these minutes (ADR 0038), so this order is unchanged.
       await env.DB.prepare(
         `INSERT INTO pull_progress (source, described_date, step, json)
          VALUES ('daily-backfill', '2026-09-02', 1, '{"next":"2026-09-01","to":"2026-09-02","tries":0}')`

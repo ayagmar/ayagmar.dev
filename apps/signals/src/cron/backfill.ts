@@ -1,7 +1,8 @@
 // A bounded one-off that fills past days of listening and weather (ADR 0038). `just
 // signals-backfill` arms it with a row in `pull_progress`; the Worker holds the Last.fm key, so
-// nothing secret leaves it. Each cron invocation then reads one date and commits it, after
-// that invocation's pull: it takes no slot from the adapters, and midnight's order is as it was.
+// nothing secret leaves it. It then reads one date on a cron turn of its own, in place of a
+// pull: a pull near the CPU limit and a date together could lose the date every time, and spend
+// its tries with nothing wrong upstream.
 import {
   calendarDatePattern,
   daysFirstMonth,
@@ -9,7 +10,7 @@ import {
   type SourceId,
   weatherStoredDaySchema,
 } from '@min7/contracts';
-import { nextDate, rabatDate } from '@min7/contracts/rabat';
+import { nextDate, rabatDate, rabatDayStart } from '@min7/contracts/rabat';
 import { getJson, PullError } from '../adapters/pull/http.ts';
 import {
   listeningDayValues,
@@ -17,6 +18,7 @@ import {
   readListeningDay,
 } from '../adapters/pull/listening-days.ts';
 import { readSecret } from '../adapters/pull/secrets.ts';
+import { midnightYieldMs } from '../adapters/pull/shipping-activity.ts';
 import {
   archiveUrl,
   hasBothSlots,
@@ -34,7 +36,7 @@ import type { SourceStatus } from '../storage/types.ts';
 const runTimeoutMs = 10_000;
 /** A day of 24 hourly codes is about 1 KiB. */
 const archiveMaxBytes = 16 * 1024;
-/** The longest range one arming may name: a little over a year, a minute a day. */
+/** The longest range one arming may name: a little over a year. */
 const maxDays = 400;
 /** Runs in a row that may fail on one date before the backfill stops and waits for a person. */
 const maxTries = 5;
@@ -117,68 +119,82 @@ async function fillDate(env: Env, date: string, now: number) {
   if (!hasBothSlots(weatherDay)) throw new PullError('upstream_incomplete');
 }
 
-async function step(
+/** A backfill ready to take this run's turn. */
+export interface DueBackfill {
+  loaded: Progress;
+  state: State;
+}
+
+/**
+ * The armed backfill, if this run could give it a turn: not in the first minutes of a date in
+ * Rabat, which belong to the listening history (ADR 0030), and not while a wait or an
+ * upstream's cooldown holds it. Failing here costs only the turn, never the run's pull.
+ */
+export async function dueBackfill(
   env: Env,
   statuses: ReadonlyMap<SourceId, SourceStatus>,
   now: number
-): Promise<void> {
-  const progress = new D1ProgressStore(env.DB, 'daily-backfill');
-  const loaded = await progress.load();
-  if (loaded === null || loaded.state === null) return;
-  const { describedDate } = loaded;
-  const state = readState(loaded.state, rabatDate(now));
-  if (state === undefined) {
-    logEvent('warn', 'backfill refused', { code: 'invalid_range' });
-    await progress.finish(loaded, describedDate);
-    return;
-  }
-  if (state.stopped === true || (state.notBefore ?? 0) > now) return;
-  const cooling = cooldownSources.some((id) => (statuses.get(id)?.retryAfterAt ?? 0) > now);
-  if (cooling) return;
-  if (state.tries >= maxTries) {
-    logEvent('warn', 'backfill stopped', { date: state.next, code: state.code ?? null });
-    await progress.save(loaded, describedDate, { ...state, stopped: true });
-    return;
-  }
-  const { notBefore: _waited, ...ready } = state;
-  const claim = { ...ready, tries: state.tries + 1 };
-  if (!(await progress.save(loaded, describedDate, claim))) return;
-  const claimed: Progress = { ...loaded, step: loaded.step + 1 };
-
+): Promise<DueBackfill | undefined> {
   try {
-    await fillDate(env, state.next, now);
-  } catch (error) {
-    if (!(error instanceof PullError)) throw error;
-    logEvent('warn', 'backfill failed', { date: state.next, code: error.code });
-    const wait = error.code === 'upstream_incomplete' ? incompleteRetryMs : retryMs;
-    const notBefore = error.retryAt ?? now + wait;
-    await progress.save(claimed, describedDate, { ...claim, notBefore, code: error.code });
-    return;
-  }
-
-  logEvent('log', 'backfill day', { date: state.next });
-  if (state.next === state.to) await progress.finish(claimed, describedDate);
-  else {
-    await progress.save(claimed, describedDate, {
-      next: nextDate(state.next),
-      to: state.to,
-      tries: 0,
-    });
+    const progress = new D1ProgressStore(env.DB, 'daily-backfill');
+    const loaded = await progress.load();
+    if (loaded === null || loaded.state === null) return undefined;
+    const today = rabatDate(now);
+    const state = readState(loaded.state, today);
+    if (state === undefined) {
+      logEvent('warn', 'backfill refused', { code: 'invalid_range' });
+      await progress.finish(loaded, loaded.describedDate);
+      return undefined;
+    }
+    if (state.stopped === true || (state.notBefore ?? 0) > now) return undefined;
+    if (now < rabatDayStart(today) * 1000 + midnightYieldMs) return undefined;
+    if (cooldownSources.some((id) => (statuses.get(id)?.retryAfterAt ?? 0) > now)) return undefined;
+    if (state.tries >= maxTries) {
+      logEvent('warn', 'backfill stopped', { date: state.next, code: state.code ?? null });
+      await progress.save(loaded, loaded.describedDate, { ...state, stopped: true });
+      return undefined;
+    }
+    return { loaded, state };
+  } catch {
+    logEvent('warn', 'backfill failed', { code: 'backfill_failed' });
+    return undefined;
   }
 }
 
 /**
- * One date of an armed backfill, if any. A failure leaves the date to the next run and is only
- * logged, as this must not fail the run that already did its pull. A date is the unit: a run
- * killed halfway repeats it, and the merges make that change nothing.
+ * One date of the backfill. A failure leaves the date to a later turn and is only logged. A
+ * date is the unit: a run killed halfway repeats it, and the merges make that change nothing.
+ * Every write names the version loaded, so arming again or cancelling during the reads wins.
  */
-export async function runBackfill(
-  env: Env,
-  statuses: ReadonlyMap<SourceId, SourceStatus>,
-  now: number
-): Promise<void> {
+export async function runBackfill(env: Env, { loaded, state }: DueBackfill, now: number) {
+  const progress = new D1ProgressStore(env.DB, 'daily-backfill');
+  const { describedDate } = loaded;
   try {
-    await step(env, statuses, now);
+    const { notBefore: _waited, ...ready } = state;
+    const claim = { ...ready, tries: state.tries + 1 };
+    if (!(await progress.save(loaded, describedDate, claim))) return;
+    const claimed: Progress = { ...loaded, step: loaded.step + 1 };
+
+    try {
+      await fillDate(env, state.next, now);
+    } catch (error) {
+      if (!(error instanceof PullError)) throw error;
+      logEvent('warn', 'backfill failed', { date: state.next, code: error.code });
+      const wait = error.code === 'upstream_incomplete' ? incompleteRetryMs : retryMs;
+      const notBefore = error.retryAt ?? now + wait;
+      await progress.save(claimed, describedDate, { ...claim, notBefore, code: error.code });
+      return;
+    }
+
+    logEvent('log', 'backfill day', { date: state.next });
+    if (state.next === state.to) await progress.finish(claimed, describedDate);
+    else {
+      await progress.save(claimed, describedDate, {
+        next: nextDate(state.next),
+        to: state.to,
+        tries: 0,
+      });
+    }
   } catch {
     logEvent('warn', 'backfill failed', { code: 'backfill_failed' });
   }

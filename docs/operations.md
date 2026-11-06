@@ -104,13 +104,13 @@ curl -s https://api.ayagmar.dev/v1/health | jq '.days'
 
 ### Backfilling past days
 
-Fills past dates of both series, one date a minute, in production only: cron triggers never run in Previews, and no key leaves the Worker. Wrangler needs a login with D1 access; nothing else is secret. The range includes both dates, must end before today in Rabat, starts no earlier than 2025-01-01 and spans at most 400 days. A date is fetched only when the backfill reaches it, so try one first:
+Fills past dates of both series, about one date every two minutes, in production only: cron triggers never run in Previews, and no key leaves the Worker. Wrangler needs a login with D1 access; nothing else is secret. The range includes both dates, must end before today in Rabat, starts no earlier than 2025-01-01 and spans at most 400 days. A date is fetched only when the backfill reaches it, so try one first:
 
 ```sh
 just signals-backfill 2026-10-01 2026-10-01
 ```
 
-A minute or two later, check the date and that the row says it finished (`json` is `null`):
+A few minutes later, check the date and that the row says it finished (`json` is `null`):
 
 ```sh
 curl -s 'https://api.ayagmar.dev/v1/days/listening?month=2026-10' | jq '.data.days[0]'
@@ -118,7 +118,7 @@ curl -s 'https://api.ayagmar.dev/v1/days/weather?month=2026-10' | jq '.data.days
 pnpm --filter @min7/signals exec wrangler d1 execute DB --remote --command "SELECT described_date, step, json FROM pull_progress WHERE source = 'daily-backfill'"
 ```
 
-Edge caching holds a month block for up to 60 seconds. Then arm the rest, which takes about a minute per date:
+Edge caching holds a month block for up to 60 seconds. Then arm the rest, which takes about two minutes per date, and pauses for the first 15 minutes of each date in Rabat:
 
 ```sh
 just signals-backfill 2026-10-02 2026-11-05
