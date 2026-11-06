@@ -103,6 +103,33 @@ for (const width of [1280, 700]) {
   });
 }
 
+// Catches the link that stands in for search looking different from the button: the unanimated
+// new header would show one control and change to another when the island hydrates, up to 2 s
+// after the page. The outer header box cannot show this; the control's box and label can.
+test('the search control looks the same before and after hydration', async ({ page }) => {
+  await page.goto('/about');
+  const button = page.getByRole('button', { name: /search/i });
+  await expect(button).toBeVisible();
+  const hydrated = { box: await button.boundingBox(), label: await button.innerText() };
+
+  let hydrate = () => {};
+  const held = new Promise<void>((done) => {
+    hydrate = done;
+  });
+  await page.route(/\/_astro\/Search\.[\w-]+\.js$/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  await follow(page, '/writing');
+  const link = page.locator('.site-tools a');
+  await expect(link).toBeVisible();
+  expect({ box: await link.boundingBox(), label: await link.innerText() }).toEqual(hydrated);
+
+  hydrate();
+  await expect(button).toBeVisible();
+  expect({ box: await button.boundingBox(), label: await button.innerText() }).toEqual(hydrated);
+});
+
 for (const { system, choice } of [
   { system: 'light', choice: 'night' },
   { system: 'dark', choice: 'day' },

@@ -468,6 +468,34 @@ h1 + .caption,
   font-size: 0.9375rem;
 }
 
+.search-script {
+  display: none;
+}
+
+/* With scripts on, the link is drawn as the button it will become, so a new page's header does
+   not change when the island hydrates, up to 2 s later (ADR 0042). data-theme-switch is set before
+   the first paint; without it the link stays a plain "Browse writing". */
+:root[data-theme-switch] .search-script {
+  display: inline;
+}
+
+:root[data-theme-switch] .search-no-script {
+  display: none;
+}
+
+:root[data-theme-switch] .site-tools astro-island > a {
+  display: inline-block;
+  border: 1px solid transparent;
+  padding: 0.25rem 0.7rem;
+  color: var(--muted);
+  font: 500 0.9375rem / 1.2 var(--serif);
+  text-decoration: none;
+}
+
+:root[data-theme-switch] .site-tools astro-island > a:hover {
+  color: var(--text);
+}
+
 /* The keyboard hint is for a keyboard: not on phones or tablets. */
 .site-tools kbd {
   display: none;
