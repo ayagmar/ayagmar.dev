@@ -6,4 +6,4 @@ idiomatic_version_file_enable_tools = ["node"]
 pnpm = "12.17.0"
 just = "1.59.0"
 # Runs the font and scene scripts (just fonts, just scene); CI does not need it.
-uv = "0.13.6"
+uv = "0.13.7"
