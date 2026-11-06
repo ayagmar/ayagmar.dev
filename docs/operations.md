@@ -100,7 +100,7 @@ Whether a series is recording is on `/v1/health`, under `days`, apart from the s
 curl -s https://api.ayagmar.dev/v1/health | jq '.days'
 ```
 
-`lastErrorCode` with `lastErrorDate` is the latest failure, and stays until a pull records every date it read. `stale: true` means nothing recorded for 3 hours (listening) or 45 minutes (weather); listening is also stale until the first hour after a deploy. `upstream_malformed` for listening means Last.fm's range answer differs from what `readRangePage` checks; `upstream_future` for weather means Open-Meteo dated a reading ahead of the clock, and it was not recorded. Workers Logs has a `day read failed` line for each, with the code. Days missed while failing stay missing until a backfill covers them. A block's `fetchedAt` is when the source was last collected, not when that day was: read `asOf` and each slot's `at`.
+`retryAfterAt`, in Unix ms, is a Last.fm refusal of the day reads: until then neither live day reads nor a backfill ask. `lastErrorCode` with `lastErrorDate` is the latest failure, and stays until a pull records every date it read. `stale: true` means nothing recorded for 3 hours (listening) or 45 minutes (weather); listening is also stale until the first hour after a deploy. `upstream_malformed` for listening means Last.fm's range answer differs from what `readRangePage` checks; `upstream_future` for weather means Open-Meteo dated a reading ahead of the clock, and it was not recorded. Workers Logs has a `day read failed` line for each, with the code. Days missed while failing stay missing until a backfill covers them. A block's `fetchedAt` is when the source was last collected, not when that day was: read `asOf` and each slot's `at`.
 
 ### Backfilling past days
 
@@ -124,7 +124,7 @@ Edge caching holds a month block for up to 60 seconds. Then arm the rest, which 
 just signals-backfill 2026-10-02 2026-11-05
 ```
 
-Workers Logs has one `backfill day` line per date. It waits by itself: `notBefore` in `json` is the Unix ms of the next try, a time the upstream gave with `Retry-After`, an hour when the archive lacks an hour, else 5 minutes. A cooldown already recorded for `listening`, `listening-history` or `weather` holds it too. Waiting asks nothing and spends no try. It stops by itself:
+Workers Logs has one `backfill day` line per date. It waits by itself: `notBefore` in `json` is the Unix ms of the next try, a time the upstream gave with `Retry-After`, an hour when the archive lacks an hour, else 5 minutes. A cooldown already recorded for `listening`, `listening-history` or `weather`, or a `retryAfterAt` under `days` on `/v1/health`, holds it too. Waiting asks nothing and spends no try. It stops by itself:
 
 - After the last date: `json` is `null`.
 - After 5 failed tries on a date: a `backfill stopped` line, and `json` holds `"stopped":true` with `next`, the date it stopped on, and `code`, why. Fix the cause, then arm again from `next`. `upstream_incomplete` means the archive never reached one of that date's two hours: what it did have is kept, and the date is incomplete, not done.

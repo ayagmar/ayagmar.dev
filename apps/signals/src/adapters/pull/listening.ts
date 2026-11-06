@@ -21,7 +21,7 @@ import {
 import { lastfmEndpoint, lastfmForm, readLastfm } from './lastfm.ts';
 import {
   type DayRead,
-  dayReadsDue,
+  dayReadsAllowed,
   listeningDaysHistory,
   readListeningDay,
 } from './listening-days.ts';
@@ -66,7 +66,9 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
     const lastMonday = thisMonday - 7 * day;
     // Only `@attr.total` of the weekly calls is read, so one item per page is enough.
     const [days, recentTracks, topArtists, thisWeek, lastWeek] = await Promise.all([
-      Promise.all(dayReadsDue(Date.now()).map((date) => readListeningDay(date, apiKey, signal))),
+      dayReadsAllowed(env.DB, Date.now()).then((dates) =>
+        Promise.all(dates.map((date) => readListeningDay(date, apiKey, signal)))
+      ),
       getJson(lastfmEndpoint, call('user.getrecenttracks', { limit: String(listLimit) })),
       getOptionalJson(
         lastfmEndpoint,

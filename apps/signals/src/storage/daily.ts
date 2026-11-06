@@ -122,6 +122,8 @@ export function pushedDaysStatement(
 export interface DayOutcome {
   date: string;
   code: string | null;
+  /** Unix ms: the latest time a refusal among the reads asked to be left alone until. */
+  retryAt?: number;
 }
 
 /** The series whose recording can fail while their snapshot carries on (ADR 0038). */
@@ -135,7 +137,17 @@ export interface DayStatus {
   lastErrorCode: string | null;
   lastErrorAt: string | null;
   lastErrorDate: string | null;
+  /** Unix ms before which no day read may ask. A pull's clean snapshot does not end it. */
+  retryAfterAt: number | null;
 }
+
+const noStatus: DayStatus = {
+  lastSuccessAt: null,
+  lastErrorCode: null,
+  lastErrorAt: null,
+  lastErrorDate: null,
+  retryAfterAt: null,
+};
 
 /** Its row in `pull_progress`, beside the pulls' own: no migration, and old Workers ignore it. */
 const statusRow = (series: string) => `days:${series}`;
@@ -154,27 +166,27 @@ export function dayStatusStatement(
 ): D1PreparedStatement {
   const source = statusRow(series);
   if (outcome.code === null) {
-    const status: DayStatus = {
-      lastSuccessAt: at,
-      lastErrorCode: null,
-      lastErrorAt: null,
-      lastErrorDate: null,
-    };
+    const status: DayStatus = { ...noStatus, lastSuccessAt: at };
     return db
       .prepare(
         `INSERT INTO pull_progress (source, described_date, step, json)
          SELECT ?1, ?2, 1, ?3
          WHERE EXISTS (SELECT 1 FROM snapshots WHERE source = ?4 AND write_id = ?5)
          ON CONFLICT (source) DO UPDATE SET
-           described_date = excluded.described_date, step = step + 1, json = excluded.json`
+           described_date = excluded.described_date, step = step + 1,
+           json = json_set(excluded.json, '$.retryAfterAt',
+             CASE WHEN json_extract(pull_progress.json, '$.retryAfterAt') > ?6
+                  THEN json_extract(pull_progress.json, '$.retryAfterAt') END)`
       )
-      .bind(source, outcome.date, JSON.stringify(status), series, writeId);
+      .bind(source, outcome.date, JSON.stringify(status), series, writeId, Date.parse(at));
   }
+  const retryAt = outcome.retryAt ?? null;
   const status: DayStatus = {
-    lastSuccessAt: null,
+    ...noStatus,
     lastErrorCode: outcome.code,
     lastErrorAt: at,
     lastErrorDate: outcome.date,
+    retryAfterAt: retryAt,
   };
   return db
     .prepare(
@@ -183,9 +195,45 @@ export function dayStatusStatement(
        ON CONFLICT (source) DO UPDATE SET
          described_date = excluded.described_date, step = step + 1,
          json = json_set(pull_progress.json, '$.lastErrorCode', ?4, '$.lastErrorAt', ?5,
-                         '$.lastErrorDate', ?2)`
+                         '$.lastErrorDate', ?2, '$.retryAfterAt', ${longestRetry('?6')})`
     )
-    .bind(source, outcome.date, JSON.stringify(status), outcome.code, at);
+    .bind(source, outcome.date, JSON.stringify(status), outcome.code, at, retryAt);
+}
+
+/** The later of the stored refusal time and `value`, null when neither is set. */
+const longestRetry = (value: string) =>
+  `nullif(max(coalesce(json_extract(pull_progress.json, '$.retryAfterAt'), 0), coalesce(${value}, 0)), 0)`;
+
+/**
+ * Holds `series`' day reads until `until`, or a later time already held, and says nothing of
+ * how recording went: for a refusal a backfill met, which live reads must keep too.
+ */
+export async function holdDayReads(
+  db: D1Database,
+  series: RecordedSeries,
+  date: string,
+  until: number
+) {
+  await db
+    .prepare(
+      `INSERT INTO pull_progress (source, described_date, step, json)
+       VALUES (?1, ?2, 1, ?3)
+       ON CONFLICT (source) DO UPDATE SET
+         step = step + 1, json = json_set(pull_progress.json, '$.retryAfterAt', ${longestRetry('?4')})`
+    )
+    .bind(statusRow(series), date, JSON.stringify({ ...noStatus, retryAfterAt: until }), until)
+    .run();
+}
+
+/** Unix ms before which `series`' day reads may not ask; 0 with nothing held. */
+export async function dayReadsHeldUntil(db: D1Database, series: RecordedSeries): Promise<number> {
+  const row = await db
+    .prepare(
+      "SELECT json_extract(json, '$.retryAfterAt') AS until FROM pull_progress WHERE source = ?"
+    )
+    .bind(statusRow(series))
+    .first<{ until: number | null }>();
+  return row?.until ?? 0;
 }
 
 /** Each recorded series' status; one that has recorded nothing yet is all null. */
@@ -203,10 +251,7 @@ export async function readDayStatuses(
     const json = stored.get(statusRow(series));
     return {
       series,
-      status:
-        json === undefined
-          ? { lastSuccessAt: null, lastErrorCode: null, lastErrorAt: null, lastErrorDate: null }
-          : (JSON.parse(json) as DayStatus),
+      status: json === undefined ? noStatus : { ...noStatus, ...(JSON.parse(json) as DayStatus) },
     };
   });
 }

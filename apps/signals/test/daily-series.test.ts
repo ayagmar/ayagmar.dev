@@ -25,6 +25,7 @@ import { mergeWeatherDay, weatherDayOf } from '../src/adapters/pull/weather-days
 import type { PullAdapter } from '../src/adapters/types.ts';
 import { runScheduled } from '../src/cron/run.ts';
 import { D1SnapshotStore } from '../src/storage/d1.ts';
+import { holdDayReads } from '../src/storage/daily.ts';
 import { clearState, fetchApi, snapshotRow, sourceHealth } from './helpers.ts';
 
 const network = setupNetwork();
@@ -362,6 +363,7 @@ type Recording = {
   lastErrorCode: string | null;
   lastErrorAt: string | null;
   lastErrorDate: string | null;
+  retryAfterAt: number | null;
 };
 const recording = async (series: string) => {
   const body = await (await fetchApi('/v1/health')).json<{ days: Recording[] }>();
@@ -402,6 +404,7 @@ describe('whether days are being recorded', () => {
       lastErrorCode: 'upstream_malformed',
       lastErrorAt: '2026-10-26T10:01:00.000Z',
       lastErrorDate: '2026-10-25',
+      retryAfterAt: null,
     });
 
     lastfm({ '2026-10-26': { total: 2, newest: scrobbleAt('2026-10-26T08:00:00Z', 'Back') } });
@@ -913,6 +916,105 @@ describe('the backfill', () => {
       expect(await backfillState()).toBeNull();
     }
   );
+
+  /** Day ranges refused with `seconds` by date; the snapshot's own requests answer as usual. */
+  function refuseRanges(seconds: (from: number) => number) {
+    const seen = { ranges: 0, archive: 0 };
+    network.use(
+      http.post(lastfmUrl, async ({ request }) => {
+        const form = await request.clone().formData();
+        const from = Number(form.get('from'));
+        if (!form.has('to') || Number(form.get('to')) - from > 25 * 3600) return undefined;
+        seen.ranges++;
+        return new HttpResponse(null, {
+          status: 429,
+          headers: { 'Retry-After': String(seconds(from)) },
+        });
+      }),
+      http.get(archiveUrl, () => {
+        seen.archive++;
+        return HttpResponse.json(archive('2026-10-01', () => 3));
+      }),
+      ...upstreamHandlers()
+    );
+    return seen;
+  }
+
+  // Catches a refusal the day reads got while the snapshot's requests succeeded: the clean
+  // snapshot clears the source's cooldown, so a backfill or the next read would ask at once.
+  it('keeps the longest refusal from a live pull, for backfill turns and later reads', async () => {
+    await seedSnapshots();
+    await arm('2026-10-01', '2026-10-01');
+    // Armed, but listening takes this turn: it is overdue.
+    await env.DB.prepare(
+      "UPDATE snapshots SET last_attempt_at = 0 WHERE source = 'listening'"
+    ).run();
+    const today = rabatDayStart('2026-11-06');
+    const seen = refuseRanges((from) => (from === today ? 3600 : 1800));
+    await pullListening('2026-11-06T10:01:00Z');
+
+    expect(seen.ranges).toBe(2);
+    expect((await sourceHealth('listening'))?.lastErrorCode).toBeNull();
+    expect((await snapshotRow('listening'))?.fetched_at).toBe('2026-11-06T10:01:00.000Z');
+    const deadline = Date.parse('2026-11-06T11:01:00Z');
+    expect(await recording('listening')).toMatchObject({
+      lastErrorCode: 'upstream_rate_limited',
+      retryAfterAt: deadline,
+    });
+
+    // Each a new invocation, as after a restart; the second a pull inside the window.
+    await tick('2026-11-06T10:02:30Z');
+    await pullListening('2026-11-06T10:03:00Z');
+    await tick('2026-11-06T11:00:30Z');
+    expect(seen).toEqual({ ranges: 2, archive: 0 });
+    expect(await backfillState()).toMatchObject({ next: '2026-10-01', tries: 0 });
+    expect((await recording('listening'))?.retryAfterAt).toBe(deadline);
+
+    network.resetHandlers();
+    lastfm({});
+    archiveAnswers(() => 3);
+    await tick('2026-11-06T11:01:30Z');
+    expect(await backfillState()).toBeNull();
+    await pullListening('2026-11-06T12:01:00Z');
+    expect(await recording('listening')).toMatchObject({ lastErrorCode: null, retryAfterAt: null });
+  });
+
+  // Catches the reverse: Last.fm refused the backfill, and the next hour's live read asks anyway.
+  it('holds live day reads after a refusal a backfill met, and records no failure', async () => {
+    await seedSnapshots();
+    await arm('2026-10-01', '2026-10-01');
+    const seen = refuseRanges(() => 7200);
+    await tick('2026-11-06T10:00:30Z');
+    expect(seen.ranges).toBe(1);
+
+    await pullListening('2026-11-06T11:01:00Z');
+    expect(seen.ranges).toBe(1);
+    expect(await recording('listening')).toMatchObject({
+      lastErrorCode: null,
+      retryAfterAt: Date.parse('2026-11-06T12:00:30Z'),
+    });
+  });
+
+  // Catches a shorter refusal, or a plain failure with no time, cutting one still running.
+  it('keeps a running refusal through a later failure that names no time', async () => {
+    const until = Date.parse('2026-11-06T13:00:00Z');
+    await holdDayReads(env.DB, 'listening', '2026-10-01', until);
+    await holdDayReads(env.DB, 'listening', '2026-10-01', until - 3_600_000);
+    await new D1SnapshotStore(env.DB).putDated(
+      'listening',
+      {
+        fetchedAt: '2026-11-06T10:00:00.000Z',
+        dates: null,
+        outcome: { date: '2026-11-06', code: 'upstream_timeout' },
+        merge: () => ({ snapshot: {}, days: [] }),
+      },
+      '2026-11-06T10:00:00.000Z'
+    );
+    expect(await recording('listening')).toMatchObject({
+      lastErrorCode: 'upstream_timeout',
+      retryAfterAt: until,
+    });
+  });
 
   // Catches an old invocation finishing over a newer arming: its save must lose, in both cases.
   it.each([

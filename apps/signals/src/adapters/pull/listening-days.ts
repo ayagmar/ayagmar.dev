@@ -7,7 +7,7 @@ import {
 } from '@min7/contracts';
 import { nextDate, rabatDate, rabatDayStart } from '@min7/contracts/rabat';
 import { logEvent } from '../../security/log.ts';
-import { type DayValue, mergedRows } from '../../storage/daily.ts';
+import { type DayValue, dayReadsHeldUntil, mergedRows } from '../../storage/daily.ts';
 import type { PullHistory } from '../types.ts';
 import {
   checkSnapshot,
@@ -51,6 +51,16 @@ export function dayReadsDue(now: number): string[] {
   if (new Date(now).getUTCMinutes() >= windowMinutes) return [];
   const today = rabatDate(now);
   return [rabatDate((rabatDayStart(today) - 1) * 1000), today];
+}
+
+/**
+ * The dates to read now, or none while a refusal holds them. The hold is stored, as the pull's
+ * own requests can succeed and clear the source's cooldown while the day reads were refused.
+ */
+export async function dayReadsAllowed(db: D1Database, now: number): Promise<string[]> {
+  const dates = dayReadsDue(now);
+  if (dates.length === 0 || (await dayReadsHeldUntil(db, 'listening')) > now) return [];
+  return dates;
 }
 
 /** Asks Last.fm for `date`. A failed request is an outcome here, not a failed pull. */
@@ -129,10 +139,14 @@ export function mergeListeningDay(
   return { count, last, asOf };
 }
 
-/** What `reads` came to: the readable days, and the first that could not be read, with why. */
+/**
+ * What `reads` came to: the readable days, the first that could not be read, with why, and the
+ * latest time any refusal among them named.
+ */
 export function listeningDayValues(reads: readonly DayRead[]) {
   const values: DayValue<ListeningStoredDay>[] = [];
   let failure: { date: string; error: PullError } | undefined;
+  let retryAt: number | undefined;
   for (const { date, at, answer } of reads) {
     try {
       if (answer instanceof PullError) throw answer;
@@ -141,9 +155,10 @@ export function listeningDayValues(reads: readonly DayRead[]) {
       if (!(error instanceof PullError)) throw error;
       logEvent('warn', 'day read failed', { source: 'listening', date, code: error.code });
       failure ??= { date, error };
+      if (error.retryAt !== undefined) retryAt = Math.max(retryAt ?? 0, error.retryAt);
     }
   }
-  return { values, failure };
+  return { values, failure, retryAt };
 }
 
 /**
@@ -157,7 +172,7 @@ export function listeningDaysHistory(
 ): PullHistory | undefined {
   const last = reads.at(-1);
   if (last === undefined) return undefined;
-  const { values, failure } = listeningDayValues(reads);
+  const { values, failure, retryAt } = listeningDayValues(reads);
   const [first] = values;
   return {
     fetchedAt: new Date().toISOString(),
@@ -165,7 +180,11 @@ export function listeningDaysHistory(
     outcome:
       failure === undefined
         ? { date: last.date, code: null }
-        : { date: failure.date, code: failure.error.code },
+        : {
+            date: failure.date,
+            code: failure.error.code,
+            ...(retryAt === undefined ? {} : { retryAt }),
+          },
     merge: (stored) => ({
       snapshot,
       days: mergedRows(values, stored.days, listeningStoredDaySchema, mergeListeningDay),

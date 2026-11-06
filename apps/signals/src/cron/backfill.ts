@@ -28,7 +28,7 @@ import {
 } from '../adapters/pull/weather-days.ts';
 import { logEvent } from '../security/log.ts';
 import { D1SnapshotStore } from '../storage/d1.ts';
-import { mergedRows } from '../storage/daily.ts';
+import { dayReadsHeldUntil, holdDayReads, mergedRows } from '../storage/daily.ts';
 import { D1ProgressStore, type Progress } from '../storage/progress.ts';
 import type { SourceStatus } from '../storage/types.ts';
 
@@ -88,7 +88,8 @@ async function fillDate(env: Env, date: string, now: number) {
   const signal = AbortSignal.timeout(runTimeoutMs);
   // One after the other: a refusal from Last.fm asks the archive nothing.
   const listening = await readListeningDay(date, apiKey, signal);
-  const { values: listeningValues, failure } = listeningDayValues([listening]);
+  const { values: listeningValues, failure, retryAt } = listeningDayValues([listening]);
+  if (retryAt !== undefined) await holdDayReads(env.DB, 'listening', date, retryAt);
   if (failure !== undefined) throw failure.error;
   const archive = await getJson(archiveUrl(date), { signal, maxBytes: archiveMaxBytes });
   const weatherValues = weatherDayValues(date, weatherDayOf(date, archive));
@@ -149,6 +150,7 @@ export async function dueBackfill(
     if (state.stopped === true || (state.notBefore ?? 0) > now) return undefined;
     if (now < rabatDayStart(today) * 1000 + midnightYieldMs) return undefined;
     if (cooldownSources.some((id) => (statuses.get(id)?.retryAfterAt ?? 0) > now)) return undefined;
+    if ((await dayReadsHeldUntil(env.DB, 'listening')) > now) return undefined;
     if (state.tries >= maxTries) {
       logEvent('warn', 'backfill stopped', { date: state.next, code: state.code ?? null });
       await progress.save(loaded, loaded.describedDate, { ...state, stopped: true });
