@@ -6,7 +6,7 @@ import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
 import { feedPaths } from './feed.ts';
 import { postCount, postsAbout, projectLinks, projectPath, type SiteProject } from './projects.ts';
-import { nav, nowPage, site, siteUrl } from './site.ts';
+import { curlTarget, identityLines, nav, nowPage, site, siteUrl } from './site.ts';
 import { type Note, notePath } from './til.ts';
 import { isoDay, type Post, postPath, postsByTag } from './writing.ts';
 
@@ -50,11 +50,15 @@ const asciiRoom = String.raw`
 |____________________________________________________|___________|___|
 `.slice(1, -1);
 
-/** The page `curl ayagmar.dev` prints: who, recent writing and notes, projects, where to go next. */
+/**
+ * The page `curl ayagmar.dev` prints: who, recent writing and notes, projects, where to go next.
+ * `origin` is where this build is served, so a Preview's room command reaches its own room.
+ */
 export function renderPlainText(
   posts: readonly Post[],
   notes: readonly Note[],
-  projects: readonly ProjectSlug[]
+  projects: readonly ProjectSlug[],
+  origin: string
 ): string {
   const writing =
     posts.length === 0
@@ -76,8 +80,7 @@ export function renderPlainText(
   return [
     asciiRoom,
     '',
-    `${site.name} | ${site.author}`,
-    `${site.role} in ${site.location}`,
+    ...identityLines,
     rule,
     'Writing',
     ...writing,
@@ -92,6 +95,7 @@ export function renderPlainText(
     `  ${'RSS'.padEnd(10)} ${siteUrl}${feedPaths().rss}`,
     `  ${'Atom'.padEnd(10)} ${siteUrl}${feedPaths().atom}`,
     `  ${'GitHub'.padEnd(10)} ${site.links.github}`,
+    `  ${'In colour'.padEnd(10)} curl ${curlTarget(origin)}/room`,
     '',
   ].join('\n');
 }

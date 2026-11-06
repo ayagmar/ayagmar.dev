@@ -212,6 +212,19 @@ export function readAnswer<Data>(
 }
 
 /**
+ * Whether `answer` still describes `time`: not flagged stale by signals, within the source's
+ * threshold of `limit` ms, and at least as new as what is shown, taken at `shownAt` (NaN if
+ * nothing is).
+ */
+export const isCurrent = <Data>(
+  answer: Answer<Data> | undefined,
+  limit: number,
+  time: number,
+  shownAt: number
+): answer is Answer<Data> =>
+  answer !== undefined && !answer.stale && time - answer.at <= limit && !(answer.at < shownAt);
+
+/**
  * Keeps the panel `[data-live=<source>]` current. Its HTML is the build's snapshot, taken at
  * `data-fetched-at` (absent when the build had none), and `data-stale-after` gives the
  * source's threshold in seconds. In api mode `data-live-src` names the endpoint, asked every
@@ -244,8 +257,7 @@ export function live<Data>(
   let drawn = '';
   poll(liveSrc, everyMs, (body, time, failed) => {
     const answer = readAnswer(body, source, read, time);
-    const current =
-      answer !== undefined && !answer.stale && time - answer.at <= limit && !(answer.at < shown.at);
+    const current = isCurrent(answer, limit, time, shown.at);
     if (current) shown = answer;
     const fresh = time - shown.at <= limit;
     // Now only while the latest request brought a current answer, the one shown.

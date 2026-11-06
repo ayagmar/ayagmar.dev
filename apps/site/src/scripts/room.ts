@@ -9,7 +9,16 @@
 // the cat.
 
 import { ask } from '../lib/live.ts';
-import { isLate, knowsRabatTime, moonAt, moonPath, rabatTime, skyAt } from '../lib/sky.ts';
+import {
+  isLate,
+  knowsRabatTime,
+  moonAt,
+  moonPath,
+  moonShown,
+  rabatTime,
+  skyAt,
+  windowWords,
+} from '../lib/sky.ts';
 import { readWeather } from '../lib/weather.ts';
 
 const scene = document.querySelector<HTMLElement>('.scene');
@@ -57,16 +66,9 @@ function tick() {
   scene.toggleAttribute('data-late', late);
   // The hour in Rabat, for the cat (room.css), which only counts it with `data-late` set.
   scene.dataset.hour = rabatTime(now).slice(0, 2);
-  // A moon this thin would be a single pixel or none: leave it out.
-  moon?.setAttribute(
-    'd',
-    sky === 'day' || phase.fraction < 0.03 ? '' : moonPath(phase, 122, 25, 6)
-  );
+  moon?.setAttribute('d', moonShown(sky, phase) ? moonPath(phase) : '');
   view?.setAttribute('role', 'img');
-  view?.setAttribute(
-    'aria-label',
-    `Through the window: ${sky === 'day' ? 'daylight over Rabat' : `${sky} over Rabat, a ${phase.name}`}${weather ? `, ${weather.words}` : ''}.`
-  );
+  view?.setAttribute('aria-label', windowWords(sky, phase, weather?.words));
   if (note) {
     note.hidden = !late;
     const time = note.querySelector('time');

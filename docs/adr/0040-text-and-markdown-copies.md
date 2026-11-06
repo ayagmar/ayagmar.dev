@@ -1,6 +1,6 @@
 # 0040. Text and Markdown copies of the pages, and llms.txt
 
-Status: accepted, 2026-11-06
+Status: accepted, 2026-11-06. Amended 2026-11-06: `/room` is routed too, and `index.txt` names it (ADR 0045).
 
 ## Context
 
