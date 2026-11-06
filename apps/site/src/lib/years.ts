@@ -2,12 +2,15 @@
  * Year pages (ADR 0041): what the daily history and the published writing say about one calendar
  * year, counted and worded once here. The page only renders it. Each series keeps its own
  * calendar, as on the day pages: shipping days are UTC dates, agent usage days dates in Rabat, so
- * they never share a count and each has its own "today". A month that failed to load is unknown:
- * its series' totals and facts are left out, never counted as if the month were quiet.
+ * they never share a count and each has its own "today", and a row dated after it counts for
+ * nothing. A month that failed to load is unknown: its series' totals and facts are left out,
+ * never counted as if the month were quiet. A date without a record is unknown too, but every
+ * year has some (recording began in 2026), so facts over them stay and say they are "on record".
  */
 import type { LlmUsageDay, ShippingActivityDay } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 import {
+  count,
   repoName,
   type ShippingStrip,
   type StripCell,
@@ -138,6 +141,18 @@ function datesOf(month: string, today: string): string[] {
 const list = (names: string[]) =>
   names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
+/** The dates of `year` that have happened on `today`. */
+const elapsed = (year: string, today: string) =>
+  monthsOf(year, today).flatMap((month) => datesOf(month, today)).length;
+
+/** How much of the elapsed year a series' facts rest on. */
+const coverageNote = (recorded: number, expected: number) =>
+  `Counted over ${plural(recorded, 'recorded day', 'recorded days')} of ${count(expected)}; the rest have no record.`;
+
+/** What a fact's label ends with: ` on record so far`, ` so far`, ` on record` or nothing. */
+const labelEnd = (year: string, today: string, partial: boolean) =>
+  `${partial ? ' on record' : ''}${today.startsWith(`${year}-`) ? ' so far' : ''}`;
+
 /** Why a series' totals are missing: `October and March could not be read…`. */
 const unknownNote = (months: readonly string[]) =>
   `${list(months.map(nameOf))} could not be read when this page was built, so the totals are left out.`;
@@ -188,7 +203,8 @@ function shippingFacts(
   days: readonly ShippingActivityDay[],
   all: readonly ShippingActivityDay[],
   year: string,
-  soFar: string,
+  end: string,
+  partial: boolean,
   pages: ReadonlySet<string>
 ): Fact[] {
   const zero: Counts = { pushes: 0, commits: 0, merges: 0, releases: 0, stars: 0 };
@@ -203,7 +219,10 @@ function shippingFacts(
     zero
   );
   const busiest = largest(days, shippedCount);
-  if (busiest === null) return [{ label: `Shipped${soFar}`, value: [text('Nothing shipped.')] }];
+  if (busiest === null) {
+    const nothing = partial ? 'Nothing shipped on recorded days.' : 'Nothing shipped.';
+    return [{ label: `Shipped${end}`, value: [text(nothing)] }];
+  }
 
   const months = new Map<string, number>();
   const repos = new Map<string, number>();
@@ -226,11 +245,11 @@ function shippingFacts(
     .slice(0, 3);
   return [
     {
-      label: `Shipped${soFar}`,
+      label: `Shipped${end}`,
       value: [text(`${shipped(total)} on ${plural(active, 'day', 'days')}`)],
     },
     {
-      label: `Busiest day${soFar}`,
+      label: `Busiest day${end}`,
       value: [
         {
           text: short(busiest.date),
@@ -239,16 +258,16 @@ function shippingFacts(
         text(`: ${shippedWords(shippedCount(busiest))}`),
       ],
     },
-    ...(run === null ? [] : [{ label: `Longest run${soFar}`, value: [text(run)] }]),
+    ...(run === null ? [] : [{ label: `Longest run${end}`, value: [text(run)] }]),
     {
-      label: `Busiest month${soFar}`,
+      label: `Busiest month${end}`,
       value: [text(`${nameOf(month)}: ${shippedWords(monthCount)}`)],
     },
     ...(top.length === 0
       ? []
       : [
           {
-            label: `Top repositories${soFar}`,
+            label: `Top repositories${end}`,
             value: top.flatMap(([repo, value], index) => [
               ...(index > 0 ? [text(', ')] : []),
               { text: repoName(repo), path: repoHref(repo) },
@@ -288,33 +307,41 @@ function shippingYear(
       empty: failed.length > 0 ? unread('Shipping') : `No shipping recorded in ${year}.`,
     };
   }
-  const soFar = today.startsWith(`${year}-`) ? ' so far' : '';
+  const expected = elapsed(year, today);
+  const partial = days.length < expected;
+  const end = labelEnd(year, today, partial);
+  if (failed.length > 0) {
+    return { empty: null, months, strip, facts: [], notes: [unknownNote(failed)] };
+  }
   return {
     empty: null,
     months,
     strip,
-    facts: failed.length > 0 ? [] : shippingFacts(days, history.days, year, soFar, pages),
+    facts: shippingFacts(days, history.days, year, end, partial, pages),
     notes: [
-      ...(failed.length > 0 ? [unknownNote(failed)] : []),
-      ...(failed.length === 0 && days.some((day) => !day.reposComplete) ? [unnamedRepos] : []),
+      ...(partial ? [coverageNote(days.length, expected)] : []),
+      ...(days.some((day) => !day.reposComplete) ? [unnamedRepos] : []),
     ],
   };
 }
 
-/** The numbers of one month of usage, or of the year. */
-function usageRow(name: string, days: readonly LlmUsageDay[]) {
+/**
+ * The numbers of one month of usage, or of the year, whose `expected` dates have happened. With a
+ * date missing, each is what the records add up to: a lower bound, like a sum missing an
+ * `activeMs`, which is unknown and not none (ADR 0014).
+ */
+function usageRow(name: string, days: readonly LlmUsageDay[], expected: number) {
   const timed = days.filter((day) => day.activeMs !== undefined);
   const ms = timed.reduce((sum, day) => sum + (day.activeMs ?? 0), 0);
   const used = days.filter((day) => day.totalTokens > 0 || (day.activeMs ?? 0) > 0);
-  // Absent is unknown, not none (ADR 0014): a sum missing some days is a lower bound.
-  const time =
-    timed.length === 0 ? null : `${timed.length < days.length ? 'at least ' : ''}${hours(ms)}`;
+  const floor = days.length < expected ? 'at least ' : '';
+  const timeFloor = timed.length < expected ? 'at least ' : '';
   return {
     name,
     state: 'recorded' as const,
-    tokens: tokens(days.reduce((sum, day) => sum + day.totalTokens, 0)),
-    time,
-    days: used.length.toLocaleString('en'),
+    tokens: `${floor}${tokens(days.reduce((sum, day) => sum + day.totalTokens, 0))}`,
+    time: timed.length === 0 ? null : `${timeFloor}${hours(ms)}`,
+    days: `${floor}${count(used.length)}`,
   };
 }
 
@@ -335,20 +362,25 @@ function usageYear(
     const name = nameOf(month);
     if (failed.includes(month)) return { name, state: 'unknown' };
     const recorded = days.filter((day) => day.date.startsWith(`${month}-`));
-    return recorded.length === 0 ? { name, state: 'none' } : usageRow(name, recorded);
+    return recorded.length === 0
+      ? { name, state: 'none' }
+      : usageRow(name, recorded, datesOf(month, today).length);
   });
-  const soFar = today.startsWith(`${year}-`) ? ' so far' : '';
+  const expected = elapsed(year, today);
+  const partial = days.length < expected;
+  const end = labelEnd(year, today, partial);
+  const totalName = partial ? 'On record' : today.startsWith(`${year}-`) ? 'So far' : 'The year';
   const busiest = failed.length > 0 ? null : largest(days, (day) => day.totalTokens);
   return {
     empty: null,
     rows,
-    total: failed.length > 0 ? null : usageRow(soFar === '' ? 'The year' : 'So far', days),
+    total: failed.length > 0 ? null : usageRow(totalName, days, expected),
     facts:
       busiest === null
         ? []
         : [
             {
-              label: `Busiest day${soFar}`,
+              label: `Busiest day${end}`,
               value: [
                 {
                   text: short(busiest.date),
@@ -358,7 +390,12 @@ function usageYear(
               ],
             },
           ],
-    notes: failed.length > 0 ? [unknownNote(failed)] : [],
+    notes:
+      failed.length > 0
+        ? [unknownNote(failed)]
+        : partial
+          ? [coverageNote(days.length, expected)]
+          : [],
   };
 }
 
@@ -376,11 +413,21 @@ export function yearPages(
 ): YearPage[] {
   const shippingToday = now.toISOString().slice(0, 10);
   const usageToday = rabatDate(now.getTime());
+  // A month's block holds whatever is stored for it, so a clock ahead of the build's can bring a
+  // row for tomorrow. Each series is cut at its own today before anything counts it.
+  const shippingHistory = {
+    ...history.shipping,
+    days: history.shipping.days.filter((day) => day.date <= shippingToday),
+  };
+  const usageHistory = {
+    ...history.usage,
+    days: history.usage.days.filter((day) => day.date <= usageToday),
+  };
   const years = [
     ...new Set(
       [
-        ...history.shipping.days.map((day) => day.date),
-        ...history.usage.days.map((day) => day.date),
+        ...shippingHistory.days.map((day) => day.date),
+        ...usageHistory.days.map((day) => day.date),
         ...published.map((entry) => entry.date),
         ...history.shipping.failed,
         ...history.usage.failed,
@@ -394,8 +441,8 @@ export function yearPages(
     const entries = published
       .filter(inYear(year))
       .toSorted((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
-    const shipping = shippingYear(history.shipping, year, shippingToday, pages);
-    const usage = usageYear(history.usage, year, usageToday, pages);
+    const shipping = shippingYear(shippingHistory, year, shippingToday, pages);
+    const usage = usageYear(usageHistory, year, usageToday, pages);
     return {
       year,
       path: yearPath(year),

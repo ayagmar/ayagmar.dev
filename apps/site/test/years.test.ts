@@ -143,11 +143,11 @@ describe('the calendar', () => {
     expect(months.map((month) => month.name)).toEqual(['January', 'February', 'March']);
     expect(months[2]?.cells?.at(-1)?.date).toBe('2026-03-15');
     expect(listed.map((fact) => fact.label)).toEqual([
-      'Shipped so far',
-      'Busiest day so far',
-      'Longest run so far',
-      'Busiest month so far',
-      'Top repositories so far',
+      'Shipped on record so far',
+      'Busiest day on record so far',
+      'Longest run on record so far',
+      'Busiest month on record so far',
+      'Top repositories on record so far',
     ]);
     expect(entry.description).toBe(
       'What shipped, how much the coding agents ran, and what was published in 2026 so far.'
@@ -170,7 +170,7 @@ describe('the calendar', () => {
       { name: 'January', state: 'recorded', tokens: '1.0K', time: null, days: '1' },
     ]);
     expect(page(pages, '2026').shipping).toEqual({ empty: 'No shipping recorded in 2026.' });
-    expect(calendar(page(pages, '2025')).facts[0]?.label).toBe('Shipped so far');
+    expect(calendar(page(pages, '2025')).facts[0]?.label).toBe('Shipped on record so far');
   });
 });
 
@@ -189,20 +189,115 @@ describe('facts', () => {
     const [only] = yearPages(history(days), [], after, new Set(['2025-03-01']));
     const { facts: listed, notes } = calendar(only as YearPage);
     expect(facts(listed)).toEqual({
-      Shipped: '22 commits in 11 pushes on 7 days',
-      'Busiest day': '1 Mar 2025: 2 pushes, merges and releases',
-      'Longest run': '3 days, 1–3 Mar 2025',
-      'Busiest month': 'March: 8 pushes, merges and releases',
-      'Top repositories': 'runnerd (11)',
+      'Shipped on record': '22 commits in 11 pushes on 7 days',
+      'Busiest day on record': '1 Mar 2025: 2 pushes, merges and releases',
+      'Longest run on record': '3 days, 1–3 Mar 2025',
+      'Busiest month on record': 'March: 8 pushes, merges and releases',
+      'Top repositories on record': 'runnerd (11)',
     });
     expect(listed[1]?.value[0]).toEqual({ text: '1 Mar 2025', path: '/day/2025-03-01' });
-    expect(notes).toEqual([]);
+    expect(notes).toEqual(['Counted over 8 recorded days of 365; the rest have no record.']);
   });
 
-  // Catches a year of recorded zeros claiming a busiest day, or a run of 0 days.
-  it('says nothing shipped for a year of recorded zeros', () => {
-    const [only] = yearPages(history([shipped('2025-03-01', 0)]), [], after, none);
-    expect(facts(calendar(only as YearPage).facts)).toEqual({ Shipped: 'Nothing shipped.' });
+  // Catches one recorded zero read as a quiet year: the days around it are unknown, and only a
+  // year recorded whole may say nothing shipped.
+  it('says nothing shipped only of a year recorded whole', () => {
+    const whole = run('2025-01-01', '2025-12-31').map((date) => shipped(date, 0));
+    const [full] = yearPages(history(whole), [], after, none);
+    expect(facts(calendar(full as YearPage).facts)).toEqual({ Shipped: 'Nothing shipped.' });
+    expect(calendar(full as YearPage).notes).toEqual([]);
+
+    const [thin] = yearPages(history([shipped('2025-03-01', 0)]), [], after, none);
+    expect(facts(calendar(thin as YearPage).facts)).toEqual({
+      'Shipped on record': 'Nothing shipped on recorded days.',
+    });
+    expect(calendar(thin as YearPage).notes).toEqual([
+      'Counted over 1 recorded day of 365; the rest have no record.',
+    ]);
+  });
+
+  // Catches one recorded day crowned the year's busiest, and a whole year qualified for nothing.
+  it('marks facts as on record unless every elapsed date has a record', () => {
+    const [thin] = yearPages(history([shipped('2025-03-01', 4)]), [], after, none);
+    expect(facts(calendar(thin as YearPage).facts)).toEqual({
+      'Shipped on record': '8 commits in 4 pushes on 1 day',
+      'Busiest day on record': '1 Mar 2025: 4 pushes, merges and releases',
+      'Longest run on record': '1 day, 1 Mar 2025',
+      'Busiest month on record': 'March: 4 pushes, merges and releases',
+      'Top repositories on record': 'runnerd (4)',
+    });
+    const whole = run('2025-01-01', '2025-12-31').map((date) => shipped(date));
+    const [full] = yearPages(history(whole), [], after, none);
+    expect(facts(calendar(full as YearPage).facts)).toMatchObject({
+      'Busiest day': '1 Jan 2025: 1 push, merge or release',
+      'Longest run': '365 days, 1 Jan–31 Dec 2025',
+    });
+  });
+
+  // Catches a row dated after the build counted though its square is not drawn: signals serves
+  // what a month has stored, and a clock a few minutes ahead can store tomorrow.
+  it('counts nothing dated after the build, in either series', () => {
+    const now = new Date('2026-11-06T23:58:00Z');
+    const pages = yearPages(
+      history(
+        [shipped('2026-11-06', 1), shipped('2026-11-07', 9), shipped('2027-01-01', 9)],
+        [used('2026-11-06', 1_000, 3_600_000), used('2026-11-07', 9_000_000, 36_000_000)]
+      ),
+      [],
+      now,
+      none
+    );
+    expect(pages.map((entry) => entry.year)).toEqual(['2026']);
+    const [only] = pages;
+    expect(facts(calendar(only as YearPage).facts)).toEqual({
+      'Shipped on record so far': '2 commits in 1 push on 1 day',
+      'Busiest day on record so far': '6 Nov 2026: 1 push, merge or release',
+      'Longest run on record so far': '1 day, 6 Nov 2026',
+      'Busiest month on record so far': 'November: 1 push, merge or release',
+      'Top repositories on record so far': 'runnerd (1)',
+    });
+    const { rows, total, facts: listed } = usage(only as YearPage);
+    expect(rows.at(-1)).toEqual({
+      name: 'November',
+      state: 'recorded',
+      tokens: 'at least 1.0K',
+      time: 'at least 1 hour',
+      days: 'at least 1',
+    });
+    expect(total).toEqual({
+      name: 'On record',
+      state: 'recorded',
+      tokens: 'at least 1.0K',
+      time: 'at least 1 hour',
+      days: 'at least 1',
+    });
+    expect(facts(listed)).toEqual({ 'Busiest day on record so far': '6 Nov 2026: 1.0K tokens' });
+  });
+
+  // Catches a ranking by commits or stars, which the squares do not count, by one kind alone, a
+  // tie settled by input order, and a fourth repository listed.
+  it('ranks repositories by pushes, merges and releases, ties by name, three at most', () => {
+    const counts = { pushes: 0, commits: 0, merges: 0, releases: 0, stars: 0 };
+    const repos = [
+      { repo: 'ayagmar/zeta', ...counts, pushes: 1, merges: 1, releases: 1 },
+      { repo: 'ayagmar/alpha', ...counts, merges: 3 },
+      { repo: 'ayagmar/mixed', ...counts, pushes: 2, merges: 1, releases: 1 },
+      { repo: 'ayagmar/stars', ...counts, pushes: 1, commits: 900, stars: 900 },
+    ];
+    const day: ShippingActivityDay = {
+      date: '2025-03-01',
+      pushes: 4,
+      commits: 900,
+      merges: 5,
+      releases: 2,
+      stars: 900,
+      repos,
+      reposComplete: true,
+    };
+    const [only] = yearPages(history([day]), [], after, none);
+    expect(facts(calendar(only as YearPage).facts)['Top repositories on record']).toBe(
+      'mixed (4), alpha (3), zeta (3)'
+    );
   });
 
   // Catches a run cut at 31 December read as ending there, or one year's page counting the
@@ -210,10 +305,10 @@ describe('facts', () => {
   it('counts a run across New Year in each year, and says it goes on', () => {
     const days = run('2025-12-29', '2026-01-02').map((date) => shipped(date));
     const pages = yearPages(history(days), [], after, none);
-    expect(facts(calendar(page(pages, '2025')).facts)['Longest run']).toBe(
+    expect(facts(calendar(page(pages, '2025')).facts)['Longest run on record']).toBe(
       '3 days, 29–31 Dec 2025, on into 2026'
     );
-    expect(facts(calendar(page(pages, '2026')).facts)['Longest run']).toBe(
+    expect(facts(calendar(page(pages, '2026')).facts)['Longest run on record']).toBe(
       '2 days, 1–2 Jan 2026, on from 2025'
     );
   });
@@ -234,7 +329,9 @@ describe('facts', () => {
     ]);
     expect(year.months[5]).toMatchObject({ name: 'June', cells: null });
     expect(year.months[4]?.cells?.at(-1)?.level).toBe(1);
-    expect(facts(calendar(page(pages, '2026')).facts).Shipped).toBe('2 commits in 1 push on 1 day');
+    expect(facts(calendar(page(pages, '2026')).facts)['Shipped on record']).toBe(
+      '2 commits in 1 push on 1 day'
+    );
   });
 
   // Catches a run said to go on into a year whose January nobody read.
@@ -245,45 +342,71 @@ describe('facts', () => {
       after,
       none
     );
-    expect(facts(calendar(page(pages, '2025')).facts)['Longest run']).toBe('1 day, 31 Dec 2025');
+    expect(facts(calendar(page(pages, '2025')).facts)['Longest run on record']).toBe(
+      '1 day, 31 Dec 2025'
+    );
   });
 
   // Catches top repositories given as the whole story when a day's counts include unnamed ones.
   it('says when the counts include repositories they do not name', () => {
     const [only] = yearPages(history([shipped('2025-03-01', 1, false)]), [], after, none);
     expect(calendar(only as YearPage).notes).toEqual([
+      'Counted over 1 recorded day of 365; the rest have no record.',
       'Some of it was in repositories not named here.',
     ]);
   });
 });
 
 describe('agent usage', () => {
-  // Catches a month without a record shown as 0 tokens, an unset activeMs summed as 0 hours, and
-  // a Rabat day moved into another month.
+  // Catches a month without a record shown as 0 tokens, an unset activeMs summed as 0 hours, a
+  // missing date's month given as exact, a recorded zero month taken for a gap, and a sum over
+  // some days labelled the year.
   it('sums each month in Rabat days, keeping no record and unknown time apart', () => {
     const days = [
-      used('2025-01-31', 1_000_000, 3_600_000),
-      used('2025-02-01', 500_000),
-      used('2025-02-02', 500_000, 7_200_000),
-      used('2025-03-01', 0, 0),
+      ...run('2025-01-01', '2025-01-31').map((date) => used(date, 100_000, 3_600_000)),
+      // 3 February has no record.
+      ...run('2025-02-01', '2025-02-02').map((date) => used(date, 500_000, 3_600_000)),
+      ...run('2025-02-04', '2025-02-28').map((date) => used(date, 1_000)),
+      ...run('2025-03-01', '2025-03-31').map((date) => used(date, 0, 0)),
       used('2025-05-01', 2_000),
     ];
     const entry = usage(page(yearPages(history([], days), [], after, none), '2025'));
     expect(entry.rows.slice(0, 5)).toEqual([
-      { name: 'January', state: 'recorded', tokens: '1.0M', time: '1 hour', days: '1' },
-      { name: 'February', state: 'recorded', tokens: '1.0M', time: 'at least 2 hours', days: '2' },
+      { name: 'January', state: 'recorded', tokens: '3.1M', time: '31 hours', days: '31' },
+      {
+        name: 'February',
+        state: 'recorded',
+        tokens: 'at least 1.0M',
+        time: 'at least 2 hours',
+        days: 'at least 27',
+      },
       { name: 'March', state: 'recorded', tokens: '0', time: '0 hours', days: '0' },
       { name: 'April', state: 'none' },
-      { name: 'May', state: 'recorded', tokens: '2.0K', time: null, days: '1' },
+      { name: 'May', state: 'recorded', tokens: 'at least 2.0K', time: null, days: 'at least 1' },
     ]);
+    expect(entry.total).toEqual({
+      name: 'On record',
+      state: 'recorded',
+      tokens: 'at least 4.1M',
+      time: 'at least 33 hours',
+      days: 'at least 59',
+    });
+    expect(facts(entry.facts)).toEqual({ 'Busiest day on record': '1 Feb 2025: 500.0K tokens' });
+    expect(entry.notes).toEqual(['Counted over 90 recorded days of 365; the rest have no record.']);
+  });
+
+  // Catches "the year" withheld from a year recorded whole, or a lower bound said of exact sums.
+  it('gives a year recorded whole its exact total', () => {
+    const days = run('2025-01-01', '2025-12-31').map((date) => used(date, 1_000, 3_600_000));
+    const entry = usage(page(yearPages(history([], days), [], after, none), '2025'));
     expect(entry.total).toEqual({
       name: 'The year',
       state: 'recorded',
-      tokens: '2.0M',
-      time: 'at least 3 hours',
-      days: '4',
+      tokens: '365.0K',
+      time: '365 hours',
+      days: '365',
     });
-    expect(facts(entry.facts)).toEqual({ 'Busiest day': '31 Jan 2025: 1.0M tokens' });
+    expect(entry.notes).toEqual([]);
   });
 
   // Catches a yearly total over a month that failed to load; shipping must not lose its facts
@@ -302,7 +425,9 @@ describe('agent usage', () => {
     expect(entry.notes).toEqual([
       'February could not be read when this page was built, so the totals are left out.',
     ]);
-    expect(facts(calendar(page(pages, '2025')).facts).Shipped).toBe('2 commits in 1 push on 1 day');
+    expect(facts(calendar(page(pages, '2025')).facts)['Shipped on record']).toBe(
+      '2 commits in 1 push on 1 day'
+    );
   });
 });
 
@@ -354,7 +479,15 @@ describe('generated histories', () => {
     const dates = run('2025-01-01', today).filter(
       (date) => next() < 0.5 && !failed.includes(date.slice(0, 7))
     );
-    const days = dates.map((date) => shipped(date, Math.floor(next() * 6)));
+    // Pushes, merges and releases in turn, so a level that counts one kind alone is caught.
+    const counts = new Map(dates.map((date) => [date, Math.floor(next() * 7)]));
+    const days = dates.map((date, index): ShippingActivityDay => {
+      const total = counts.get(date) ?? 0;
+      const kind = (['pushes', 'merges', 'releases'] as const)[index % 3] ?? 'pushes';
+      return { ...shipped(date, 0), [kind]: total, commits: 50, stars: 50 };
+    });
+    // A row after the build, which no square or count may show.
+    days.push(shipped(new Date(now.getTime() + 86_400_000).toISOString().slice(0, 10), 6));
     const tokenDays = dates.map((date) => used(date, Math.floor(next() * 3) * 1000));
     const pages = yearPages(
       history(days, tokenDays, { shipping: failed, usage: failed }),
@@ -362,18 +495,20 @@ describe('generated histories', () => {
       now,
       none
     );
-    const counts = new Map(days.map((day) => [day.date, day.pushes]));
+    const scale = (shippedThatDay: number) =>
+      shippedThatDay >= 5 ? 4 : Math.min(shippedThatDay, 3);
     for (const entry of pages) {
       const unknown = failed.some((month) => month.startsWith(entry.year));
       if (entry.shipping.empty !== null) continue;
       expect(entry.shipping.facts.length === 0).toBe(
-        unknown || !days.some((day) => day.date.startsWith(entry.year))
+        unknown || !dates.some((date) => date.startsWith(entry.year))
       );
       for (const month of entry.shipping.months) {
         expect(month.cells === null).toBe(failed.includes(month.month));
         for (const cell of month.cells ?? []) {
           expect(cell.date <= today).toBe(true);
-          expect(cell.level === null).toBe(!counts.has(cell.date));
+          const shippedThatDay = counts.get(cell.date);
+          expect(cell.level).toBe(shippedThatDay === undefined ? null : scale(shippedThatDay));
         }
       }
       if (entry.usage.empty === null) expect(entry.usage.total === null).toBe(unknown);

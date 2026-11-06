@@ -2,12 +2,13 @@
 // page is reachable from /stats and from a day.
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { dailySources } from '@min7/contracts';
+import { daysFixtures, historyFixtures } from '@min7/contracts/fixtures';
 import { expect, notFoundPath, test } from './fixtures.ts';
 
 const dist = join(import.meta.dirname, '..', 'dist');
 
-// Catches a square that links to a page the build did not make, a square lost from a recorded
-// day, and the two series' sections losing the calendar each counts in.
+// Catches a square that links to a page the build did not make, a recorded date with no link, and the two series' sections losing the calendar each counts in.
 test('the year shows its calendar, each square leading to an existing day', async ({ page }) => {
   await page.goto('/2026');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('2026');
@@ -22,6 +23,11 @@ test('the year shows its calendar, each square leading to an existing day', asyn
     .locator('.year-heat a')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
   expect(hrefs.filter((href) => !existsSync(join(dist, `${href.slice(1)}.html`)))).toEqual([]);
+  const recorded = dailySources
+    .flatMap((series) => [...historyFixtures[series].ok.days, ...daysFixtures[series].ok.days])
+    .map((day) => day.date)
+    .filter((date) => date.startsWith('2026-'));
+  expect(recorded.filter((date) => !hrefs.includes(`/day/${date}`))).toEqual([]);
   await shipped.getByRole('link', { name: '25 Oct: 16 pushes, merges and releases' }).click();
   await expect(page).toHaveURL('/day/2026-10-25');
   await page.getByRole('link', { name: 'All of 2026' }).click();
