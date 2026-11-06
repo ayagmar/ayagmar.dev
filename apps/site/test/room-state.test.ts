@@ -465,6 +465,30 @@ describe('the seed', () => {
     expect(roomState(seededInputs(seed, true), moment)).toEqual(roomState(whole, moment));
   });
 
+  // Catches an old observation trimmed by the build's clock: when the producer stops, the screen
+  // keeps its dated days, on a Sunday (the fullest last column) and past twelve weeks too.
+  it.each([
+    ['a week old', '2026-10-26T12:00:00Z', 7],
+    ['an old Sunday', '2026-10-25T12:00:00Z', 30],
+    ['past twelve weeks', '2026-10-26T12:00:00Z', 120],
+  ])('keeps the screen of an observation %s', (_, taken, buildDaysLater) => {
+    const at = Date.parse(taken);
+    const days = Array.from({ length: 100 }, (_row, index) => ({
+      ...usageSnapshot.days[0],
+      date: new Date(at - index * dayMs).toISOString().slice(0, 10),
+      totalTokens: (index + 1) * 1000,
+      costUsd: null,
+    }));
+    const data = { ...usageSnapshot, days } as LlmUsageSnapshot;
+    const builtAt = at + buildDaysLater * dayMs;
+    const seedLater = roomSeed({ ...built, builtAt, usage: envelope('llm-usage' as const, data, at) });
+    const moment: RoomMoment = { kind: 'built', instant: builtAt };
+    const seededScreen = roomState(seededInputs(seedLater, true), moment).screen;
+    const wholeUsage = reading({ days, monthTokens: data.monthToDate.totalTokens }, at);
+    expect(seededScreen).toEqual(roomState(inputs({ usage: wholeUsage }), moment).screen);
+    expect(seededScreen.cells.filter(({ level }) => level !== null).length).toBeGreaterThan(70);
+  });
+
   const release = (repo: string, at: string): ShippingEvent => ({
     type: 'release',
     repo,
