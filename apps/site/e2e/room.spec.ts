@@ -77,6 +77,8 @@ test('without JavaScript the page follows the system theme and hides the switch'
 // window layer (ADR 0027), and italic text on home, which puts another font in front of the
 // scene and pushes mobile LCP past 2 s.
 test('home loads one scene, one window and two fonts', async ({ page }) => {
+  // Midday in Rabat: from 02:00 to 05:00 the cat's layer is a fourth image.
+  await page.clock.setFixedTime('2026-06-21T12:00:00Z');
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/about');
   await page.evaluate(() => localStorage.setItem('theme', 'day'));
