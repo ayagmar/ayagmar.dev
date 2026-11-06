@@ -53,6 +53,12 @@
   // A page back from the back/forward cache still has the theme it was left with, and the page
   // change would fade into it. pageshow comes before that fade's first frame (ADR 0042).
   addEventListener('pageshow', (event) => event.persisted && sync());
+  // A link to the open page loads it again from the build, so a fade would dissolve what its
+  // scripts have drawn into older values (ADR 0042). The load is as it was without transitions.
+  addEventListener('pageswap', ({ activation, viewTransition }) => {
+    if (activation?.entry.url?.split('#')[0] === location.href.split('#')[0])
+      viewTransition?.skipTransition();
+  });
   const choose = (choice) => {
     store(key, choice === 'auto' ? null : choice);
     apply(choice);

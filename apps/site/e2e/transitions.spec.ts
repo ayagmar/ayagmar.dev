@@ -1,3 +1,4 @@
+import { snapshotFixtures } from '@min7/contracts/fixtures';
 import type { Page } from '@playwright/test';
 import { expect, notFoundPath, test } from './fixtures.ts';
 
@@ -128,6 +129,55 @@ test('the search control looks the same before and after hydration', async ({ pa
   hydrate();
   await expect(button).toBeVisible();
   expect({ box: await button.boundingBox(), label: await button.innerText() }).toEqual(hydrated);
+});
+
+// Catches a link to the open page fading: the answer on screen would dissolve into the build's
+// older value and then jump back when the new document's own request returns.
+test('a link to the open page reloads it without a fade', async ({ page }) => {
+  const api = 'https://api.ayagmar.dev/v1/listening';
+  await page.clock.install({ time: '2026-10-26T10:31:00Z' });
+  await page.route('**/', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(
+      'data-live="listening"',
+      `data-live="listening" data-live-src="${api}"`
+    );
+    await route.fulfill({ response, body });
+  });
+  let asked = 0;
+  let answer = () => {};
+  const held = new Promise<void>((done) => {
+    answer = done;
+  });
+  await page.route(api, async (route) => {
+    asked += 1;
+    if (asked > 1) await held;
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        source: 'listening',
+        version: 1,
+        fetchedAt: '2026-10-26T10:30:00Z',
+        stale: false,
+        data: {
+          ...snapshotFixtures.listening.ok,
+          nowPlaying: { track: 'Which Will', artist: 'Nick Drake', album: null, url: null },
+        },
+      }),
+    });
+  });
+  await watchReveal(page);
+  await page.goto('/');
+  const line = page.locator('.now-playing');
+  await expect(line).toHaveText('Now playing Which Will by Nick Drake');
+
+  await page.locator('.wordmark').click();
+  await expect.poll(() => asked).toBe(2);
+  await expect(line).toContainText('Last played Friendships and Love by Rocketship');
+  expect(await revealed(page)).toEqual([false]);
+
+  answer();
+  await expect(line).toHaveText('Now playing Which Will by Nick Drake');
 });
 
 for (const { system, choice } of [
