@@ -11,7 +11,7 @@ import { listeningBody } from '../lib/listening-panel.ts';
 import { llmUsagePanel } from '../lib/llm-usage-panel.ts';
 import { getDays } from '../lib/posts.ts';
 import { site } from '../lib/site.ts';
-import { statsWords as words } from '../lib/stats.ts';
+import { statsBuildWords, statsWords as words } from '../lib/stats.ts';
 import { projectsBody, shippingBody, typingBody } from '../lib/stats-panels.ts';
 import { typingWords } from '../lib/typing.ts';
 
@@ -45,8 +45,8 @@ const featured = featuredProjects.map((project) => project.repo);
   <h1>Stats</h1>
   {signalsMode === 'fixtures' ? (
     <p class="sample sample-banner">
-      {words.sample} The live numbers are on <a href={new URL('/stats', Astro.site)}>ayagmar.dev</a>
-      .
+      {statsBuildWords.sample} The live numbers are on{' '}
+      <a href={new URL('/stats', Astro.site)}>ayagmar.dev</a>.
     </p>
   ) : (
     <p class="caption">
@@ -148,7 +148,7 @@ const featured = featuredProjects.map((project) => project.repo);
         {/* The same markup the live script draws (src/lib/llm-usage-panel.ts, ADR 0014). */}
         <div class="llm-usage-body">
           {llmUsage.data === null || llmUsage.fetchedAt === null ? (
-            <p>{words.noLlmUsage}</p>
+            <p>{statsBuildWords.noLlmUsage}</p>
           ) : (
             <Markup nodes={llmUsagePanel(llmUsage.data, llmUsage.fetchedAt)} />
           )}

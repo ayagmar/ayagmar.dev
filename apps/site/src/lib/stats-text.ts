@@ -19,7 +19,7 @@ import { freshnessWords } from './live.ts';
 import { llmUsagePanel } from './llm-usage-panel.ts';
 import type { Element, Markup } from './markup.ts';
 import { site, siteUrl } from './site.ts';
-import { statsWords as words } from './stats.ts';
+import { statsBuildWords, statsWords as words } from './stats.ts';
 import { projectsBody, shippingBody, typingBody } from './stats-panels.ts';
 import { typingWords } from './typing.ts';
 
@@ -98,7 +98,7 @@ export function renderStatsText(sources: StatsSources, sample: boolean): string 
     [
       'Listening',
       listening.data === null
-        ? [words.noListening]
+        ? [statsBuildWords.noListening]
         : markupLines([
             {
               tag: 'p',
@@ -129,14 +129,14 @@ export function renderStatsText(sources: StatsSources, sample: boolean): string 
     [
       'LLM usage',
       llmUsage.data === null || llmUsage.fetchedAt === null
-        ? [words.noLlmUsage]
+        ? [statsBuildWords.noLlmUsage]
         : markupLines(llmUsagePanel(llmUsage.data, llmUsage.fetchedAt)),
       llmUsage,
     ],
   ];
   return [
     `Stats | ${site.name}`,
-    sample ? words.sample : words.snapshot,
+    sample ? statsBuildWords.sample : statsBuildWords.snapshot,
     rule,
     ...panels.flatMap(([title, lines, envelope]) => [
       title,

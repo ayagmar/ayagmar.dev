@@ -97,6 +97,10 @@ export const statsWords = {
   noShipping: 'No public activity to show yet.',
   stars: 'Stars on other repositories',
   noProjects: 'No project data yet.',
+};
+
+/** The words only the build uses, kept apart so they stay out of the browser's script. */
+export const statsBuildWords = {
   noListening: 'No listening data yet',
   noLlmUsage: 'No data yet.',
   sample: 'Sample data: this build shows the test fixtures, some of them made up.',
