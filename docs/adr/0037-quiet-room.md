@@ -1,6 +1,6 @@
 # 0037. The quiet room
 
-Status: accepted, 2026-11-01. Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
+Status: accepted, 2026-11-01. Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp; home's list steps back on a wide screen. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
 
 ## Context
 
@@ -19,6 +19,8 @@ After the quiet windows (ADR 0034) the owner still found the site cartoony and g
 **One accent.** Links, the current page and the heat strip are the lamp. Rose marks sample data, as a dot and a line. The ground is flat: paper white `#f6f2ea` by day, ink `#0e0c13` at night; only a post keeps the lamp's pool behind its title.
 
 **Heat is quantiles on one ramp.** The strip, a year's calendar and the LLM usage year take their levels from `heatLevels` (`src/lib/heat.ts`): 0 for a recorded zero, then the quartile of the non-zero days shown, equal counts together. A fixed scale put most days of a real month on one pale step. The ramp is `--heat-1` to `--heat-4` in `base.css`, OKLCH steps of lightness on the lamp's hue. It stops well short of the lamp: at night the top is 7.5:1 on the ground where the old one was about 15:1, so a busy day no longer outshines the room. Each step stays 3:1 on the ground and 1.3:1 from the last (`e2e/contrast.spec.ts`).
+
+**Home has one way round, not three.** The top nav, the hotspots and the list repeated each other. From 60 rem the list is one muted row of section names, with the object's name kept for screen readers, and hovering or focusing a row lights its object: the same state as the hotspot's own hover, label included, by `:has()` in `room.css`, with no script. Hotspots and rows both render `roomObjects`; CSS has no loop, so the rule names each id, and `e2e/room.spec.ts` walks every row so a new object cannot be left dark. Below 60 rem the list stays as it was, since on a phone it is the way in.
 
 **Header and footer as words.** Search, Menu and the theme switch have no borders; the current page and the chosen theme are text over a 1 px lamp underline. The footer is one muted serif line.
 

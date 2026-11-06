@@ -87,7 +87,8 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
       {roomObjects.map((item) => (
         <li>
           <a href={item.href} data-room-list={item.id}>
-            {item.object} <span>{item.section}</span>
+            <span class="room-object">{item.object}</span>{' '}
+            <span class="room-section">{item.section}</span>
           </a>
         </li>
       ))}

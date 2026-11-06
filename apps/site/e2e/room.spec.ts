@@ -133,6 +133,35 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
   await expect(page.locator('.scene a:visible')).toHaveCount(0);
 });
 
+// Catches an object in the list that lights nothing: the rule names each object, so a new one in
+// src/lib/room.ts needs its line in room.css. Also a row lighting the wrong object, or two.
+test('hovering or focusing a row of the list lights its object in the room', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  const lit = () =>
+    page.locator('.hotspot').evaluateAll((spots) =>
+      spots
+        .filter((spot) => getComputedStyle(spot).borderTopColor !== 'rgba(0, 0, 0, 0)')
+        .filter((spot) => getComputedStyle(spot.querySelector('span') as Element).opacity === '1')
+        .map((spot) => spot.getAttribute('data-room'))
+    );
+  const rows = await page.locator('[data-room-list]').all();
+  expect(rows).toHaveLength(7);
+  for (const row of rows) {
+    const id = await row.getAttribute('data-room-list');
+    await row.hover();
+    expect(await lit()).toEqual([id]);
+    await page.mouse.move(0, 0);
+    expect(await lit()).toEqual([]);
+    await row.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    expect(await lit()).toEqual([id]);
+    await row.blur();
+  }
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 

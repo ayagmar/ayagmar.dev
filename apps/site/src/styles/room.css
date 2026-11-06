@@ -345,8 +345,18 @@
   }
 }
 
+/* Lit by its own pointer or focus, or by its row in the list under the scene. One line per
+   object in src/lib/room.ts; e2e/room.spec.ts walks them all. */
 .hotspot:hover,
-.hotspot:focus-visible {
+.hotspot:focus-visible,
+main:has([data-room-list="corkboard"]:is(:hover, :focus-visible)) [data-room="corkboard"],
+main:has([data-room-list="frame"]:is(:hover, :focus-visible)) [data-room="frame"],
+main:has([data-room-list="notebook"]:is(:hover, :focus-visible)) [data-room="notebook"],
+main:has([data-room-list="monitor"]:is(:hover, :focus-visible)) [data-room="monitor"],
+main:has([data-room-list="keyboard"]:is(:hover, :focus-visible)) [data-room="keyboard"],
+main:has([data-room-list="tea"]:is(:hover, :focus-visible)) [data-room="tea"],
+main:has([data-room-list="record-player"]:is(:hover, :focus-visible)) [data-room="record-player"] {
+  --label: 1;
   border-color: var(--lamp);
   background: color-mix(in srgb, var(--lamp) 12%, transparent);
   outline: 2px solid var(--ground);
@@ -362,13 +372,8 @@
   color: var(--text);
   font: 600 0.8125rem / 1 var(--mono);
   white-space: nowrap;
-  opacity: 0;
+  opacity: var(--label, 0);
   pointer-events: none;
-}
-
-.hotspot:hover span,
-.hotspot:focus-visible span {
-  opacity: 1;
 }
 
 @media (hover: none) {
@@ -557,21 +562,48 @@
 }
 
 /* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
-.room-list a span {
+.room-section {
   color: var(--text);
   font-size: 1rem;
 }
 
-.room-list a span::first-letter {
+.room-section::first-letter {
   text-transform: uppercase;
 }
 
-.room-list a:hover {
+.room-list a:is(:hover, :focus-visible) {
   border-color: var(--lamp);
 }
 
-.room-list a:hover span {
+.room-list a:is(:hover, :focus-visible) .room-section {
   color: var(--lamp);
+}
+
+/* With the room's hotspots in reach the list steps back: one muted row of section names, each
+   lighting its object in the scene. The object's name stays for screen readers. */
+@media (min-width: 60rem) {
+  .room-list {
+    margin-top: 1.5rem;
+  }
+
+  .room-list a {
+    padding: 0.25rem 0;
+    border-top: 0;
+  }
+
+  .room-object {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .room-section {
+    color: var(--muted);
+    font-size: 0.9375rem;
+  }
 }
 
 /* ---------- panels ---------- */
