@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { renderArt } from '../src/lib/art.ts';
@@ -54,28 +55,54 @@ describe('link-preview card', () => {
     expect(await blank(png, { left: 0, top: 590, width: 1200, height: 40 })).toBe(true);
   });
 
-  // Catches art lost on the way through librsvg (a dash pattern it draws as nothing, a night plate
-  // dropped), or the room replaced on a post without art.
-  it('draws the night art on a post with art and the room on one without', async () => {
-    const cream = [240, 230, 200];
-    const creamPixels = async (art?: string) => {
-      const png = await renderOgCard({ title: 'A post', line: 'min7 · Writing', art });
-      const { data, info } = await sharp(png)
-        .extract({ left: 120, top: 56, width: 960, height: 320 })
-        .removeAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      let count = 0;
-      for (let at = 0; at < data.length; at += info.channels) {
-        if (cream.every((value, channel) => Math.abs((data[at + channel] ?? 0) - value) < 12))
-          count++;
-      }
-      return { count, corner: [...data.subarray(info.width * 160 * 3, info.width * 160 * 3 + 3)] };
-    };
-    const withArt = await creamPixels(renderArt('notebook'));
-    const without = await creamPixels();
-    expect(withArt.count).toBeGreaterThan(2000);
-    expect(without.count).toBeLessThan(withArt.count);
-    expect(withArt.corner).toEqual([13, 15, 30]);
+  /** A region of the card's picture, as raw RGB. */
+  const pictureRegion = (png: Buffer) =>
+    sharp(png)
+      .extract({
+        left: 120 + region.left,
+        top: 56 + region.top,
+        width: region.width,
+        height: region.height,
+      })
+      .removeAlpha()
+      .raw()
+      .toBuffer();
+  // The lamp, the window and the monitor: a part of the room with many colours in it.
+  const region = { left: 60, top: 20, width: 500, height: 200 };
+
+  // Catches art lost on the way through librsvg (a dash pattern it draws as nothing), or the
+  // night plate dropped from the card.
+  it('draws the night art on a post with art', async () => {
+    const png = await renderOgCard({
+      title: 'A post',
+      line: 'min7 · Writing',
+      art: renderArt('notebook'),
+    });
+    const data = await pictureRegion(png);
+    let cream = 0;
+    for (let at = 0; at < data.length; at += 3) {
+      if (Math.abs((data[at] ?? 0) - 240) + Math.abs((data[at + 2] ?? 0) - 200) < 24) cream++;
+    }
+    expect(cream).toBeGreaterThan(200);
+    expect([...data.subarray(0, 3)]).toEqual([13, 15, 30]);
+  });
+
+  // Catches a blank or wrong picture on a post without art: the card must show the night room.
+  it('draws the night room on a post without art', async () => {
+    const card = await pictureRegion(
+      await renderOgCard({ title: 'A post', line: 'min7 · Writing' })
+    );
+    const room = await sharp(join(import.meta.dirname, '../src/assets/room-night.png'))
+      .resize(960, 320, { kernel: 'nearest' })
+      .extract(region)
+      .removeAlpha()
+      .raw()
+      .toBuffer();
+    const blank = Buffer.alloc(room.length, card.subarray(0, 3));
+    const distance = (a: Buffer, b: Buffer) =>
+      a.reduce((sum, value, at) => sum + Math.abs(value - (b[at] ?? 0)), 0) / a.length;
+    // The card is a palette PNG, so its colours land near the room's, not on them.
+    expect(distance(card, room)).toBeLessThan(6);
+    expect(distance(room, blank)).toBeGreaterThan(20);
   });
 });
