@@ -1,5 +1,5 @@
 import { snapshotFixtures } from '@min7/contracts/fixtures';
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 import { expect, notFoundPath, test } from './fixtures.ts';
 
 // The page background of each theme (--ground in base.css).
@@ -111,7 +111,12 @@ test('the search control looks the same before and after hydration', async ({ pa
   await page.goto('/about');
   const button = page.getByRole('button', { name: /search/i });
   await expect(button).toBeVisible();
-  const hydrated = { box: await button.boundingBox(), label: await button.innerText() };
+  const face = async (control: Locator) => ({
+    box: await control.boundingBox(),
+    // biome-ignore lint/performance/useDomNodeTextContent: the label as rendered, without hidden spans.
+    label: await control.innerText(),
+  });
+  const hydrated = await face(button);
 
   let hydrate = () => {};
   const held = new Promise<void>((done) => {
@@ -124,11 +129,11 @@ test('the search control looks the same before and after hydration', async ({ pa
   await follow(page, '/writing');
   const link = page.locator('.site-tools a');
   await expect(link).toBeVisible();
-  expect({ box: await link.boundingBox(), label: await link.innerText() }).toEqual(hydrated);
+  expect(await face(link)).toEqual(hydrated);
 
   hydrate();
   await expect(button).toBeVisible();
-  expect({ box: await button.boundingBox(), label: await button.innerText() }).toEqual(hydrated);
+  expect(await face(button)).toEqual(hydrated);
 });
 
 // Catches a link to the open page fading: the answer on screen would dissolve into the build's
