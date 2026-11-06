@@ -6,7 +6,8 @@ import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 const post = '/writing/token-logs';
 
 test.describe('on a 390px phone', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  // isMobile for a phone's overlay scrollbars: Playwright's hidden ones keep a stable gutter.
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
   // Catches card chrome or a paper margin coming back and squeezing the text column.
   test('the post text runs nearly edge to edge', { tag: '@drafts' }, async ({ page }) => {
