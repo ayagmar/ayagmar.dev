@@ -18,8 +18,25 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    // The Worker only sees the pages with a plain-text version, to answer terminal clients with it.
-    "run_worker_first": ["/", "/now"]
+    // The Worker sees only the pages with a text or Markdown copy, to answer terminal clients and
+    // agents with it (ADR 0040); never their subresources, feeds or the copies themselves.
+    "run_worker_first": [
+      "/",
+      "/now",
+      "/about",
+      "/uses",
+      "/stats",
+      "/writing",
+      "/writing/*",
+      "/til",
+      "/til/*",
+      "/projects",
+      "/projects/*",
+      "!/writing/tags/*",
+      "!/*.md",
+      "!/*.txt",
+      "!/*.xml"
+    ]
   },
   // Required by `wrangler preview` even though the site has no bindings to swap.
   "previews": {}

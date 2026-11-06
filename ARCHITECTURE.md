@@ -3,7 +3,7 @@
 ## Units
 
 ```
-apps/site            Astro static site + a Worker that only answers `/` for terminal clients.
+apps/site            Astro static site + a Worker that answers terminal clients and agents.
                      Renders snapshots. Knows no data source and no signals internals.
 apps/signals         Hono Worker on api.ayagmar.dev. Pulls sources on a cron, accepts pushes,
                      serves the latest snapshot per source and daily history per series.
@@ -102,13 +102,13 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | RSS and Atom (one model, two renderers; writing and TIL)                  | `apps/site/src/lib/feed.ts`                                                                                                              |
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                                                    |
 | Copy buttons on code blocks in posts and notes                            | `apps/site/src/lib/markdown/code-copy.ts`, `src/scripts/code-copy.ts`                                                                    |
-| Plain-text home page (`dist/index.txt`)                                   | `apps/site/src/lib/plaintext.ts`                                                                                                         |
+| Text and Markdown copies of pages, /llms.txt (ADR 0040)                   | `apps/site/src/lib/{plaintext,article,stats-text,llms}.ts`, `src/pages/**/*.{txt,md}.ts`                                                 |
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                                            |
 | Build-time snapshot reader (`fixtures` or `api` mode)                     | `apps/site/src/data/`                                                                                                                    |
 | Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/live.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{now-playing,stats-live}.ts`                        |
 | Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/markup.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                                      |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                                      |
-| Site Worker (terminal check on `/` and `/now`)                            | `apps/site/worker/index.ts`                                                                                                              |
+| Site Worker (which copy a request gets, ADR 0040)                         | `apps/site/worker/index.ts`                                                                                                              |
 | Site identity and navigation                                              | `apps/site/src/lib/site.ts`                                                                                                              |
 | About page data, its schema                                               | `content/about.json`, `apps/site/src/data/about.ts`                                                                                      |
 | Skills shelf: data, schema, sync script, page (ADR 0031)                  | `content/skills.json`, `apps/site/src/lib/{skills-schema,skills}.ts`, `src/pages/skills.astro`, `scripts/skills-sync.ts`                 |
@@ -129,8 +129,8 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 ## Site build
 
 `just site-build` runs these steps:
-1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the feeds, `index.txt`, the sitemap, the icons and a link-preview PNG for each post and note plus one for every other page.
+1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the text and Markdown copies, `llms.txt`, the feeds, the sitemap, the icons and a link-preview PNG for each post and note plus one for every other page.
 2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post and note bodies) into `dist/pagefind/`.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
-In production, Workers static assets serve `dist/`. The site Worker runs only for `/` and `/now`: a `curl`, `wget`, HTTPie or `xh` user agent gets `index.txt` or `now.txt`, anything else gets the HTML page. `index.txt` starts with the room in ASCII. Both responses come from the assets binding, so they carry the `_headers` rules, plus `Vary: User-Agent`.
+In production, Workers static assets serve `dist/`. The site Worker runs only for the pages with a copy ([ADR 0040](docs/adr/0040-text-and-markdown-copies.md)): a request whose `Accept` prefers Markdown gets the page's `.md` or else its `.txt`, a `curl`, `wget`, HTTPie or `xh` user agent its `.txt`, anything else the HTML page. `index.txt` starts with the room in ASCII. Every response comes from the assets binding, so it carries the `_headers` rules, plus `Vary: Accept, User-Agent`. The `.md` and `.txt` URLs themselves are plain assets, marked `noindex`.
