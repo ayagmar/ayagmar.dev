@@ -31,7 +31,7 @@
       {
         "name": "live reads",
         "file": "/_astro/live.*.js",
-        "bytes": 1500
+        "bytes": 1520
       },
       {
         "name": "listening reads",

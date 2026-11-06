@@ -1,8 +1,8 @@
-import type { ListeningSnapshot, ShippingSnapshot } from '@min7/contracts';
+import { type ListeningSnapshot, type ShippingSnapshot, staleAfterSeconds } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { HttpResponse, http } from 'msw';
 import { setupServer } from 'msw/node';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   frameFor,
   frames,
@@ -130,11 +130,13 @@ describe('the words', () => {
 
 describe('the Worker', () => {
   const base = 'https://signals.test';
-  const fetchedAt = new Date(Date.now() - 60_000).toISOString();
-  const envelope = (source: string, data: unknown, stale = false) => ({
+  const limit = staleAfterSeconds.listening * 1000;
+  const start = Date.parse('2026-11-06T12:00:00Z');
+  const iso = (time: number) => new Date(time).toISOString();
+  const envelope = (source: string, data: unknown, at: number, stale = false) => ({
     source,
     version: 1,
-    fetchedAt,
+    fetchedAt: iso(at),
     stale,
     data,
   });
@@ -142,8 +144,15 @@ describe('the Worker', () => {
     ...listening,
     nowPlaying: { track: 'Live track', artist: 'Live artist', album: null, url: null },
   };
+  const liveMerge = { ...shipping.events[0], number: 999, title: 'live merge' };
+  const liveShipping = { ...shipping, events: [liveMerge] };
   const server = setupServer();
+  let clock: number;
+  let builtAt: number;
   let stored: Map<string, Response>;
+  let failing: { match?: string; body?: string; put?: boolean };
+  let writes: Promise<unknown>[];
+
   const assets = (signals: string | null) => ({
     fetch: async (request: Request) => {
       const { pathname } = new URL(request.url);
@@ -152,8 +161,9 @@ describe('the Worker', () => {
         return Response.json({
           origin: 'https://ayagmar.dev',
           signals,
-          listening: envelope('listening', listening),
-          shipping: envelope('shipping', shipping),
+          listeningLimitMs: limit,
+          listening: envelope('listening', listening, builtAt),
+          shipping: envelope('shipping', shipping, builtAt),
         });
       }
       return new Response('plain', { headers: { 'X-Robots-Tag': 'noindex', ETag: '"a"' } });
@@ -163,35 +173,48 @@ describe('the Worker', () => {
     const response = await terminalRoom(
       new Request('https://ayagmar.dev/room'),
       assets(signals),
-      () => undefined
+      (work) => writes.push(work)
     );
+    await Promise.all(writes);
     return { response, body: await response.text() };
   };
+  const answer = (source: string, data: unknown, at = clock, stale = false) =>
+    http.get(`${base}/v1/${source}`, () => HttpResponse.json(envelope(source, data, at, stale)));
 
   beforeAll(() => server.listen({ onUnhandledFrame: 'error' }));
+  beforeEach(() => {
+    clock = start;
+    builtAt = start - 3_600_000;
+    stored = new Map();
+    failing = {};
+    writes = [];
+    vi.spyOn(Date, 'now').mockImplementation(() => clock);
+    vi.stubGlobal('caches', {
+      open: async () => ({
+        match: async (key: string) => {
+          if (failing.match && key.endsWith(failing.match)) throw new Error('cache down');
+          if (failing.body && key.endsWith(failing.body)) {
+            return { json: () => Promise.reject(new Error('bad body')) };
+          }
+          return stored.get(key)?.clone();
+        },
+        put: async (key: string, response: Response) => {
+          if (failing.put) throw new Error('cache full');
+          stored.set(key, response);
+        },
+      }),
+    });
+  });
   afterEach(() => {
     server.resetHandlers();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
   afterAll(() => server.close());
 
-  const useCache = () => {
-    stored = new Map();
-    vi.stubGlobal('caches', {
-      open: async () => ({
-        match: async (key: string) => stored.get(key)?.clone(),
-        put: async (key: string, response: Response) => void stored.set(key, response),
-      }),
-    });
-  };
-
   // Catches the build's snapshot being called live, or a live answer being ignored.
   it('says what is playing from a current answer', async () => {
-    useCache();
-    server.use(
-      http.get(`${base}/v1/listening`, () => HttpResponse.json(envelope('listening', playing))),
-      http.get(`${base}/v1/shipping`, () => HttpResponse.json(envelope('shipping', shipping)))
-    );
+    server.use(answer('listening', playing), answer('shipping', shipping));
     const { body, response } = await room();
     expect(body).toContain('\nNow playing Live track by Live artist\n');
     expect(body).not.toContain('Sample data');
@@ -201,19 +224,49 @@ describe('the Worker', () => {
 
   // Catches a stale answer claiming a track is playing now.
   it('never says now playing from a stale answer', async () => {
-    useCache();
+    server.use(answer('listening', playing, clock, true), answer('shipping', shipping));
+    expect((await room()).body).toContain('\nLast played Live track by Live artist');
+  });
+
+  // Catches a cached answer outliving the 15 minutes: signals stopped pulling, its last answer
+  // said `stale: false` just before the limit, and this cache keeps it past it.
+  it('stops saying now playing when a cached answer passes the limit', async () => {
+    server.use(answer('listening', playing, start - limit + 1_000), answer('shipping', shipping));
+    expect((await room()).body).toContain('\nNow playing Live track');
+    clock = start + 30_000;
+    const { body } = await room();
+    expect(stored.size).toBe(2);
+    expect(body).not.toContain('Now playing');
+    expect(body).toContain('\nLast played Live track by Live artist');
+  });
+
+  // Catches the limit being checked against a clock read before the request went out.
+  it('checks the limit after a read that crosses it', async () => {
     server.use(
-      http.get(`${base}/v1/listening`, () =>
-        HttpResponse.json(envelope('listening', playing, true))
-      ),
-      http.get(`${base}/v1/shipping`, () => HttpResponse.json(envelope('shipping', shipping)))
+      http.get(`${base}/v1/listening`, () => {
+        const body = envelope('listening', playing, start - limit + 1_000);
+        clock = start + 2_000;
+        return HttpResponse.json(body);
+      }),
+      answer('shipping', shipping)
     );
     expect((await room()).body).not.toContain('Now playing');
   });
 
+  // Catches an entry cached before a deploy replacing what the newer build knows.
+  it('prefers a build newer than the live answers', async () => {
+    builtAt = start;
+    server.use(
+      answer('listening', playing, start - 60_000),
+      answer('shipping', liveShipping, start - 60_000)
+    );
+    const { body } = await room();
+    expect(body).toContain('\nLast played Friendships and Love by Rocketship');
+    expect(body).not.toContain('live merge');
+  });
+
   // Catches a signals outage failing the room, or each terminal paying for it again.
-  it('falls back to the build when signals fails, and asks once a minute', async () => {
-    useCache();
+  it('falls back to the build when signals fails, and caches the failure', async () => {
     let asked = 0;
     server.use(
       http.get(`${base}/v1/*`, () => {
@@ -228,9 +281,36 @@ describe('the Worker', () => {
     expect(asked).toBe(2);
   });
 
+  // Catches the cache, an optimisation, taking the whole room down with one source.
+  it('loses only the source whose cache lookup fails', async () => {
+    failing.match = 'shipping';
+    server.use(answer('listening', playing), answer('shipping', liveShipping));
+    const { body, response } = await room();
+    expect(response.status).toBe(200);
+    expect(body).toContain('\nNow playing Live track');
+    expect(body).not.toContain('live merge');
+    expect(body).toContain('repo-pulse merged #28');
+  });
+
+  // Catches a cached entry that cannot be read failing the room.
+  it('loses only the source whose cached body cannot be read', async () => {
+    failing.body = 'listening';
+    server.use(answer('listening', playing), answer('shipping', liveShipping));
+    const { body, response } = await room();
+    expect(response.status).toBe(200);
+    expect(body).toContain('\nLast played Friendships and Love by Rocketship');
+    expect(body).toContain('live merge');
+  });
+
+  // Catches a failed background write surfacing as an unhandled rejection.
+  it('answers the same when the cache cannot be written', async () => {
+    failing.put = true;
+    server.use(answer('listening', playing), answer('shipping', shipping));
+    expect((await room()).body).toContain('\nNow playing Live track');
+  });
+
   // Catches a Preview or a test build reaching out to the network, or passing as live.
   it('asks nobody in fixtures mode and says so', async () => {
-    useCache();
     expect((await room(null)).body).toContain('\nSample data, not live\n');
   });
 });

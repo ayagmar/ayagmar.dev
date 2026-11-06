@@ -24,22 +24,22 @@ If the owner prefers colour on the bare command, as wttr.in does, the change is 
 
 **What is live.** `src/lib/terminal-room.ts` renders per request from `roomFacts(time)`: `skyAt`, `moonAt`, `isLate` and `rabatTime` from `sky.ts`, and nothing else in the picture. `RoomFacts` is the input a later room model replaces. The moon comes from `moonRuns`, the runs the page's SVG path is made of. The 12-pixel disc covers two cells a side, so the phase shows only as how bright they are, and the window's sentence, now `windowWords` in `sky.ts` for both, names it. The words are the page's: `nowPlaying` and `nowPlayingMarkup` for the track, `shippingItem` for the newest push or merge, both written out by `inline` (`src/lib/markup-text.ts`, moved from `stats-text.ts`). Weather and the cat stay on the page: the first costs a third read and 14 layers, and the cat's hours live in `room.css`.
 
-**Signals.** `worker/room.ts` asks `/v1/listening` and `/v1/shipping` on the public API with a 1 s deadline, through the readers the browser uses (`readAnswer`, `readListening`, `readShipping`), so the Worker loads no zod. Each answer, or failure, is kept 60 s in the data centre's cache. A same-zone `fetch` works because signals is on a Custom Domain (Cloudflare's Custom Domains docs); no service binding ties the two Workers together. "Now playing" needs a live answer with `stale: false`. When signals fails, the room shows the build's own snapshot from `/terminal/room.json`, which says "Last played" with its date. The sky and moon need no data, so they stay true. In fixtures mode, Previews and tests included, that file names no API: the Worker asks nobody and the output says `Sample data, not live`.
+**Signals.** `worker/room.ts` asks `/v1/listening` and `/v1/shipping` on the public API with a 1 s deadline, through the readers the browser uses (`readAnswer`, `readListening`, `readShipping`), so the Worker loads no zod. Each answer, or failure, is usually kept 60 s in the data centre's cache. That cache is best-effort: it is per data centre, terminals arriving together on a cold cache each ask, and requests cannot share a pending read, since a Worker may not await a promise from another request's context. A hard ceiling would need coordination, such as a Durable Object, which a decorative line does not justify. The cache is optional for each source on its own: a failed lookup, an unreadable entry or anything past the 1 s deadline means that source shows the build's answer, and a failed write changes nothing. A same-zone `fetch` works because signals is on a Custom Domain (Cloudflare's Custom Domains docs); no service binding ties the two Workers together. "Now playing" is decided when the room is rendered, after the reads, by `isCurrent` in `live.ts`, the test the browser uses: `stale: false`, within the listening limit and not older than the build's answer. A cached answer can pass the limit, so the flag alone is not enough. The limit is `staleAfterSeconds.listening`, which the build writes into `room.json` as the Worker does not load contracts. An expired answer still gives a dated "Last played", and the newer of the live and build answers is the one shown, for shipping too. When signals fails, the room shows the build's own snapshot from `/terminal/room.json`, which says "Last played" with its date. The sky and moon need no data, so they stay true. In fixtures mode, Previews and tests included, that file names no API: the Worker asks nobody and the output says `Sample data, not live`.
 
 The cache is per data centre, and Cloudflare's docs only promise it on custom domains, so a Preview would not cache; a Preview asks nobody anyway.
 
 **Cost per request, measured.**
 
-| What                            | Number                                                  |
-| ------------------------------- | ------------------------------------------------------- |
-| Site Worker runs                | 1, against the shared 100,000 a day (ADR 0040)          |
-| Signals Worker runs             | 2 on a cache miss, at most 2 per minute per data centre |
-| Asset reads through the binding | 3: the frame, `room.json`, `index.txt` for its headers  |
-| Rendering                       | 0.37 ms in Node, 500 runs                               |
-| Response                        | About 33 KB, 8 KB gzip                                  |
-| Worker bundle                   | 21.7 KiB, 7.5 KiB gzip                                  |
+| What                            | Number                                                                      |
+| ------------------------------- | --------------------------------------------------------------------------- |
+| Site Worker runs                | 1, against the shared 100,000 a day (ADR 0040)                              |
+| Signals Worker runs             | Typically 2 per minute per data centre, up to 2 per request on a cold cache |
+| Asset reads through the binding | 3: the frame, `room.json`, `index.txt` for its headers                      |
+| Rendering                       | 0.32 ms in Node, 500 runs                                                   |
+| Response                        | About 33 KB, 8 KB gzip                                                      |
+| Worker bundle                   | 23.0 KiB, 8.0 KiB gzip                                                      |
 
-**Other people's text.** A track or pull request title goes to a terminal, where an escape sequence is a command. `terminalLine` removes every control and format character from each line under the picture and cuts it at 80 columns.
+**Other people's text.** A track or pull request title goes to a terminal, where an escape sequence is a command. `terminalLine` removes every control and format character from each line that carries such a title and cuts it at 80 terminal cells between graphemes (`Intl.Segmenter`, with a short table of wide ranges and emoji rather than a dependency), so a CJK title does not wrap. The table is not the full East Asian Width data: a rare wide character outside it can still wrap a line by a cell or two, which costs looks and nothing else.
 
 **Headers.** The answer copies `index.txt`'s headers, so it has the `_headers` rules and `noindex`, without the ETag. It is `no-store`, as it changes by the minute.
 
