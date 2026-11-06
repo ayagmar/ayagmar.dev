@@ -1,0 +1,1896 @@
+{
+  "days": [
+    {
+      "date": "2025-11-10",
+      "costUsd": 5.86,
+      "totalTokens": 2344000
+    },
+    {
+      "date": "2025-11-11",
+      "costUsd": 5.22,
+      "totalTokens": 2088000
+    },
+    {
+      "date": "2025-11-12",
+      "costUsd": 2.54,
+      "totalTokens": 1017000
+    },
+    {
+      "date": "2025-11-13",
+      "costUsd": 4.81,
+      "totalTokens": 1923000
+    },
+    {
+      "date": "2025-11-14",
+      "costUsd": 0.36,
+      "totalTokens": 145000
+    },
+    {
+      "date": "2025-11-15",
+      "costUsd": 0.63,
+      "totalTokens": 252000
+    },
+    {
+      "date": "2025-11-16",
+      "costUsd": 4.48,
+      "totalTokens": 1793000
+    },
+    {
+      "date": "2025-11-17",
+      "costUsd": 5.55,
+      "totalTokens": 2219000
+    },
+    {
+      "date": "2025-11-18",
+      "costUsd": 2.33,
+      "totalTokens": 931000
+    },
+    {
+      "date": "2025-11-19",
+      "costUsd": 3.29,
+      "totalTokens": 1318000
+    },
+    {
+      "date": "2025-11-20",
+      "costUsd": 2.24,
+      "totalTokens": 896000
+    },
+    {
+      "date": "2025-11-21",
+      "costUsd": 1.18,
+      "totalTokens": 471000
+    },
+    {
+      "date": "2025-11-22",
+      "costUsd": 5.46,
+      "totalTokens": 2186000
+    },
+    {
+      "date": "2025-11-23",
+      "costUsd": 2.34,
+      "totalTokens": 936000
+    },
+    {
+      "date": "2025-11-24",
+      "costUsd": 1.26,
+      "totalTokens": 504000
+    },
+    {
+      "date": "2025-11-25",
+      "costUsd": 3.64,
+      "totalTokens": 1457000
+    },
+    {
+      "date": "2025-11-26",
+      "costUsd": 3.12,
+      "totalTokens": 1246000
+    },
+    {
+      "date": "2025-11-27",
+      "costUsd": 3.21,
+      "totalTokens": 1286000
+    },
+    {
+      "date": "2025-11-28",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2025-11-29",
+      "costUsd": 5.72,
+      "totalTokens": 2288000
+    },
+    {
+      "date": "2025-11-30",
+      "costUsd": 1.96,
+      "totalTokens": 783000
+    },
+    {
+      "date": "2025-12-01",
+      "costUsd": 5.05,
+      "totalTokens": 2020000
+    },
+    {
+      "date": "2025-12-02",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2025-12-03",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2025-12-04",
+      "costUsd": 1.76,
+      "totalTokens": 703000
+    },
+    {
+      "date": "2025-12-05",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2025-12-06",
+      "costUsd": 3.27,
+      "totalTokens": 1310000
+    },
+    {
+      "date": "2025-12-07",
+      "costUsd": 4.27,
+      "totalTokens": 1709000
+    },
+    {
+      "date": "2025-12-08",
+      "costUsd": 0.94,
+      "totalTokens": 374000
+    },
+    {
+      "date": "2025-12-09",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2025-12-10",
+      "costUsd": 4.2,
+      "totalTokens": 1678000
+    },
+    {
+      "date": "2025-12-11",
+      "costUsd": 3.7,
+      "totalTokens": 1479000
+    },
+    {
+      "date": "2025-12-12",
+      "costUsd": 3.9,
+      "totalTokens": 1558000
+    },
+    {
+      "date": "2025-12-13",
+      "costUsd": 6.49,
+      "totalTokens": 2597000
+    },
+    {
+      "date": "2025-12-14",
+      "costUsd": 2.04,
+      "totalTokens": 815000
+    },
+    {
+      "date": "2025-12-15",
+      "costUsd": 0.99,
+      "totalTokens": 395000
+    },
+    {
+      "date": "2025-12-16",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2025-12-17",
+      "costUsd": 1.72,
+      "totalTokens": 688000
+    },
+    {
+      "date": "2025-12-18",
+      "costUsd": 4.3,
+      "totalTokens": 1719000
+    },
+    {
+      "date": "2025-12-19",
+      "costUsd": 6.17,
+      "totalTokens": 2467000
+    },
+    {
+      "date": "2025-12-20",
+      "costUsd": 0.42,
+      "totalTokens": 170000
+    },
+    {
+      "date": "2025-12-21",
+      "costUsd": 1.18,
+      "totalTokens": 472000
+    },
+    {
+      "date": "2025-12-22",
+      "costUsd": 5.46,
+      "totalTokens": 2182000
+    },
+    {
+      "date": "2025-12-23",
+      "costUsd": 0.41,
+      "totalTokens": 162000
+    },
+    {
+      "date": "2025-12-24",
+      "costUsd": 0.59,
+      "totalTokens": 238000
+    },
+    {
+      "date": "2025-12-25",
+      "costUsd": 3.42,
+      "totalTokens": 1368000
+    },
+    {
+      "date": "2025-12-26",
+      "costUsd": 3.57,
+      "totalTokens": 1428000
+    },
+    {
+      "date": "2025-12-27",
+      "costUsd": 3.58,
+      "totalTokens": 1434000
+    },
+    {
+      "date": "2025-12-28",
+      "costUsd": 2.05,
+      "totalTokens": 821000
+    },
+    {
+      "date": "2025-12-29",
+      "costUsd": 2.33,
+      "totalTokens": 931000
+    },
+    {
+      "date": "2025-12-30",
+      "costUsd": 5.57,
+      "totalTokens": 2226000
+    },
+    {
+      "date": "2025-12-31",
+      "costUsd": 2.59,
+      "totalTokens": 1035000
+    },
+    {
+      "date": "2026-01-01",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-01-02",
+      "costUsd": 1.75,
+      "totalTokens": 701000,
+      "activeMs": 6960000
+    },
+    {
+      "date": "2026-01-03",
+      "costUsd": 0.56,
+      "totalTokens": 226000,
+      "activeMs": 2520000
+    },
+    {
+      "date": "2026-01-04",
+      "costUsd": 2.48,
+      "totalTokens": 990000,
+      "activeMs": 8220000
+    },
+    {
+      "date": "2026-01-05",
+      "costUsd": 2.36,
+      "totalTokens": 945000,
+      "activeMs": 5640000
+    },
+    {
+      "date": "2026-01-06",
+      "costUsd": 6.29,
+      "totalTokens": 2515000,
+      "activeMs": 33120000
+    },
+    {
+      "date": "2026-01-07",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-01-08",
+      "costUsd": 1.52,
+      "totalTokens": 610000,
+      "activeMs": 4500000
+    },
+    {
+      "date": "2026-01-09",
+      "costUsd": 3.55,
+      "totalTokens": 1421000,
+      "activeMs": 11820000
+    },
+    {
+      "date": "2026-01-10",
+      "costUsd": 5.95,
+      "totalTokens": 2381000,
+      "activeMs": 34140000
+    },
+    {
+      "date": "2026-01-11",
+      "costUsd": 3.12,
+      "totalTokens": 1250000,
+      "activeMs": 13680000
+    },
+    {
+      "date": "2026-01-12",
+      "costUsd": 3.81,
+      "totalTokens": 1523000,
+      "activeMs": 10320000
+    },
+    {
+      "date": "2026-01-13",
+      "costUsd": 6.0,
+      "totalTokens": 2402000,
+      "activeMs": 22080000
+    },
+    {
+      "date": "2026-01-14",
+      "costUsd": 3.92,
+      "totalTokens": 1567000,
+      "activeMs": 19080000
+    },
+    {
+      "date": "2026-01-15",
+      "costUsd": 6.46,
+      "totalTokens": 2583000,
+      "activeMs": 37560000
+    },
+    {
+      "date": "2026-01-16",
+      "costUsd": 5.75,
+      "totalTokens": 2302000,
+      "activeMs": 15780000
+    },
+    {
+      "date": "2026-01-17",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-01-18",
+      "costUsd": 4.39,
+      "totalTokens": 1756000,
+      "activeMs": 12120000
+    },
+    {
+      "date": "2026-01-19",
+      "costUsd": 5.92,
+      "totalTokens": 2366000,
+      "activeMs": 24660000
+    },
+    {
+      "date": "2026-01-20",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-01-21",
+      "costUsd": 3.96,
+      "totalTokens": 1582000,
+      "activeMs": 11700000
+    },
+    {
+      "date": "2026-01-22",
+      "costUsd": 5.45,
+      "totalTokens": 2181000,
+      "activeMs": 13200000
+    },
+    {
+      "date": "2026-01-23",
+      "costUsd": 4.39,
+      "totalTokens": 1757000,
+      "activeMs": 11460000
+    },
+    {
+      "date": "2026-01-24",
+      "costUsd": 1.39,
+      "totalTokens": 555000,
+      "activeMs": 8700000
+    },
+    {
+      "date": "2026-01-25",
+      "costUsd": 5.9,
+      "totalTokens": 2361000,
+      "activeMs": 19260000
+    },
+    {
+      "date": "2026-01-26",
+      "costUsd": 5.07,
+      "totalTokens": 2028000,
+      "activeMs": 20400000
+    },
+    {
+      "date": "2026-01-27",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-01-28",
+      "costUsd": 5.93,
+      "totalTokens": 2373000,
+      "activeMs": 33420000
+    },
+    {
+      "date": "2026-01-29",
+      "costUsd": 3.73,
+      "totalTokens": 1494000,
+      "activeMs": 16020000
+    },
+    {
+      "date": "2026-01-30",
+      "costUsd": 4.88,
+      "totalTokens": 1950000,
+      "activeMs": 12360000
+    },
+    {
+      "date": "2026-01-31",
+      "costUsd": 2.19,
+      "totalTokens": 877000,
+      "activeMs": 5460000
+    },
+    {
+      "date": "2026-02-01",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-02-02",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-02-03",
+      "costUsd": 1.83,
+      "totalTokens": 731000,
+      "activeMs": 7620000
+    },
+    {
+      "date": "2026-02-04",
+      "costUsd": 4.54,
+      "totalTokens": 1814000,
+      "activeMs": 15840000
+    },
+    {
+      "date": "2026-02-05",
+      "costUsd": 1.85,
+      "totalTokens": 740000,
+      "activeMs": 8040000
+    },
+    {
+      "date": "2026-02-06",
+      "costUsd": 4.54,
+      "totalTokens": 1815000,
+      "activeMs": 22380000
+    },
+    {
+      "date": "2026-02-07",
+      "costUsd": 2.96,
+      "totalTokens": 1182000,
+      "activeMs": 9480000
+    },
+    {
+      "date": "2026-02-08",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-02-09",
+      "costUsd": 1.27,
+      "totalTokens": 509000,
+      "activeMs": 5520000
+    },
+    {
+      "date": "2026-02-10",
+      "costUsd": 3.04,
+      "totalTokens": 1218000,
+      "activeMs": 15600000
+    },
+    {
+      "date": "2026-02-11",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-02-12",
+      "costUsd": 1.27,
+      "totalTokens": 509000,
+      "activeMs": 7920000
+    },
+    {
+      "date": "2026-02-13",
+      "costUsd": 1.0,
+      "totalTokens": 400000,
+      "activeMs": 3960000
+    },
+    {
+      "date": "2026-02-14",
+      "costUsd": 5.18,
+      "totalTokens": 2073000,
+      "activeMs": 20700000
+    },
+    {
+      "date": "2026-02-15",
+      "costUsd": 3.9,
+      "totalTokens": 1559000,
+      "activeMs": 19620000
+    },
+    {
+      "date": "2026-02-16",
+      "costUsd": 4.39,
+      "totalTokens": 1756000,
+      "activeMs": 10860000
+    },
+    {
+      "date": "2026-02-17",
+      "costUsd": 1.12,
+      "totalTokens": 449000,
+      "activeMs": 5040000
+    },
+    {
+      "date": "2026-02-18",
+      "costUsd": 3.78,
+      "totalTokens": 1512000,
+      "activeMs": 17220000
+    },
+    {
+      "date": "2026-02-19",
+      "costUsd": 2.21,
+      "totalTokens": 886000,
+      "activeMs": 9900000
+    },
+    {
+      "date": "2026-02-20",
+      "costUsd": 6.24,
+      "totalTokens": 2497000,
+      "activeMs": 29820000
+    },
+    {
+      "date": "2026-02-21",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-02-22",
+      "costUsd": 5.09,
+      "totalTokens": 2038000,
+      "activeMs": 12960000
+    },
+    {
+      "date": "2026-02-23",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-02-24",
+      "costUsd": 4.82,
+      "totalTokens": 1926000,
+      "activeMs": 18120000
+    },
+    {
+      "date": "2026-02-25",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-02-26",
+      "costUsd": 4.21,
+      "totalTokens": 1682000,
+      "activeMs": 10860000
+    },
+    {
+      "date": "2026-02-27",
+      "costUsd": 4.1,
+      "totalTokens": 1639000,
+      "activeMs": 24240000
+    },
+    {
+      "date": "2026-02-28",
+      "costUsd": 3.34,
+      "totalTokens": 1336000,
+      "activeMs": 20100000
+    },
+    {
+      "date": "2026-03-01",
+      "costUsd": 6.31,
+      "totalTokens": 2525000,
+      "activeMs": 26580000
+    },
+    {
+      "date": "2026-03-02",
+      "costUsd": 5.33,
+      "totalTokens": 2134000,
+      "activeMs": 21960000
+    },
+    {
+      "date": "2026-03-03",
+      "costUsd": 1.44,
+      "totalTokens": 577000,
+      "activeMs": 6120000
+    },
+    {
+      "date": "2026-03-04",
+      "costUsd": 4.65,
+      "totalTokens": 1859000,
+      "activeMs": 24180000
+    },
+    {
+      "date": "2026-03-05",
+      "costUsd": 3.19,
+      "totalTokens": 1274000,
+      "activeMs": 18840000
+    },
+    {
+      "date": "2026-03-06",
+      "costUsd": 3.44,
+      "totalTokens": 1375000,
+      "activeMs": 21780000
+    },
+    {
+      "date": "2026-03-07",
+      "costUsd": 4.1,
+      "totalTokens": 1641000,
+      "activeMs": 10500000
+    },
+    {
+      "date": "2026-03-08",
+      "costUsd": 5.83,
+      "totalTokens": 2334000,
+      "activeMs": 19740000
+    },
+    {
+      "date": "2026-03-09",
+      "costUsd": 2.96,
+      "totalTokens": 1182000,
+      "activeMs": 15900000
+    },
+    {
+      "date": "2026-03-10",
+      "costUsd": 3.6,
+      "totalTokens": 1438000,
+      "activeMs": 22860000
+    },
+    {
+      "date": "2026-03-11",
+      "costUsd": 2.15,
+      "totalTokens": 858000,
+      "activeMs": 6960000
+    },
+    {
+      "date": "2026-03-12",
+      "costUsd": 3.12,
+      "totalTokens": 1249000,
+      "activeMs": 16980000
+    },
+    {
+      "date": "2026-03-13",
+      "costUsd": 4.54,
+      "totalTokens": 1818000,
+      "activeMs": 28200000
+    },
+    {
+      "date": "2026-03-14",
+      "costUsd": 2.16,
+      "totalTokens": 864000,
+      "activeMs": 5280000
+    },
+    {
+      "date": "2026-03-15",
+      "costUsd": 3.35,
+      "totalTokens": 1340000,
+      "activeMs": 11460000
+    },
+    {
+      "date": "2026-03-16",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-03-17",
+      "costUsd": 1.46,
+      "totalTokens": 583000,
+      "activeMs": 8280000
+    },
+    {
+      "date": "2026-03-18",
+      "costUsd": 2.63,
+      "totalTokens": 1052000,
+      "activeMs": 8520000
+    },
+    {
+      "date": "2026-03-19",
+      "costUsd": 2.1,
+      "totalTokens": 842000,
+      "activeMs": 12600000
+    },
+    {
+      "date": "2026-03-20",
+      "costUsd": 0.3,
+      "totalTokens": 120000,
+      "activeMs": 1500000
+    },
+    {
+      "date": "2026-03-21",
+      "costUsd": 3.4,
+      "totalTokens": 1359000,
+      "activeMs": 15960000
+    },
+    {
+      "date": "2026-03-22",
+      "costUsd": 2.07,
+      "totalTokens": 829000,
+      "activeMs": 5820000
+    },
+    {
+      "date": "2026-03-23",
+      "costUsd": 5.15,
+      "totalTokens": 2061000,
+      "activeMs": 12780000
+    },
+    {
+      "date": "2026-03-24",
+      "costUsd": 3.17,
+      "totalTokens": 1267000,
+      "activeMs": 10920000
+    },
+    {
+      "date": "2026-03-25",
+      "costUsd": 2.28,
+      "totalTokens": 911000,
+      "activeMs": 14400000
+    },
+    {
+      "date": "2026-03-26",
+      "costUsd": 1.08,
+      "totalTokens": 434000,
+      "activeMs": 4560000
+    },
+    {
+      "date": "2026-03-27",
+      "costUsd": 5.14,
+      "totalTokens": 2056000,
+      "activeMs": 19500000
+    },
+    {
+      "date": "2026-03-28",
+      "costUsd": 5.31,
+      "totalTokens": 2123000,
+      "activeMs": 27240000
+    },
+    {
+      "date": "2026-03-29",
+      "costUsd": 3.53,
+      "totalTokens": 1411000,
+      "activeMs": 18660000
+    },
+    {
+      "date": "2026-03-30",
+      "costUsd": 3.56,
+      "totalTokens": 1423000,
+      "activeMs": 10080000
+    },
+    {
+      "date": "2026-03-31",
+      "costUsd": 5.33,
+      "totalTokens": 2131000,
+      "activeMs": 15480000
+    },
+    {
+      "date": "2026-04-01",
+      "costUsd": 0.64,
+      "totalTokens": 255000,
+      "activeMs": 1620000
+    },
+    {
+      "date": "2026-04-02",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-04-03",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-04-04",
+      "costUsd": 4.21,
+      "totalTokens": 1682000,
+      "activeMs": 16620000
+    },
+    {
+      "date": "2026-04-05",
+      "costUsd": 6.34,
+      "totalTokens": 2535000,
+      "activeMs": 26880000
+    },
+    {
+      "date": "2026-04-06",
+      "costUsd": 4.59,
+      "totalTokens": 1838000,
+      "activeMs": 18180000
+    },
+    {
+      "date": "2026-04-07",
+      "costUsd": 5.15,
+      "totalTokens": 2061000,
+      "activeMs": 13860000
+    },
+    {
+      "date": "2026-04-08",
+      "costUsd": 5.17,
+      "totalTokens": 2070000,
+      "activeMs": 28200000
+    },
+    {
+      "date": "2026-04-09",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-04-10",
+      "costUsd": 6.04,
+      "totalTokens": 2414000,
+      "activeMs": 33480000
+    },
+    {
+      "date": "2026-04-11",
+      "costUsd": 3.08,
+      "totalTokens": 1232000,
+      "activeMs": 19620000
+    },
+    {
+      "date": "2026-04-12",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-04-13",
+      "costUsd": 2.38,
+      "totalTokens": 953000,
+      "activeMs": 13380000
+    },
+    {
+      "date": "2026-04-14",
+      "costUsd": 5.04,
+      "totalTokens": 2018000,
+      "activeMs": 23520000
+    },
+    {
+      "date": "2026-04-15",
+      "costUsd": 5.02,
+      "totalTokens": 2007000,
+      "activeMs": 17820000
+    },
+    {
+      "date": "2026-04-16",
+      "costUsd": 1.87,
+      "totalTokens": 748000,
+      "activeMs": 5460000
+    },
+    {
+      "date": "2026-04-17",
+      "costUsd": 0.33,
+      "totalTokens": 132000,
+      "activeMs": 840000
+    },
+    {
+      "date": "2026-04-18",
+      "costUsd": 5.87,
+      "totalTokens": 2347000,
+      "activeMs": 21360000
+    },
+    {
+      "date": "2026-04-19",
+      "costUsd": 5.84,
+      "totalTokens": 2335000,
+      "activeMs": 14700000
+    },
+    {
+      "date": "2026-04-20",
+      "costUsd": 1.87,
+      "totalTokens": 747000,
+      "activeMs": 7500000
+    },
+    {
+      "date": "2026-04-21",
+      "costUsd": 3.76,
+      "totalTokens": 1505000,
+      "activeMs": 23160000
+    },
+    {
+      "date": "2026-04-22",
+      "costUsd": 3.33,
+      "totalTokens": 1333000,
+      "activeMs": 10860000
+    },
+    {
+      "date": "2026-04-23",
+      "costUsd": 5.3,
+      "totalTokens": 2119000,
+      "activeMs": 33660000
+    },
+    {
+      "date": "2026-04-24",
+      "costUsd": 3.27,
+      "totalTokens": 1307000,
+      "activeMs": 7980000
+    },
+    {
+      "date": "2026-04-25",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-04-26",
+      "costUsd": 6.05,
+      "totalTokens": 2421000,
+      "activeMs": 24780000
+    },
+    {
+      "date": "2026-04-27",
+      "costUsd": 2.73,
+      "totalTokens": 1092000,
+      "activeMs": 12360000
+    },
+    {
+      "date": "2026-04-28",
+      "costUsd": 2.43,
+      "totalTokens": 972000,
+      "activeMs": 9180000
+    },
+    {
+      "date": "2026-04-29",
+      "costUsd": 0.7,
+      "totalTokens": 280000,
+      "activeMs": 2460000
+    },
+    {
+      "date": "2026-04-30",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-01",
+      "costUsd": 4.83,
+      "totalTokens": 1931000,
+      "activeMs": 30360000
+    },
+    {
+      "date": "2026-05-02",
+      "costUsd": 2.63,
+      "totalTokens": 1052000,
+      "activeMs": 11340000
+    },
+    {
+      "date": "2026-05-03",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-04",
+      "costUsd": 6.34,
+      "totalTokens": 2538000,
+      "activeMs": 32160000
+    },
+    {
+      "date": "2026-05-05",
+      "costUsd": 6.28,
+      "totalTokens": 2510000,
+      "activeMs": 17700000
+    },
+    {
+      "date": "2026-05-06",
+      "costUsd": 1.6,
+      "totalTokens": 641000,
+      "activeMs": 10020000
+    },
+    {
+      "date": "2026-05-07",
+      "costUsd": 3.17,
+      "totalTokens": 1267000,
+      "activeMs": 14760000
+    },
+    {
+      "date": "2026-05-08",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-09",
+      "costUsd": 0.5,
+      "totalTokens": 201000,
+      "activeMs": 2100000
+    },
+    {
+      "date": "2026-05-10",
+      "costUsd": 5.29,
+      "totalTokens": 2117000,
+      "activeMs": 18960000
+    },
+    {
+      "date": "2026-05-11",
+      "costUsd": 6.09,
+      "totalTokens": 2436000,
+      "activeMs": 31020000
+    },
+    {
+      "date": "2026-05-12",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-13",
+      "costUsd": 2.91,
+      "totalTokens": 1163000,
+      "activeMs": 15000000
+    },
+    {
+      "date": "2026-05-14",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-15",
+      "costUsd": 3.73,
+      "totalTokens": 1493000,
+      "activeMs": 22920000
+    },
+    {
+      "date": "2026-05-16",
+      "costUsd": 2.6,
+      "totalTokens": 1040000,
+      "activeMs": 14040000
+    },
+    {
+      "date": "2026-05-17",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-18",
+      "costUsd": 4.71,
+      "totalTokens": 1885000,
+      "activeMs": 19260000
+    },
+    {
+      "date": "2026-05-19",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-20",
+      "costUsd": 2.35,
+      "totalTokens": 940000,
+      "activeMs": 10800000
+    },
+    {
+      "date": "2026-05-21",
+      "costUsd": 1.82,
+      "totalTokens": 729000,
+      "activeMs": 10140000
+    },
+    {
+      "date": "2026-05-22",
+      "costUsd": 5.8,
+      "totalTokens": 2320000,
+      "activeMs": 18360000
+    },
+    {
+      "date": "2026-05-23",
+      "costUsd": 3.69,
+      "totalTokens": 1477000,
+      "activeMs": 14520000
+    },
+    {
+      "date": "2026-05-24",
+      "costUsd": 1.25,
+      "totalTokens": 501000,
+      "activeMs": 6720000
+    },
+    {
+      "date": "2026-05-25",
+      "costUsd": 2.04,
+      "totalTokens": 816000,
+      "activeMs": 5520000
+    },
+    {
+      "date": "2026-05-26",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-27",
+      "costUsd": 0.8,
+      "totalTokens": 319000,
+      "activeMs": 2640000
+    },
+    {
+      "date": "2026-05-28",
+      "costUsd": 2.12,
+      "totalTokens": 850000,
+      "activeMs": 7500000
+    },
+    {
+      "date": "2026-05-29",
+      "costUsd": 3.98,
+      "totalTokens": 1590000,
+      "activeMs": 12720000
+    },
+    {
+      "date": "2026-05-30",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-05-31",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-06-01",
+      "costUsd": 6.48,
+      "totalTokens": 2592000,
+      "activeMs": 28260000
+    },
+    {
+      "date": "2026-06-02",
+      "costUsd": 4.87,
+      "totalTokens": 1948000,
+      "activeMs": 29640000
+    },
+    {
+      "date": "2026-06-03",
+      "costUsd": 3.37,
+      "totalTokens": 1348000,
+      "activeMs": 14880000
+    },
+    {
+      "date": "2026-06-04",
+      "costUsd": 1.07,
+      "totalTokens": 427000,
+      "activeMs": 2700000
+    },
+    {
+      "date": "2026-06-05",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-06-06",
+      "costUsd": 0.68,
+      "totalTokens": 270000,
+      "activeMs": 1980000
+    },
+    {
+      "date": "2026-06-07",
+      "costUsd": 0.55,
+      "totalTokens": 219000,
+      "activeMs": 2640000
+    },
+    {
+      "date": "2026-06-08",
+      "costUsd": 0.84,
+      "totalTokens": 335000,
+      "activeMs": 3420000
+    },
+    {
+      "date": "2026-06-09",
+      "costUsd": 5.34,
+      "totalTokens": 2135000,
+      "activeMs": 31440000
+    },
+    {
+      "date": "2026-06-10",
+      "costUsd": 1.52,
+      "totalTokens": 607000,
+      "activeMs": 9000000
+    },
+    {
+      "date": "2026-06-11",
+      "costUsd": 4.61,
+      "totalTokens": 1845000,
+      "activeMs": 13980000
+    },
+    {
+      "date": "2026-06-12",
+      "costUsd": 5.69,
+      "totalTokens": 2275000,
+      "activeMs": 29760000
+    },
+    {
+      "date": "2026-06-13",
+      "costUsd": 1.99,
+      "totalTokens": 795000,
+      "activeMs": 5040000
+    },
+    {
+      "date": "2026-06-14",
+      "costUsd": 2.77,
+      "totalTokens": 1107000,
+      "activeMs": 8820000
+    },
+    {
+      "date": "2026-06-15",
+      "costUsd": 4.33,
+      "totalTokens": 1732000,
+      "activeMs": 12360000
+    },
+    {
+      "date": "2026-06-16",
+      "costUsd": 2.92,
+      "totalTokens": 1166000,
+      "activeMs": 16020000
+    },
+    {
+      "date": "2026-06-17",
+      "costUsd": 2.25,
+      "totalTokens": 902000,
+      "activeMs": 7080000
+    },
+    {
+      "date": "2026-06-18",
+      "costUsd": 0.39,
+      "totalTokens": 155000,
+      "activeMs": 960000
+    },
+    {
+      "date": "2026-06-19",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-06-20",
+      "costUsd": 2.1,
+      "totalTokens": 839000,
+      "activeMs": 12960000
+    },
+    {
+      "date": "2026-06-21",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-06-22",
+      "costUsd": 4.61,
+      "totalTokens": 1843000,
+      "activeMs": 13140000
+    },
+    {
+      "date": "2026-06-23",
+      "costUsd": 3.56,
+      "totalTokens": 1425000,
+      "activeMs": 22620000
+    },
+    {
+      "date": "2026-06-24",
+      "costUsd": 2.62,
+      "totalTokens": 1048000,
+      "activeMs": 13680000
+    },
+    {
+      "date": "2026-06-25",
+      "costUsd": 3.61,
+      "totalTokens": 1444000,
+      "activeMs": 22860000
+    },
+    {
+      "date": "2026-06-26",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-06-27",
+      "costUsd": 0.71,
+      "totalTokens": 285000,
+      "activeMs": 1920000
+    },
+    {
+      "date": "2026-06-28",
+      "costUsd": 4.79,
+      "totalTokens": 1916000,
+      "activeMs": 19440000
+    },
+    {
+      "date": "2026-06-29",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-06-30",
+      "costUsd": 3.86,
+      "totalTokens": 1545000,
+      "activeMs": 20040000
+    },
+    {
+      "date": "2026-07-01",
+      "costUsd": 1.14,
+      "totalTokens": 456000,
+      "activeMs": 3600000
+    },
+    {
+      "date": "2026-07-02",
+      "costUsd": 1.25,
+      "totalTokens": 498000,
+      "activeMs": 3540000
+    },
+    {
+      "date": "2026-07-03",
+      "costUsd": 4.14,
+      "totalTokens": 1658000,
+      "activeMs": 20820000
+    },
+    {
+      "date": "2026-07-04",
+      "costUsd": 2.0,
+      "totalTokens": 798000,
+      "activeMs": 5100000
+    },
+    {
+      "date": "2026-07-05",
+      "costUsd": 3.68,
+      "totalTokens": 1472000,
+      "activeMs": 20100000
+    },
+    {
+      "date": "2026-07-06",
+      "costUsd": 5.75,
+      "totalTokens": 2301000,
+      "activeMs": 19380000
+    },
+    {
+      "date": "2026-07-07",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-07-08",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-07-09",
+      "costUsd": 2.15,
+      "totalTokens": 860000,
+      "activeMs": 6900000
+    },
+    {
+      "date": "2026-07-10",
+      "costUsd": 5.72,
+      "totalTokens": 2289000,
+      "activeMs": 21240000
+    },
+    {
+      "date": "2026-07-11",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-07-12",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-07-13",
+      "costUsd": 6.47,
+      "totalTokens": 2587000,
+      "activeMs": 20280000
+    },
+    {
+      "date": "2026-07-14",
+      "costUsd": 1.86,
+      "totalTokens": 745000,
+      "activeMs": 11820000
+    },
+    {
+      "date": "2026-07-15",
+      "costUsd": 2.75,
+      "totalTokens": 1101000,
+      "activeMs": 7920000
+    },
+    {
+      "date": "2026-07-16",
+      "costUsd": 5.06,
+      "totalTokens": 2025000,
+      "activeMs": 26880000
+    },
+    {
+      "date": "2026-07-17",
+      "costUsd": 0.37,
+      "totalTokens": 147000,
+      "activeMs": 2220000
+    },
+    {
+      "date": "2026-07-18",
+      "costUsd": 2.72,
+      "totalTokens": 1088000,
+      "activeMs": 16260000
+    },
+    {
+      "date": "2026-07-19",
+      "costUsd": 4.83,
+      "totalTokens": 1934000,
+      "activeMs": 25920000
+    },
+    {
+      "date": "2026-07-20",
+      "costUsd": 6.12,
+      "totalTokens": 2447000,
+      "activeMs": 29160000
+    },
+    {
+      "date": "2026-07-21",
+      "costUsd": 1.47,
+      "totalTokens": 588000,
+      "activeMs": 9240000
+    },
+    {
+      "date": "2026-07-22",
+      "costUsd": 3.54,
+      "totalTokens": 1418000,
+      "activeMs": 11220000
+    },
+    {
+      "date": "2026-07-23",
+      "costUsd": 3.7,
+      "totalTokens": 1481000,
+      "activeMs": 14220000
+    },
+    {
+      "date": "2026-07-24",
+      "costUsd": 1.27,
+      "totalTokens": 507000,
+      "activeMs": 6900000
+    },
+    {
+      "date": "2026-07-25",
+      "costUsd": 4.43,
+      "totalTokens": 1772000,
+      "activeMs": 19620000
+    },
+    {
+      "date": "2026-07-26",
+      "costUsd": 5.87,
+      "totalTokens": 2349000,
+      "activeMs": 28980000
+    },
+    {
+      "date": "2026-07-27",
+      "costUsd": 1.32,
+      "totalTokens": 527000,
+      "activeMs": 6840000
+    },
+    {
+      "date": "2026-07-28",
+      "costUsd": 4.95,
+      "totalTokens": 1978000,
+      "activeMs": 15480000
+    },
+    {
+      "date": "2026-07-29",
+      "costUsd": 1.35,
+      "totalTokens": 542000,
+      "activeMs": 3600000
+    },
+    {
+      "date": "2026-07-30",
+      "costUsd": 1.25,
+      "totalTokens": 502000,
+      "activeMs": 7800000
+    },
+    {
+      "date": "2026-07-31",
+      "costUsd": 4.26,
+      "totalTokens": 1704000,
+      "activeMs": 19560000
+    },
+    {
+      "date": "2026-08-01",
+      "costUsd": 3.79,
+      "totalTokens": 1516000,
+      "activeMs": 17460000
+    },
+    {
+      "date": "2026-08-02",
+      "costUsd": 2.84,
+      "totalTokens": 1135000,
+      "activeMs": 13980000
+    },
+    {
+      "date": "2026-08-03",
+      "costUsd": 5.22,
+      "totalTokens": 2090000,
+      "activeMs": 13620000
+    },
+    {
+      "date": "2026-08-04",
+      "costUsd": 3.03,
+      "totalTokens": 1213000,
+      "activeMs": 17220000
+    },
+    {
+      "date": "2026-08-05",
+      "costUsd": 2.47,
+      "totalTokens": 989000,
+      "activeMs": 13320000
+    },
+    {
+      "date": "2026-08-06",
+      "costUsd": 3.31,
+      "totalTokens": 1326000,
+      "activeMs": 10860000
+    },
+    {
+      "date": "2026-08-07",
+      "costUsd": 3.38,
+      "totalTokens": 1353000,
+      "activeMs": 20760000
+    },
+    {
+      "date": "2026-08-08",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-08-09",
+      "costUsd": 1.27,
+      "totalTokens": 508000,
+      "activeMs": 6000000
+    },
+    {
+      "date": "2026-08-10",
+      "costUsd": 0.92,
+      "totalTokens": 366000,
+      "activeMs": 5160000
+    },
+    {
+      "date": "2026-08-11",
+      "costUsd": 2.91,
+      "totalTokens": 1163000,
+      "activeMs": 13800000
+    },
+    {
+      "date": "2026-08-12",
+      "costUsd": 1.53,
+      "totalTokens": 612000,
+      "activeMs": 3840000
+    },
+    {
+      "date": "2026-08-13",
+      "costUsd": 0.54,
+      "totalTokens": 215000,
+      "activeMs": 2880000
+    },
+    {
+      "date": "2026-08-14",
+      "costUsd": 6.27,
+      "totalTokens": 2509000,
+      "activeMs": 16620000
+    },
+    {
+      "date": "2026-08-15",
+      "costUsd": 3.75,
+      "totalTokens": 1500000,
+      "activeMs": 19080000
+    },
+    {
+      "date": "2026-08-16",
+      "costUsd": 0.55,
+      "totalTokens": 221000,
+      "activeMs": 1440000
+    },
+    {
+      "date": "2026-08-17",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-08-18",
+      "costUsd": 4.21,
+      "totalTokens": 1682000,
+      "activeMs": 15360000
+    },
+    {
+      "date": "2026-08-19",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-08-20",
+      "costUsd": 3.24,
+      "totalTokens": 1296000,
+      "activeMs": 12900000
+    },
+    {
+      "date": "2026-08-21",
+      "costUsd": 0.25,
+      "totalTokens": 99000,
+      "activeMs": 1440000
+    },
+    {
+      "date": "2026-08-22",
+      "costUsd": 4.93,
+      "totalTokens": 1974000,
+      "activeMs": 19380000
+    },
+    {
+      "date": "2026-08-23",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-08-24",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-08-25",
+      "costUsd": 4.87,
+      "totalTokens": 1949000,
+      "activeMs": 12120000
+    },
+    {
+      "date": "2026-08-26",
+      "costUsd": 4.15,
+      "totalTokens": 1659000,
+      "activeMs": 15420000
+    },
+    {
+      "date": "2026-08-27",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-08-28",
+      "costUsd": 0.85,
+      "totalTokens": 341000,
+      "activeMs": 2220000
+    },
+    {
+      "date": "2026-08-29",
+      "costUsd": 0.42,
+      "totalTokens": 170000,
+      "activeMs": 1920000
+    },
+    {
+      "date": "2026-08-30",
+      "costUsd": 2.53,
+      "totalTokens": 1013000,
+      "activeMs": 6480000
+    },
+    {
+      "date": "2026-08-31",
+      "costUsd": 0.35,
+      "totalTokens": 139000,
+      "activeMs": 1800000
+    },
+    {
+      "date": "2026-09-01",
+      "costUsd": 3.75,
+      "totalTokens": 1501000,
+      "activeMs": 19320000
+    },
+    {
+      "date": "2026-09-02",
+      "costUsd": 1.23,
+      "totalTokens": 490000,
+      "activeMs": 3000000
+    },
+    {
+      "date": "2026-09-03",
+      "costUsd": 5.13,
+      "totalTokens": 2052000,
+      "activeMs": 14820000
+    },
+    {
+      "date": "2026-09-04",
+      "costUsd": 1.57,
+      "totalTokens": 629000,
+      "activeMs": 5640000
+    },
+    {
+      "date": "2026-09-05",
+      "costUsd": 6.18,
+      "totalTokens": 2474000,
+      "activeMs": 34860000
+    },
+    {
+      "date": "2026-09-06",
+      "costUsd": 0.8,
+      "totalTokens": 320000,
+      "activeMs": 2760000
+    },
+    {
+      "date": "2026-09-07",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-09-08",
+      "costUsd": 1.12,
+      "totalTokens": 450000,
+      "activeMs": 6180000
+    },
+    {
+      "date": "2026-09-09",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-09-10",
+      "costUsd": 0.54,
+      "totalTokens": 214000,
+      "activeMs": 1260000
+    },
+    {
+      "date": "2026-09-11",
+      "costUsd": 1.81,
+      "totalTokens": 725000,
+      "activeMs": 7440000
+    },
+    {
+      "date": "2026-09-12",
+      "costUsd": 0.61,
+      "totalTokens": 243000,
+      "activeMs": 2940000
+    },
+    {
+      "date": "2026-09-13",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-09-14",
+      "costUsd": 3.6,
+      "totalTokens": 1441000,
+      "activeMs": 17760000
+    },
+    {
+      "date": "2026-09-15",
+      "costUsd": 4.12,
+      "totalTokens": 1648000,
+      "activeMs": 24000000
+    },
+    {
+      "date": "2026-09-16",
+      "costUsd": 1.43,
+      "totalTokens": 571000,
+      "activeMs": 4620000
+    },
+    {
+      "date": "2026-09-17",
+      "costUsd": 6.4,
+      "totalTokens": 2559000,
+      "activeMs": 33840000
+    },
+    {
+      "date": "2026-09-18",
+      "costUsd": 3.88,
+      "totalTokens": 1551000,
+      "activeMs": 23100000
+    },
+    {
+      "date": "2026-09-19",
+      "costUsd": 5.21,
+      "totalTokens": 2084000,
+      "activeMs": 24420000
+    },
+    {
+      "date": "2026-09-20",
+      "costUsd": 1.24,
+      "totalTokens": 495000,
+      "activeMs": 5220000
+    },
+    {
+      "date": "2026-09-21",
+      "costUsd": 3.24,
+      "totalTokens": 1297000,
+      "activeMs": 10920000
+    },
+    {
+      "date": "2026-09-22",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-09-23",
+      "costUsd": 5.33,
+      "totalTokens": 2133000,
+      "activeMs": 30240000
+    },
+    {
+      "date": "2026-09-24",
+      "costUsd": 1.54,
+      "totalTokens": 615000,
+      "activeMs": 7980000
+    },
+    {
+      "date": "2026-09-25",
+      "costUsd": 5.18,
+      "totalTokens": 2074000,
+      "activeMs": 19140000
+    },
+    {
+      "date": "2026-09-26",
+      "costUsd": 0.69,
+      "totalTokens": 278000,
+      "activeMs": 3300000
+    },
+    {
+      "date": "2026-09-27",
+      "costUsd": 0,
+      "totalTokens": 0,
+      "activeMs": 0
+    },
+    {
+      "date": "2026-09-28",
+      "costUsd": 2.76,
+      "totalTokens": 1104000,
+      "activeMs": 7020000
+    }
+  ]
+}

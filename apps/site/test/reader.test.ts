@@ -195,10 +195,10 @@ describe('whole history (ADR 0038)', () => {
     },
   });
 
-  // Catches receipts counted over a history with a month missing: one block that failed makes
-  // the series unknown, never a shorter one. Also a read past the current month, which the
+  // Catches a month that failed read as a month without days, which would make every count over
+  // it look smaller than it was. Also a read past the current month, which the
   // route refuses, or before the first it serves.
-  it('reads every month signals serves, and nothing when one of them fails', async () => {
+  it('reads every month signals serves, and names the one that fails', async () => {
     const asked: string[] = [];
     let failing: string | null = null;
     server.use(
@@ -216,13 +216,14 @@ describe('whole history (ADR 0038)', () => {
       ...Array.from({ length: 12 }, (_, i) => `2025-${String(i + 1).padStart(2, '0')}`),
       ...Array.from({ length: 10 }, (_, i) => `2026-${String(i + 1).padStart(2, '0')}`),
     ]);
-    expect(whole?.days).toEqual(days);
+    expect(whole).toEqual({ days, failed: [], fetchedAt: '2026-10-26T08:55:00.000Z' });
 
     failing = '2025-06';
     const partial = await createReader({ ...options, mode: 'api' }).readHistory(
       'shipping-activity'
     );
-    expect(partial).toBeNull();
+    expect(partial.failed).toEqual(['2025-06']);
+    expect(partial.days).toEqual(days);
   });
 });
 
