@@ -125,7 +125,7 @@ test('names what could not be read and draws the rest', async ({ page }) => {
   await goBack(page, 11);
   const facts = scrub(page).locator('.room-scrub-facts li');
   await expect(facts.nth(2)).toHaveText('Listening for 16 Oct could not be read');
-  await expect(facts.nth(1)).toContainText('tokens on 16 Oct');
+  await expect(facts.nth(1)).toContainText('tokens on record for 16 Oct');
 });
 
 // Catches an announcement per key press, and a settled date that says nothing.

@@ -39,9 +39,11 @@ interface Days {
 
 export type Series = keyof Days;
 
-/** A month of a series as read: the days with a record, and when the source was last read. */
+/**
+ * A month of a series as read: the days with a record. The block's `fetchedAt` is left behind: it
+ * dates the source's latest snapshot, and proves nothing about a row an old pull last wrote.
+ */
 export interface Block<Day> {
-  fetchedAt: string;
   days: Day[];
 }
 
@@ -130,9 +132,8 @@ export function readBlock<Name extends Series>(
     now
   );
   if (answer === undefined) return;
-  const { data, fetchedAt } = answer;
+  const { data } = answer;
   return {
-    fetchedAt,
     days:
       series === 'llm-usage'
         ? (data as UsageDay[]).map(({ date, totalTokens }) => ({ date, totalTokens }) as never)
@@ -140,7 +141,7 @@ export function readBlock<Name extends Series>(
   };
 }
 
-/** `, so far, as of 26 Oct, 09:00` while `asOf` is before `end`: the day was still running. */
+/** `, so far, as of 26 Oct, 09:00` while a row's own `asOf` is before `end`. */
 const soFar = (asOf: string, end: number) =>
   Date.parse(asOf) < end ? `, so far, as of ${rabatStamp(asOf)}` : '';
 
@@ -172,15 +173,10 @@ function pinsOn(date: string, held: Held<ShippingActivityDay>): RoomState['pins'
     .slice(0, pinSlots);
   // A day's names may be withheld (ADR 0038), and what it counted still happened.
   const pins = named.length > 0 ? named : pin('', day);
-  const zone = soFar(held.fetchedAt, utcDate(date) + dayMs);
-  return {
-    pins,
-    latest: null,
-    words:
-      pins.length === 0
-        ? `Nothing shipped on ${dayWords(date)}, UTC${zone}`
-        : `${shipped(day)} on ${dayWords(date)}, UTC${zone}`,
-  };
+  // A shipping row does not say when it was last written, so it may have stopped short of the
+  // day's end: `on record` is all it can claim, zero included.
+  const what = pins.length === 0 ? 'Nothing shipped' : shipped(day);
+  return { pins, latest: null, words: `${what} on record for ${dayWords(date)}, UTC` };
 }
 
 function screenOn(date: string, lookup: Lookup): RoomState['screen'] {
@@ -199,8 +195,8 @@ function screenOn(date: string, lookup: Lookup): RoomState['screen'] {
   if (held === 'failed') return { cells, words: unread('Agent usage', date) };
   const day = held.days.find((entry) => entry.date === date);
   if (day === undefined) return { cells, words: noRecord('agent usage', date) };
-  const zone = soFar(held.fetchedAt, rabatEnd(date));
-  return { cells, words: `${tokens(day.totalTokens)} tokens on ${dayWords(date)}${zone}` };
+  // As for shipping: a usage row cannot show it covers the whole day.
+  return { cells, words: `${tokens(day.totalTokens)} tokens on record for ${dayWords(date)}` };
 }
 
 function recordOn(date: string, held: Held<ListeningDay>): RoomState['record'] {

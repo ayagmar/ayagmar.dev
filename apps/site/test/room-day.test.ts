@@ -53,8 +53,8 @@ describe('a past date', () => {
     expect(facts.record.words).toMatch(
       /^Last played .+ by .+ · 16 Oct, \d\d:\d\d\. \d+ plays on 16 Oct$/
     );
-    expect(facts.screen.words).toMatch(/ tokens on 16 Oct$/);
-    expect(facts.pins.words).toMatch(/ on 16 Oct, UTC$/);
+    expect(facts.screen.words).toMatch(/ tokens on record for 16 Oct$/);
+    expect(facts.pins.words).toMatch(/ on record for 16 Oct, UTC$/);
   });
 
   // Catches a scrobble reading as a claim about now: the fixture's newest track, from a block
@@ -74,7 +74,32 @@ describe('a past date', () => {
         `${daysFixtures.listening.ok.days.at(-1)?.last?.artist} · 26 Oct, 08:12. ` +
         '4 plays on 26 Oct, so far, as of 26 Oct, 09:00'
     );
-    expect(dayFacts('2026-10-26', fixtures).pins.words).toMatch(/so far, as of 26 Oct, 09:00$/);
+  });
+
+  // Catches a morning's row read as the whole day once the source moves on: pushes rewrite only
+  // the newest 35 days, so a row can stay partial under a block fetched months later.
+  it('never reads a whole day into a row a newer snapshot left alone', () => {
+    const usage = { date: '2026-10-16', totalTokens: 0 };
+    const counts = { pushes: 0, commits: 0, merges: 0, releases: 0, stars: 0 };
+    const shippingDay = { date: '2026-10-16', ...counts, repos: [], reposComplete: true };
+    const later = (series: Series, day: unknown) =>
+      readBlock(
+        series,
+        '2026-10',
+        {
+          ...body(series, '2026-10'),
+          fetchedAt: '2026-12-20T09:00:00Z',
+          data: { days: [day] },
+        },
+        Date.parse('2026-12-20T12:00:00Z')
+      ) as Held<never>;
+    const held = ((series: Series, month: string) => {
+      if (series === 'llm-usage') return later(series, usage);
+      return series === 'shipping-activity' ? later(series, shippingDay) : fixtures(series, month);
+    }) as Lookup;
+    const facts = dayFacts('2026-10-16', held);
+    expect(facts.screen.words).toBe('0 tokens on record for 16 Oct');
+    expect(facts.pins.words).toBe('Nothing shipped on record for 16 Oct, UTC');
   });
 
   // Catches a checked zero and a missing row collapsing into one, or a failed read into either:
@@ -120,10 +145,10 @@ describe('a past date', () => {
       repos: [],
       reposComplete: false,
     };
-    const held: Block<never> = { fetchedAt: '2026-10-26T09:00:00Z', days: [day as never] };
+    const held: Block<never> = { days: [day as never] };
     const { pins, words } = dayFacts('2026-10-16', with_('shipping-activity', held)).pins;
     expect(pins).toEqual([{ repo: '', date: '2026-10-16', kind: 'merge', count: 3 }]);
-    expect(words).toBe('2 merges · 3 commits in 1 push on 16 Oct, UTC');
+    expect(words).toBe('2 merges · 3 commits in 1 push on record for 16 Oct, UTC');
   });
 
   // Catches stars or an empty push pinned as shipping: neither is work.
@@ -135,10 +160,10 @@ describe('a past date', () => {
       repos: [{ repo: 'ayagmar/a', ...counts }],
       reposComplete: true,
     };
-    const held: Block<never> = { fetchedAt: '2026-10-26T09:00:00Z', days: [day as never] };
+    const held: Block<never> = { days: [day as never] };
     const { pins, words } = dayFacts('2026-10-16', with_('shipping-activity', held)).pins;
     expect(pins).toEqual([]);
-    expect(words).toBe('Nothing shipped on 16 Oct, UTC');
+    expect(words).toBe('Nothing shipped on record for 16 Oct, UTC');
   });
 });
 
