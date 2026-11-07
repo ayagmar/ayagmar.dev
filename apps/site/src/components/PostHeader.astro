@@ -15,21 +15,16 @@ interface Props {
   linkTags?: boolean;
   /** The post's receipt line (src/lib/days.ts), when its frontmatter gives a range. */
   receipt?: string | null;
+  /** The post's art as SVG (ADR 0027); without it the header has no figure. */
+  art?: string | undefined;
 }
 
-const { post, linkTags = true, receipt = null } = Astro.props;
+const { post, linkTags = true, receipt = null, art } = Astro.props;
 const { title, date, updated, tags, draft, projects = [] } = post.data;
-// The `art` slot holds per-post art (ADR 0027); without it the header has no figure. Search
-// skips it: the ascii kind is text.
-const hasArt = Astro.slots.has('art');
 ---
 
 <header class="post-header">
-  {hasArt && (
-    <figure class="post-art" data-pagefind-ignore>
-      <slot name="art" />
-    </figure>
-  )}
+  {art !== undefined && <figure class="post-art" set:html={art} />}
   <h1>{title}</h1>
   {draft && (
     <p>

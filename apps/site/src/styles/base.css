@@ -1,5 +1,6 @@
-/* The late-night room (ADR 0026), quiet around it: the room is the only picture; the rest is
-   type, hairline rules and one accent, the lamp. One token layer for day and night, mobile first.
+/* The late-night room (ADR 0026), quiet around it: the room and a post's dots are the pictures;
+   the rest is type, hairline rules and one accent, the lamp. One token layer for day and night,
+   mobile first.
    Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
    It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
 
@@ -48,6 +49,11 @@
   --heat-2: light-dark(oklch(0.57 0.085 66), oklch(0.57 0.075 66));
   --heat-3: light-dark(oklch(0.5 0.085 62), oklch(0.64 0.08 70));
   --heat-4: light-dark(oklch(0.435 0.08 58), oklch(0.71 0.085 74));
+  /* Post art (ADR 0027), every one a room colour: lit cream, indigo shade and amber at night, ink,
+     bone and ember by day, when lit planes print as ink. */
+  --art-bright: light-dark(#14172e, #f0e6c8);
+  --art-dim: light-dark(#968a70, #6470aa);
+  --art-accent: light-dark(#b06846, #fac468);
 
   /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
   --paper: light-dark(#fbf6ea, #efe3c6);
@@ -1263,25 +1269,55 @@ main:has(.toc) .reader ~ .project-card {
   margin: 0 0 1.5rem;
 }
 
-/* A faint edge in the text colour, so the art holds its shape on either ground. */
-.post-art svg,
+/* A faint edge in the text colour, so an image holds its shape on either ground. */
 .prose img {
   outline: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
   outline-offset: -1px;
 }
 
-/* Per-post art (ADR 0027): build-time SVG in the room's colours, its own background in both
-   themes. */
+/* Per-post art (ADR 0027): dots straight on the page, its own ground and the lamp's pool behind
+   them. Light by night; by day, ink. The SVG's attributes keep the night colours and paint a
+   plate for the link-preview card, which has no stylesheet. Every colour is one of the room's. */
 .post-art svg {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: calc(2 * var(--radius));
 }
 
-.post-art text {
-  font: 10px var(--mono);
-  white-space: pre;
+.art-dots .ground {
+  fill: transparent;
+}
+
+.art-dots .bright {
+  stroke: var(--art-bright);
+}
+
+.art-dots .dim {
+  stroke: var(--art-dim);
+}
+
+.art-dots .accent {
+  stroke: var(--art-accent);
+}
+
+/* Paper is white whichever theme is chosen, and browsers drop backgrounds when printing. */
+@media print {
+  .art-dots {
+    color-scheme: light;
+  }
+}
+
+/* SVG keeps its author colours in forced colors, and one of them could be the user's canvas. */
+@media (forced-colors: active) {
+  .art-dots .ground {
+    fill: none;
+  }
+
+  .art-dots .bright,
+  .art-dots .dim,
+  .art-dots .accent {
+    stroke: CanvasText;
+  }
 }
 
 .prose {
@@ -1593,7 +1629,6 @@ main:has(.toc) .reader ~ .project-card {
   }
 
   /* At the screen edge, square corners. */
-  .reader .post-art svg,
   .reader pre {
     border-radius: 0;
   }

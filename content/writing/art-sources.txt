@@ -1,0 +1,6 @@
+Where each map in this folder comes from. The source images are not in this repository.
+
+ephemeral-runners.art.txt
+  Bronze statuette of a horse, Greek, The Metropolitan Museum of Art, object 251268.
+  https://www.metmuseum.org/art/collection/search/251268
+  Met Open Access, CC0. Image: https://images.metmuseum.org/CRDImages/gr/web-large/TOAH_DP120127.jpg

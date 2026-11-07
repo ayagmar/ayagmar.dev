@@ -15,6 +15,7 @@ import {
 } from 'node:fs';
 import { connect } from 'node:net';
 import { join } from 'node:path';
+import { isPostMap } from '../apps/site/src/lib/art.ts';
 import { buildOrigin } from '../apps/site/src/lib/og.ts';
 import { siteUrl } from '../apps/site/src/lib/site.ts';
 
@@ -291,6 +292,19 @@ function publishBranch(slug: string): string {
   throw new UsageError(`No Preview URL fits a branch for ${slug}.`);
 }
 
+/**
+ * What a post's map brings to its publishing commit: the map and the record of its source. Only a
+ * new or changed map does, so a post needs no pull request of its own to land its map first.
+ */
+function mapFiles(text: string, changed: string[]): string[] {
+  const art = frontmatter(text)
+    .lines.map((line) => /^art:\s*['"]?([^\s'"#]+)/.exec(line)?.[1])
+    .find((value) => value !== undefined);
+  if (art === undefined || !isPostMap(art)) return [];
+  const map = `content/writing/${art}`;
+  return changed.includes(map) ? [map, 'content/writing/art-sources.txt'] : [];
+}
+
 function publish(slug: string, dryRun: boolean) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
     throw new UsageError(`"${slug}" is not a slug; pass the file name without .md.`);
@@ -301,11 +315,17 @@ function publish(slug: string, dryRun: boolean) {
   if (!isDraft(text)) throw new UsageError(`${file} is not a draft (no draft: true).`);
 
   // Not trimmed: each line starts with two status columns, the first often a space.
-  const others = execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], {
+  const changes = execFileSync('git', ['status', '--porcelain', '--untracked-files=all'], {
     encoding: 'utf8',
   })
     .split('\n')
-    .filter((line) => line !== '' && line.slice(3) !== file);
+    .filter((line) => line !== '');
+  const carried = mapFiles(
+    text,
+    changes.map((line) => line.slice(3))
+  );
+  const files = [file, ...carried];
+  const others = changes.filter((line) => !files.includes(line.slice(3)));
   if (others.length > 0)
     throw new UsageError(
       `Other changes are in the tree; commit or set them aside first:\n${others.join('\n')}`
@@ -336,16 +356,19 @@ function publish(slug: string, dryRun: boolean) {
     console.log(`Would publish ${file}:
   1. set draft: false and date: ${today()} (updated stays)
   2. just site-build (restores the draft if it fails)
-  3. git switch -c ${branch} and commit "${message}"
+  3. git switch -c ${branch} and commit "${message}" with ${files.join(', ')}
   4. git push -u origin ${branch}
   5. gh pr create --base main --title "${message}"
 Preview, once Workers Builds finishes: ${preview}`);
     return;
   }
 
-  // The draft's index entry before anything changes ("mode oid stage\tpath", or none), to put
+  // Each file's index entry before anything changes ("mode oid stage\tpath", or none), to put
   // back exactly if the commit fails: a staged draft stays staged, an untracked one untracked.
-  const staged = /^(\d+) ([0-9a-f]+) 0\t/.exec(git('ls-files', '--stage', '--', file));
+  const entries = files.map((path) => ({
+    path,
+    staged: /^(\d+) ([0-9a-f]+) 0\t/.exec(git('ls-files', '--stage', '--', path)),
+  }));
   writeFileSync(path, published(text));
   try {
     execFileSync('just', ['site-build'], { stdio: 'inherit' });
@@ -364,8 +387,8 @@ Preview, once Workers Builds finishes: ${preview}`);
   try {
     run('git', 'switch', '--quiet', '-c', branch);
     created = true;
-    run('git', 'add', '--', file);
-    run('git', 'commit', '--quiet', '-m', message, '--', file);
+    run('git', 'add', '--', ...files);
+    run('git', 'commit', '--quiet', '-m', message, '--', ...files);
   } catch {
     // Nothing is committed: put the branch, the index entry and the draft back as they were.
     const quiet = (...args: string[]) => execFileSync('git', args, { stdio: 'ignore' });
@@ -388,12 +411,14 @@ Preview, once Workers Builds finishes: ${preview}`);
       notes.push(
         `${branch} could not be made (did something else just create it?) and was not touched.`
       );
-    try {
-      if (staged)
-        quiet('update-index', '--add', '--cacheinfo', `${staged[1]},${staged[2]},${file}`);
-      else quiet('rm', '--cached', '--quiet', '--ignore-unmatch', '--', file);
-    } catch {
-      notes.push(`The index entry of ${file} could not be put back; check \`git status\`.`);
+    for (const { path, staged } of entries) {
+      try {
+        if (staged)
+          quiet('update-index', '--add', '--cacheinfo', `${staged[1]},${staged[2]},${path}`);
+        else quiet('rm', '--cached', '--quiet', '--ignore-unmatch', '--', path);
+      } catch {
+        notes.push(`The index entry of ${path} could not be put back; check \`git status\`.`);
+      }
     }
     writeFileSync(path, text);
     throw new UsageError(
@@ -426,7 +451,7 @@ Preview, once Workers Builds finishes: ${preview}`);
         '--title',
         message,
         '--body',
-        `Publishes \`${file}\` at \`${pagePath(kind, slug)}\`. \`just site-build\` passed with it.`,
+        `Publishes \`${files.join('`, `')}\` at \`${pagePath(kind, slug)}\`. \`just site-build\` passed with it.`,
       ],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }
     ).trim();

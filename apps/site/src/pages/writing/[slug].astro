@@ -9,7 +9,7 @@ import ReplyByEmail from '../../components/ReplyByEmail.astro';
 import SeriesLine from '../../components/SeriesLine.astro';
 import Toc from '../../components/Toc.astro';
 import Base from '../../layouts/Base.astro';
-import { renderArt } from '../../lib/art.ts';
+import { renderArt } from '../../lib/art-files.ts';
 import { postReceipt, projectRepos } from '../../lib/days.ts';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { postOgImage } from '../../lib/og.ts';
@@ -78,9 +78,11 @@ const structuredData = [
 <Base {title} description={summary} {image} {structuredData} noindex={draft}>
   {hasDiagrams && <link slot="head" rel="stylesheet" href="/diagrams.css">}
   <article class="reader" data-pagefind-body>
-    <PostHeader post={post} receipt={receipt}>
-      {art !== undefined && <Fragment slot="art" set:html={renderArt(post.id, art)} />}
-    </PostHeader>
+    <PostHeader
+      post={post}
+      receipt={receipt}
+      art={art === undefined ? undefined : renderArt(art)}
+    />
     <SeriesLine current={post.id} parts={series} />
     <Toc headings={headings} />
     <div class="prose">

@@ -4,7 +4,7 @@
 
 1. `just post "Title of the post"` writes `content/writing/<slug>.md` as a draft (the slug is the URL, `/writing/<slug>`), opens it in `$VISUAL` or `$EDITOR` (without `--wait`, so set it to a GUI editor), starts the dev server with drafts shown and opens the page in the browser. The page reloads on every save. If this checkout's dev server with drafts is already on port 4321, it uses that one; anything else there (plain `just dev`, another worktree or project) is refused with what to run. `--no-open` only writes the file.
 2. `just drafts` starts the same dev server later and prints the URL of every draft post and note.
-3. `just publish <slug>` publishes it. It needs a clean tree apart from that file, `HEAD` at `origin/main` and `gh` logged in. It sets `draft: false` and `date` to today (UTC; `updated` stays as it is), runs `just site-build`, which fails on a bad field or an unnamed diagram (the file goes back to a draft if it does), then commits `content(writing): publish <slug>` on a new branch `content/<slug>`, pushes it and opens a pull request. If the commit fails, the draft and the branch are put back; if the push or the pull request fails, the commit stays and it prints the commands that finish the job. It prints the pull request and the page's Preview URL, `https://content-<slug>-min7-site.ayagmar.workers.dev/writing/<slug>`, live once Workers Builds finishes. A slug over 45 characters is cut short in the branch name so that URL still fits. `--dry-run` runs the checks and prints the steps without changing anything.
+3. `just publish <slug>` publishes it. It needs a clean tree apart from that file and a new map of its art ([docs/art.md](docs/art.md)), `HEAD` at `origin/main` and `gh` logged in. It sets `draft: false` and `date` to today (UTC; `updated` stays as it is), runs `just site-build`, which fails on a bad field or an unnamed diagram (the file goes back to a draft if it does), then commits `content(writing): publish <slug>` on a new branch `content/<slug>`, pushes it and opens a pull request. If the commit fails, the draft and the branch are put back; if the push or the pull request fails, the commit stays and it prints the commands that finish the job. It prints the pull request and the page's Preview URL, `https://content-<slug>-min7-site.ayagmar.workers.dev/writing/<slug>`, live once Workers Builds finishes. A slug over 45 characters is cut short in the branch name so that URL still fits. `--dry-run` runs the checks and prints the steps without changing anything.
 4. Merge the pull request. `main` deploys to ayagmar.dev, the feeds and search index included. `just publish` never merges.
 
 Frontmatter:
@@ -26,13 +26,14 @@ Any other field fails the build, so a typo such as `sumary:` does not pass silen
 
 A series counts the posts the build shows: published ones in production, drafts too in Previews. A series with one part shown has no line.
 
-`art` draws a small picture above the title at build time, in the room's colours ([ADR 0027](docs/adr/0027-room-details-and-per-post-art.md)):
+`art` draws a figure in dots above the title at build time ([ADR 0027](docs/adr/0027-room-details-and-per-post-art.md)). Name one of the room's objects, or a map file beside the post:
 
 ```yaml
-art: { kind: dither, palette: night, seed: 2 }
+art: lamp
+art: my-post.art.txt
 ```
 
-`kind` is `ascii`, `dither` or `pattern`. `palette` is `night` (the default), `lamp`, `screen`, `zellige` or `wood`. `seed` is a whole number, 0 by default; change it until you like the picture. The same post and seed always give the same picture.
+The objects are `lamp`, `notebook`, `monitor`, `record`, `cat`, `window` and `tea`. [docs/art.md](docs/art.md) shows how to make a map.
 
 `receipts` puts one line under the post's header with what the daily history recorded over a range of days, both ends included: PRs merged, commits, agent tokens and the days with any of them.
 

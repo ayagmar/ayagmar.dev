@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import sharp from 'sharp';
 import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 // The page background of each theme (--ground in base.css).
@@ -361,9 +362,8 @@ test.describe('on a phone', () => {
   });
 });
 
-// The three placeholder drafts carry the three kinds of art (ADR 0027): ascii, dither, pattern.
-// Their pages, and home listing them, are checked on the drafts build; the ascii one,
-// /writing/token-logs, in reader.spec.ts.
+// The three placeholder drafts carry art (ADR 0027). Their pages, and home listing them, are
+// checked on the drafts build; /writing/token-logs in reader.spec.ts.
 for (const [path, details] of [
   ['/', { tag: '@drafts' }],
   ['/writing/ephemeral-runners', { tag: '@drafts' }],
@@ -605,14 +605,102 @@ for (const colorScheme of ['light', 'dark'] as const) {
   });
 }
 
-// Catches art missing from a post that asks for it, or the wrong kind drawn.
-test('each post draws the art its frontmatter asks for', { tag: '@drafts' }, async ({ page }) => {
-  for (const [path, kind] of [
-    ['/writing/token-logs', 'ascii'],
-    ['/writing/ephemeral-runners', 'dither'],
-    ['/writing/cache-reads', 'pattern'],
-  ] as const) {
-    await page.goto(path);
-    await expect(page.locator(`.post-art svg.art-${kind}`)).toBeVisible();
+/**
+ * Pixels of the post's art at least `apart` from the ground under it, summed over red, green and
+ * blue. Cream on white is 95 apart, the palest ink on white over 350. The shot loses its edge
+ * because a fractional layout leaves a column of the page's background in it, enough to pass as ink.
+ */
+async function inkPixels(page: Page, apart: number) {
+  const shot = sharp(await page.locator('.post-art svg').screenshot());
+  const { width = 0, height = 0 } = await shot.metadata();
+  const { data, info } = await shot
+    .extract({ left: 2, top: 2, width: width - 4, height: height - 4 })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  let ink = 0;
+  for (let at = 0; at < data.length; at += info.channels) {
+    const distance = [0, 1, 2].reduce(
+      (sum, channel) => sum + Math.abs((data[at + channel] ?? 0) - (data[channel] ?? 0)),
+      0
+    );
+    if (distance >= apart) ink++;
   }
-});
+  return ink;
+}
+
+/** The art of a post with all three tones, cut down to one, as a map of that tone would draw. */
+async function oneTone(page: Page, tone: string) {
+  await page.goto('/writing/cache-reads');
+  await page.locator('.post-art svg').evaluate((svg, keep) => {
+    for (const path of svg.querySelectorAll('path')) {
+      if (!path.classList.contains(keep)) path.remove();
+    }
+  }, tone);
+}
+
+// Catches art that vanishes on paper: the night theme's cream strokes print on white, and the
+// page's background does not print at all. A map may be a single tone, so each must show alone.
+for (const theme of ['night', 'day']) {
+  test(`post art prints dark on white with the ${theme} theme`, { tag: '@drafts' }, async ({
+    page,
+  }) => {
+    await page.addInitScript((choice) => localStorage.setItem('theme', choice), theme);
+    await page.emulateMedia({ media: 'print' });
+    for (const tone of ['bright', 'dim', 'accent']) {
+      await oneTone(page, tone);
+      await page.locator('.post-art svg').evaluate((svg) => {
+        (svg as SVGElement).style.background = '#fff';
+      });
+      expect(await inkPixels(page, 250), tone).toBeGreaterThan(50);
+    }
+  });
+}
+
+// Catches art lost in forced colors: SVG keeps its author colours there, so a tone can equal the
+// user's canvas. Every tone must take the text colour, and no plate may be painted.
+for (const colorScheme of ['dark', 'light'] as const) {
+  test(`post art uses the text colour in forced colors on a ${colorScheme} canvas`, {
+    tag: '@drafts',
+  }, async ({ page }) => {
+    await page.emulateMedia({ forcedColors: 'active', colorScheme });
+    for (const tone of ['bright', 'dim', 'accent']) {
+      await oneTone(page, tone);
+      expect(await inkPixels(page, 90), tone).toBeGreaterThan(50);
+    }
+    await page.goto('/writing/cache-reads');
+    const seen = await page.locator('.post-art svg').evaluate((svg) => ({
+      plate: getComputedStyle(svg.querySelector('.ground') as Element).fill,
+      tones: [...svg.querySelectorAll('path')].map((path) => getComputedStyle(path).stroke),
+      text: getComputedStyle(document.body).color,
+    }));
+    expect(seen.plate).toBe('none');
+    expect(new Set([...seen.tones, seen.text]).size).toBe(1);
+  });
+}
+
+// Catches art missing from a post that asks for it, drawn on a post that does not, or a tone that
+// matches the ground it sits on and leaves the figure invisible in one theme.
+for (const colorScheme of ['dark', 'light'] as const) {
+  test(`post art shows against the ${colorScheme} ground`, { tag: '@drafts' }, async ({ page }) => {
+    await page.emulateMedia({ colorScheme });
+    for (const path of [
+      '/writing/token-logs',
+      '/writing/ephemeral-runners',
+      '/writing/cache-reads',
+    ]) {
+      await page.goto(path);
+      await expect(page.locator('.post-art svg.art-dots')).toBeVisible();
+      const seen = await page.locator('.post-art svg').evaluate((svg) => ({
+        ground: getComputedStyle(document.body).backgroundColor,
+        plate: getComputedStyle(svg.querySelector('.ground') as Element).fill,
+        tones: [...svg.querySelectorAll('path')].map((path) => getComputedStyle(path).stroke),
+      }));
+      expect(seen.plate).toBe('rgba(0, 0, 0, 0)');
+      expect(seen.tones).toHaveLength(3);
+      expect(new Set([...seen.tones, seen.ground]).size).toBe(4);
+    }
+    await page.goto('/writing/ricing-niri');
+    await expect(page.locator('.post-art')).toHaveCount(0);
+  });
+}

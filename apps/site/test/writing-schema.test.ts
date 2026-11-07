@@ -58,14 +58,14 @@ describe('writing frontmatter', () => {
       'updated: must not be before date',
     ],
     [
-      'unknown art kind',
-      { art: { kind: 'mosaic' } },
-      'art.kind: must be one of ascii, dither, pattern',
+      'unknown room object',
+      { art: 'kettle' },
+      'art: must be one of lamp, notebook, monitor, record, cat, window, tea, or a map beside the post like "my-post.art.txt"',
     ],
     [
-      'unknown art palette',
-      { art: { kind: 'dither', palette: 'neon' } },
-      'art.palette: must be one of night, lamp, screen, zellige, wood',
+      'the retired art object',
+      { art: { kind: 'dither', palette: 'night', seed: 2 } },
+      'art: takes one name, not { kind, palette, seed }: a room object, as in "art: record", or a map beside the post, as in "art: my-post.art.txt"',
     ],
     [
       'receipts ending before they start',
@@ -82,23 +82,16 @@ describe('writing frontmatter', () => {
       { receipts: { from: '2026-10-12', to: '2026-10-20', repos: ['runnerd'] } },
       'receipts.repos.0: must be a repository like "owner/name"',
     ],
-    [
-      'fractional art seed',
-      { art: { kind: 'dither', seed: 1.5 } },
-      expect.stringMatching(/^art\.seed: /),
-    ],
   ])('rejects %s', (_case, change, expected) => {
     expect(problems({ ...valid, ...change })).toEqual([expected]);
   });
 
-  // Catches art appearing on posts that did not ask for it, or a kind without its defaults.
-  it('leaves art off unless asked, and defaults its seed and palette', () => {
+  // Catches art appearing on posts that did not ask for it, or a good name refused.
+  it('leaves art off unless asked, and takes a room object or a map beside the post', () => {
     expect(writingSchema.parse(valid).art).toBeUndefined();
-    expect(writingSchema.parse({ ...valid, art: { kind: 'pattern' } }).art).toEqual({
-      kind: 'pattern',
-      seed: 0,
-      palette: 'night',
-    });
+    expect(writingSchema.parse({ ...valid, art: 'lamp' }).art).toBe('lamp');
+    const map = 'ephemeral-runners.art.txt';
+    expect(writingSchema.parse({ ...valid, art: map }).art).toBe(map);
   });
 
   it('reads unquoted YAML dates and quoted ISO dates as the same day', () => {

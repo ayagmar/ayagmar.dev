@@ -6,7 +6,7 @@ summary: 'Placeholder draft for layout and tests. Session logs, <usage> blocks &
 tags: [llm, tooling]
 projects: [llm-usage-metrics]
 receipts: { from: 2026-10-12, to: 2026-10-20 }
-art: { kind: ascii, palette: screen }
+art: notebook
 draft: true
 ---
 

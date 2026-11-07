@@ -1,6 +1,6 @@
 // A post's link-preview image: its art (ADR 0027), or the night room, and its title.
 import type { APIRoute, GetStaticPaths } from 'astro';
-import { renderArt } from '../../../lib/art.ts';
+import { renderArt } from '../../../lib/art-files.ts';
 import { renderOgCard } from '../../../lib/og-card.ts';
 import { getPosts } from '../../../lib/posts.ts';
 import { site } from '../../../lib/site.ts';
@@ -18,7 +18,7 @@ export const GET: APIRoute<Awaited<ReturnType<typeof getStaticPaths>>[number]['p
   const png = await renderOgCard({
     title,
     line: `${site.name} · Writing`,
-    art: art === undefined ? undefined : renderArt(post.id, art),
+    art: art === undefined ? undefined : renderArt(art),
   });
   return new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } });
 };
