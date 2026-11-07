@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { type Art, artKinds, artPalettes, renderArt, roomPalette } from '../src/lib/art.ts';
+import { moonColour } from '../src/lib/sky.ts';
 
 const hex = ([r, g, b]: readonly number[]) =>
   `#${[r, g, b].map((c) => (c ?? 0).toString(16).padStart(2, '0')).join('')}`;
@@ -47,5 +48,17 @@ describe('post art', () => {
     );
     expect(colors).toHaveLength(41);
     expect(colors).toEqual(roomPalette.map((color) => [...color]));
+  });
+
+  // Catches a colour in room.css or the moon's leaving the palette, which only a test can hold:
+  // CSS cannot import it, and the scene around them would stop matching.
+  it('holds the room CSS and the moon to the palette', () => {
+    const css = readFileSync(join(import.meta.dirname, '..', 'src/styles/room.css'), 'utf8');
+    const colours = [...css.matchAll(/--room-[\w-]+: (#[0-9a-f]{6});/g)].map(([, value]) => value);
+    expect(colours).toHaveLength(7);
+    const room = roomPalette.map(hex);
+    expect([...colours, moonColour].filter((colour) => !room.includes(colour as string))).toEqual(
+      []
+    );
   });
 });
