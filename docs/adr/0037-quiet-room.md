@@ -1,6 +1,6 @@
 # 0037. The quiet room
 
-Status: accepted, 2026-11-01. Amended 2026-11-06: post art has no plate, so no corners or outline (ADR 0027). Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp, and keeps no record apart from zero; home's list steps back on a wide screen; a post ends in small print; home has an entrance once per session. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
+Status: accepted, 2026-11-01. Amended 2026-11-06: a post's figure in dots is the one other picture, and has no plate, so no corners or outline (ADR 0027). Amended 2026-11-06: a page change fades in 160 ms (ADR 0042); every heat view shares one level function and one ramp, and keeps no record apart from zero; home's list steps back on a wide screen; a post ends in small print; home has an entrance once per session. Supersedes ADR 0034's windows, type and palette. Amends ADR 0026 (visual system) and ADR 0017 (font budget).
 
 ## Context
 
@@ -30,8 +30,8 @@ After the quiet windows (ADR 0034) the owner still found the site cartoony and g
 - `-webkit-font-smoothing: antialiased` on the whole page.
 - `text-wrap: balance` on headings, `text-wrap: pretty` on paragraphs, list items and definitions.
 - `tabular-nums` on every time, number and data cell, so a ticking "3 minutes ago" or a column of counts does not shift.
-- Concentric corners: controls (inputs, buttons, `kbd`, inline code) take `--radius` (4 px); the dialogs and the Menu popover, with 1 rem of padding, take `--radius` plus 1 rem, so a Close button or the search field in a corner sits concentric with it. Code blocks and post art take twice `--radius`, and square corners where they run to a phone's edge.
-- Post art and images in posts have a 1 px outline in the text colour at 10%, so they hold their edge on either ground.
+- Concentric corners: controls (inputs, buttons, `kbd`, inline code) take `--radius` (4 px); the dialogs and the Menu popover, with 1 rem of padding, take `--radius` plus 1 rem, so a Close button or the search field in a corner sits concentric with it. Code blocks take twice `--radius`, and square corners where they run to a phone's edge.
+- Images in posts have a 1 px outline in the text colour at 10%, so they hold their edge on either ground.
 - Hover changes colour with a 120 ms transition, never a keyframe animation, so it stays interruptible. The transition applies only while hovered, so a change of theme recolours the page in one frame. The dialogs and the Menu open without animation. The one authored entrance is home's, below. The reduced-motion rule takes every transition and animation to nothing.
 
 **The entrance.** The lamp's switch-on is the site's best moment, so on the first page of a session, if that page is home, the name, the role and the list follow it in, 80 ms apart from 0.4 s, by opacity and 6 px of `translate`. It runs behind the lamp, ends before it, and never touches layout. It takes `theme.js` to 1,409 B of its 1,420 B allowance, so the next addition there needs a new cap. `theme.js` sets `data-entrance` before the first paint, so without scripts or with blocked storage nothing is hidden and nothing plays. It sets it only under `prefers-reduced-motion: no-preference`, and takes it off when the list's animation ends, when any animation is cancelled and on `pagehide`: left on, turning reduced motion on and off again would replay the entrance, and so would a page restored from the back/forward cache. Any first page marks the session, so a reload, a return to home and arriving through a view transition all stay still.
