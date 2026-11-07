@@ -13,11 +13,11 @@ import {
   parseBody,
   type UpstreamResponse,
 } from './http.ts';
-import { rabatPoint, weatherDaysHistory } from './weather-days.ts';
+import { rabatQuery, weatherDaysHistory } from './weather-days.ts';
 
 // Current values only, no hourly or daily arrays, in fixed units and Unix time.
 const url = `https://api.open-meteo.com/v1/forecast?${new URLSearchParams({
-  ...rabatPoint,
+  ...rabatQuery,
   current: 'weather_code,cloud_cover,precipitation,wind_speed_10m,is_day,temperature_2m',
   temperature_unit: 'celsius',
   wind_speed_unit: 'kmh',

@@ -8,20 +8,19 @@
  * year has some (recording began in 2026), so facts over them stay and say they are "on record".
  */
 import type { LlmUsageDay, ShippingActivityDay } from '@min7/contracts';
-import { rabatDate } from '@min7/contracts/rabat';
+import { dayMs, isoDate, rabatDate, utcDate } from '@min7/contracts/rabat';
 import {
-  count,
   type ShippingStrip,
   type StripCell,
   shippedWords,
   stripCells,
   stripOf,
 } from '../data/format.ts';
-import { type Counts, dayPath, shipped, shippedCount } from './day-words.ts';
-import { type Published, range, repoHref, short, unnamedRepos, unread } from './days.ts';
+import { type Counts, dayPath, shipped, shippedCount, shortDate } from './day-words.ts';
+import { type Published, range, repoHref, unnamedRepos, unread } from './days.ts';
 import { hours } from './llm-usage-panel.ts';
-import { plural } from './plural.ts';
-import { dayMs, isoDate, repoName, tokens, utcDate } from './words.ts';
+import { count, plural } from './plural.ts';
+import { repoName, tokens } from './words.ts';
 
 /** A series as the build read it (`readHistory`). */
 interface Series<Day> {
@@ -252,7 +251,7 @@ function shippingFacts(
       label: `Busiest day${end}`,
       value: [
         {
-          text: short(busiest.date),
+          text: shortDate(busiest.date),
           path: pages.has(busiest.date) ? dayPath(busiest.date) : null,
         },
         text(`: ${shippedWords(shippedCount(busiest))}`),
@@ -389,7 +388,7 @@ function usageYear(
               label: `Busiest day${end}`,
               value: [
                 {
-                  text: short(busiest.date),
+                  text: shortDate(busiest.date),
                   path: pages.has(busiest.date) ? dayPath(busiest.date) : null,
                 },
                 text(`: ${tokens(busiest.totalTokens)} tokens`),
@@ -417,7 +416,7 @@ export function yearPages(
   now: Date,
   pages: ReadonlySet<string>
 ): YearPage[] {
-  const shippingToday = now.toISOString().slice(0, 10);
+  const shippingToday = isoDate(now.getTime());
   const usageToday = rabatDate(now.getTime());
   // A month's block holds whatever is stored for it, so a clock ahead of the build's can bring a
   // row for tomorrow. Each series is cut at its own today before anything counts it.

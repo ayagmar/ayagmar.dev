@@ -1,9 +1,18 @@
 /**
- * What a shipping day counts and says, and where a date's page is: shared by the day and year
- * pages and by the room's past days, so it holds nothing the browser must not load.
+ * A date in full, what a shipping day counts and says, and where a date's page is: shared by the
+ * day and year pages, /stats and the room's past days, so it holds nothing the browser must not
+ * load. Apart from src/lib/words.ts because home's first load needs none of it.
  */
 import type { ShippingActivityDay } from '@min7/contracts';
 import { plural } from './plural.ts';
+import { dateWords } from './words.ts';
+
+/** `26 October`. */
+export const dayName = dateWords({ day: 'numeric', month: 'long' });
+/** `26 Oct 2026`. */
+export const shortDate = dateWords({ day: 'numeric', month: 'short', year: 'numeric' });
+/** `26 October 2026`. */
+export const longDate = dateWords({ day: 'numeric', month: 'long', year: 'numeric' });
 
 export type Counts = Pick<
   ShippingActivityDay,

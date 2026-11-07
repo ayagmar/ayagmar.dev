@@ -26,6 +26,9 @@ export const nav = [
   { href: '/about', label: 'About' },
 ] as const;
 
+/** The line between the parts of a plain-text page. */
+export const textRule = '-'.repeat(72);
+
 /** What a build from the shared fixtures says about its numbers (ADR 0015). */
 export const sampleNote = 'Sample data, not live';
 

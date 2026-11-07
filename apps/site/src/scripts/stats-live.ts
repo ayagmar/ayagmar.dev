@@ -4,23 +4,34 @@
 // rendered from the markup the page renders it from (src/lib/listening-panel.ts,
 // src/lib/stats-panels.ts and src/lib/llm-usage-panel.ts), and every time on the page reads
 // relative to now. Each panel asks at its own pace while the page is visible, and when the tab
-// comes back once its last request is a minute old (src/lib/live.ts). In fixtures mode no panel
+// comes back once its last request is a minute old (src/lib/live-page.ts). In fixtures mode no panel
 // has an endpoint and nothing is requested.
 
 import type { ListeningSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
-import { nowPlaying, readListening, renderNowPlaying } from '../lib/listening.ts';
+import { shortDate } from '../lib/day-words.ts';
+import { nowPlaying, readListening } from '../lib/listening.ts';
 import { listeningBody } from '../lib/listening-panel.ts';
-import { type Answer, live } from '../lib/live.ts';
+import type { Answer } from '../lib/live.ts';
+import { live } from '../lib/live-page.ts';
 import { readLlmUsageSnapshot } from '../lib/llm-usage.ts';
 import { llmUsagePanel } from '../lib/llm-usage-panel.ts';
-import { type Markup, toNode } from '../lib/markup.ts';
+import type { Markup } from '../lib/markup.ts';
+import { renderNowPlaying, toNode } from '../lib/markup-page.ts';
 import { knowsRabat } from '../lib/rabat-date.ts';
 import { readProjects, readShipping } from '../lib/stats.ts';
 import { projectsBody, shippingBody, typingBody } from '../lib/stats-panels.ts';
-import { readMonkeytype, relabelDays } from '../lib/typing.ts';
+import { daysAgo, readMonkeytype } from '../lib/typing.ts';
 
 const minute = 60_000;
+
+/** Rewrites every `time[data-day]` on the page relative to `now`, its exact day in the title. */
+function relabelDays(now: number): void {
+  for (const time of document.querySelectorAll<HTMLTimeElement>('time[data-day]')) {
+    time.textContent = daysAgo(time.dateTime, now);
+    time.title = shortDate(time.dateTime);
+  }
+}
 
 /**
  * Draws the panel's `selector` from `markup` only for another snapshot than the one it shows:

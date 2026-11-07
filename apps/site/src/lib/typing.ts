@@ -5,6 +5,7 @@
  * them.
  */
 import type { MonkeytypeSnapshot, TypingBest } from '@min7/contracts';
+import { dayMs, utcDate } from '@min7/contracts/rabat';
 import { calendarDate, day } from './live.ts';
 
 const number = (value: unknown) =>
@@ -72,11 +73,6 @@ export function headline({ time }: MonkeytypeSnapshot) {
       };
 }
 
-const exact = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'UTC' });
-
-/** `14 Jan 2021`, for `2021-01-14`: the day a best was set, as the page shows it without JavaScript. */
-export const dayDate = (date: string) => exact.format(Date.parse(date));
-
 const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
 /**
@@ -86,16 +82,8 @@ const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
  * behind) is today.
  */
 export function daysAgo(date: string, now: number): string {
-  const days = Math.max(0, day(now) - Date.parse(date) / 86_400_000);
+  const days = Math.max(0, day(now) - utcDate(date) / dayMs);
   if (days < 30) return relative.format(-days, 'day');
   if (days < 365) return relative.format(-Math.max(1, Math.floor(days / 30.44)), 'month');
   return relative.format(-Math.max(1, Math.floor(days / 365.25)), 'year');
-}
-
-/** Rewrites every `time[data-day]` on the page relative to `now`, its exact day in the title. */
-export function relabelDays(now: number): void {
-  for (const time of document.querySelectorAll<HTMLTimeElement>('time[data-day]')) {
-    time.textContent = daysAgo(time.dateTime, now);
-    time.title = dayDate(time.dateTime);
-  }
 }

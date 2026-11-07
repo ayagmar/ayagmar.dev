@@ -1,5 +1,5 @@
-import { daysFixtures, historyFixtures } from '@min7/contracts/fixtures';
-import { rabatDate } from '@min7/contracts/rabat';
+import { daysFixtures } from '@min7/contracts/fixtures';
+import { isoDate, rabatDate, utcDate } from '@min7/contracts/rabat';
 import { describe, expect, it } from 'vitest';
 import {
   type Block,
@@ -13,22 +13,10 @@ import {
   type Series,
 } from '../src/lib/room-day.ts';
 import { type RoomInputs, roomState } from '../src/lib/room-state.ts';
-import { isoDate, utcDate } from '../src/lib/words.ts';
+import { body } from './room-fixture.ts';
 
 // A past date's facts (ADR 0044), through `dayFacts` and `readBlock`, over the shared fixtures.
 const now = Date.parse('2026-11-06T12:00:00Z');
-
-const body = (series: Series, month: string) => ({
-  source: series,
-  version: 1,
-  fetchedAt: '2026-10-26T09:00:00Z',
-  stale: false,
-  data: {
-    days: [...historyFixtures[series].ok.days, ...daysFixtures[series].ok.days].filter(({ date }) =>
-      date.startsWith(month)
-    ),
-  },
-});
 
 const fixtures = ((series: Series, month: string) =>
   readBlock(series, month, body(series, month), now) as Held<never>) as Lookup;

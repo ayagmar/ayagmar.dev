@@ -54,7 +54,6 @@
   --paper-2: light-dark(#f0e7d3, #e3d4b2);
   --ink: #1f1b2e;
   --ink-2: #574f66;
-  --ink-link: #8a2c26;
   --code-bg: #1f1b2e;
   --code-fg: #efe6d0;
 
@@ -76,7 +75,6 @@
   --page-change-ease: ease-out;
 
   /* What the current surface draws with; panels and paper override these four. */
-  --bg: var(--ground);
   --fg: var(--text);
   --fg-2: var(--muted);
   --accent: var(--lamp);
@@ -821,7 +819,7 @@ h1 + .caption,
   line-height: 1.5;
 }
 
-/* A time the page's script keeps relative to now (src/lib/live.ts) sits in a box as wide as
+/* A time the page's script keeps relative to now (src/lib/live-page.ts) sits in a box as wide as
    the longest text it can hold ("59 minutes ago", or "26 Oct, 09:00" before the script
    runs), so rewriting it never reflows the page (CLS). */
 time[data-ago] {
@@ -2073,12 +2071,6 @@ main:has(.toc) .reader ~ .project-card {
   color: var(--fg-2);
   font-family: var(--mono);
   font-size: 0.8125rem;
-}
-
-/* Agent hours: each row's pair sits in the list's grid; a hidden row (a value not sent)
-   takes no space. Not scoped to /stats, so the live panels' markup matches the build's. */
-.agent-hours dl > div:not([hidden]) {
-  display: contents;
 }
 
 /* Links in long lists (tracks, artists, shipping events): a faint underline, full on hover, so

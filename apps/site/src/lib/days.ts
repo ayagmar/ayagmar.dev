@@ -10,11 +10,12 @@ import {
   type ProjectSlug,
   type ShippingActivityDay,
 } from '@min7/contracts';
-import { dayPath, shipped, shippedCount } from './day-words.ts';
+import { dayMs, rabatTimeZone, utcDate } from '@min7/contracts/rabat';
+import { dayPath, longDate, shipped, shippedCount, shortDate } from './day-words.ts';
 import { hours } from './llm-usage-panel.ts';
 import { plural } from './plural.ts';
 import { projectPath } from './projects.ts';
-import { dayMs, repoName, tokens, utcDate } from './words.ts';
+import { repoName, tokens } from './words.ts';
 
 /** The history the build read; a series is null when it could not be read whole. */
 export interface History {
@@ -37,31 +38,15 @@ export interface Published {
   kind: 'Post' | 'Note';
 }
 
-const longDate = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-const shortDate = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
-/** `12 Oct 2026`. */
-export const short = (date: string) => shortDate.format(utcDate(date));
-
 /** `12–26 Oct 2026`, `28 Sept–4 Oct 2026`, `28 Dec 2026–3 Jan 2027`, or `12 Oct 2026`. */
 export function range(from: string, to: string): string {
-  if (from === to) return short(from);
-  if (from.slice(0, 4) !== to.slice(0, 4)) return `${short(from)}–${short(to)}`;
+  if (from === to) return shortDate(from);
+  if (from.slice(0, 4) !== to.slice(0, 4)) return `${shortDate(from)}–${shortDate(to)}`;
   const start =
     from.slice(0, 7) === to.slice(0, 7)
       ? String(Number(from.slice(8)))
-      : short(from).replace(/ \d{4}$/, '');
-  return `${start}–${short(to)}`;
+      : shortDate(from).replace(/ \d{4}$/, '');
+  return `${start}–${shortDate(to)}`;
 }
 
 export const repoHref = (repo: string) => {
@@ -105,7 +90,7 @@ export interface DayPage {
 /** Which calendar each series counts in, for the line under its heading. */
 export const dayZones = {
   shipping: 'Counted over the UTC day.',
-  usage: 'Counted over the day in Rabat (Africa/Casablanca).',
+  usage: `Counted over the day in Rabat (${rabatTimeZone}).`,
 } as const;
 
 /** Said when counts include repositories they do not name. */
@@ -155,9 +140,9 @@ export function dayPages(history: History, published: readonly Published[]): Day
     ...new Set([...shippingDays.keys(), ...usageDays.keys(), ...published.map((p) => p.date)]),
   ].sort();
   const link = (date: string | undefined) =>
-    date === undefined ? null : { path: dayPath(date), title: longDate.format(utcDate(date)) };
+    date === undefined ? null : { path: dayPath(date), title: longDate(date) };
   return dates.map((date, index) => {
-    const title = longDate.format(utcDate(date));
+    const title = longDate(date);
     return {
       date,
       title,
@@ -190,7 +175,7 @@ export function projectReceipt(history: History, repo: string): string | null {
     commits += entry.commits;
     releases += entry.releases;
   }
-  return `${plural(merges, 'merge', 'merges')} · ${plural(commits, 'commit', 'commits')} · ${plural(releases, 'release', 'releases')} since ${short(first.date)}`;
+  return `${plural(merges, 'merge', 'merges')} · ${plural(commits, 'commit', 'commits')} · ${plural(releases, 'release', 'releases')} since ${shortDate(first.date)}`;
 }
 
 /** A post's `receipts` frontmatter, dates as `YYYY-MM-DD`. */

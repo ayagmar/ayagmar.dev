@@ -14,9 +14,10 @@ import { dayPath } from '../lib/day-words.ts';
 import { getDays, getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
 import { catName, catNote, hotspotWords, roomObjects } from '../lib/room.ts';
+import { seededInputs } from '../lib/room-clock.ts';
 import { daysBack } from '../lib/room-day.ts';
 import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
-import { roomState, seededInputs } from '../lib/room-state.ts';
+import { roomState } from '../lib/room-state.ts';
 import { site } from '../lib/site.ts';
 import { moonColour } from '../lib/sky.ts';
 import { person, website } from '../lib/structured-data.ts';
@@ -131,7 +132,7 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
           </button>
         </div>
         <p class="room-scrub-failed" role="alert" hidden>
-          The past days could not be loaded. Move the slider to try again.
+          The past days could not be loaded. Reload the page to try again.
         </p>
         <ul class="room-scrub-facts" hidden></ul>
         <p class="sr-only" role="status"></p>

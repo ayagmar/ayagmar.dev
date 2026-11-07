@@ -17,7 +17,7 @@ import { listeningBody } from './listening-panel.ts';
 import { freshnessWords } from './live.ts';
 import { llmUsagePanel } from './llm-usage-panel.ts';
 import { markupLines } from './markup-text.ts';
-import { sampleNote, site, siteUrl } from './site.ts';
+import { sampleNote, site, siteUrl, textRule } from './site.ts';
 import { statsBuildWords, statsWords as words } from './stats.ts';
 import { projectsBody, shippingBody, typingBody } from './stats-panels.ts';
 import { typingWords } from './typing.ts';
@@ -42,7 +42,6 @@ function freshness(envelope: Envelope<unknown>, sample: boolean): string[] {
 /** What `curl ayagmar.dev/stats` prints: each panel's numbers as of the build. */
 export function renderStatsText(sources: StatsSources, sample: boolean): string {
   const { listening, projects, typing, shipping, llmUsage } = sources;
-  const rule = '-'.repeat(72);
   const featured = featuredProjects.map((project) => project.repo);
   const played =
     listening.data === null || listening.fetchedAt === null
@@ -91,12 +90,12 @@ export function renderStatsText(sources: StatsSources, sample: boolean): string 
   return [
     `Stats | ${site.name}`,
     sample ? statsBuildWords.sample : statsBuildWords.snapshot,
-    rule,
+    textRule,
     ...panels.flatMap(([title, lines, envelope]) => [
       title,
       ...lines,
       ...freshness(envelope, sample),
-      rule,
+      textRule,
     ]),
     `  ${'Page'.padEnd(10)} ${siteUrl}/stats`,
     `  ${'Home'.padEnd(10)} ${siteUrl}`,

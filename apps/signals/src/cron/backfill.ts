@@ -10,7 +10,7 @@ import {
   type SourceId,
   weatherStoredDaySchema,
 } from '@min7/contracts';
-import { nextDate, rabatDate, rabatDayStart } from '@min7/contracts/rabat';
+import { dayMs, nextDate, rabatDate, rabatDayStart } from '@min7/contracts/rabat';
 import { getJson, PullError } from '../adapters/pull/http.ts';
 import {
   listeningDayValues,
@@ -46,8 +46,6 @@ const retryMs = 5 * 60_000;
 const incompleteRetryMs = 60 * 60_000;
 /** Sources whose `Retry-After` also binds the backfill: the same two upstreams. */
 const cooldownSources: readonly SourceId[] = ['listening', 'listening-history', 'weather'];
-
-const dayMs = 24 * 60 * 60_000;
 
 interface State {
   /** The date this run reads. */

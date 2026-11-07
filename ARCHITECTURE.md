@@ -38,8 +38,8 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
                                                                                  ▼
                                                      build: astro build reads /v1/* (or fixtures),
                                                             the shipping strip /v1/days/shipping-activity
-                                                     browser: home now-playing reads /v1/listening,
-                                                              room script reads /v1/weather,
+                                                     browser: room script reads /v1/listening
+                                                              and /v1/weather,
                                                               /stats script reads /v1/listening,
                                                               /v1/shipping, /v1/projects,
                                                               /v1/monkeytype,
@@ -112,8 +112,8 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Text and Markdown copies of pages, /llms.txt (ADR 0040)                   | `apps/site/src/lib/{plaintext,article,stats-text,llms}.ts`, `src/pages/**/*.{txt,md}.ts`                                                           |
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                                                      |
 | Build-time snapshot reader (`fixtures` or `api` mode)                     | `apps/site/src/data/`                                                                                                                              |
-| Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/live.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{now-playing,stats-live}.ts`                                  |
-| Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/markup.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                                                |
+| Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/{live,live-page}.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{room,stats-live}.ts`                             |
+| Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/{markup,markup-page}.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                                  |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                                                |
 | Site Worker (which copy a request gets, ADR 0040)                         | `apps/site/worker/index.ts`                                                                                                                        |
 | The room in a terminal: frames, words, live answers (ADR 0045)            | `apps/site/src/lib/terminal-room.ts`, `src/pages/terminal/`, `worker/room.ts`                                                                      |
@@ -130,7 +130,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Contact sheet of every room state, never shipped (`just room-states`)     | `apps/site/scripts/room-states.ts`, written to `apps/site/.room-states/`                                                                           |
 | Weather in the window: code table, art (ADR 0029)                         | `packages/contracts/src/weather-codes.ts`, `apps/site/src/lib/weather.ts`, `src/scripts/room.ts`, `src/assets/weather-*.png`                       |
 | On this day: Rabat dates, history check (ADR 0030)                        | `packages/contracts/src/rabat.ts`, `apps/site/src/lib/history.ts`, `src/scripts/history.ts`                                                        |
-| Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,llm-usage,llm-usage-panel,stats-panels,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`                            |
+| Browser reads on /stats and /uses: freshness, LLM usage, desktop facts    | `apps/site/src/lib/{live,live-page,llm-usage,llm-usage-panel,stats-panels,markup,desktop}.ts`, `src/scripts/{stats-live,uses}.ts`                  |
 | /uses page data, its schema (ADR 0032)                                    | `content/uses.json`, `apps/site/src/data/uses.ts`, `apps/site/src/pages/uses.astro`                                                                |
 | Per-post art (ADR 0027)                                                   | `apps/site/src/lib/art.ts`, golden files in `test/golden/`                                                                                         |
 | Favicon, touch icon and link-preview images (ADR 0027)                    | `apps/site/public/favicon.svg`, `src/lib/{og,og-card}.ts`, `src/pages/og/`, `src/pages/{favicon.ico,apple-touch-icon.png}.ts`                      |

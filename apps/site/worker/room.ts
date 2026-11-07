@@ -2,13 +2,8 @@
 import { readListening } from '../src/lib/listening.ts';
 import { isCurrent, readAnswer } from '../src/lib/live.ts';
 import { knowsRabat } from '../src/lib/rabat-date.ts';
-import {
-  liveReading,
-  type Reading,
-  type RoomSeed,
-  roomState,
-  seededInputs,
-} from '../src/lib/room-state.ts';
+import { liveReading, seededInputs } from '../src/lib/room-clock.ts';
+import { type Reading, type RoomSeed, roomState } from '../src/lib/room-state.ts';
 import { readShipping } from '../src/lib/stats.ts';
 import { frameFor, renderTerminalRoom } from '../src/lib/terminal-room.ts';
 

@@ -57,7 +57,7 @@ Built import graph, `gzip -9` on each file, summed: a page's entry script and th
 | /stats | 9,258 B | 9,609 B | +351 B   |
 | /uses  | 3,445 B | 3,469 B | +24 B    |
 
-As `scripts/budgets.ts` measures it, home's script is 3,980 B under a cap of 4,350 B, set at 10 % over the first measurement. ADR 0029 asked for a decision before passing 2,300 B; the owner asked for this feature. The now-playing entry is gone. Part of home's cost is the shelf, pin and screen code, which runs in the browser only so the state stays complete there, and which ADR 0044's scrub draws. Home's HTML grows by 1,422 B gzip, mostly the seed. The base PNGs lose 768 to 985 B each. The screen's live version was never measured, as it does not ship.
+As `scripts/budgets.ts` measures it, home's script is 3,980 B under a cap of 4,350 B, set at 10 % over the first measurement. ADR 0029 asked for a decision before passing 2,300 B: this raise is made for the feature. The now-playing entry is gone. Part of home's cost is the shelf, pin and screen code, which runs in the browser only so the state stays complete there, and which ADR 0044's scrub draws. Home's HTML grows by 1,422 B gzip, mostly the seed. The base PNGs lose 768 to 985 B each. The screen's live version was never measured, as it does not ship.
 
 Rollup names a shared chunk after its first module, so the live reads chunk is now `plural.*.js` (1,886 B, cap 1,900 B) and the listening reads chunk `heat.*.js` (1,991 B, cap 2,010 B), which also holds `words.ts` and the heat levels. Their caps moved with what they hold, and `budgets.ts` fails loudly when a name changes. /now stays off these chunks: `staleFrom` steps the calendar, so that page imports no `dayMs`.
 

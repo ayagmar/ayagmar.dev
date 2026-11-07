@@ -1,25 +1,22 @@
 import type { ListeningSnapshot, LlmUsageSnapshot, ShippingEvent } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
-import { rabatDate } from '@min7/contracts/rabat';
+import { dayMs, rabatDate } from '@min7/contracts/rabat';
 import { describe, expect, it } from 'vitest';
 import { readListening } from '../src/lib/listening.ts';
 import { follow } from '../src/lib/live.ts';
 import { hotspotWords, roomObjects } from '../src/lib/room.ts';
+import { changedParts, liveReading, seededInputs } from '../src/lib/room-clock.ts';
 import { dayFacts } from '../src/lib/room-day.ts';
 import { roomSeed } from '../src/lib/room-seed.ts';
 import {
-  changedParts,
-  liveReading,
   type Reading,
   type RoomInputs,
   type RoomListening,
   type RoomMoment,
   type RoomPost,
   roomState,
-  seededInputs,
   shelfSlots,
 } from '../src/lib/room-state.ts';
-import { dayMs } from '../src/lib/words.ts';
 
 // The room's truth (ADR 0043), through `roomState` and the reader: the clock is an argument and
 // nothing else is faked.

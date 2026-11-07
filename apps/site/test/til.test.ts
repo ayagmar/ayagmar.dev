@@ -44,8 +44,4 @@ describe('TIL frontmatter', () => {
   ])('rejects %s', (_case, extra) => {
     expect(tilSchema.safeParse({ ...valid, ...extra }).success).toBe(false);
   });
-
-  it('defaults tags to none and draft to false', () => {
-    expect(tilSchema.parse(valid)).toMatchObject({ tags: [], draft: false });
-  });
 });

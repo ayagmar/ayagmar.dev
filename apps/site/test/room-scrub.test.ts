@@ -1,24 +1,12 @@
-import { daysFixtures, historyFixtures } from '@min7/contracts/fixtures';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { dateBack, dayFacts, type Lookup, readBlock, type Series } from '../src/lib/room-day.ts';
 import { dateAt, scrubber, valueAt } from '../src/lib/room-scrub.ts';
 import type { PastDay } from '../src/lib/room-state.ts';
+import { body } from './room-fixture.ts';
 
 // The scrub's rules (ADR 0044) over generated sequences: the network is the only thing mocked,
 // each answer held until the test lets it go, in any order.
 const now = Date.parse('2026-11-06T12:00:00Z');
-
-const body = (series: Series, month: string) => ({
-  source: series,
-  version: 1,
-  fetchedAt: '2026-10-26T09:00:00Z',
-  stale: false,
-  data: {
-    days: [...historyFixtures[series].ok.days, ...daysFixtures[series].ok.days].filter(({ date }) =>
-      date.startsWith(month)
-    ),
-  },
-});
 
 const whole = ((series: Series, month: string) =>
   readBlock(series, month, body(series, month), now)) as Lookup;

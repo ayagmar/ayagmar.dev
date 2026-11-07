@@ -28,7 +28,7 @@ import {
   type WeatherDays,
   weatherDaysEnvelopeSchema,
 } from '@min7/contracts';
-import { rabatDate } from '@min7/contracts/rabat';
+import { isoDate, rabatDate } from '@min7/contracts/rabat';
 
 const envelopeSchemas = {
   listening: listeningEnvelopeSchema,
@@ -234,7 +234,7 @@ export function createReader(options: ReaderOptions) {
       data: {
         zone: block.zone,
         from: `${month}-01`,
-        to: new Date(Date.UTC(year, index, 0)).toISOString().slice(0, 10),
+        to: isoDate(Date.UTC(year, index, 0)),
         days: [...historyFixtures[series].ok.days, ...block.days].filter((day) =>
           day.date.startsWith(`${month}-`)
         ),

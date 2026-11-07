@@ -5,11 +5,12 @@ import type {
   ShippingEvent,
   ShippingSnapshot,
 } from '@min7/contracts';
+import { dayMs, isoDate, utcDate } from '@min7/contracts/rabat';
 import { shippedCount } from '../lib/day-words.ts';
 import { type HeatLevel, heatLevels, noRecordSentence, noRecordWords } from '../lib/heat.ts';
-import { plural } from '../lib/plural.ts';
+import { count, plural } from '../lib/plural.ts';
 import type { SiteProject } from '../lib/projects.ts';
-import { dayMs, utcDay } from '../lib/words.ts';
+import { dayWords, utcDay } from '../lib/words.ts';
 
 /** What happened, in a few words, for a shipping event. */
 export function describeEvent(event: ShippingEvent): string {
@@ -21,11 +22,9 @@ export function describeEvent(event: ShippingEvent): string {
     case 'merge':
       return `merged #${event.number}: ${event.title}`;
     case 'stars':
-      return `gained ${plural(event.gained, 'star', 'stars')} (${event.total.toLocaleString('en')} total)`;
+      return `gained ${plural(event.gained, 'star', 'stars')} (${count(event.total)} total)`;
   }
 }
-
-export const count = (value: number) => value.toLocaleString('en');
 
 /** A project's numbers the snapshot knows, in display order; empty when it knows none. */
 export function projectFacts({ live }: SiteProject) {
@@ -84,11 +83,6 @@ export interface ShippingStrip {
   countedAt: string;
 }
 
-const dayLabel = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-});
 const timeLabel = new Intl.DateTimeFormat('en-GB', {
   timeZone: 'UTC',
   day: 'numeric',
@@ -98,7 +92,6 @@ const timeLabel = new Intl.DateTimeFormat('en-GB', {
   hourCycle: 'h23',
 });
 
-/** What a square counts: pushes, merges and releases. Stars are attention, not shipping. */
 /** `3 pushes, merges and releases`, what a count of `shippedCount` says. */
 export const shippedWords = (count: number) =>
   plural(count, 'push, merge or release', 'pushes, merges and releases');
@@ -118,7 +111,7 @@ export function stripCells(
     return {
       date,
       level: levels[index] ?? null,
-      label: `${dayLabel.format(Date.parse(date))}: ${what}`,
+      label: `${dayWords(date)}: ${what}`,
       page: pages.has(date),
     };
   });
@@ -132,8 +125,8 @@ export function stripOf(cells: StripCell[], countedAt: string): ShippingStrip | 
   if (first === undefined || latest === undefined) return null;
   return {
     cells,
-    from: dayLabel.format(Date.parse(first.date)),
-    to: dayLabel.format(Date.parse(latest.date)),
+    from: dayWords(first.date),
+    to: dayWords(latest.date),
     gaps: recorded.length < cells.length,
     busy: recorded.filter((cell) => (cell.level ?? 0) > 0).length,
     countedAt: `${timeLabel.format(Date.parse(countedAt))} UTC`,
@@ -148,7 +141,7 @@ export function stripWords(strip: ShippingStrip, gap: 'outlined' | 'faint' = 'ou
   const range = strip.from === strip.to ? strip.from : `${strip.from} to ${strip.to}`;
   const gaps = strip.gaps ? ` ${noRecordSentence(gap)}` : '';
   return {
-    label: `Shipping activity from ${range}: ${strip.busy} ${strip.busy === 1 ? 'day' : 'days'} with something shipped.${gaps} Counted up to ${strip.countedAt}, drawn when this page was built.`,
+    label: `Shipping activity from ${range}: ${plural(strip.busy, 'day', 'days')} with something shipped.${gaps} Counted up to ${strip.countedAt}, drawn when this page was built.`,
     squares: `One square a day, ${range}${strip.gaps ? `; ${noRecordWords(gap)}` : ''}`,
     counted: `Counted up to ${strip.countedAt}`,
   };
@@ -164,9 +157,9 @@ function strip(
   countedAt: string,
   pages: ReadonlySet<string>
 ): ShippingStrip | null {
-  const last = Date.parse(`${end}T00:00:00Z`);
+  const last = utcDate(end);
   const days = Array.from({ length: 28 }, (_, i) => {
-    const date = new Date(last - (27 - i) * dayMs).toISOString().slice(0, 10);
+    const date = isoDate(last - (27 - i) * dayMs);
     return { date, shipped: shipped(date) };
   });
   return stripOf(stripCells(days, pages), countedAt);
@@ -198,7 +191,7 @@ export function shippingStrip(
   const events = shipping.data?.events ?? [];
   if (shipping.fetchedAt === null || events.length === 0) return null;
   const oldest = Math.min(...events.map(({ at }) => Date.parse(at)));
-  const firstDay = utcDay(new Date(oldest).toISOString());
+  const firstDay = isoDate(oldest);
   const lastDay = utcDay(shipping.fetchedAt);
   const counts = new Map<string, number>();
   for (const { type, at } of events) {
@@ -206,7 +199,7 @@ export function shippingStrip(
     counts.set(utcDay(at), (counts.get(utcDay(at)) ?? 0) + 1);
   }
   return strip(
-    utcDay(now.toISOString()),
+    isoDate(now.getTime()),
     (date) => (date < firstDay || date > lastDay ? null : (counts.get(date) ?? 0)),
     shipping.fetchedAt,
     pages

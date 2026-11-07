@@ -40,7 +40,7 @@
       },
       {
         "name": "listening reads",
-        "file": "/_astro/listening.*.js",
+        "file": "/_astro/markup-page.*.js",
         "bytes": 1840
       },
       {

@@ -4,6 +4,7 @@ import {
   llmUsagePushSchema,
   llmUsageSnapshotSchema,
 } from '@min7/contracts';
+import { dayMs, isoDate, utcDate } from '@min7/contracts/rabat';
 import { byCodeUnit, type Producer } from './producers.ts';
 import { agentLabels } from './public-labels.ts';
 
@@ -71,8 +72,7 @@ function historySince({ payload }: LlmUsagePush): string {
     .sort()
     .at(-1);
   if (newest === undefined) return '9999-12-31';
-  const start = Date.parse(`${newest}T00:00:00Z`) - (historyDays - 1) * 24 * 60 * 60 * 1000;
-  return new Date(start).toISOString().slice(0, 10);
+  return isoDate(utcDate(newest) - (historyDays - 1) * dayMs);
 }
 
 export const llmUsageProducer: Producer<LlmUsagePush> = {

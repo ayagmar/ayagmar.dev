@@ -5,7 +5,7 @@
 import type { ListeningSnapshot } from '@min7/contracts';
 import { artistUrl, trackUrl } from './lastfm.ts';
 import { instantMs, list, text, whole } from './live.ts';
-import { el, type Markup, toNode, when } from './markup.ts';
+import { el, type Markup, when } from './markup.ts';
 import { rabatStamp } from './words.ts';
 
 /** A Last.fm page, or null. Links only; the site never loads from Last.fm. */
@@ -111,24 +111,4 @@ export function nowPlayingMarkup(line: NowPlayingLine): { words: Markup[]; at: M
 export function nowPlayingWords({ lead, track, at, when }: NowPlayingLine): string {
   const sentence = track === null ? lead : `${lead} ${track.track} by ${track.artist}`;
   return at === null ? sentence : `${sentence} · ${when}${rabatStamp(at)}`;
-}
-
-// What the line's live region says now, so it is announced only when that changes.
-let said = '';
-
-/**
- * Updates the page's `.now-playing` line in place. The track sentence is a polite live region
- * announced whole when it changes; the time after it ticks every minute outside it.
- */
-export function renderNowPlaying(line: HTMLElement, current: NowPlayingLine): void {
-  const { words, at } = nowPlayingMarkup(current);
-  const sentence = line.firstElementChild as HTMLElement;
-  const key = JSON.stringify(words);
-  if (key !== said) {
-    said = key;
-    // Text only: titles and artists are Last.fm's, so never markup.
-    sentence.replaceChildren(...words.map(toNode));
-  }
-  line.toggleAttribute('data-playing', current.playing);
-  line.replaceChildren(sentence, ...(at === null ? [] : [' ', toNode(at)]));
 }
