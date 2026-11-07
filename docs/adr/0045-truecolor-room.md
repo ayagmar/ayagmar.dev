@@ -1,6 +1,6 @@
 # 0045. The room in truecolor for terminals
 
-Status: accepted, 2026-11-06. Amends ADR 0027 and ADR 0040. Amended 2026-11-06: `RoomFacts` gave way to `roomState` (ADR 0043), and `room.json` carries the room's seed instead of the two envelopes; the Worker reads its frame after the answers, as the sky now comes from the same state, and decides what plays after that last read, keeping the frame's sky.
+Status: accepted, 2026-11-06. Amends ADR 0027 and ADR 0040. Amended 2026-11-07: the Worker's project dropped the DOM library. Amended 2026-11-06: `RoomFacts` gave way to `roomState` (ADR 0043), and `room.json` carries the room's seed instead of the two envelopes; the Worker reads its frame after the answers, as the sky now comes from the same state, and decides what plays after that last read, keeping the frame's sky.
 
 ## Context
 
@@ -51,5 +51,5 @@ The cache is per data centre, and Cloudflare's docs only promise it on custom do
 
 - `/room` is the one routed path whose answer is computed; its cost is above, and cutting it from `run_worker_first` turns it off.
 - The build writes `/terminal/*.rgb` and `/terminal/room.json`, public and unlinked. The JSON holds the same public snapshots /stats shows.
-- The Worker's TypeScript project has the DOM library, because `live.ts`, `listening.ts` and `markup.ts` hold browser code next to the pure functions it imports. Workers' and the DOM's types disagree in places, so the Worker uses `caches.open` and `toNode` uses `appendChild`.
+- The Worker's TypeScript project has no DOM library: what touches the page is in `live-page.ts` and `markup-page.ts`, and the Worker imports only the pure modules.
 - Moving the window in `scene.py` moves the frames with it; `moonDisc` in `sky.ts` moves by hand, for the page and the terminal.
