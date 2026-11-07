@@ -1,12 +1,19 @@
-// Last.fm: now playing, recent scrobbles, top artists and weekly scrobble counts for min7_.
+// Last.fm: now playing and recent scrobbles every pull; top artists and weekly scrobble counts
+// on their own cadences, carried from the stored snapshot between reads (ADR 0009).
 import {
   type ListeningSnapshot,
   lastfmArtistSchema,
+  lastfmErrorSchema,
   lastfmRecentTracksSchema,
   lastfmTopArtistsSchema,
   lastfmTrackSchema,
   listeningSnapshotSchema,
 } from '@min7/contracts';
+import { rabatDate } from '@min7/contracts/rabat';
+import { logEvent } from '../../security/log.ts';
+import { D1SnapshotStore } from '../../storage/d1.ts';
+import { dayReadsHeldUntil, holdDayReads } from '../../storage/daily.ts';
+import type { StoredSnapshot } from '../../storage/types.ts';
 import type { PullAdapter } from '../types.ts';
 import {
   checkSnapshot,
@@ -31,12 +38,23 @@ const listLimit = 10;
 // Ten tracks with their image lists are about 10 KiB.
 const maxBytes = 128 * 1024;
 
-/** The four Last.fm answers a listening snapshot is built from; null is a failed request. */
+/** The parts of a snapshot that a pull need not read: what the stored one says of them. */
+interface Carried {
+  topArtists: ListeningSnapshot['topArtists'];
+  thisWeek: number | null;
+  lastWeek: number | null;
+}
+
+type SlowPart = keyof Carried;
+
+/** The Last.fm answers a listening snapshot is built from; null is a part not read. */
 export interface ListeningRaw {
   recentTracks: UpstreamResponse;
   topArtists: UpstreamResponse | null;
   thisWeek: UpstreamResponse | null;
   lastWeek: UpstreamResponse | null;
+  /** What a part with no readable answer falls back to; absent with no stored snapshot. */
+  carried?: Carried;
   /** The dates read for daily history; absent outside the hourly window (ADR 0038). */
   days?: DayRead[];
 }
@@ -50,6 +68,59 @@ export function weekStart(now: Date): number {
   return midnight - daysSinceMonday * day;
 }
 
+const minute = 60_000;
+
+/**
+ * The first pull of a slot reads the part. The offsets keep the two apart and out of the first
+ * five minutes of an hour, the day reads' window (ADR 0038), so the heaviest pull grows no
+ * heavier. Fifteen minutes is the source's `stale` threshold; all-time totals barely move.
+ */
+const thisWeekSlot = { everyMs: 15 * minute, offsetMs: 7 * minute };
+const topArtistsSlot = { everyMs: 60 * minute, offsetMs: 30 * minute };
+
+const slotOf = ({ everyMs, offsetMs }: typeof thisWeekSlot, time: number) =>
+  Math.floor((time - offsetMs) / everyMs);
+
+/**
+ * A snapshot stored this soon after Monday 00:00 UTC may come from a pull that began in the old
+ * week. Longer than a pull can last: the runner gives up on a fetch after 20 seconds.
+ */
+const weekSettledMs = minute;
+
+/**
+ * What a pull at `now` carries from `stored`, and which parts it reads. A part with nothing to
+ * carry is read at every pull, so one that failed with no value to fall back on comes back at
+ * the next. Week counts carry only inside their week: a count of another week is wrong however
+ * Last.fm is doing, so a failed read at the rollover leaves null. `fetchedAt` is the only clock
+ * needed, which leaves the snapshot's shape alone and survives a restart.
+ */
+function slowParts(stored: StoredSnapshot | null, now: number) {
+  const snapshot = listeningSnapshotSchema.safeParse(stored?.snapshot);
+  const fetchedAt = Date.parse(stored?.fetchedAt ?? '');
+  if (!snapshot.success || Number.isNaN(fetchedAt)) {
+    return { due: { topArtists: true, thisWeek: true, lastWeek: true } };
+  }
+  const { topArtists, scrobbles } = snapshot.data;
+  const inThisWeek = fetchedAt >= weekStart(new Date(now)) * 1000 + weekSettledMs;
+  const thisWeek = inThisWeek ? scrobbles.thisWeek : null;
+  const lastWeek = inThisWeek ? scrobbles.lastWeek : null;
+  return {
+    carried: { topArtists, thisWeek, lastWeek },
+    due: {
+      topArtists:
+        topArtists === null || slotOf(topArtistsSlot, fetchedAt) !== slotOf(topArtistsSlot, now),
+      thisWeek: thisWeek === null || slotOf(thisWeekSlot, fetchedAt) !== slotOf(thisWeekSlot, now),
+      lastWeek: lastWeek === null,
+    },
+  };
+}
+
+/** Whether an answer gave nothing to use, which carrying would otherwise hide. */
+const unread = (response: UpstreamResponse | null) =>
+  response === null ||
+  response.status !== 200 ||
+  lastfmErrorSchema.safeParse(response.body).success;
+
 export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
   id: 'listening',
   intervalSeconds: 60,
@@ -62,38 +133,50 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
       maxBytes,
       form: lastfmForm(apiKey, method, params),
     });
-    const thisMonday = weekStart(new Date());
-    const lastMonday = thisMonday - 7 * day;
-    // Only `@attr.total` of the weekly calls is read, so one item per page is enough.
-    const [days, recentTracks, topArtists, thisWeek, lastWeek] = await Promise.all([
+    /**
+     * A refusal holds these reads as it holds the day reads (ADR 0038): the source's own
+     * cooldown cannot, as the recent tracks' success clears it. They are the optional reads,
+     * so a hold costs a carried value a little age and the pull nothing else.
+     */
+    const readSlowParts = async () => {
+      const stored = await new D1SnapshotStore(env.DB).get('listening');
+      const now = Date.now();
+      const { due, carried } = slowParts(stored, now);
+      const held =
+        Object.values(due).some(Boolean) && (await dayReadsHeldUntil(env.DB, 'listening')) > now;
+      const ask = (part: SlowPart, method: string, params: Record<string, string>) =>
+        due[part] && !held ? getOptionalJson(lastfmEndpoint, call(method, params)) : null;
+      const thisMonday = weekStart(new Date(now));
+      const lastMonday = thisMonday - 7 * day;
+      // Only `@attr.total` of the weekly calls is read, so one item per page is enough.
+      const [topArtists, thisWeek, lastWeek] = await Promise.all([
+        ask('topArtists', 'user.gettopartists', { period: 'overall', limit: String(listLimit) }),
+        ask('thisWeek', 'user.getrecenttracks', { limit: '1', from: String(thisMonday) }),
+        ask('lastWeek', 'user.getrecenttracks', {
+          limit: '1',
+          from: String(lastMonday),
+          to: String(thisMonday),
+        }),
+      ]);
+      const answers = { topArtists, thisWeek, lastWeek };
+      const failed = (Object.keys(answers) as SlowPart[]).filter(
+        (part) => due[part] && !held && unread(answers[part])
+      );
+      if (failed.length > 0) {
+        logEvent('warn', 'listening part unread', { source: 'listening', parts: failed.join() });
+      }
+      const refusedUntil = Math.max(...Object.values(answers).map((a) => a?.retryAt ?? 0));
+      if (refusedUntil > 0) await holdDayReads(env.DB, 'listening', rabatDate(now), refusedUntil);
+      return { ...answers, ...(carried === undefined ? {} : { carried }) };
+    };
+    const [days, recentTracks, parts] = await Promise.all([
       dayReadsAllowed(env.DB, Date.now()).then((dates) =>
         Promise.all(dates.map((date) => readListeningDay(date, apiKey, signal)))
       ),
       getJson(lastfmEndpoint, call('user.getrecenttracks', { limit: String(listLimit) })),
-      getOptionalJson(
-        lastfmEndpoint,
-        call('user.gettopartists', { period: 'overall', limit: String(listLimit) })
-      ),
-      getOptionalJson(
-        lastfmEndpoint,
-        call('user.getrecenttracks', { limit: '1', from: String(thisMonday) })
-      ),
-      getOptionalJson(
-        lastfmEndpoint,
-        call('user.getrecenttracks', {
-          limit: '1',
-          from: String(lastMonday),
-          to: String(thisMonday),
-        })
-      ),
+      readSlowParts(),
     ]);
-    return {
-      recentTracks,
-      topArtists,
-      thisWeek,
-      lastWeek,
-      ...(days.length === 0 ? {} : { days }),
-    };
+    return { recentTracks, ...parts, ...(days.length === 0 ? {} : { days }) };
   },
 
   normalize(raw) {
@@ -115,7 +198,7 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
     const top = readOptional(raw.topArtists, lastfmTopArtistsSchema);
     const topArtists =
       top === null
-        ? null
+        ? (raw.carried?.topArtists ?? null)
         : items(top.topartists.artist, lastfmArtistSchema).flatMap((artist) => {
             const name = artist.name.trim();
             return name === ''
@@ -127,7 +210,10 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
       nowPlaying,
       recent: played,
       topArtists: topArtists?.slice(0, listLimit) ?? null,
-      scrobbles: { thisWeek: weekTotal(raw.thisWeek), lastWeek: weekTotal(raw.lastWeek) },
+      scrobbles: {
+        thisWeek: weekTotal(raw.thisWeek) ?? raw.carried?.thisWeek ?? null,
+        lastWeek: weekTotal(raw.lastWeek) ?? raw.carried?.lastWeek ?? null,
+      },
     });
   },
 
