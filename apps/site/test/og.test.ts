@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
-import { renderArt } from '../src/lib/art.ts';
+import { renderArt } from '../src/lib/art-files.ts';
 import { buildOrigin } from '../src/lib/og.ts';
 import { renderOgCard } from '../src/lib/og-card.ts';
 

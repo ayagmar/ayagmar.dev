@@ -63,14 +63,9 @@ describe('writing frontmatter', () => {
       'art: must be one of lamp, notebook, monitor, record, cat, window, tea, or a map beside the post like "my-post.art.txt"',
     ],
     [
-      'map file that is not there',
-      { art: 'no-such-post.art.txt' },
-      'art: content/writing/no-such-post.art.txt does not exist',
-    ],
-    [
-      'art that is not a name',
-      { art: { kind: 'dither' } },
-      'art: must name a room object or a map file',
+      'the retired art object',
+      { art: { kind: 'dither', palette: 'night', seed: 2 } },
+      'art: takes one name, not { kind, palette, seed }: a room object, as in "art: record", or a map beside the post, as in "art: my-post.art.txt"',
     ],
     [
       'receipts ending before they start',

@@ -31,8 +31,8 @@ The names are `lamp`, `notebook`, `monitor`, `record`, `cat`, `window` and `tea`
    | `+`       | an amber dot |
    | space     | nothing      |
 
-   Keep amber rare: an eye, one line. Every row must be the same width, at most 144 characters, with at most 30 rows, so keep the trailing spaces. A smaller map sits in the middle of the picture. Anything else fails the build with a message naming the post.
-4. Add the map's source and licence to `content/writing/art-sources.txt`. A test fails without it.
+   Keep amber rare: an eye, one line. Every row must be the same width, at most 144 characters, with at most 30 rows, so keep the trailing spaces. A smaller map sits in the middle of the picture. Anything else fails the build with a message naming the post, and so does a map that is a symlink.
+4. Add the map's source to `content/writing/art-sources.txt`: `own work`, or a link with `CC0` or `public domain`. A test fails without it, and on a record whose map is gone.
 5. Name the map in the frontmatter, and look at it with `just drafts` in both themes:
 
    ```yaml

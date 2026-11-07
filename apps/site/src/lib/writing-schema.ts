@@ -1,6 +1,6 @@
 import { repoFullNamePattern } from '@min7/contracts';
 import { z } from 'astro/zod';
-import { artProblem } from './art.ts';
+import { artForm, artNameProblem } from './art.ts';
 import { projectSlug } from './project-schema.ts';
 
 const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -9,13 +9,14 @@ const dateMessage = 'must be a date like 2026-10-26';
 
 // YAML reads an unquoted 2026-10-26 as a Date; a quoted one stays a string and must be a real
 // calendar day. Nothing else is coerced, so a blank `date:` (null) fails instead of becoming 1970.
-/** Optional art above the title (ADR 0027): a room object, or a map file beside the post. */
-const art = z
-  .string({ error: 'must name a room object or a map file' })
-  .superRefine((name, ctx) => {
-    const message = artProblem(name);
-    if (message !== undefined) ctx.addIssue({ code: 'custom', message });
-  });
+/**
+ * Optional art above the title (ADR 0027): a room object, or a map file beside the post. The map
+ * itself is checked over the stored entries, in src/content.config.ts.
+ */
+const art = z.string({ error: artForm }).superRefine((name, ctx) => {
+  const message = artNameProblem(name);
+  if (message !== undefined) ctx.addIssue({ code: 'custom', message });
+});
 
 export const day = z.union([z.date(), z.iso.date().transform((text) => new Date(text))], {
   error: dateMessage,

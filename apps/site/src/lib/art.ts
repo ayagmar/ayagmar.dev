@@ -1,11 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-
 /**
  * Per-post art (ADR 0027): a figure above a post's title, drawn at build time as inline SVG from
  * a text map: `#` bright, `.` dim, `+` amber, space empty. A post names one of the room's objects
- * (src/art/) or a map beside it in content/writing. The map is a rectangle of cells on one fixed
- * lattice, and the same map always gives the same bytes: every coordinate is a whole number.
+ * (src/art/) or a map beside it in content/writing; art-files.ts finds the map. It is a rectangle
+ * of cells on one fixed lattice, and the same map always gives the same bytes: every coordinate
+ * is a whole number. Nothing here touches the disk, since the Worker's types reach this file
+ * through writing-schema.ts.
  */
 
 /** The 41 colours of the room, the base palette of scripts/scene.py (a test keeps them equal). */
@@ -35,19 +34,6 @@ export const roomObjects = [
   'tea',
 ] as const;
 
-// Bundled, so the named objects are part of the build.
-const objectMaps: Record<string, string> = import.meta.glob('../art/*.txt', {
-  query: '?raw',
-  import: 'default',
-  eager: true,
-});
-
-// The content collection's base in src/content.config.ts; every build and test runs in apps/site.
-const postMap = (file: string) => {
-  const path = resolve('../../content/writing', file);
-  return existsSync(path) ? readFileSync(path, 'utf8') : undefined;
-};
-
 const pitch = { x: 10, y: 16 };
 export const lattice = { cols: 144, rows: 30 };
 const size = { width: lattice.cols * pitch.x, height: lattice.rows * pitch.y };
@@ -63,14 +49,22 @@ const ground = 1;
 
 const rowsOf = (text: string) => text.replace(/\n$/, '').split('\n');
 
+// By code point past ASCII: a BOM or a no-break space would print as nothing at all.
+const shown = (char: string) => {
+  const code = char.codePointAt(0) ?? 0;
+  return code > 126
+    ? `U+${code.toString(16).toUpperCase().padStart(4, '0')}`
+    : JSON.stringify(char);
+};
+
 /** What is wrong with a map's text, or undefined. */
 export function mapProblem(text: string): string | undefined {
   const rows = rowsOf(text);
   if (rows.length > lattice.rows) return `has ${rows.length} rows, ${lattice.rows} at most`;
   for (const [index, row] of rows.entries()) {
-    const stray = /[^#.+ ]/.exec(row)?.[0];
+    const stray = /[^#.+ ]/u.exec(row)?.[0];
     if (stray !== undefined)
-      return `row ${index + 1} has ${JSON.stringify(stray)}; a map uses only #, ., + and spaces`;
+      return `row ${index + 1} has ${shown(stray)}; a map uses only #, ., + and spaces`;
     if (row.length > lattice.cols)
       return `row ${index + 1} is ${row.length} wide, ${lattice.cols} at most`;
     if (row.length !== rows[0]?.length)
@@ -79,18 +73,17 @@ export function mapProblem(text: string): string | undefined {
   return /[#.+]/.test(text) ? undefined : 'has no dots';
 }
 
-const isPostMap = (art: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*\.art\.txt$/.test(art);
+export const isPostMap = (art: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*\.art\.txt$/.test(art);
 
-/** What is wrong with a post's `art` value, or undefined. `read` finds a map beside a post. */
-export function artProblem(art: string, read: (file: string) => string | undefined = postMap) {
-  const beside = isPostMap(art);
-  if (!beside && !roomObjects.some((name) => name === art))
-    return `must be one of ${roomObjects.join(', ')}, or a map beside the post like "my-post.art.txt"`;
-  const file = beside ? `content/writing/${art}` : `src/art/${art}.txt`;
-  const text = beside ? read(art) : objectMaps[`../art/${art}.txt`];
-  if (text === undefined) return `${file} does not exist`;
-  const problem = mapProblem(text);
-  return problem === undefined ? undefined : `${file} ${problem}`;
+/** The answer to `art` that is not one name, such as the retired `{ kind, palette, seed }`. */
+export const artForm =
+  'takes one name, not { kind, palette, seed }: a room object, as in "art: record", or a map beside the post, as in "art: my-post.art.txt"';
+
+/** What is wrong with the value of a post's `art` as a name, or undefined. */
+export function artNameProblem(art: unknown): string | undefined {
+  if (typeof art !== 'string') return artForm;
+  if (isPostMap(art) || roomObjects.some((name) => name === art)) return undefined;
+  return `must be one of ${roomObjects.join(', ')}, or a map beside the post like "my-post.art.txt"`;
 }
 
 /** One subpath per run of a tone's dots: a zero-length dash every pitch, round caps. */
@@ -129,11 +122,4 @@ export function renderMap(text: string): string {
     })
     .join('');
   return `<svg xmlns="http://www.w3.org/2000/svg" class="art-dots" viewBox="0 0 ${size.width} ${size.height}" aria-hidden="true" focusable="false"><rect class="ground" width="${size.width}" height="${size.height}" fill="${hex(ground)}"/><g fill="none" stroke-linecap="round" stroke-dasharray="0 ${pitch.x}">${paths}</g></svg>`;
-}
-
-/** The post's art as an SVG string, for PostHeader. */
-export function renderArt(art: string): string {
-  const problem = artProblem(art);
-  if (problem !== undefined) throw new Error(`art: ${problem}`);
-  return renderMap((isPostMap(art) ? postMap(art) : objectMaps[`../art/${art}.txt`]) ?? '');
 }

@@ -1,5 +1,7 @@
 // Runs `astro build` on bad content and checks the build itself stops, naming the file and the
 // slug. The schema and helper tests show the rules; this shows Astro enforces them.
+import { rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { stripVTControlCharacters } from 'node:util';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { type SiteFixture, siteFixture } from './site-fixture.ts';
@@ -53,6 +55,12 @@ it.each([
     'summary',
   ],
   [
+    'a post keeps the retired art object',
+    'content/writing/bad.md',
+    "---\ntitle: A post\ndate: 2026-10-01\nsummary: 'One sentence.'\nart: { kind: dither, palette: night, seed: 2 }\ndraft: true\n---\n",
+    'art: takes one name, not { kind, palette, seed }: a room object, as in "art: record"',
+  ],
+  [
     'content/now.md is dated in the future',
     'content/now.md',
     '---\nupdated: "2999-01-01"\n---\n\nSoon.\n',
@@ -86,4 +94,35 @@ it.each([
     expect(log).toContain(message);
   },
   60_000
+);
+
+// Catches the content cache hiding a map changed alone: an unchanged post keeps its stored entry
+// without a schema run, and nothing renders a draft in a production build.
+it.each([
+  ['draft', 'draft: true\n'],
+  ['published post', ''],
+])(
+  'fails a warm build when the map of a %s breaks or goes',
+  (_case, draft) => {
+    const map = 'content/writing/art.art.txt';
+    fixture.write(
+      'content/writing/art.md',
+      `---\ntitle: Art\ndate: 2026-10-01\nsummary: 'One sentence.'\nart: art.art.txt\n${draft}---\n`
+    );
+    fixture.write(map, '#\n');
+    expect(output().status).toBe(0);
+
+    fixture.write(map, '#x\n');
+    const broken = output();
+    expect(broken.status, broken.text).not.toBe(0);
+    expect(broken.text).toContain(
+      `content/writing/art.md: art ${map} row 1 has "x"; a map uses only #, ., + and spaces`
+    );
+
+    rmSync(join(fixture.root, map));
+    const gone = output();
+    expect(gone.status, gone.text).not.toBe(0);
+    expect(gone.text).toContain(`content/writing/art.md: art ${map} does not exist`);
+  },
+  120_000
 );

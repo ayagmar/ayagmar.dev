@@ -2,6 +2,7 @@ import { defineCollection } from 'astro:content';
 import { file, glob, type Loader } from 'astro/loaders';
 import { aboutSchema } from './data/about.ts';
 import { usesSchema } from './data/uses.ts';
+import { postArtErrors, writingBase } from './lib/art-files.ts';
 import { nowSchema } from './lib/now-schema.ts';
 import { projectSchema } from './lib/project-schema.ts';
 import { checkProjectFiles } from './lib/projects.ts';
@@ -35,13 +36,22 @@ const projects: Loader = {
   },
 };
 
+// Render posts during each build instead of reusing HTML from the content cache, which does not
+// notice a changed Markdown plugin such as the diagram renderer (ADR 0024).
+const writingFiles = glob({ pattern: '*.md', base: writingBase, deferRender: true });
+
+const writing: Loader = {
+  name: 'writing',
+  load: async (context) => {
+    await writingFiles.load(context);
+    const posts = [...context.store.values()].map(({ id, data }) => ({ id, art: data.art }));
+    const errors = postArtErrors(posts);
+    if (errors.length > 0) throw new Error(errors.join('\n'));
+  },
+};
+
 export const collections = {
-  writing: defineCollection({
-    // Render posts during each build instead of reusing HTML from the content cache, which
-    // does not notice a changed Markdown plugin such as the diagram renderer (ADR 0024).
-    loader: glob({ pattern: '*.md', base: '../../content/writing', deferRender: true }),
-    schema: writingSchema,
-  }),
+  writing: defineCollection({ loader: writing, schema: writingSchema }),
   // Short notes, rendered per build like posts so the diagram renderer runs on each (ADR 0028).
   til: defineCollection({
     loader: glob({ pattern: '*.md', base: '../../content/til', deferRender: true }),

@@ -1,15 +1,18 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
 import {
-  artProblem,
-  lattice,
-  mapProblem,
-  renderArt,
-  renderMap,
-  roomObjects,
-  roomPalette,
-} from '../src/lib/art.ts';
+  chmodSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { lattice, mapProblem, renderMap, roomObjects, roomPalette } from '../src/lib/art.ts';
+import { artProblem, mapsIn, postArtErrors, renderArt } from '../src/lib/art-files.ts';
 import { moonColour } from '../src/lib/sky.ts';
 
 const hex = ([r, g, b]: readonly number[]) =>
@@ -74,12 +77,20 @@ describe('post art', () => {
     );
   });
 
-  // Catches a map published with no record of where its image came from.
-  it('records the source of every map beside a post', () => {
+  // Catches a map published with no record of its image, a record with no link or licence, and a
+  // record left behind by a deleted map.
+  it('records the source and licence of every map beside a post', () => {
     const dir = join(repo, 'content/writing');
-    const sources = readFileSync(join(dir, 'art-sources.txt'), 'utf8');
+    const records = readFileSync(join(dir, 'art-sources.txt'), 'utf8')
+      .trim()
+      .split('\n\n')
+      .slice(1);
     const maps = readdirSync(dir).filter((name) => name.endsWith('.art.txt'));
-    expect(maps.filter((name) => !sources.includes(`${name}\n`))).toEqual([]);
+    expect(records.map((record) => record.split('\n')[0]).sort()).toEqual(maps.sort());
+    const sourced = (record: string) =>
+      /own work/i.test(record) ||
+      (/https:\/\/\S/.test(record) && /CC0|public domain/i.test(record));
+    expect(records.filter((record) => !sourced(record))).toEqual([]);
   });
 });
 
@@ -122,6 +133,14 @@ describe('text maps', () => {
     ['blank', '   \n   \n', 'has no dots'],
     ['other characters', '##\n#x\n', 'row 2 has "x"; a map uses only #, ., + and spaces'],
     ['Windows line ends', '##\r\n##\r\n', 'row 1 has "\\r"; a map uses only #, ., + and spaces'],
+    ['tabs', '#\t#\n', 'row 1 has "\\t"; a map uses only #, ., + and spaces'],
+    ['opened by a BOM', '\uFEFF##\n', 'row 1 has U+FEFF; a map uses only #, ., + and spaces'],
+    [
+      'spaced with a no-break space',
+      '#\u00A0#\n',
+      'row 1 has U+00A0; a map uses only #, ., + and spaces',
+    ],
+    ['not ASCII', '#\u{1F40E}\n', 'row 1 has U+1F40E; a map uses only #, ., + and spaces'],
     ['ragged rows', '###\n##\n', 'row 2 is 2 wide and row 1 is 3; pad rows with spaces'],
     ['too wide', `${'#'.repeat(lattice.cols + 1)}\n`, 'row 1 is 145 wide, 144 at most'],
     ['too tall', '#\n'.repeat(lattice.rows + 1), 'has 31 rows, 30 at most'],
@@ -131,9 +150,85 @@ describe('text maps', () => {
 
   // Catches a bad file passing because only the name was checked, or an error that hides the file.
   it('names the file when a map beside a post is broken', () => {
-    expect(artProblem('a-post.art.txt', () => '#x\n')).toBe(
+    expect(artProblem('a-post.art.txt', () => ({ text: '#x\n' }))).toBe(
       'content/writing/a-post.art.txt row 1 has "x"; a map uses only #, ., + and spaces'
     );
-    expect(artProblem('a-post.art.txt', () => '#.\n')).toBeUndefined();
+    expect(artProblem('a-post.art.txt', () => ({ text: '#.\n' }))).toBeUndefined();
+  });
+
+  // Catches the two namespaces running together: `lamp.art.txt` is a post's map, never the object.
+  it('keeps a map called lamp.art.txt apart from the lamp', () => {
+    const read = () => ({ text: '#\n' });
+    expect(renderArt('lamp.art.txt', read)).toBe(renderMap('#\n'));
+    expect(renderArt('lamp', read)).not.toBe(renderMap('#\n'));
+    expect(artProblem('lamp.art.txt', () => ({ problem: 'does not exist' }))).toBe(
+      'content/writing/lamp.art.txt does not exist'
+    );
+  });
+});
+
+describe('maps on disk', () => {
+  let root: string;
+  let dir: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'art-'));
+    dir = join(root, 'writing');
+    mkdirSync(dir);
+  });
+  afterEach(() => {
+    chmodSync(dir, 0o755);
+    rmSync(root, { recursive: true });
+  });
+
+  // Catches a symlink whose target renders from outside the repository: valid map, valid name.
+  it('refuses a symlink to a valid map outside the folder', () => {
+    writeFileSync(join(root, 'outside.txt'), '#\n');
+    symlinkSync(join(root, 'outside.txt'), join(dir, 'custom.art.txt'));
+    expect(artProblem('custom.art.txt', mapsIn(dir))).toBe(
+      'content/writing/custom.art.txt must be a plain file, not a symlink or a directory'
+    );
+    expect(() => renderArt('custom.art.txt', mapsIn(dir))).toThrow('must be a plain file');
+  });
+
+  // Catches a raw EISDIR from the loader, which would not name the map.
+  it('refuses a directory with a map name', () => {
+    mkdirSync(join(dir, 'custom.art.txt'));
+    expect(artProblem('custom.art.txt', mapsIn(dir))).toBe(
+      'content/writing/custom.art.txt must be a plain file, not a symlink or a directory'
+    );
+  });
+
+  // Catches a raw EACCES from the loader, which would not name the map.
+  it.skipIf(process.getuid?.() === 0)('reports a folder it may not read', () => {
+    chmodSync(dir, 0o000);
+    expect(artProblem('custom.art.txt', mapsIn(dir))).toMatch(
+      /^content\/writing\/custom\.art\.txt cannot be read: EACCES/
+    );
+  });
+
+  // Catches a map changed alone, which the content cache does not notice: both posts keep their
+  // stored entry, the schema does not run, and nothing renders the draft to trip over it.
+  it('finds a deleted and a corrupted map on stored entries, drafts included', () => {
+    const posts = [
+      { id: 'a-draft', art: 'a-draft.art.txt' },
+      { id: 'a-post', art: 'a-post.art.txt' },
+      { id: 'fine', art: 'fine.art.txt' },
+      { id: 'no-art', art: undefined },
+    ];
+    writeFileSync(join(dir, 'fine.art.txt'), '#\n');
+    writeFileSync(join(dir, 'a-post.art.txt'), '#x\n');
+    expect(postArtErrors(posts, mapsIn(dir))).toEqual([
+      'content/writing/a-draft.md: art content/writing/a-draft.art.txt does not exist',
+      'content/writing/a-post.md: art content/writing/a-post.art.txt row 1 has "x"; a map uses only #, ., + and spaces',
+    ]);
+  });
+
+  // Catches an entry stored before the object form was retired, which no schema run will see.
+  it('names the post and the new form for a stored old value', () => {
+    const old = { kind: 'dither', palette: 'night', seed: 2 };
+    expect(postArtErrors([{ id: 'old', art: old }])).toEqual([
+      'content/writing/old.md: art takes one name, not { kind, palette, seed }: a room object, as in "art: record", or a map beside the post, as in "art: my-post.art.txt"',
+    ]);
   });
 });
