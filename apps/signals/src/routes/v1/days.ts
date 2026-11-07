@@ -17,7 +17,6 @@ import type { AppEnv } from '../../env.ts';
 import { methodNotAllowed, notFound } from '../../errors.ts';
 import { preflight } from '../../security/cors.ts';
 import { D1SnapshotStore } from '../../storage/d1.ts';
-import { readDays } from '../../storage/daily.ts';
 import { serveEnvelope } from './snapshot.ts';
 
 /** The path of every series; any other answers the JSON 404. */
@@ -88,9 +87,12 @@ async function serveDays(c: Context<AppEnv>, series: DailySource): Promise<Respo
   }
   const path = `/v1/days/${series}?${range.key}`;
   return serveEnvelope(c, series, path, range.until, async () => {
-    const stored = await new D1SnapshotStore(c.env.DB).get(series);
+    const { stored, days: rows } = await new D1SnapshotStore(c.env.DB).getWithDays(
+      series,
+      range.from,
+      range.to
+    );
     if (stored?.snapshot == null) return { fetchedAt: null, data: null };
-    const rows = await readDays(c.env.DB, series, range.from, range.to);
     // Rows were checked against the series' schema before they were stored.
     const named = new Set<string>([
       ...(series === 'shipping-activity'
