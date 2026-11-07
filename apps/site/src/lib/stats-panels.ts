@@ -10,11 +10,12 @@ import type {
   ShippingSnapshot,
 } from '@min7/contracts';
 import { describeEvent, projectsSummary } from '../data/format.ts';
+import { dayName, shortDate } from './day-words.ts';
 import { el, type Markup, stampMarkup } from './markup.ts';
 import { plural } from './plural.ts';
 import { starTotals, statsWords as words } from './stats.ts';
 import { bestRows, headline, typingWords } from './typing.ts';
-import { dayName, repoName, shortDate } from './words.ts';
+import { repoName } from './words.ts';
 
 /**
  * The first `keep` items of a list, then the rest in a disclosure that opens without

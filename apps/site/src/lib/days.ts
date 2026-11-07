@@ -11,11 +11,11 @@ import {
   type ShippingActivityDay,
 } from '@min7/contracts';
 import { dayMs, rabatTimeZone, utcDate } from '@min7/contracts/rabat';
-import { dayPath, shipped, shippedCount } from './day-words.ts';
+import { dayPath, longDate, shipped, shippedCount, shortDate } from './day-words.ts';
 import { hours } from './llm-usage-panel.ts';
 import { plural } from './plural.ts';
 import { projectPath } from './projects.ts';
-import { longDate, repoName, shortDate, tokens } from './words.ts';
+import { repoName, tokens } from './words.ts';
 
 /** The history the build read; a series is null when it could not be read whole. */
 export interface History {

@@ -5,6 +5,7 @@ import { aboutLinks, formatMonth, monthSpan } from '../data/about.ts';
 import { projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
+import { longDate } from './day-words.ts';
 import { feedPaths } from './feed.ts';
 import type { BrewingItem } from './now-schema.ts';
 import {
@@ -17,7 +18,6 @@ import {
 } from './projects.ts';
 import { curlTarget, identityLines, nav, nowPage, site, siteUrl, textRule } from './site.ts';
 import { type Note, notePath } from './til.ts';
-import { longDate } from './words.ts';
 import { isoDay, nothingPublished, type Post, postPath, postsByTag } from './writing.ts';
 
 /** A built `.txt` page. Every text page ends in one newline. */

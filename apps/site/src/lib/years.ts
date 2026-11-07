@@ -16,11 +16,11 @@ import {
   stripCells,
   stripOf,
 } from '../data/format.ts';
-import { type Counts, dayPath, shipped, shippedCount } from './day-words.ts';
+import { type Counts, dayPath, shipped, shippedCount, shortDate } from './day-words.ts';
 import { type Published, range, repoHref, unnamedRepos, unread } from './days.ts';
 import { hours } from './llm-usage-panel.ts';
 import { count, plural } from './plural.ts';
-import { repoName, shortDate, tokens } from './words.ts';
+import { repoName, tokens } from './words.ts';
 
 /** A series as the build read it (`readHistory`). */
 interface Series<Day> {

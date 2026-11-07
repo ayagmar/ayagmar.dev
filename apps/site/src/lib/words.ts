@@ -33,19 +33,13 @@ export const repoName = (repo: string) => repo.slice(repo.indexOf('/') + 1);
 export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
 
 /** A calendar date in words: `date` is a day, so it is read and written in UTC. */
-const dateWords = (options: Intl.DateTimeFormatOptions) => {
+export const dateWords = (options: Intl.DateTimeFormatOptions) => {
   const format = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...options });
   return (date: string) => format.format(utcDate(date));
 };
 
 /** `26 Oct`. */
 export const dayWords = dateWords({ day: 'numeric', month: 'short' });
-/** `26 October`. */
-export const dayName = dateWords({ day: 'numeric', month: 'long' });
-/** `26 Oct 2026`. */
-export const shortDate = dateWords({ day: 'numeric', month: 'short', year: 'numeric' });
-/** `26 October 2026`. */
-export const longDate = dateWords({ day: 'numeric', month: 'long', year: 'numeric' });
 
 /** `1–26 Oct`, `28 Sept–4 Oct`, or `1 Oct` for a single day. */
 export function dateRange(from: string, to: string): string {

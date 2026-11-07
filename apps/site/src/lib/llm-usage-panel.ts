@@ -4,10 +4,11 @@
  */
 import type { LlmUsageSnapshot } from '@min7/contracts';
 import { dayMs, isoDate, rabatDate, utcDate } from '@min7/contracts/rabat';
+import { shortDate } from './day-words.ts';
 import { heatmap, noRecordWords } from './heat.ts';
 import { el, type Markup } from './markup.ts';
 import { plural } from './plural.ts';
-import { dateRange, dayWords, shortDate, tokens } from './words.ts';
+import { dateRange, dayWords, tokens } from './words.ts';
 
 const hourMs = 3_600_000;
 

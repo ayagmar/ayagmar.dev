@@ -9,14 +9,14 @@
 import type { ListeningDay, ShippingActivityDay, WeatherDay } from '@min7/contracts';
 import { dayMs, isoDate, nextDate, rabatDayStart, utcDate } from '@min7/contracts/rabat';
 import { weatherCodes } from '@min7/contracts/weather-codes';
-import { type Counts, shipped, shippedCount } from './day-words.ts';
+import { type Counts, dayName, shipped, shippedCount } from './day-words.ts';
 import { heatmap } from './heat.ts';
 import { type NowPlayingLine, nowPlayingWords } from './listening.ts';
 import { calendarDate, instantMs, list, readAnswer, text, whole } from './live.ts';
 import { plural } from './plural.ts';
 import { type PastDay, pinSlots, type RoomPin, type RoomState, screenWeeks } from './room-state.ts';
 import { rabatTime } from './sky.ts';
-import { dayName, dayWords, rabatStamp, tokens } from './words.ts';
+import { dayWords, rabatStamp, tokens } from './words.ts';
 
 /** Every date is drawn at this hour in Rabat: dark all year, so the moon shows its phase. */
 const roomHour = 21;
