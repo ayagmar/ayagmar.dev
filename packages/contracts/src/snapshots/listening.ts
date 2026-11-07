@@ -88,7 +88,7 @@ export const listeningSnapshotSchema = z.object({
     .nullable(),
   /**
    * Scrobbles in the current and the previous week; weeks start Monday 00:00 UTC. Read about
-   * every 15 minutes and once a week (ADR 0009); the last count read of that same week between
+   * every 15 minutes and twice a week (ADR 0009); the last count read of that same week between
    * reads or when a read fails. Each is null when Last.fm has not answered that part this week.
    */
   scrobbles: z.object({

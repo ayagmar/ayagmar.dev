@@ -87,6 +87,13 @@ const slotOf = ({ everyMs, offsetMs }: typeof thisWeekSlot, time: number) =>
 const weekSettledMs = minute;
 
 /**
+ * Last week's count is read again this long into Monday, past the morning's late scrobbles,
+ * clear of the other reads' minutes and the day reads' window. Its first read comes at the worst
+ * moment for it, and without this one a wrong answer would stand all week.
+ */
+const lastWeekRepairMs = (12 * 60 + 15) * minute;
+
+/**
  * What a pull at `now` carries from `stored`, and which parts it reads. A part with nothing to
  * carry is read at every pull, so one that failed with no value to fall back on comes back at
  * the next. Week counts carry only inside their week: a count of another week is wrong however
@@ -100,7 +107,9 @@ function slowParts(stored: StoredSnapshot | null, now: number) {
     return { due: { topArtists: true, thisWeek: true, lastWeek: true } };
   }
   const { topArtists, scrobbles } = snapshot.data;
-  const inThisWeek = fetchedAt >= weekStart(new Date(now)) * 1000 + weekSettledMs;
+  const monday = weekStart(new Date(now)) * 1000;
+  const inThisWeek = fetchedAt >= monday + weekSettledMs;
+  const repairAt = monday + lastWeekRepairMs;
   const thisWeek = inThisWeek ? scrobbles.thisWeek : null;
   const lastWeek = inThisWeek ? scrobbles.lastWeek : null;
   return {
@@ -109,7 +118,7 @@ function slowParts(stored: StoredSnapshot | null, now: number) {
       topArtists:
         topArtists === null || slotOf(topArtistsSlot, fetchedAt) !== slotOf(topArtistsSlot, now),
       thisWeek: thisWeek === null || slotOf(thisWeekSlot, fetchedAt) !== slotOf(thisWeekSlot, now),
-      lastWeek: lastWeek === null,
+      lastWeek: lastWeek === null || (fetchedAt < repairAt && now >= repairAt),
     },
   };
 }
@@ -211,7 +220,7 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
       topArtists: topArtists?.slice(0, listLimit) ?? null,
       scrobbles: {
         thisWeek: weekTotal(raw.thisWeek) ?? raw.carried?.thisWeek ?? null,
-        lastWeek: weekTotal(raw.lastWeek) ?? raw.carried?.lastWeek ?? null,
+        lastWeek: closedWeek(weekTotal(raw.lastWeek), raw.carried?.lastWeek ?? null),
       },
     });
   },
@@ -244,6 +253,10 @@ const lastfmPage = /^https:\/\/www\.last\.fm\/\S*$/;
 
 const lastfmUrl = (url: string | undefined) =>
   url !== undefined && lastfmPage.test(url) ? url : null;
+
+/** A finished week's count only grows, so the repair read cannot be the wrong answer itself. */
+const closedWeek = (read: number | null, carried: number | null) =>
+  read === null || carried === null ? (read ?? carried) : Math.max(read, carried);
 
 function weekTotal(response: UpstreamResponse | null): number | null {
   const parsed = readOptional(response, lastfmRecentTracksSchema);

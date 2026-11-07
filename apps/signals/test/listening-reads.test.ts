@@ -283,6 +283,32 @@ describe('the week rollover', () => {
     expect((await stored()).scrobbles.thisWeek).toBe(countOf(monday));
   });
 
+  // Catches a low first read standing all week: late scrobbles, or a one-off 0 from Last.fm.
+  it('reads last week again once at midday on Monday', async () => {
+    const repair = monday + (12 * 60 + 15) * minute;
+    await storeAt(carrying(41, 0), repair - minute);
+    const reads = lastfm();
+
+    await runAt(repair - 30_000);
+    expect(reads).toEqual(['recent']);
+    await runAt(repair + 30_000);
+    await runAt(repair + 90_000);
+
+    expect(reads.toSorted()).toEqual(['lastWeek', 'recent', 'recent', 'recent']);
+    expect((await stored()).scrobbles.lastWeek).toBe(countOf(monday - 7 * 24 * 60 * minute));
+  });
+
+  // Catches the repair read being the wrong answer: a finished week does not shrink.
+  it('keeps the higher count when the repair reads less', async () => {
+    const repair = monday + (12 * 60 + 15) * minute;
+    await storeAt(carrying(41, 999_999), repair - minute);
+    lastfm();
+
+    await runAt(repair + 30_000);
+
+    expect((await stored()).scrobbles.lastWeek).toBe(999_999);
+  });
+
   // Catches a rollover missed while Last.fm's Retry-After kept the source waiting.
   it('rolls over at the first pull after a cooldown that spans the boundary', async () => {
     await storeAt(carrying(41, 90), monday - 10 * minute);
