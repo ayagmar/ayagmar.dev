@@ -25,6 +25,7 @@ const warmRuns = 10;
 
 const allScenarios = [
   'listening',
+  'listening-carried',
   'listening-days',
   'weather',
   'backfill',
