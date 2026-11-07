@@ -213,6 +213,66 @@ describe('publish', () => {
     assert.equal(git(repo, 'status', '--porcelain'), '?? content/writing/cache-reads.md');
   });
 
+  describe('a post with a map of its own', () => {
+    const map = 'content/writing/cache-reads.art.txt';
+    const sources = 'content/writing/art-sources.txt';
+
+    beforeEach(() => {
+      writeFileSync(join(repo, sources), 'Where each map comes from.\n');
+      git(repo, 'add', sources);
+      git(repo, 'commit', '-q', '-m', 'sources');
+      git(repo, 'push', '-q', 'origin', 'main');
+      writeFileSync(
+        join(repo, 'content/writing/cache-reads.md'),
+        draftPost.replace('tags: []', 'art: cache-reads.art.txt\ntags: []')
+      );
+    });
+    const addMap = () => {
+      writeFileSync(join(repo, map), '#\n');
+      writeFileSync(join(repo, sources), 'Where each map comes from.\n\nA record.\n');
+    };
+
+    // Catches a map left out of the post's PR: main takes no direct commit, so a map committed
+    // first stops publish on HEAD, and an uncommitted one stops it on the tree.
+    it('publishes a new map and its record in the commit of the post', () => {
+      addMap();
+      const { code, out } = cli(['publish', 'cache-reads']);
+      assert.equal(code, 0, out);
+      assert.equal(
+        git(origin, 'diff', '--name-only', 'main', 'content/cache-reads'),
+        [sources, map, 'content/writing/cache-reads.md'].sort().join('\n')
+      );
+      assert.equal(git(repo, 'status', '--porcelain'), '');
+    });
+
+    // Catches the rollback forgetting the files it staged beside the post.
+    it('puts the map and its record back when the commit fails', () => {
+      addMap();
+      failingHook('pre-commit');
+      const { code, out } = cli(['publish', 'cache-reads']);
+      assert.equal(code, 1, out);
+      // Unstaged, ` M`: the helper trims the first space, and a staged file would read `M  `.
+      assert.equal(
+        git(repo, 'status', '--porcelain'),
+        [`M ${sources}`, `?? ${map}`, '?? content/writing/cache-reads.md'].join('
+')
+      );
+    });
+
+    // Catches an unrelated edit riding along: the record comes only with a map that changed.
+    it('stops on a changed record when the map is already on main', () => {
+      writeFileSync(join(repo, map), '#\n');
+      git(repo, 'add', map);
+      git(repo, 'commit', '-q', '-m', 'map');
+      git(repo, 'push', '-q', 'origin', 'main');
+      writeFileSync(join(repo, sources), 'Edited.\n');
+      const { code, out } = cli(['publish', 'cache-reads']);
+      assert.equal(code, 1, out);
+      assert.match(out, /Other changes are in the tree/);
+      assert.match(out, /art-sources\.txt/);
+    });
+  });
+
   it('puts back a staged draft exactly as it was staged when the commit fails', () => {
     writeFileSync(
       join(repo, 'content/writing/cache-reads.md'),

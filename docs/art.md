@@ -21,7 +21,7 @@ The names are `lamp`, `notebook`, `monitor`, `record`, `cat`, `window` and `tea`
    just art-map ~/Pictures/horse.jpg my-post --dark .6
    ```
 
-   This writes `content/writing/my-post.art.txt`. Leave out `--dark` for a subject already on black. `--at .4` moves the figure across the picture, `--echo .2` adds a copy in dim dots, and `--top 55` makes more of it bright. Run `python3 apps/site/scripts/art_map.py --help` for the details.
+   This writes `content/writing/my-post.art.txt`. Leave out `--dark` for a subject already on black. `--at .4` moves the figure across the picture, `--echo .2` adds a copy in dim dots, and `--top 55` makes more of it bright. Run `just art-map x y --help` for the details.
 3. Open the map in an editor and fix it by hand:
 
    | Character | Draws        |
@@ -39,4 +39,4 @@ The names are `lamp`, `notebook`, `monitor`, `record`, `cat`, `window` and `tea`
    art: my-post.art.txt
    ```
 
-Commit the map before running `just publish`, which commits only the post and stops on any other change in the tree.
+`just publish` commits a new or changed map and `art-sources.txt` with the post, so leave them uncommitted, as you leave the post. Any other change in the tree stops it.
