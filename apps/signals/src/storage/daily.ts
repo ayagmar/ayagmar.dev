@@ -256,16 +256,8 @@ export async function readDayStatuses(
   });
 }
 
-/** The stored days of `source` from `from` to `to`, oldest first, with their values parsed. */
-export async function readDays(
-  db: D1Database,
-  source: DailySource,
-  from: string,
-  to: string
-): Promise<{ day: string; data: unknown }[]> {
-  const { results } = await db
+/** Reads the stored days of `source` from `from` to `to`, oldest first, for a caller's D1 batch. */
+export const daysStatement = (db: D1Database, source: DailySource, from: string, to: string) =>
+  db
     .prepare('SELECT day, json FROM daily WHERE source = ? AND day >= ? AND day <= ? ORDER BY day')
-    .bind(source, from, to)
-    .all<{ day: string; json: string }>();
-  return results.map(({ day, json }) => ({ day, data: JSON.parse(json) }));
-}
+    .bind(source, from, to);
