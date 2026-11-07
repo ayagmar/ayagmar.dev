@@ -44,6 +44,14 @@ describe('plan', () => {
     ]);
   });
 
+  // Catches a map or a source record reaching main unchecked: only site-test reads them, so main
+  // would go red after the merge, and then every later code PR with it.
+  it('runs the unit tests on a change to a map or the record of its source', () => {
+    for (const file of ['content/writing/new.art.txt', 'content/writing/art-sources.txt']) {
+      assert.ok(runs([file]).includes('site-test'), file);
+    }
+  });
+
   it('runs Lighthouse, with the build and budgets it needs, on a labelled docs-only change', () => {
     assert.deepEqual(runs(['README.md']), ['format', 'secrets-source']);
     assert.deepEqual(runs(['README.md'], ['docs', lighthouseLabel]), [
