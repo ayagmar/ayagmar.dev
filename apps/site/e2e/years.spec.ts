@@ -2,7 +2,6 @@
 // page is reachable from /stats and from a day.
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { dailySources } from '@min7/contracts';
 import { daysFixtures, historyFixtures } from '@min7/contracts/fixtures';
 import { expect, notFoundPath, test } from './fixtures.ts';
 
@@ -23,7 +22,7 @@ test('the year shows its calendar, each square leading to an existing day', asyn
     .locator('.year-heat a')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href') ?? ''));
   expect(hrefs.filter((href) => !existsSync(join(dist, `${href.slice(1)}.html`)))).toEqual([]);
-  const recorded = dailySources
+  const recorded = (['shipping-activity', 'llm-usage'] as const)
     .flatMap((series) => [...historyFixtures[series].ok.days, ...daysFixtures[series].ok.days])
     .map((day) => day.date)
     .filter((date) => date.startsWith('2026-'));
@@ -51,4 +50,16 @@ test('a year with no history and other top-level paths are the 404 page', async 
     const response = await page.goto(path);
     expect(response?.status(), path).toBe(404);
   }
+});
+
+// Catches the strip's outline winning over the calendar's faint square: both rules are as
+// specific, so which one holds depends on the order the stylesheets are bundled in.
+test('a day with no record in a shown month is faint, not outlined', async ({ page }) => {
+  await page.goto('/2026');
+  const style = await page
+    .locator('.year-heat i[data-l="none"]')
+    .first()
+    .evaluate((square) => getComputedStyle(square).outlineStyle);
+  expect(style).toBe('none');
+  await expect(page.locator('.year-heat .heat-cap')).toContainText('faint days have no record');
 });

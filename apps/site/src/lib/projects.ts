@@ -1,4 +1,5 @@
 import { featuredProjects, type Project, type ProjectSlug } from '@min7/contracts';
+import { plural } from './plural.ts';
 import type { ProjectFrontmatter } from './project-schema.ts';
 import type { Post } from './writing.ts';
 
@@ -77,9 +78,12 @@ export const morePostsAbout = <P extends Post>(
     .filter((post) => post.id !== currentId)
     .slice(0, limit);
 
-/** `2 posts`, `no posts`. */
-export const postCount = (count: number) =>
-  count === 0 ? 'no posts' : `${count} ${count === 1 ? 'post' : 'posts'}`;
+/** `2 posts`; nothing at all for none, so a project's row says only what it has. */
+export const postCount = (count: number) => (count === 0 ? '' : plural(count, 'post', 'posts'));
+
+/** A project's row on /projects and its text copy: `2 posts, active`, or only what it has. */
+export const projectRowLabel = <P extends Post>(project: SiteProject, posts: readonly P[]) =>
+  [postCount(postsAbout(posts, project.slug).length), project.status].filter(Boolean).join(', ');
 
 /**
  * Problems with the content/projects files, by file id (the file name without `.md`): a slug

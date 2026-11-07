@@ -6,7 +6,7 @@ import { rawFixtures } from '@min7/contracts/fixtures';
 import { upstreamHandlers } from '@min7/contracts/testing';
 import { setupNetwork } from '@msw/cloudflare';
 import { delay, HttpResponse, http } from 'msw';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getJson } from '../src/adapters/pull/http.ts';
 import { PullError } from '../src/adapters/pull/index.ts';
 import { listening } from '../src/adapters/pull/listening.ts';
@@ -45,6 +45,15 @@ describe('network mocking', () => {
 });
 
 describe('pull adapter fetch', () => {
+  // Past the hourly window, when a listening pull asks only its four usual questions (ADR 0038).
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.parse('2026-10-26T09:30:00Z'));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('returns what each upstream answered, as the raw fixtures record it', async () => {
     network.use(...upstreamHandlers());
 

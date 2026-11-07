@@ -3,15 +3,11 @@
 import type { LlmUsageSnapshot } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
-import {
-  dateRange,
-  heatmap,
-  hours,
-  llmUsagePanel,
-  share,
-  tokens,
-} from '../src/lib/llm-usage-panel.ts';
+import { heatmap } from '../src/lib/heat.ts';
+import { hours, llmUsagePanel, share } from '../src/lib/llm-usage-panel.ts';
 import type { Markup } from '../src/lib/markup.ts';
+import { markupLines } from '../src/lib/markup-text.ts';
+import { dateRange, tokens } from '../src/lib/words.ts';
 
 const ok = snapshotFixtures['llm-usage'].ok as LlmUsageSnapshot;
 const taken = '2026-10-26T08:00:00Z';
@@ -127,15 +123,38 @@ describe('heatmap', () => {
     expect(heat.cells.at(-1)?.date).toBe('2026-10-26');
   });
 
+  // Catches a date the snapshot does not hold drawn as a recorded zero: it would claim a quiet day
+  // nobody knows about, in the build and in the live panel, which share this markup.
+  it('draws a missing date apart from a recorded zero, and says so', () => {
+    const days = [
+      { date: '2026-10-24', costUsd: null, totalTokens: 0 },
+      { date: '2026-10-26', costUsd: null, totalTokens: 500 },
+    ];
+    const squares = (nodes: Markup[]): Record<string, string>[] =>
+      nodes.flatMap((node) =>
+        typeof node === 'string'
+          ? []
+          : [...(node.tag === 'i' ? [node.attrs] : []), ...squares(node.children)]
+      );
+    const panel = llmUsagePanel({ ...ok, days }, taken);
+    const levels = squares(panel).map((square) => square['data-l']);
+    expect(levels.slice(-3)).toEqual(['0', 'none', '1']);
+    expect(words(panel)).toContain('Squares: faint days have no record');
+    // Catches words about how a square looks reaching the copy that has no squares.
+    const copy = markupLines(panel).join('\n');
+    expect(copy).toContain('with 500. Some days have no record.');
+    expect(copy).not.toContain('faint');
+  });
+
   // Catches levels scaled to the busiest day, which washes out every other day.
-  it('levels days by quartile, zero and missing days at 0', () => {
+  it('levels days by quartile, zero days at 0 and missing days unknown', () => {
     const days = [100, 200, 300, 400, 1_000_000, 0].map((totalTokens, i) => ({
       date: `2026-10-${String(20 + i).padStart(2, '0')}`,
       costUsd: null,
       totalTokens,
     }));
     const heat = heatmap(days, '2026-10-26');
-    expect(heat.cells.slice(-7).map((cell) => cell.level)).toEqual([1, 1, 2, 3, 4, 0, 0]);
+    expect(heat.cells.slice(-7).map((cell) => cell.level)).toEqual([1, 1, 2, 3, 4, 0, null]);
     expect(heat.activeDays).toBe(5);
     expect(heat.busiest?.date).toBe('2026-10-24');
   });

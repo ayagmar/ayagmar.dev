@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { poll } from '../src/lib/live.ts';
+import { poll } from '../src/lib/live-page.ts';
 
-// When a live panel asks signals (src/lib/live.ts): the page's clock, visibility, tab events
+// When a live panel asks signals (src/lib/live-page.ts): the page's clock, visibility, tab events
 // and network are faked; nothing else is.
 const minute = 60_000;
 const endpoint = 'https://api.ayagmar.dev/v1/shipping';

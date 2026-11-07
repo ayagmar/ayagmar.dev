@@ -21,3 +21,4 @@ worker-configuration.d.ts
 .stryker-tmp/
 **/reports/mutation/
 __pycache__/
+.room-states/

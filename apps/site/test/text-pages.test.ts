@@ -10,8 +10,13 @@ import {
   renderArticleText,
 } from '../src/lib/article.ts';
 import { renderLlmsTxt } from '../src/lib/llms.ts';
-import { renderProjectText, renderTilText, renderWritingText } from '../src/lib/plaintext.ts';
-import { siteProjects } from '../src/lib/projects.ts';
+import {
+  renderPlainText,
+  renderProjectText,
+  renderTilText,
+  renderWritingText,
+} from '../src/lib/plaintext.ts';
+import { projectRowLabel, type SiteProject, siteProjects } from '../src/lib/projects.ts';
 import { renderStatsText, type StatsSources } from '../src/lib/stats-text.ts';
 import type { Note } from '../src/lib/til.ts';
 import type { Post } from '../src/lib/writing.ts';
@@ -201,6 +206,26 @@ describe('list pages', () => {
       'Writing | min7\n'.concat('-'.repeat(72), '\n  Nothing published yet.\n')
     );
     expect(renderTilText([])).toContain('  Nothing published yet.\n');
+  });
+
+  // Catches a project's row printing a zero count: on /projects and in its text copy a row says
+  // only what the project has, and picks the count up again with the first post.
+  it('leave out a post count of zero', () => {
+    const project = { ...siteProjects([], null)[0], status: 'active' } as SiteProject;
+    expect(projectRowLabel(project, [])).toBe('active');
+    expect(projectRowLabel({ ...project, status: null }, [])).toBe('');
+    const about = post('p', { projects: [project.slug] });
+    expect(projectRowLabel(project, [about])).toBe('1 post, active');
+  });
+
+  // Catches the text copy of home keeping an empty band, or staying empty once there are posts.
+  it('leave a section out of index.txt until it has content', () => {
+    const empty = renderPlainText([], [], [], 'https://ayagmar.dev');
+    expect(empty).not.toMatch(/^(Writing|TIL)$/m);
+    expect(empty).not.toContain('Nothing published');
+    const full = renderPlainText([post('p')], [note('n', 'Body.')], [], 'https://ayagmar.dev');
+    expect(full).toMatch(/^Writing\n {2}2026-10-24 {2}A post$/m);
+    expect(full).toMatch(/^TIL\n {2}2026-10-25 {2}A note$/m);
   });
 
   // Catches a Preview listing a draft as if it were published.

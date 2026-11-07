@@ -9,7 +9,7 @@ import {
   type ShippingActivityStoredDay,
   shippingActivitySnapshotSchema,
 } from '@min7/contracts';
-import { rabatDate, rabatDayStart } from '@min7/contracts/rabat';
+import { dayMs, isoDate, rabatDate, rabatDayStart } from '@min7/contracts/rabat';
 import { D1SnapshotStore } from '../../storage/d1.ts';
 import type { DailyRow } from '../../storage/daily.ts';
 import type { SourceStatus } from '../../storage/types.ts';
@@ -34,7 +34,6 @@ export interface ShippingActivityPull {
   days: { day: string; data: ShippingActivityStoredDay }[];
 }
 
-const dayMs = 24 * 60 * 60 * 1000;
 const intervalMs = 60 * 60 * 1000;
 /**
  * After a `complete: false` answer: repo-pulse's visibility gate stays warm for 60 seconds, and
@@ -45,7 +44,7 @@ const incompleteRetryMs = 2 * 60 * 1000;
  * The first minutes of a date in Rabat belong to the listening history, which every other due
  * source delays by a minute (ADR 0030); this pull waits until they are over.
  */
-const midnightYieldMs = 15 * 60 * 1000;
+export const midnightYieldMs = 15 * 60 * 1000;
 const counts = ['pushes', 'commits', 'merges', 'releases', 'stars'] as const;
 
 const isCount = (value: unknown): value is number =>
@@ -108,7 +107,7 @@ function isWholeWindow(generatedAt: string, days: readonly RepoPulseActivityDay[
   if (days.length !== activityRecentDays && days.length !== activityMaxDays) return false;
   const last = Math.floor(Date.parse(generatedAt) / dayMs);
   return days.every((day, index) => {
-    const date = new Date((last - (days.length - 1 - index)) * dayMs).toISOString().slice(0, 10);
+    const date = isoDate((last - (days.length - 1 - index)) * dayMs);
     if (day.date !== date) return false;
     if (day.repos.some((repo, i) => i > 0 && !((day.repos[i - 1]?.repo ?? '') < repo.repo))) {
       return false;
@@ -207,8 +206,6 @@ function merge(pull: ShippingActivityPull, stored: StoredHistory) {
   return { snapshot, days };
 }
 
-const utcDate = (time: number) => new Date(time).toISOString().slice(0, 10);
-
 /**
  * Whether the last attempt recorded neither a failure nor a success: the run was cut off. An
  * attempt that stored nothing because its answer was not newer looks the same; it only makes
@@ -245,7 +242,7 @@ export const shippingActivity: HistoryAdapter<UpstreamResponse, ShippingActivity
   async fetch(env, signal, previous) {
     const stored = await new D1SnapshotStore(env.DB).get('shipping-activity');
     const fullOn = (stored?.snapshot as { fullOn?: unknown } | null | undefined)?.fullOn;
-    const whole = fullOn !== utcDate(Date.now()) && !endedSilently(previous);
+    const whole = fullOn !== isoDate(Date.now()) && !endedSilently(previous);
     const days = whole ? activityMaxDays : activityRecentDays;
     const url = `${activityUrl}?days=${days}`;
     const answer = await getJson(url, { signal, maxBytes });

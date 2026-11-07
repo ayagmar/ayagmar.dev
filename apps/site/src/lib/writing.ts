@@ -37,6 +37,12 @@ export const lastUpdated = (post: Post) => post.data.updated ?? post.data.date;
 /** `2026-10-26`, in UTC like the frontmatter dates. */
 export const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
+/** What /writing, /til and their text copies say while they have nothing to list. */
+export const nothingPublished = 'Nothing published yet.';
+
+/** The same of a day or year already over. */
+export const nothingPublishedThen = 'Nothing published.';
+
 /** Whole minutes to read a post's Markdown at 220 words a minute, never under one. */
 export const readingMinutes = (markdown: string) =>
   Math.max(1, Math.round(markdown.split(/\s+/).filter(Boolean).length / 220));

@@ -17,6 +17,7 @@ const firstFrame = async (page: Page) => {
 declare global {
   interface Window {
     firstFrame: string;
+    entrances: number;
   }
 }
 
@@ -69,35 +70,50 @@ test('without JavaScript the page follows the system theme and hides the switch'
   // The room stays the static night scene: no sky from a clock, no moon, no note.
   await expect(page.locator('.scene')).not.toHaveAttribute('data-sky', /.*/);
   await expect(page.locator('.room-note')).toBeHidden();
+  // The objects are the build's, the words on them dated, and the record rests.
+  await expect(page.locator('.room-pins li').first()).toBeVisible();
+  await expect(page.locator('.room-screen i[data-l="4"]').first()).toBeVisible();
+  await expect(page.locator('.scene')).toHaveAttribute('data-record', 'resting');
+  await expect(page.locator('[data-room="frame"]')).toHaveAccessibleName(
+    /^Framed screen: LLM usage\. .+ tokens, .+, as of .+\.$/
+  );
   // The keys button would open nothing.
   await expect(page.getByRole('button', { name: 'Keys' })).toBeHidden();
   await context.close();
 });
 
-// Catches both scenes downloading when the stored choice differs from the system, more than one
-// window layer (ADR 0027), and italic text on home, which puts another font in front of the
-// scene and pushes mobile LCP past 2 s.
-test('home loads one scene, one window and two fonts', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/about');
-  await page.evaluate(() => localStorage.setItem('theme', 'day'));
-  await page.goto('/');
-  await page.waitForLoadState('load');
-  const assets = await page.evaluate(() =>
-    performance
-      .getEntriesByType('resource')
-      .map((entry) => entry.name.match(/\/_astro\/([\w-]+)\.[\w-]+\.(?:png|woff2)$/)?.[1])
-      .filter((name) => name !== undefined)
-      .sort()
-  );
-  // Which window depends on the time in Rabat; there is exactly one. So does the cat: it loads
-  // from 02:00 to 05:00 there, and only in the page's theme. A fixed clock is no way out, since
-  // Playwright's clock leaves `performance` without its entries.
-  const timed = /^(?:window|cat)-/;
-  expect(assets.filter((name) => !timed.test(name))).toEqual(['mono', 'room-day', 'serif-roman']);
-  expect(assets.filter((name) => name.startsWith('window-'))).toHaveLength(1);
-  expect(assets.filter((name) => name === 'cat-night')).toEqual([]);
-});
+// Catches a scene downloading that the room does not show, whether the stored choice differs from
+// the system or the sky brings the night scene over the day one, more than one window layer (ADR
+// 0027), the cat out of its hours or not as its one layer, and italic text on home, which puts
+// another font in front of the scene and pushes mobile LCP past 2 s. Each list is exact, and the
+// clock is fixed, so this holds at any hour; responses, as a fixed clock empties `performance`.
+for (const [theme, time, room] of [
+  ['day', '2026-10-26T12:00:00Z', ['room-day', 'window-day']],
+  ['day', '2026-10-26T17:55:00Z', ['room-day', 'room-night', 'window-dusk']],
+  ['day', '2026-10-26T21:00:00Z', ['room-day', 'room-night', 'window-night']],
+  ['day', '2026-10-26T03:00:00Z', ['cat-night', 'room-day', 'room-night-dim', 'window-night']],
+  ['day', '2026-10-26T06:00:00Z', ['room-day', 'room-night-dim', 'window-night']],
+  ['night', '2026-10-26T12:00:00Z', ['room-night', 'window-day']],
+  ['night', '2026-10-26T03:00:00Z', ['cat-night', 'room-night-dim', 'window-night']],
+] as const) {
+  test(`home loads only what the room shows: ${theme} theme at ${time}`, async ({ page }) => {
+    const assets: string[] = [];
+    page.on('response', (response) => {
+      const name = response.url().match(/\/_astro\/([\w-]+)\.[\w-]+\.(?:png|woff2)$/)?.[1];
+      if (name !== undefined) assets.push(name);
+    });
+    await page.clock.setFixedTime(time);
+    await page.emulateMedia({ colorScheme: theme === 'day' ? 'dark' : 'light' });
+    await page.addInitScript((choice) => localStorage.setItem('theme', choice), theme);
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    // Night theme's first paint can fetch the lit scene before room.ts turns the lamp down, so
+    // in that one state it may or may not have started; every other list is exact.
+    const racing = theme === 'night' && room.some((name) => name === 'room-night-dim');
+    const loaded = assets.filter((name) => !(racing && name === 'room-night'));
+    expect(loaded.toSorted()).toEqual(['mono', ...room, 'serif-roman'].toSorted());
+  });
+}
 
 const roomLinks = (page: Page) =>
   page.locator('.scene a').evaluateAll((links) => links.map((link) => link.getAttribute('href')));
@@ -123,7 +139,7 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
 
   for (const width of [360, 1280]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const hotspot of await page.locator('.scene a').all()) {
+    for (const hotspot of await page.locator('.scene a:visible').all()) {
       await expect(hotspot).toHaveAccessibleName(/.+: .+/);
       const box = await hotspot.boundingBox();
       expect(box?.width, `${width}px`).toBeGreaterThanOrEqual(24);
@@ -131,7 +147,219 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
     }
   }
   await page.setViewportSize({ width: 320, height: 800 });
-  await expect(page.locator('.scene a').first()).toBeHidden();
+  await expect(page.locator('.scene a:visible')).toHaveCount(0);
+});
+
+// Catches a spine turned into a link or a tab stop (too small a target, ADR 0043), a draft on the
+// published shelf, and a Notebook that says something other than what the shelf holds. The count
+// comes from /writing, the list the shelf must equal.
+for (const [build, details] of [
+  ['published', {}],
+  ['drafts', { tag: '@drafts' }],
+] as const) {
+  test(
+    `the shelf holds the ${build} build's posts and says so on the Notebook`,
+    details,
+    async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.goto('/writing');
+      const titles = await page.locator('ul.posts > li > a').allTextContents();
+      await page.goto('/');
+      const spines = page.locator('.room-books li');
+      await expect(spines).toHaveCount(Math.min(titles.length, 19));
+      if (build === 'drafts') expect(titles.length).toBeGreaterThan(0);
+      await expect(page.locator('.room-books a, .room-books [tabindex]')).toHaveCount(0);
+      await expect(page.locator('.scene a')).toHaveCount(7);
+      await expect(page.locator('[data-room="notebook"]')).toHaveAccessibleName(
+        titles.length === 0
+          ? 'Notebook: writing. No posts yet.'
+          : new RegExp(`^Notebook: writing\\. ${titles.length} posts?, newest: .+\\.$`)
+      );
+    }
+  );
+}
+
+// Catches an object in the list that lights nothing: the rule names each object, so a new one in
+// src/lib/room.ts needs its line in room.css. Also a row lighting the wrong object, or two.
+test('hovering or focusing a row of the list lights its object in the room', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  const lit = () =>
+    page.locator('.hotspot').evaluateAll((spots) =>
+      spots
+        .filter((spot) => getComputedStyle(spot).borderTopColor !== 'rgba(0, 0, 0, 0)')
+        .filter((spot) => getComputedStyle(spot.querySelector('span') as Element).opacity === '1')
+        .map((spot) => spot.getAttribute('data-room'))
+    );
+  const rows = await page.locator('[data-room-list]').all();
+  expect(rows).toHaveLength(7);
+  for (const row of rows) {
+    const id = await row.getAttribute('data-room-list');
+    await row.hover();
+    expect(await lit()).toEqual([id]);
+    await page.mouse.move(0, 0);
+    expect(await lit()).toEqual([]);
+    await row.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    expect(await lit()).toEqual([id]);
+    await row.blur();
+  }
+});
+
+// Catches the entrance replaying on a reload or a return to home, playing on arrival from another
+// page, moving anything for readers who asked for less motion, or hiding the name without scripts.
+test.describe('the entrance', () => {
+  const armed = (page: Page) => page.locator('html[data-entrance]');
+  const name = (page: Page) =>
+    page.locator('.intro').evaluate((intro) => getComputedStyle(intro).animationName);
+  /** Counts the entrance's animations in each new document, as the first may end before a read. */
+  const countStarts = (page: Page) =>
+    page.addInitScript(() => {
+      window.entrances = 0;
+      document.addEventListener('animationstart', (event) => {
+        if (event.animationName === 'arrive') window.entrances += 1;
+      });
+    });
+  const starts = (page: Page) => page.evaluate(() => window.entrances);
+
+  test('plays once, only when home opens the session', async ({ page }) => {
+    await countStarts(page);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    await expect.poll(() => starts(page)).toBe(3);
+    await page.reload();
+    await page.waitForLoadState('load');
+    expect(await starts(page)).toBe(0);
+    expect(await name(page)).toBe('none');
+    await page.goto('/about');
+    await page.goto('/');
+    expect(await name(page)).toBe('none');
+  });
+
+  test('does not play when the session starts on another page', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/about');
+    await page.getByRole('link', { name: 'min7' }).first().click();
+    await expect(page).toHaveURL(/\/$/);
+    expect(await name(page)).toBe('none');
+  });
+
+  // Catches a trigger left on <html>: the animation comes back with the preference and hides the
+  // name again, long after the page settled.
+  test('cannot replay when the motion preference changes after it ends', async ({ page }) => {
+    await countStarts(page);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    await expect.poll(() => starts(page)).toBe(3);
+    await expect(armed(page)).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    expect(await name(page)).toBe('none');
+    expect(await starts(page)).toBe(3);
+  });
+
+  // Catches a page left mid-entrance coming back from the back/forward cache still armed. A real
+  // restore needs a cache Playwright's browser has off, so the events are synthetic (ADR 0042).
+  test('leaving retires it, so a restored page stays still', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    await page.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    });
+    await expect(armed(page)).toHaveCount(0);
+    expect(await name(page)).toBe('none');
+  });
+
+  // Catches a trigger left dormant for a reader who starts with reduced motion and later turns
+  // it off: nothing ends it, as nothing ever ran.
+  test('stays still with reduced motion, and is not left waiting', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    expect(await name(page)).toBe('none');
+    await expect(armed(page)).toHaveCount(0);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    expect(await name(page)).toBe('none');
+  });
+
+  test('never hides the name without JavaScript', async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    await page.goto(`${baseURL}/`);
+    await expect(page.locator('.intro')).toHaveCSS('opacity', '1');
+    await context.close();
+  });
+});
+
+// Catches the optional lighting taking the hotspot's own hover down with it: a browser that cannot
+// parse one selector drops its whole rule. Every `:has()` rule goes, as there, and a hotspot must
+// still light and show its label under the pointer and the keyboard. The list then lights nothing.
+test('a hotspot lights by itself without :has()', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  const dropped = await page.evaluate(() => {
+    let count = 0;
+    const drop = (list: CSSRuleList, owner: CSSStyleSheet | CSSGroupingRule) => {
+      for (let i = list.length - 1; i >= 0; i -= 1) {
+        const rule = list[i];
+        if (rule instanceof CSSGroupingRule) drop(rule.cssRules, rule);
+        if (rule instanceof CSSStyleRule && rule.selectorText.includes(':has(')) {
+          owner.deleteRule(i);
+          count += 1;
+        }
+      }
+    };
+    for (const sheet of document.styleSheets) drop(sheet.cssRules, sheet);
+    return count;
+  });
+  expect(dropped).toBeGreaterThan(0);
+  const spot = page.locator('[data-room="monitor"]');
+  const label = spot.locator('span');
+  const unlit = await spot.evaluate((el) => getComputedStyle(el).borderTopColor);
+  await spot.hover();
+  await expect(label).toHaveCSS('opacity', '1');
+  // Polled: a hover's colour change is a 120 ms transition (ADR 0037).
+  await expect
+    .poll(() => spot.evaluate((el) => getComputedStyle(el).borderTopColor))
+    .not.toBe(unlit);
+  await page.mouse.move(0, 0);
+  await expect(label).toHaveCSS('opacity', '0');
+  await page.locator('[data-room="notebook"]').focus();
+  await page.keyboard.press('Tab');
+  await expect(spot).toBeFocused();
+  await expect(label).toHaveCSS('opacity', '1');
+  await page.locator('[data-room-list="tea"]').hover();
+  await expect(page.locator('[data-room="tea"] span')).toHaveCSS('opacity', '0');
+});
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  // Catches the room scaling down to a 390x130 strip, pixels that stop being square, a crop that
+  // scrolls the page sideways, and hotspots hanging off the edge of the view.
+  test('the room is cropped at twice its pixels, and the list still reaches everything', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    const scene = await page.locator('.scene').boundingBox();
+    expect([scene?.width, scene?.height]).toEqual([960, 320]);
+    const view = await page.evaluate(() => [
+      document.documentElement.scrollWidth,
+      document.documentElement.clientWidth,
+    ]);
+    expect(view).toEqual([390, 390]);
+    const spots = await page.locator('.scene a:visible').all();
+    const shown = await Promise.all(spots.map((spot) => spot.getAttribute('data-room')));
+    expect(shown).toEqual(['notebook', 'monitor', 'keyboard']);
+    for (const spot of spots) {
+      const box = await spot.boundingBox();
+      expect(box?.x).toBeGreaterThanOrEqual(0);
+      expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+    }
+    await expect(page.locator('[data-room-list]:visible')).toHaveCount(7);
+  });
 });
 
 // The three placeholder drafts carry art (ADR 0027). Their pages, and home listing them, are
@@ -240,8 +468,8 @@ test.describe('the room keeps Rabat time', () => {
   });
 
   // Catches the cat missing its hours or waiting for a reload, moving the page when it comes,
-  // a note the keyboard cannot reach or cut off by the scene's edge on a phone, and art from the
-  // other theme.
+  // a note the keyboard cannot reach or cut off by the scene's edge on a phone, and a sunlit cat
+  // in the Day theme: these hours are always dark.
   test('a cat sleeps on the sill from 02:00 to 05:00, and says so on focus', async ({ page }) => {
     const cat = page.getByRole('img', { name: /cat asleep on the windowsill/ });
     const art = () =>
@@ -249,7 +477,8 @@ test.describe('the room keeps Rabat time', () => {
         .locator('.room-cat')
         .evaluate((layer) => getComputedStyle(layer).backgroundImage.match(/cat-\w+/)?.[0]);
     await page.clock.install({ time: '2026-10-26T01:59:30Z' });
-    await page.emulateMedia({ colorScheme: 'dark' });
+    // Still, so the name's position below is not the entrance's.
+    await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
     await page.goto('/');
     await expect(page.locator('.scene')).toHaveAttribute('data-sky', 'night');
     await expect(cat).toBeHidden();
@@ -269,12 +498,37 @@ test.describe('the room keeps Rabat time', () => {
     }
     await expectNoAxeViolations(page, '.room');
     await page.emulateMedia({ colorScheme: 'light' });
-    expect(await art()).toBe('cat-day');
+    expect(await art()).toBe('cat-night');
     await expectNoAxeViolations(page, '.room');
 
     await page.clock.runFor(3 * 60 * 60_000);
     await expect(cat).toBeHidden();
   });
+
+  // Catches sunlit walls beside a night window, a layer that hides the window, and the theme
+  // itself changing: only the room follows the sky.
+  for (const [time, sky, opacity] of [
+    ['2026-10-26T12:00:00Z', 'day', null],
+    ['2026-10-26T17:55:00Z', 'dusk', '0.5'],
+    ['2026-10-26T21:00:00Z', 'night', '0.85'],
+  ] as const) {
+    test(`the Day theme's room follows a ${sky} sky`, async ({ page }) => {
+      await visit(page, time, 'light');
+      const layer = await page.locator('.room-art.day').evaluate((art) => {
+        const after = getComputedStyle(art, '::after');
+        return after.content === 'none' ? null : after.opacity;
+      });
+      expect(layer).toBe(opacity);
+      expect(await background(page)).toBe(ground.day);
+      expect(await room(page)).toMatchObject({ sky, window: `window-${sky}` });
+      const order = await page.evaluate(() => {
+        const art = document.querySelector('.room-art.day') as Element;
+        const view = document.querySelector('.room-window') as Element;
+        return art.compareDocumentPosition(view) === Node.DOCUMENT_POSITION_FOLLOWING;
+      });
+      expect(order).toBe(true);
+    });
+  }
 
   test('just after sunset the window shows dusk', async ({ page }) => {
     await visit(page, '2026-10-26T17:55:00Z', 'dark');

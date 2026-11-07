@@ -23,7 +23,7 @@ export interface Progress {
 export class D1ProgressStore {
   constructor(
     private readonly db: D1Database,
-    private readonly source: SourceId
+    private readonly source: SourceId | 'daily-backfill'
   ) {}
 
   async load(): Promise<Progress | null> {

@@ -1,5 +1,17 @@
-// The calendar date in Rabat (ADR 0030), one definition for signals and the browser. No zod
-// here: the /stats page script imports this file, and the browser does not load zod.
+// Calendar dates (ADR 0030), one definition for signals and the browser: UTC days as plain
+// arithmetic, and the date in Rabat. No zod here: page scripts import this file, and the browser
+// does not load zod.
+
+export const dayMs = 86_400_000;
+
+/** Unix ms of the start of `date` (`2026-10-26`) in UTC. */
+export const utcDate = (date: string) => Date.parse(`${date}T00:00:00Z`);
+
+/** `2026-10-26`: the UTC date at `time` (Unix ms). */
+export const isoDate = (time: number) => new Date(time).toISOString().slice(0, 10);
+
+/** Hassan Tower, Rabat: where the room's sun rises and the weather is read. */
+export const rabatPoint = { latitude: 34.024, longitude: -6.8228 } as const;
 
 /** The IANA zone for all of Morocco. Its offset has changed many times; tzdata knows each one. */
 export const rabatTimeZone = 'Africa/Casablanca';
@@ -26,10 +38,7 @@ export function rabatDate(time: number): string {
 }
 
 /** The calendar date after `date` (`2028-02-29` after `2028-02-28`). */
-export function nextDate(date: string): string {
-  const [year = 0, month = 0, day = 0] = date.split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
-}
+export const nextDate = (date: string) => isoDate(utcDate(date) + dayMs);
 
 /**
  * Unix seconds of the first second whose Rabat date is `date`: local midnight, or the first
@@ -40,8 +49,7 @@ export function nextDate(date: string): string {
  * same date (2008-08-31), and each spring-forward skips from 23:59:59 to 01:00.
  */
 export function rabatDayStart(date: string): number {
-  const [year = 0, month = 0, day = 0] = date.split('-').map(Number);
-  let low = Date.UTC(year, month - 1, day) / 1000 - 3 * 3600;
+  let low = utcDate(date) / 1000 - 3 * 3600;
   let high = low + 6 * 3600;
   while (low < high) {
     const middle = Math.floor((low + high) / 2);

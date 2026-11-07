@@ -1,6 +1,6 @@
 # 0027. Room details and per-post art
 
-Status: accepted, 2026-10-26. Amended 2026-11-06: per-post art is a figure in dots from a text map, the `ascii`, `dither` and `pattern` kinds are gone (see Per-post art below). Amended 2026-11-01: a post's art also draws its link-preview image (see Link previews below). Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco. Amended 2026-10-26: the now-playing island became a page script shared with /stats (ADR 0015); the record's rules below hold, and a hung request now ends after a 5 s deadline.
+Status: accepted, 2026-10-26. Amended 2026-11-06: the cat's hours and the record's state come from the room's model, `data-cat` replaces `data-hour`, and the scene's own arm rests off the disc until a track plays (ADR 0043). Amended 2026-11-06: the room also prints in truecolor at `/room` (ADR 0045), follows the sky in either theme, and the cat has one layer. Amended 2026-11-06: per-post art is a figure in dots from a text map, the `ascii`, `dither` and `pattern` kinds are gone (see Per-post art below). Amended 2026-11-01: a post's art also draws its link-preview image (see Link previews below). Amended 2026-10-26: the room follows Rabat (Hassan Tower, 34.0240 N, 6.8228 W), where the owner lives, instead of Casablanca; the time zone is still `Africa/Casablanca`, which covers all of Morocco. Amended 2026-10-26: the now-playing island became a page script shared with /stats (ADR 0015); the record's rules below hold, and a hung request now ends after a 5 s deadline.
 
 ## Context
 
@@ -21,8 +21,10 @@ Every detail has to keep what ADRs 0019, 0026 and the budgets of ADR 0017 promis
 `apps/site/src/lib/sky.ts` computes everything from an instant, with no state. `apps/site/src/scripts/room.ts` runs it on the home page only, once on load and then every minute, and sets three things on `.scene`:
 - `data-sky` is `day`, `dusk` or `night`. `room.css` then shows one of three window layers, `window-{day,dusk,night}.png`. Each is the full 480x160 scene, transparent except the view through the window, so it lines up with the scene at any size. The window frame, the mullions and the lamp in front stay in the room's own scene, so they keep the room's light. Only the layer in use downloads (1.3 to 1.4 KiB each).
 - The moon is an inline SVG over the scene in the same 480x160 coordinates. The script writes its `path`: the lit part of a 12-pixel disc, a run of unit squares per row, lit on the right while waxing as seen from Morocco, in the palette's moon colour `#e8e8fa`. It is drawn at dusk and at night, and left out when less than 3 % is lit.
-- `data-late` between 02:00 and 07:00 Rabat time swaps the night scene for `room-night-dim.png` (the lamp at a third of its light, the bulb a dim amber) and shows the note `Probably asleep: it is 03:12 in Rabat.` The note sits over the desk's front edge, below every hotspot, positioned absolutely, so showing it moves nothing. In the day theme the lamp is already off; only the note appears.
-- Amended 2026-11-03: between 02:00 and 05:00 Rabat time a ginger cat sleeps on the windowsill, left of the lamp. `scripts/scene.py` draws it into the room with the same geometry, light and dither, and exports only its pixels as full-scene layers: `cat-night.png` (lit by the turned-down lamp) and `cat-day.png` (daylight, for the day theme), 0.6 and 0.7 KiB, only the shown one downloaded. The script sets `data-hour` on the scene on every tick (so the cat comes and goes when the hour turns), and `room.css` shows the cat only with `data-late` and hour 02, 03 or 04, so a browser with outdated tzdata never shows it. It sits above the view and the weather and is positioned absolutely, so it moves nothing. A focusable spot over the cat (`role="img"`, named "A ginger cat asleep on the windowsill. It keeps the night shift until five.") shows the note "The cat keeps the night shift until five." on hover and focus, like a hotspot's label; below 30 rem it wraps, so the scene's sideways clip never cuts it. Expressing the hours in CSS rather than script kept the room script inside its allowance: 2,299 B of 2,300 (main was 2,291), so the next addition to it needs a new cap.
+- `data-late` between 02:00 and 07:00 Rabat time swaps the night scene for `room-night-dim.png` (the lamp at a third of its light, the bulb a dim amber) and shows the note `Probably asleep: it is 03:12 in Rabat.` The note sits over the desk's front edge, below every hotspot, positioned absolutely, so showing it moves nothing. In the day theme the same dim room comes over the day scene (see below), with the note.
+- Amended 2026-11-03: between 02:00 and 05:00 Rabat time a ginger cat sleeps on the windowsill, left of the lamp. `scripts/scene.py` draws it into the room with the same geometry, light and dither, and exports only its pixels as a full-scene layer, `cat-night.png` (lit by the turned-down lamp, 0.6 KiB). A daylit `cat-day.png` for the day theme went on 2026-11-06: these hours are always dark, so it was a sunlit cat beside a night window. The script sets `data-hour` on the scene on every tick (so the cat comes and goes when the hour turns), and `room.css` shows the cat only with `data-late` and hour 02, 03 or 04, so a browser with outdated tzdata never shows it. It sits above the view and the weather and is positioned absolutely, so it moves nothing. A focusable spot over the cat (`role="img"`, named "A ginger cat asleep on the windowsill. It keeps the night shift until five.") shows the note "The cat keeps the night shift until five." on hover and focus, like a hotspot's label; below 30 rem it wraps, so the scene's sideways clip never cuts it. Expressing the hours in CSS rather than script kept the room script inside its allowance: 2,299 B of 2,300 (main was 2,291), so the next addition to it needs a new cap.
+
+Amended 2026-11-06: the theme stays the reader's and the sky stays Rabat's, and `just room-states` showed where they disagree. In Day theme after dark, the sunlit walls sat beside a night window, so `room-night.png` comes over the day scene as a layer under the window: 50 % at dusk, 85 % at night, the dim scene in the late hours. Lamplight, not a flat tint: the lamp and the monitor are lit, and the page around stays the Day theme. It downloads only then, about 12 KiB, once `room.ts` has set the sky, so it is behind the first paint. In Night theme by day the window and its weather are at 70 % brightness, since a noon sky, fog above all, glared out of the dark room. Without the script neither applies, as there is no sky. The Day scene's text alternative no longer says sunlight fills the room; the window's label carries the sky.
 
 The window element gets `role="img"` and a label such as "Through the window: night over Rabat, a waxing gibbous moon." from the script. The room's own text alternatives no longer mention the sky.
 
@@ -101,7 +103,8 @@ The room script is imported from an Astro `<script>`, emitted as `/_astro/index.
 | Now-playing island         | home       | +156 B                               |
 | Window layer               | home       | 1.3 to 1.4 KiB, one per visit        |
 | Dim night scene            | home       | 11.5 KiB, only 02:00–07:00 and night |
-| Cat on the sill            | home       | 0.6 or 0.7 KiB, only 02:00–05:00     |
+| Cat on the sill            | home       | 0.6 KiB, only 02:00–05:00            |
+| Night scene over Day theme | home       | 12 KiB, only Day theme after dark    |
 | Keys list, switch, comment | every page | about 0.4 KB                         |
 | Art                        | posts      | 0.7 to 1.1 KB                        |
 
@@ -129,6 +132,7 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 
 ## How to see each one
 
+- All of them at once: `just room-states` writes a contact sheet of every sky, late hour, weather and phase in both themes to `apps/site/.room-states/sheet.png`, from the built page and `src/lib/sky.ts`. It is a recipe and not a Preview route so that nothing can reach production: the directory is ignored and no page links it.
 - Window, moon, lamp and note: open the home page; it shows Rabat now. For other hours, the e2e tests "the room keeps Rabat time" in `apps/site/e2e/room.spec.ts` fix the clock at 03:00, noon and dusk; Playwright's `page.clock.setFixedTime` does the same by hand.
 - Record: only with a live `/v1/listening` answer. Locally, `signals.spec.ts` serves one from the shared fixtures.
 - `curl -s http://localhost:8790/` after `just site-build` and `just site-serve`.
@@ -140,7 +144,7 @@ Lighthouse 12.6.1 mobile on home (simulated throttling, Playwright's Chromium, t
 
 - The home page runs a 1.5 KB module script; every other page is unchanged apart from 0.6 KB more theme script, the keys list with its switch, the Keys button and the comment.
 - A device clock that is wrong shows a wrong sky, moon and lamp (accepted above).
-- Moving the window in `scene.py` means moving the moon's centre (122, 25) in `room.ts`.
+- Moving the window in `scene.py` means moving `moonDisc` in `sky.ts`.
 - Changing `art.ts` changes every post's art; the golden files make that a deliberate `vitest run -u`.
 - Visitors with tzdata older than 2026c see the theme's lamp and no note until their browser updates.
 - If Morocco changes its clocks again, `knowsRabatTime()` in `sky.ts` must follow the new rules, or every browser loses the lamp and the note.

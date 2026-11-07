@@ -12,7 +12,7 @@ export const signalsApiBase = SIGNALS_API_BASE.replace(/\/+$/, '');
 export const signals = createReader({ mode: signalsMode, apiBase: signalsApiBase });
 
 /**
- * The attributes of a panel the browser keeps current (src/lib/live.ts, ADR 0015): which
+ * The attributes of a panel the browser keeps current (src/lib/live-page.ts, ADR 0015): which
  * source, when the build's snapshot was taken, the source's stale threshold, and in api mode
  * the endpoint. In fixtures mode there is no endpoint and no request.
  */

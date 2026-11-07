@@ -4,10 +4,10 @@
  * (src/scripts/history.ts) and the tests share them.
  */
 import { rabatDate } from '@min7/contracts/rabat';
-import { count } from '../data/format.ts';
 import { trackBy } from './listening.ts';
 import { instantMs, text } from './live.ts';
 import type { Markup } from './markup.ts';
+import { count, plural } from './plural.ts';
 
 export interface HistoryYear {
   year: number;
@@ -24,8 +24,6 @@ export interface History {
   /** Past years with scrobbles on that date, newest first; empty when there were none. */
   years: HistoryYear[];
 }
-
-export { knowsRabatDate } from './rabat-date.ts';
 
 const int = (value: unknown, min: number, max: number) =>
   Number.isInteger(value) && (value as number) >= min && (value as number) <= max;
@@ -62,25 +60,15 @@ export function readHistory(body: unknown, now: number): History | undefined {
   return { describedDate, years: read };
 }
 
-const dayMonth = new Intl.DateTimeFormat('en-GB', {
-  day: 'numeric',
-  month: 'long',
-  timeZone: 'UTC',
-});
-
-/** `26 October`, for `2026-10-26`. */
-export const dayName = (date: string) => dayMonth.format(Date.parse(`${date}T12:00:00Z`));
-
 /**
  * One year's line: `2025: 29 scrobbles. Most played: `, the title and artist, each a link to
  * its Last.fm page, then `, 2 times.` A day signals read only part of says so (`Most played of
  * the 200 read: `), since its top is only the top of those.
  */
 export function yearLine({ year, scrobbles, read, top }: HistoryYear): Markup[] {
-  const times = `${count(top.plays)} ${top.plays === 1 ? 'time' : 'times'}`;
   return [
-    `${year}: ${count(scrobbles)} ${scrobbles === 1 ? 'scrobble' : 'scrobbles'}. Most played${read < scrobbles ? ` of the ${count(read)} read` : ''}: `,
+    `${year}: ${plural(scrobbles, 'scrobble', 'scrobbles')}. Most played${read < scrobbles ? ` of the ${count(read)} read` : ''}: `,
     ...trackBy(top.track, top.artist, null),
-    `, ${times}.`,
+    `, ${plural(top.plays, 'time', 'times')}.`,
   ];
 }

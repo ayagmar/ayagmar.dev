@@ -138,6 +138,24 @@ describe('JavaScript per page', () => {
     assert.match(problems()[0] ?? '', /^index\.html: \d+ B of JavaScript .* with islands/);
   });
 
+  // Catches an on-demand chunk growing unseen: it is left out of the page, so only its cap holds it.
+  it('leaves a hashed on-demand chunk out of the page and still holds it to its cap', () => {
+    const lazy = {
+      ...limits,
+      onDemand: ['/_astro/lazy.*.js'],
+      allowances: [{ name: 'lazy', file: '/_astro/lazy.*.js', bytes: 2_000 }],
+    };
+    write({
+      'index.html': page(island('/_astro/Search.js')),
+      '_astro/Search.js': 'export const s=()=>import(`./lazy.abc.js`);',
+      '_astro/r.js': 'export default 1;',
+      '_astro/lazy.abc.js': js(1_000),
+    });
+    assert.deepEqual(measure(dist, lazy).problems, []);
+    write({ '_astro/lazy.abc.js': js(3_000) });
+    assert.match(measure(dist, lazy).problems[0] ?? '', /over the 2000 B allowance for the lazy/);
+  });
+
   it('reads comments in an import as the gaps they are, static or dynamic', () => {
     write({
       'index.html': page(island('/_astro/Search.js')),

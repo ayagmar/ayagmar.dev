@@ -74,6 +74,11 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
         return day !== undefined && exact ? reply(day.page) : HttpResponse.error();
       }
       if (method === 'user.gettopartists') return reply(lastfm.topArtists);
+      // A day of listening (ADR 0038), never over 25 hours: a checked empty range. A week is longer.
+      if (query.has('to') && Number(query.get('to')) - Number(query.get('from')) <= 25 * 3600) {
+        const attr = { user: 'min7_', page: '1', perPage: '1', totalPages: '0', total: '0' };
+        return reply({ status: 200, body: { recenttracks: { track: [], '@attr': attr } } });
+      }
       if (query.has('to')) return reply(lastfm.lastWeek);
       if (query.has('from')) return reply(lastfm.thisWeek);
       return reply(lastfm.recentTracks);
@@ -102,6 +107,16 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
         : reply(activity);
     }),
     http.get('https://api.open-meteo.com/v1/forecast', () => reply(openMeteo)),
+    // The archive (ADR 0038): answered only for one date with the hourly code, in Unix time.
+    http.get('https://archive-api.open-meteo.com/v1/archive', ({ request }) => {
+      const query = new URL(request.url).searchParams;
+      const valid =
+        query.get('start_date') === query.get('end_date') &&
+        query.get('hourly') === 'weather_code' &&
+        query.get('timezone') === 'GMT' &&
+        query.get('timeformat') === 'unixtime';
+      return valid ? reply(rawFixtures['open-meteo-archive'].ok) : HttpResponse.error();
+    }),
     // Monkeytype (ADR 0033): answered only with an ApeKey and for exactly `?mode=time` or
     // `?mode=words`; the answer the case has none for (not asked) fails.
     http.get('https://api.monkeytype.com/users/personalBests', ({ request }) => {

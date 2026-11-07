@@ -8,30 +8,19 @@
  * year has some (recording began in 2026), so facts over them stay and say they are "on record".
  */
 import type { LlmUsageDay, ShippingActivityDay } from '@min7/contracts';
-import { rabatDate } from '@min7/contracts/rabat';
+import { dayMs, isoDate, rabatDate, utcDate } from '@min7/contracts/rabat';
 import {
-  count,
-  repoName,
   type ShippingStrip,
   type StripCell,
-  shippedCount,
   shippedWords,
-  stripCell,
+  stripCells,
   stripOf,
 } from '../data/format.ts';
-import {
-  type Counts,
-  dayPath,
-  type Published,
-  plural,
-  range,
-  repoHref,
-  shipped,
-  short,
-  unnamedRepos,
-  unread,
-} from './days.ts';
-import { hours, tokens } from './llm-usage-panel.ts';
+import { type Counts, dayPath, shipped, shippedCount, shortDate } from './day-words.ts';
+import { type Published, range, repoHref, unnamedRepos, unread } from './days.ts';
+import { hours } from './llm-usage-panel.ts';
+import { count, plural } from './plural.ts';
+import { repoName, tokens } from './words.ts';
 
 /** A series as the build read it (`readHistory`). */
 interface Series<Day> {
@@ -116,10 +105,7 @@ export interface YearPage {
 export const yearPath = (year: string) => `/${year}`;
 
 const monthName = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'long' });
-const dayMs = 86_400_000;
-const at = (date: string) => Date.parse(`${date}T00:00:00Z`);
-const isoDate = (time: number) => new Date(time).toISOString().slice(0, 10);
-const nameOf = (month: string) => monthName.format(at(`${month}-01`));
+const nameOf = (month: string) => monthName.format(utcDate(`${month}-01`));
 const inYear = (year: string) => (entry: { date: string }) => entry.date.startsWith(`${year}-`);
 
 /** The months of `year` that have begun on `today`. */
@@ -136,6 +122,19 @@ function datesOf(month: string, today: string): string[] {
   return Array.from({ length }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`).filter(
     (date) => date <= today
   );
+}
+
+/**
+ * The months a series draws: from the first with a record or a failed read (an unknown month may
+ * hold records), so a year that began being recorded in October does not open on nine empty ones.
+ */
+function shownMonths(
+  months: readonly string[],
+  days: readonly { date: string }[],
+  failed: readonly string[]
+): string[] {
+  const first = [...days.map((day) => day.date.slice(0, 7)), ...failed].sort()[0] ?? '';
+  return first === '' ? [] : months.filter((month) => month >= first);
 }
 
 const list = (names: string[]) =>
@@ -180,15 +179,15 @@ function longestRun(active: ReadonlySet<string>, year: string): string | null {
   for (let i = 0; i < dates.length; i += 1) {
     const next = dates[i + 1];
     const date = dates[i] as string;
-    if (next !== undefined && at(next) - at(date) === dayMs) continue;
+    if (next !== undefined && utcDate(next) - utcDate(date) === dayMs) continue;
     if (best === null || i - start + 1 > best.length) {
       best = { from: dates[start] as string, to: date, length: i - start + 1 };
     }
     start = i + 1;
   }
   if (best === null) return null;
-  const before = best.from === `${year}-01-01` && active.has(isoDate(at(best.from) - dayMs));
-  const after = best.to === `${year}-12-31` && active.has(isoDate(at(best.to) + dayMs));
+  const before = best.from === `${year}-01-01` && active.has(isoDate(utcDate(best.from) - dayMs));
+  const after = best.to === `${year}-12-31` && active.has(isoDate(utcDate(best.to) + dayMs));
   return [
     `${plural(best.length, 'day', 'days')}, ${range(best.from, best.to)}`,
     before && `on from ${Number(year) - 1}`,
@@ -252,7 +251,7 @@ function shippingFacts(
       label: `Busiest day${end}`,
       value: [
         {
-          text: short(busiest.date),
+          text: shortDate(busiest.date),
           path: pages.has(busiest.date) ? dayPath(busiest.date) : null,
         },
         text(`: ${shippedWords(shippedCount(busiest))}`),
@@ -287,15 +286,21 @@ function shippingYear(
   const days = history.days.filter(inYear(year));
   const failed = history.failed.filter((month) => month.startsWith(`${year}-`));
   const byDate = new Map(days.map((day) => [day.date, shippedCount(day)]));
-  const months = monthsOf(year, today).map((month): CalendarMonth => {
-    const first = (new Date(at(`${month}-01`)).getUTCDay() + 6) % 7;
+  const shown = shownMonths(monthsOf(year, today), days, failed);
+  const dates = shown
+    .filter((month) => !failed.includes(month))
+    .flatMap((month) => datesOf(month, today));
+  const cells = stripCells(
+    dates.map((date) => ({ date, shipped: byDate.get(date) ?? null })),
+    pages
+  );
+  const months = shown.map((month): CalendarMonth => {
+    const first = (new Date(utcDate(`${month}-01`)).getUTCDay() + 6) % 7;
     return {
       month,
       name: nameOf(month),
       column: first + 1,
-      cells: failed.includes(month)
-        ? null
-        : datesOf(month, today).map((date) => stripCell(date, byDate.get(date) ?? null, pages)),
+      cells: failed.includes(month) ? null : cells.filter(({ date }) => date.startsWith(month)),
     };
   });
   const strip = stripOf(
@@ -358,7 +363,7 @@ function usageYear(
       empty: failed.length > 0 ? unread('Agent usage') : `No agent usage recorded in ${year}.`,
     };
   }
-  const rows = monthsOf(year, today).map((month): UsageRow => {
+  const rows = shownMonths(monthsOf(year, today), days, failed).map((month): UsageRow => {
     const name = nameOf(month);
     if (failed.includes(month)) return { name, state: 'unknown' };
     const recorded = days.filter((day) => day.date.startsWith(`${month}-`));
@@ -383,7 +388,7 @@ function usageYear(
               label: `Busiest day${end}`,
               value: [
                 {
-                  text: short(busiest.date),
+                  text: shortDate(busiest.date),
                   path: pages.has(busiest.date) ? dayPath(busiest.date) : null,
                 },
                 text(`: ${tokens(busiest.totalTokens)} tokens`),
@@ -411,7 +416,7 @@ export function yearPages(
   now: Date,
   pages: ReadonlySet<string>
 ): YearPage[] {
-  const shippingToday = now.toISOString().slice(0, 10);
+  const shippingToday = isoDate(now.getTime());
   const usageToday = rabatDate(now.getTime());
   // A month's block holds whatever is stored for it, so a clock ahead of the build's can bring a
   // row for tomorrow. Each series is cut at its own today before anything counts it.

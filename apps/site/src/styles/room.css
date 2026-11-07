@@ -13,6 +13,26 @@
   overflow-x: clip;
 }
 
+/* A phone crops the room instead of scaling it: the scene at exactly twice its pixels, so they
+   stay square, with the window, the desk and the monitor in view. Every layer and hotspot is a
+   percentage of `.scene`, so they follow without a second image. `--crop` is the view's centre on
+   the scene (164 of its 480 pixels), `--crop-start` and `--crop-end` the view's edges. */
+@media (max-width: 30rem) {
+  .room {
+    container-type: inline-size;
+    overflow-x: clip;
+  }
+
+  .scene {
+    --crop: 328px;
+    --crop-start: calc(var(--crop) - 50cqw);
+    --crop-end: calc(960px - var(--crop) - 50cqw);
+    width: 960px;
+    max-width: none;
+    margin-inline: calc(50cqw - var(--crop)) 0;
+  }
+}
+
 .room-art {
   position: absolute;
   inset: 0;
@@ -60,6 +80,183 @@
   }
 }
 
+/* What the room holds (ADR 0043), drawn over the bare objects of the scene from the room's state,
+   as percentages of its 480x160 pixels: real notes, a real calendar, a spine per post. Picture
+   only: each object's hotspot says the same in words. Every colour is one of the room's own
+   (src/lib/art.ts). They are the lit things in the room, and dim with its lamp. */
+.scene {
+  --room-paper: #d8c8a0;
+  --room-paper-shade: #968a70;
+  --room-amber: #fac468;
+  --room-amber-shade: #de964e;
+  --room-ink: #241614;
+  --room-tack: #be4038;
+  --room-spine: #804840;
+}
+
+.room-lit {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  forced-color-adjust: none;
+  animation: lamp-on 1.8s steps(9) 0.1s backwards;
+}
+
+:root[data-theme="day"] .room-lit {
+  animation: none;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="night"]) .room-lit {
+    animation: none;
+  }
+}
+
+.scene[data-late] .room-lit {
+  filter: brightness(0.55);
+}
+
+/* Six notes on the cork, a repository's day each: a release is the larger, amber one, and each
+   holds up to three lines of ink for what happened. */
+.room-pins {
+  top: 10%;
+  left: 2.5%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 5% 5%;
+  width: 9.167%;
+  height: 22.5%;
+}
+
+/* One shaded pixel in four, two art pixels apart: the room's dither, so paper sits in the scene. */
+.room-pins li {
+  --note: var(--room-paper);
+  --note-shade: var(--room-paper-shade);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12%;
+  margin: 8%;
+  padding: 24% 12% 0;
+  background: conic-gradient(var(--note-shade) 25%, var(--note) 0) 0 0 / 18% 16%;
+}
+
+.room-pins li[data-kind="release"] {
+  --note: var(--room-amber);
+  --note-shade: var(--room-amber-shade);
+  margin: 0;
+}
+
+.room-pins li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 42%;
+  width: 16%;
+  aspect-ratio: 1;
+  background: var(--room-tack);
+}
+
+.room-pins i {
+  height: 7%;
+  background: var(--room-ink);
+}
+
+/* The last eleven weeks of tokens, a column a week: the ramp of /stats (ADR 0037) in its night
+   colours, whatever the theme, as a screen is dark in both. */
+.room-screen {
+  top: 41.25%;
+  left: 2.5%;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  grid-template-columns: repeat(11, 1fr);
+  gap: calc(100% / 27) calc(100% / 43);
+  width: 8.958%;
+  height: 16.875%;
+  background: none;
+  color-scheme: dark;
+}
+
+.room-screen i {
+  aspect-ratio: auto;
+}
+
+/* A spine per post on the bottom shelf, in 19 tracks of five pixels, oldest at the left. The
+   heights turn over by position, so a new post never moves the ones before it. */
+.room-books {
+  top: 38.125%;
+  left: 76.875%;
+  display: grid;
+  grid-template-columns: repeat(19, 1fr);
+  align-items: end;
+  width: 19.792%;
+  height: 15.625%;
+}
+
+.room-books li {
+  height: 84%;
+  margin-right: 20%;
+  background: var(--room-paper);
+}
+
+.room-books li[data-tone="1"] {
+  background: var(--room-spine);
+}
+
+.room-books li:nth-child(3n) {
+  height: 96%;
+}
+
+.room-books li:nth-child(5n + 1) {
+  height: 76%;
+}
+
+/* The record turns with the arm on it only while `record.state` says a track is playing now. The
+   strip is the same pixels in eight frames, so a still one tells the same: reduced motion loses
+   the turning, not the truth. Only then does it download. */
+.room-record {
+  position: absolute;
+  top: 68.125%;
+  left: 76.875%;
+  width: 17.083%;
+  height: 11.25%;
+  background: 0 0 / 800% 100% no-repeat;
+  image-rendering: pixelated;
+  forced-color-adjust: none;
+  pointer-events: none;
+}
+
+.scene[data-record="playing"] .room-record {
+  background-image: url("../assets/record-night.png");
+}
+
+:root[data-theme="day"] .scene[data-sky="day"][data-record="playing"] .room-record {
+  background-image: url("../assets/record-day.png");
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="night"]) .scene[data-sky="day"][data-record="playing"] .room-record {
+    background-image: url("../assets/record-day.png");
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scene[data-record="playing"] .room-record {
+    animation: record-turn 1.8s steps(8) infinite;
+  }
+}
+
+/* Eight frames across seven steps of the strip's offset: the eighth step lands past the last. */
+@keyframes record-turn {
+  to {
+    background-position-x: calc(100% * 8 / 7);
+  }
+}
+
 /* The room's clock (ADR 0027), set by src/scripts/room.ts: the view through the window by
    Rabat's sun, the moon, and the lamp turned down late at night. Each layer covers the whole
    scene, so it lines up with it at every size; only the one in use is downloaded. */
@@ -89,6 +286,37 @@
 
 .scene[data-late] .room-art.night {
   background-image: url("../assets/room-night-dim.png");
+}
+
+/* The theme is the reader's, the sky is Rabat's. Day theme after dark would put sunlit walls
+   beside a night window, so the lit room comes over the day one, under the window: part way at
+   dusk, nearly whole at night. Only then does the second scene download. */
+.scene:is([data-sky="dusk"], [data-sky="night"]) .room-art.day::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../assets/room-night.png") center / 100% 100% no-repeat;
+  image-rendering: pixelated;
+  opacity: 0.85;
+}
+
+.scene[data-sky="dusk"] .room-art.day::after {
+  opacity: 0.5;
+}
+
+.scene[data-late] .room-art.day::after {
+  background-image: url("../assets/room-night-dim.png");
+}
+
+/* And the other way round: in Night theme a noon window glares out of the dark room. */
+:root[data-theme="night"] .scene[data-sky="day"] :is(.room-window, .room-weather) {
+  filter: brightness(0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="day"]) .scene[data-sky="day"] :is(.room-window, .room-weather) {
+    filter: brightness(0.7);
+  }
 }
 
 /* The weather over the window (ADR 0029), set by src/scripts/room.ts from signals: above the
@@ -213,13 +441,13 @@
   }
 }
 
-/* The cat on the windowsill between 02:00 and 05:00 (ADR 0027), by src/scripts/room.ts's hour:
-   above the view and its weather, lit as the room of the shown theme. Its spot covers the cat's
-   pixels (scripts/scene.py) and shows the note above it on hover and focus, like a hotspot's
-   label. Only the shown layer is downloaded. */
-/* Without the script, out of its hours, or with outdated time zone rules (no `data-late`), there
-   is no cat to see or focus. */
-.scene:not([data-late]:is([data-hour="02"], [data-hour="03"], [data-hour="04"])) .room-cat {
+/* The cat on the windowsill between 02:00 and 05:00 (ADR 0027), by `lamp.cat` in the room's state:
+   above the view and its weather, lit by the turned-down lamp in either theme, since these hours
+   are always dark. Its spot covers the cat's pixels (scripts/scene.py) and shows the note above
+   it on hover and focus, like a hotspot's label. */
+/* Without the script, out of its hours, or with outdated time zone rules, there is no cat to see
+   or focus. */
+.scene:not([data-cat]) .room-cat {
   display: none;
 }
 
@@ -229,16 +457,6 @@
   background: url("../assets/cat-night.png") center / 100% 100% no-repeat;
   image-rendering: pixelated;
   pointer-events: none;
-}
-
-:root[data-theme="day"] .room-cat {
-  background-image: url("../assets/cat-day.png");
-}
-
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme="night"]) .room-cat {
-    background-image: url("../assets/cat-day.png");
-  }
 }
 
 .room-cat-spot {
@@ -268,12 +486,13 @@
   pointer-events: none;
 }
 
-/* The spot is 13 % in from the scene's left and `.scene` clips sideways, so on a phone the note
-   wraps before the scene's right edge. */
+/* On a phone the note wraps inside the cropped view. */
 @media (max-width: 30rem) {
   .room-cat-spot span {
+    /* From the view's left edge: the spot itself starts 124px into the cropped scene. */
+    left: calc(var(--crop-start) + 0.5rem - 124px);
     width: max-content;
-    max-width: calc(87vw - 1rem);
+    max-width: calc(100cqw - 1rem);
     line-height: 1.3;
     white-space: normal;
   }
@@ -299,12 +518,19 @@
   pointer-events: none;
 }
 
+@media (max-width: 30rem) {
+  .room-note {
+    left: var(--crop);
+  }
+}
+
 /* Hotspots: real links over the scene's objects, as percentages of its 480x160 pixels
    (scripts/scene.py). Below 360px wide the smallest would be under 24px, so they give way to
    the list under the scene. */
 .hotspot {
   display: none;
   position: absolute;
+  --hotspot-lit: color-mix(in srgb, var(--lamp) 12%, transparent);
   /* WCAG 2.2 target size, in a window a classic scrollbar makes narrower. */
   min-width: 24px;
   min-height: 24px;
@@ -318,30 +544,49 @@
   }
 }
 
+/* Lit by its own pointer or focus. A rule of its own: one selector a browser cannot parse drops
+   its whole rule, and this must hold without `:has()`. */
 .hotspot:hover,
 .hotspot:focus-visible {
+  --label: 1;
   border-color: var(--lamp);
-  background: color-mix(in srgb, var(--lamp) 12%, transparent);
+  background: var(--hotspot-lit);
   outline: 2px solid var(--ground);
   outline-offset: 0;
+}
+
+/* Or by its row in the list under the scene, where `:has()` allows. One line per object in
+   src/lib/room.ts; e2e/room.spec.ts walks them all. */
+@supports selector(:has(*)) {
+  main:has([data-room-list="corkboard"]:is(:hover, :focus-visible)) [data-room="corkboard"],
+  main:has([data-room-list="frame"]:is(:hover, :focus-visible)) [data-room="frame"],
+  main:has([data-room-list="notebook"]:is(:hover, :focus-visible)) [data-room="notebook"],
+  main:has([data-room-list="monitor"]:is(:hover, :focus-visible)) [data-room="monitor"],
+  main:has([data-room-list="keyboard"]:is(:hover, :focus-visible)) [data-room="keyboard"],
+  main:has([data-room-list="tea"]:is(:hover, :focus-visible)) [data-room="tea"],
+  main:has([data-room-list="record-player"]:is(:hover, :focus-visible))
+    [data-room="record-player"] {
+    --label: 1;
+    border-color: var(--lamp);
+    background: var(--hotspot-lit);
+    outline: 2px solid var(--ground);
+    outline-offset: 0;
+  }
 }
 
 .hotspot span {
   position: absolute;
   bottom: 100%;
   left: -2px;
+  /* A title can be long: it wraps inside the scene, which clips sideways. */
+  width: max-content;
+  max-width: min(32rem, 88vw);
   padding: 0.3rem 0.5rem;
   background: var(--ground);
   color: var(--text);
-  font: 600 0.8125rem / 1 var(--mono);
-  white-space: nowrap;
-  opacity: 0;
+  font: 600 0.8125rem / 1.3 var(--mono);
+  opacity: var(--label, 0);
   pointer-events: none;
-}
-
-.hotspot:hover span,
-.hotspot:focus-visible span {
-  opacity: 1;
 }
 
 @media (hover: none) {
@@ -410,6 +655,35 @@
   left: auto;
 }
 
+/* Objects outside the phone's crop drop out, and those it cuts stop at its edge; the list under
+   the scene reaches every one. */
+@media (max-width: 30rem) {
+  :is(
+    [data-room="corkboard"],
+    [data-room="frame"],
+    [data-room="tea"],
+    [data-room="record-player"]
+  ).hotspot {
+    display: none;
+  }
+
+  [data-room="notebook"] {
+    left: max(5.833%, var(--crop-start) + 6px);
+    right: 72.084%;
+    width: auto;
+  }
+
+  [data-room="monitor"] {
+    right: max(43.75%, var(--crop-end) + 6px);
+    width: auto;
+  }
+
+  [data-room="keyboard"] {
+    right: max(45%, var(--crop-end) + 6px);
+    width: auto;
+  }
+}
+
 .intro {
   margin: 3rem 0 0;
   font-size: clamp(2rem, 1.4rem + 2.8vw, 3.25rem);
@@ -453,6 +727,30 @@
     14.6% 14.6%,
     35.4% 14.6%
   );
+}
+
+/* The first page of a session (src/scripts/theme.js): the name, the role and the list follow the
+   lamp in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the attribute
+   exists only with scripts, so nothing is hidden without them. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-entrance] :is(.intro, .intro span, .room-list) {
+    animation: arrive 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
+  }
+
+  :root[data-entrance] .intro span {
+    animation-delay: 0.48s;
+  }
+
+  :root[data-entrance] .room-list {
+    animation-delay: 0.56s;
+  }
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
 }
 
 /* Two columns on phones, four on tablets, then every object in one row. An odd one out on a
@@ -501,21 +799,48 @@
 }
 
 /* No italic on home: it would add the italic font to the scene's critical path (ADR 0026). */
-.room-list a span {
+.room-section {
   color: var(--text);
   font-size: 1rem;
 }
 
-.room-list a span::first-letter {
+.room-section::first-letter {
   text-transform: uppercase;
 }
 
-.room-list a:hover {
+.room-list a:is(:hover, :focus-visible) {
   border-color: var(--lamp);
 }
 
-.room-list a:hover span {
+.room-list a:is(:hover, :focus-visible) .room-section {
   color: var(--lamp);
+}
+
+/* With the room's hotspots in reach the list steps back: one muted row of section names, each
+   lighting its object in the scene. The object's name stays for screen readers. */
+@media (min-width: 60rem) {
+  .room-list {
+    margin-top: 1.5rem;
+  }
+
+  .room-list a {
+    padding: 0.25rem 0;
+    border-top: 0;
+  }
+
+  .room-object {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .room-section {
+    color: var(--muted);
+    font-size: 0.9375rem;
+  }
 }
 
 /* ---------- panels ---------- */
@@ -707,5 +1032,123 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* The line under the scene sits on the page's column, as the scrub does. */
+.room > .sample {
+  width: min(66rem, 100% - 2 * var(--gutter));
+  margin-inline: auto;
+}
+
+/* The scrub under the room (ADR 0044). Only with scripts, from the first paint: `data-theme-switch`
+   is set before it, so the band is there at once and showing it moves nothing. */
+.room-scrub {
+  display: none;
+  width: min(66rem, 100% - 2 * var(--gutter));
+  margin: 0.75rem auto 0;
+}
+
+:root[data-theme-switch] .room-scrub {
+  display: block;
+}
+
+/* A hairline and a small lamp-coloured mark, in a band tall enough to take a finger: the thumb's
+   clear borders are part of its 24 px target. */
+.room-scrub input {
+  --thumb: var(--lamp);
+  display: block;
+  width: 100%;
+  height: 1.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  cursor: ew-resize;
+  appearance: none;
+}
+
+.room-scrub input::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--line);
+}
+
+.room-scrub input::-moz-range-track {
+  height: 1px;
+  background: var(--line);
+}
+
+.room-scrub input::-webkit-slider-thumb {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin-top: -11.5px;
+  border: solid transparent;
+  border-width: 4px 10px;
+  background: var(--thumb);
+  background-clip: padding-box;
+  appearance: none;
+}
+
+.room-scrub input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: solid transparent;
+  border-width: 4px 10px;
+  border-radius: 0;
+  background: var(--thumb);
+  background-clip: padding-box;
+}
+
+.room-scrub-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  align-items: baseline;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.room-scrub-date {
+  margin: 0 auto 0 0;
+}
+
+.room-scrub[data-past] .room-scrub-date {
+  color: var(--text);
+}
+
+.room-scrub-now {
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  color: var(--lamp);
+  font: inherit;
+  cursor: pointer;
+}
+
+.room-scrub-now[hidden] {
+  display: none;
+}
+
+.room-scrub-failed {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.room-scrub-facts {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  list-style: none;
+}
+
+@media print {
+  :root[data-theme-switch] .room-scrub {
+    display: none;
   }
 }

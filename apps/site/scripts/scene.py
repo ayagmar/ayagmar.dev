@@ -10,6 +10,11 @@ The room details (ADR 0027) add four layers the home page script picks by Rabat 
 `room-night-dim.png`, the night room with the lamp turned down between 02:00 and 07:00. The
 moon is not drawn here: the script draws the real phase over the window. `cat-{night,day}.png`
 are only a cat asleep on the sill, shown between 02:00 and 05:00.
+
+The picture invents nothing (ADR 0043): the corkboard is bare, the framed screen dark, the bottom
+shelf empty and the record player's arm parked. The page lays the real notes, days and spines over
+them, from the room's state. `record-{night,day}.png` are strips of eight frames of the record
+turning with the arm on it, shown only while a track plays.
 Run `just scene`; the outputs in src/assets/ are committed.
 
 The hotspot rectangles over the scene live in src/styles/room.css, in percentages of these
@@ -19,18 +24,20 @@ import math
 import random
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 OUT_DIR = Path(__file__).resolve().parent.parent / "src" / "assets"
 
 
 def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
-         weather: str | None = None, cat: bool = False) -> tuple[Image.Image, Image.Image]:
+         weather: str | None = None, cat: bool = False,
+         record: int | None = None) -> tuple[Image.Image, Image.Image]:
     """The room in daylight or at night, and the mask of the view through the window that
     nothing in the room covers. `sky` is that view (day, dusk or night, the theme's own by
     default) and `lamp` scales the desk lamp's light. With `weather` (cloudy, overcast, fog, rain,
     snow or storm) the mask is only the part of the view that weather covers (ADR 0029). With
-    `cat` a cat sleeps on the sill, and the mask is the cat."""
+    `cat` a cat sleeps on the sill, and the mask is the cat. With `record` (0 to 7) the arm is on
+    the record, turned that many eighths."""
     sky = sky or ("day" if DAY else "night")
     W, H = 480, 160
     rnd = random.Random(7)
@@ -375,34 +382,19 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
     R(SX1 - 34, BOARDS[1] - 4, SX1 - 6, BOARDS[1], (40, 70, 130))
     R(SX1 - 32, BOARDS[1] - 8, SX1 - 8, BOARDS[1] - 4, (214, 170, 70))
     R(SX1 - 30, BOARDS[1] - 12, SX1 - 10, BOARDS[1] - 8, (190, 64, 56))
-    # bottom row: novels, a few light novels
-    books(SX0 + 3, SX1 - 3, BOARDS[2], 17, 23, 31)
+    # bottom row: what the owner wrote, a spine per post, laid over by the page (ADR 0043). Only
+    # the bookend at the far end of its 19 tracks is painted.
+    R(SX1 - 6, BOARDS[2] - 12, SX1 - 3, BOARDS[2], BRASS)
 
     # ---------------------------------------------------------- corkboard
     R(8, 12, 58, 52, WOOD_D)
     R(10, 14, 56, 50, (150, 104, 66))
     for _ in range(120):
         P(rnd.randint(10, 55), rnd.randint(14, 49), (126, 86, 54))
-    for nx, ny, nw, nh, col in ((13, 17, 13, 11, (232, 218, 182)), (30, 16, 12, 14, (250, 200, 110)),
-                                (44, 19, 10, 9, (190, 220, 200)), (14, 32, 11, 12, (240, 160, 150)),
-                                (28, 34, 14, 10, (232, 218, 182)), (45, 32, 9, 13, (250, 200, 110))):
-        R(nx, ny, nx + nw, ny + nh, col)
-        for ly in range(ny + 3, ny + nh - 1, 3):
-            R(nx + 2, ly, nx + nw - 2 - rnd.randint(0, 3), ly + 1, INK)
-        P(nx + nw // 2, ny, (190, 64, 56))
-    # string between two notes
-    LINE([(25, 23), (36, 24), (49, 28)], (190, 64, 56), 1)
 
     # ------------------------------------------ framed little screen (usage)
     R(8, 58, 58, 102, BRASS_D)
     R(10, 60, 56, 100, (20, 22, 40), True)
-    LV = [(22, 26, 48), MINT_D, MINT_M, MINT, (190, 246, 220)]
-    hr = random.Random(5)
-    for cx in range(11):
-        for cy in range(7):
-            lv = min(4, max(0, int(hr.random() * 3 + (cx / 11) * 1.6 - 0.4 + (1 if cy in (1, 2, 3) else 0) * 0.5)))
-            R(12 + cx * 4, 66 + cy * 4, 12 + cx * 4 + 3, 66 + cy * 4 + 3, LV[lv], True)
-    R(12, 94, 40, 96, MINT_M, True)
 
     # ------------------------------------------------------------- desk
     R(0, 108, W, 134, WOOD)
@@ -515,8 +507,19 @@ def draw(DAY: bool, sky: str | None = None, lamp: float = 1.0,
     ELL(391, 115, 407, 123, (190, 64, 56))
     P(399, 119, (232, 218, 182))
     ELL(437, 111, 445, 118, BRASS)
-    LINE([(441, 113), (415, 120)], (210, 214, 230), 2)
-    R(410, 118, 416, 123, (210, 214, 230))
+    if record is None:
+        # parked off the disc: nothing is playing until a live answer says so (ADR 0043)
+        LINE([(441, 113), (447, 123)], (210, 214, 230), 2)
+        R(444, 122, 450, 126, (210, 214, 230))
+    else:
+        turn = record * math.pi / 4
+        for reach, rx, ry, col in ((1, 19, 5.5, (86, 86, 112)), (-1, 19, 5.5, (86, 86, 112)),
+                                   (1, 6, 3, (232, 218, 182))):
+            x = 399 + round(reach * rx * math.cos(turn))
+            y = 119 + round(reach * ry * math.sin(turn))
+            R(x - 1, y, x + 2, y + 1, col)
+        LINE([(441, 113), (415, 120)], (210, 214, 230), 2)
+        R(410, 118, 416, 123, (210, 214, 230))
     for kx in (370, 376):
         ELL(kx, 129, kx + 4, 133, BRASS)
     R(440, 129, 448, 131, (232, 218, 182))
@@ -655,6 +658,22 @@ def drops(sky: str) -> Image.Image:
     return tile
 
 
+RECORD_BOX = (369, 109, 451, 127)
+
+
+def record_strip(day: bool) -> Image.Image:
+    """The eight frames of the turning record side by side, each only the pixels that differ from
+    the room with its arm parked, so the strip lies over either scene and costs under a KiB."""
+    parked = draw(day)[0].convert("RGB").crop(RECORD_BOX)
+    width, height = parked.size
+    strip = Image.new("RGBA", (width * 8, height), (0, 0, 0, 0))
+    for frame in range(8):
+        turning = draw(day, record=frame)[0].convert("RGB").crop(RECORD_BOX)
+        changed = ImageChops.difference(parked, turning).convert("L").point(lambda v: 255 if v else 0)
+        strip.paste(turning, (frame * width, 0), changed)
+    return strip.quantize(colors=32, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE)
+
+
 def colours(image: Image.Image) -> set[tuple[int, int, int]]:
     """The colours an image shows, transparency left out."""
     rgba = image.convert("RGBA")
@@ -668,7 +687,8 @@ outputs = {
     **{f"window-{sky}.png": window_only(*draw(False, sky)) for sky in ("day", "dusk", "night")},
     # Lit as the room is at that hour: the lamp turned down at night, daylight in the day theme.
     "cat-night.png": window_only(*draw(False, lamp=0.35, cat=True)),
-    "cat-day.png": window_only(*draw(True, cat=True)),
+    "record-night.png": record_strip(False),
+    "record-day.png": record_strip(True),
 }
 # The weather over the window (ADR 0029): one layer per kind for the day sky and one for the
 # night, which dusk shows too, plus the falling rain. Clear weather is the sky as it is.

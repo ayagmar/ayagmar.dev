@@ -7,6 +7,7 @@ import { stripWords } from '../data/format.ts';
 import Base from '../layouts/Base.astro';
 import { dayZones } from '../lib/days.ts';
 import { getDays } from '../lib/posts.ts';
+import { nothingPublishedThen } from '../lib/writing.ts';
 
 // A page per calendar year with history (src/lib/years.ts). A year that only says it could not
 // be read stays out of search and the sitemap (docs/seo.md, ADR 0041).
@@ -17,7 +18,7 @@ export const getStaticPaths = (async () => {
 
 const { page } = Astro.props;
 const { shipping, usage, year } = page;
-const words = shipping.empty === null ? stripWords(shipping.strip) : null;
+const words = shipping.empty === null ? stripWords(shipping.strip, 'faint') : null;
 ---
 
 <Base title={year} description={page.description} noindex={!page.hasContent}>
@@ -122,7 +123,7 @@ const words = shipping.empty === null ? stripWords(shipping.strip) : null;
     <section aria-labelledby="year-published">
       <h2 id="year-published">Published</h2>
       {page.published.length === 0 ? (
-        <p>Nothing published.</p>
+        <p>{nothingPublishedThen}</p>
       ) : (
         <ul class="log">
           {page.published.map((entry) => (

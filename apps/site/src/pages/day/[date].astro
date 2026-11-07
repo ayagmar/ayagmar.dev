@@ -1,10 +1,11 @@
 ---
 import type { GetStaticPaths } from 'astro';
 import Sample from '../../components/Sample.astro';
-import { repoName } from '../../data/format.ts';
 import Base from '../../layouts/Base.astro';
 import { dayZones } from '../../lib/days.ts';
 import { getDays } from '../../lib/posts.ts';
+import { repoName } from '../../lib/words.ts';
+import { nothingPublishedThen } from '../../lib/writing.ts';
 import { yearPath } from '../../lib/years.ts';
 
 // A page per date with a recorded day or something published (src/lib/days.ts). They are thin,
@@ -65,7 +66,7 @@ const year = day.date.slice(0, 4);
     <section aria-labelledby="day-published">
       <h2 id="day-published">Published</h2>
       {day.published.length === 0 ? (
-        <p>Nothing published.</p>
+        <p>{nothingPublishedThen}</p>
       ) : (
         <ul class="log">
           {day.published.map((entry) => (

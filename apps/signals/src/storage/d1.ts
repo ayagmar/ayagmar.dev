@@ -1,6 +1,6 @@
 import { type DailySource, type SourceId, sourceIdSchema } from '@min7/contracts';
 import type { PullHistory } from '../adapters/types.ts';
-import { pullDaysStatement } from './daily.ts';
+import { type DailyRow, dayStatusStatement, daysStatement, pullDaysStatement } from './daily.ts';
 import type { SnapshotStore, SourceStatus, StoredSnapshot } from './types.ts';
 
 type StatusRow = {
@@ -19,6 +19,8 @@ const statusColumns =
 /** Every stored time is UTC with milliseconds, so the TEXT columns sort as instants. */
 export const utc = (time: string | number) => new Date(time).toISOString();
 
+type SnapshotRow = StatusRow & { json: string | null };
+
 const toStatus = (row: StatusRow): SourceStatus | null => {
   const source = sourceIdSchema.safeParse(row.source);
   if (!source.success) return null;
@@ -33,17 +35,39 @@ const toStatus = (row: StatusRow): SourceStatus | null => {
   };
 };
 
+const toStored = (row: SnapshotRow | null | undefined): StoredSnapshot | null => {
+  const status = row && toStatus(row);
+  if (!row || !status) return null;
+  return { ...status, snapshot: row.json === null ? null : JSON.parse(row.json) };
+};
+
 export class D1SnapshotStore implements SnapshotStore {
   constructor(private readonly db: D1Database) {}
 
-  async get(source: SourceId): Promise<StoredSnapshot | null> {
-    const row = await this.db
+  private snapshotStatement(source: SourceId) {
+    return this.db
       .prepare(`SELECT ${statusColumns}, json FROM snapshots WHERE source = ?`)
-      .bind(source)
-      .first<StatusRow & { json: string | null }>();
-    const status = row && toStatus(row);
-    if (!row || !status) return null;
-    return { ...status, snapshot: row.json === null ? null : JSON.parse(row.json) };
+      .bind(source);
+  }
+
+  async get(source: SourceId): Promise<StoredSnapshot | null> {
+    return toStored(await this.snapshotStatement(source).first<SnapshotRow>());
+  }
+
+  /**
+   * `get` and the stored days from `from` to `to`, oldest first, with their values parsed. One
+   * batch, because a read away from the database's region pays about 170 ms per round trip.
+   */
+  async getWithDays(source: DailySource, from: string, to: string) {
+    const [snapshot, days] = await this.db.batch([
+      this.snapshotStatement(source),
+      daysStatement(this.db, source, from, to),
+    ]);
+    const rows = (days?.results ?? []) as { day: string; json: string }[];
+    return {
+      stored: toStored(snapshot?.results[0] as SnapshotRow | undefined),
+      days: rows.map(({ day, json }) => ({ day, data: JSON.parse(json) as unknown })),
+    };
   }
 
   async list(): Promise<SourceStatus[]> {
@@ -130,6 +154,12 @@ export class D1SnapshotStore implements SnapshotStore {
       if (merged.days.length > 0) {
         write.push(pullDaysStatement(this.db, source, merged.days, writeId, at, attempt));
       }
+      if (history.outcome?.code === null) {
+        write.push(dayStatusStatement(this.db, source, history.outcome, writeId, attempt));
+      }
+    }
+    if (history.outcome != null && history.outcome.code !== null) {
+      write.push(dayStatusStatement(this.db, source, history.outcome, null, attempt));
     }
     await this.db.batch([
       ...write,
@@ -140,6 +170,41 @@ export class D1SnapshotStore implements SnapshotStore {
         )
         .bind(source, Date.parse(attempt)),
     ]);
+  }
+
+  /**
+   * Merges the days of `date` into `source`'s history without its snapshot (ADR 0038), for a
+   * backfill: the snapshot's JSON, times and freshness stay as they are, whatever the date.
+   * Only `write_id` moves, the fence `putDated` and this method share, so a live pull and a
+   * backfill that read the same state cannot overwrite each other's merge: the loser writes
+   * nothing. False when this one lost, or the source has no row to fence on.
+   */
+  async mergeDays(
+    source: DailySource,
+    date: string,
+    merge: (stored: ReadonlyMap<string, string>) => DailyRow[],
+    at: string
+  ): Promise<boolean> {
+    const [snapshot, day] = await this.db.batch([
+      this.db.prepare('SELECT write_id FROM snapshots WHERE source = ?').bind(source),
+      this.db
+        .prepare('SELECT day, json FROM daily WHERE source = ? AND day = ?')
+        .bind(source, date),
+    ]);
+    const stored = (day?.results ?? []) as { day: string; json: string }[];
+    const rows = merge(new Map(stored.map((row) => [row.day, row.json])));
+    if (rows.length === 0) return true;
+    const row = snapshot?.results[0] as { write_id: string | null } | undefined;
+    if (row === undefined) return false;
+    const writeId = crypto.randomUUID();
+    const time = utc(at);
+    const [fence] = await this.db.batch([
+      this.db
+        .prepare('UPDATE snapshots SET write_id = ?2 WHERE source = ?1 AND write_id IS ?3')
+        .bind(source, writeId, row.write_id),
+      pullDaysStatement(this.db, source, rows, writeId, time, time),
+    ]);
+    return (fence?.meta.changes ?? 0) > 0;
   }
 
   /**

@@ -1,6 +1,6 @@
 # 0026. Visual design: the late-night room
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: ADR 0034 changes the panels, the palette and the headings' typeface.
+Status: accepted, 2026-10-26. Amended 2026-10-26: ADR 0034 changes the panels, the palette and the headings' typeface. Amended 2026-11-06: a phone crops the scene instead of scaling it.
 
 ## Context
 
@@ -63,9 +63,9 @@ The scene is home's LCP element on phones. Lighthouse 13.5 mobile (simulated thr
 
 Performance 0.99 to 1.00, accessibility 1.00, CLS under 0.001 in the last row. A high-priority preload of the shown scene, started by the theme script, was tried and left out: once the italic was gone, runs with and without it differed by less than the run-to-run spread (about 0.15 s).
 
-Seven hotspots are real links in reading order (left to right): corkboard (shipping), framed screen (LLM usage), notebook (writing), monitor (projects), keyboard (TIL, added later), tea set (about), record player (music). The shelf (reading) was one until 2026-10-31; it leads nowhere until /stats shows the shelf (ADR 0034's amendment). `apps/site/src/lib/room.ts` lists them once, and both the hotspots and the plain list under the scene render from it. Their rectangles are percentages in `room.css`, keyed by `data-room`. Each hotspot is at least 32 scene pixels on both sides, so it is at least 24 CSS px from a 360 px viewport up; below 360 px the hotspots are hidden and the list is the way in. The scene scales to the viewport width at every size.
+Seven hotspots are real links in reading order (left to right): corkboard (shipping), framed screen (LLM usage), notebook (writing), monitor (projects), keyboard (TIL, added later), tea set (about), record player (music). The shelf (reading) was one until 2026-10-31; it leads nowhere until /stats shows the shelf (ADR 0034's amendment). `apps/site/src/lib/room.ts` lists them once, and both the hotspots and the plain list under the scene render from it. Their rectangles are percentages in `room.css`, keyed by `data-room`. Each hotspot is at least 32 scene pixels on both sides, so it is at least 24 CSS px from a 360 px viewport up; below 360 px the hotspots are hidden and the list is the way in. The scene scales to the viewport width down to 30 rem. Amended 2026-11-06: at 390 px that left a 390x130 strip, so below 30 rem it is cropped, not scaled: the same image at exactly twice its pixels (960x320), centred on scene x 164, so the window, the lamp, the desk and the monitor are in view and the pixels stay square at any device ratio. Nothing downloads differently and the box's size is fixed by CSS, so it costs no layout shift. Only the notebook, monitor and keyboard hotspots stay, stopping at the view's edge; the list reaches the rest.
 
-The only motion is the lamp coming on (a 1.8 s brightness fade, night only) and the record turning in the listening panel. `prefers-reduced-motion: reduce` sets `animation: none` on everything.
+The only motion is the lamp coming on (a 1.8 s brightness fade, night only), the entrance behind it on a session's first page (ADR 0037) and the record turning in the listening panel. `prefers-reduced-motion: reduce` sets `animation: none` on everything.
 
 ### Pages
 
@@ -101,7 +101,7 @@ Biome's `noDescendingSpecificity` is off for `apps/site/src/styles/**`. It compa
 
 ### Rejected from the prototype
 
-- The 760 px wide scene with drag-to-scroll on phones: it hid most of the room and forced a gesture. The scene now scales to the viewport, and the list carries narrow phones.
+- The 760 px wide scene with drag-to-scroll on phones: it hid most of the room and forced a gesture. A phone's crop (2026-11-06) keeps that rejection: it has no scrolling, and the list carries what it leaves out.
 - The live Casablanca clock on the desk and the heatmap built in the browser: they needed page JavaScript. The clock may come back with the easter eggs.
 - Sample LLM usage and shelf panels with made-up numbers: those sources are not wired, so the home page shows only real panels and their hotspots lead to the stats sections that say "No data yet".
 - Hotspot targets inside the home page (`#writing`): they now go to the real pages.

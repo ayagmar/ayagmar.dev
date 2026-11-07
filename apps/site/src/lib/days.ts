@@ -10,9 +10,12 @@ import {
   type ProjectSlug,
   type ShippingActivityDay,
 } from '@min7/contracts';
-import { count, repoName, shippedCount } from '../data/format.ts';
-import { hours, tokens } from './llm-usage-panel.ts';
+import { dayMs, rabatTimeZone, utcDate } from '@min7/contracts/rabat';
+import { dayPath, longDate, shipped, shippedCount, shortDate } from './day-words.ts';
+import { hours } from './llm-usage-panel.ts';
+import { plural } from './plural.ts';
 import { projectPath } from './projects.ts';
+import { repoName, tokens } from './words.ts';
 
 /** The history the build read; a series is null when it could not be read whole. */
 export interface History {
@@ -35,54 +38,15 @@ export interface Published {
   kind: 'Post' | 'Note';
 }
 
-export type Counts = Pick<
-  ShippingActivityDay,
-  'pushes' | 'commits' | 'merges' | 'releases' | 'stars'
->;
-
-export const dayPath = (date: string) => `/day/${date}`;
-
-export const plural = (value: number, one: string, many: string) =>
-  `${count(value)} ${value === 1 ? one : many}`;
-
-const at = (date: string) => Date.parse(`${date}T00:00:00Z`);
-const longDate = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-});
-const shortDate = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
-/** `12 Oct 2026`. */
-export const short = (date: string) => shortDate.format(at(date));
-
 /** `12–26 Oct 2026`, `28 Sept–4 Oct 2026`, `28 Dec 2026–3 Jan 2027`, or `12 Oct 2026`. */
 export function range(from: string, to: string): string {
-  if (from === to) return short(from);
-  if (from.slice(0, 4) !== to.slice(0, 4)) return `${short(from)}–${short(to)}`;
+  if (from === to) return shortDate(from);
+  if (from.slice(0, 4) !== to.slice(0, 4)) return `${shortDate(from)}–${shortDate(to)}`;
   const start =
     from.slice(0, 7) === to.slice(0, 7)
       ? String(Number(from.slice(8)))
-      : short(from).replace(/ \d{4}$/, '');
-  return `${start}–${short(to)}`;
-}
-
-/** What shipped, `2 merges · 5 commits in 1 push · 1 release`; empty for nothing. Stars are
- * attention, not shipping, as on the strip. */
-export function shipped({ merges, commits, pushes, releases }: Counts): string {
-  return [
-    merges > 0 && plural(merges, 'merge', 'merges'),
-    pushes > 0 && `${plural(commits, 'commit', 'commits')} in ${plural(pushes, 'push', 'pushes')}`,
-    releases > 0 && plural(releases, 'release', 'releases'),
-  ]
-    .filter(Boolean)
-    .join(' · ');
+      : shortDate(from).replace(/ \d{4}$/, '');
+  return `${start}–${shortDate(to)}`;
 }
 
 export const repoHref = (repo: string) => {
@@ -126,7 +90,7 @@ export interface DayPage {
 /** Which calendar each series counts in, for the line under its heading. */
 export const dayZones = {
   shipping: 'Counted over the UTC day.',
-  usage: 'Counted over the day in Rabat (Africa/Casablanca).',
+  usage: `Counted over the day in Rabat (${rabatTimeZone}).`,
 } as const;
 
 /** Said when counts include repositories they do not name. */
@@ -176,9 +140,9 @@ export function dayPages(history: History, published: readonly Published[]): Day
     ...new Set([...shippingDays.keys(), ...usageDays.keys(), ...published.map((p) => p.date)]),
   ].sort();
   const link = (date: string | undefined) =>
-    date === undefined ? null : { path: dayPath(date), title: longDate.format(at(date)) };
+    date === undefined ? null : { path: dayPath(date), title: longDate(date) };
   return dates.map((date, index) => {
-    const title = longDate.format(at(date));
+    const title = longDate(date);
     return {
       date,
       title,
@@ -211,7 +175,7 @@ export function projectReceipt(history: History, repo: string): string | null {
     commits += entry.commits;
     releases += entry.releases;
   }
-  return `${plural(merges, 'merge', 'merges')} · ${plural(commits, 'commit', 'commits')} · ${plural(releases, 'release', 'releases')} since ${short(first.date)}`;
+  return `${plural(merges, 'merge', 'merges')} · ${plural(commits, 'commit', 'commits')} · ${plural(releases, 'release', 'releases')} since ${shortDate(first.date)}`;
 }
 
 /** A post's `receipts` frontmatter, dates as `YYYY-MM-DD`. */
@@ -267,7 +231,7 @@ export function postReceipt(
   }
   parts.push(plural(active.size, 'active day', 'active days'));
 
-  const length = (at(to) - at(from)) / 86_400_000 + 1;
+  const length = (utcDate(to) - utcDate(from)) / dayMs + 1;
   const gaps = shippingDays.length < length || usageDays.length < length;
   const where = repos === null ? '' : `, ${repos.map(repoName).join(', ')}`;
   return `${range(from, to)}${where}: ${parts.join(' · ')}${gaps ? ' (some days have no record)' : ''}`;

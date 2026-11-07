@@ -1,5 +1,5 @@
 ---
-import { isoDay, type Post, postPath } from '../lib/writing.ts';
+import { isoDay, nothingPublished, type Post, postPath } from '../lib/writing.ts';
 
 interface Props {
   posts: readonly Post[];
@@ -7,7 +7,7 @@ interface Props {
   empty?: string;
 }
 
-const { posts, empty = 'Nothing published yet.' } = Astro.props;
+const { posts, empty = nothingPublished } = Astro.props;
 ---
 
 {posts.length === 0 ? (

@@ -4,19 +4,16 @@
 // a browser that does not know Morocco's current clock rules (the date there would be an hour
 // off around midnight), and whenever the last answer is unusable or for another date.
 import { nextDate, rabatDayStart } from '@min7/contracts/rabat';
-import {
-  dayName,
-  type HistoryYear,
-  knowsRabatDate,
-  readHistory,
-  yearLine,
-} from '../lib/history.ts';
+import { dayName } from '../lib/day-words.ts';
+import { type HistoryYear, readHistory, yearLine } from '../lib/history.ts';
 import { ask, due } from '../lib/live.ts';
-import { el, toNode } from '../lib/markup.ts';
+import { el } from '../lib/markup.ts';
+import { toNode } from '../lib/markup-page.ts';
+import { knowsRabat } from '../lib/rabat-date.ts';
 
 const block = document.querySelector<HTMLElement>('.history');
 // `${SIGNALS_API_BASE}/v1/listening-history`, absent in fixtures mode: then no request.
-const endpoint = knowsRabatDate() ? block?.dataset.historySrc : undefined;
+const endpoint = knowsRabat() ? block?.dataset.historySrc : undefined;
 
 // The last answer, read again on every check so that it shows only on the date it is for.
 let answer: unknown;

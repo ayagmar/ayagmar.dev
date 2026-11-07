@@ -1,22 +1,30 @@
 import type { ProjectSlug } from '@min7/contracts';
+import { isoDate } from '@min7/contracts/rabat';
 import type { About } from '../data/about.ts';
 import { aboutLinks, formatMonth, monthSpan } from '../data/about.ts';
 import { projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
+import { longDate } from './day-words.ts';
 import { feedPaths } from './feed.ts';
-import { postCount, postsAbout, projectLinks, projectPath, type SiteProject } from './projects.ts';
-import { nav, nowPage, site, siteUrl } from './site.ts';
+import type { BrewingItem } from './now-schema.ts';
+import {
+  postCount,
+  postsAbout,
+  projectLinks,
+  projectPath,
+  projectRowLabel,
+  type SiteProject,
+} from './projects.ts';
+import { curlTarget, identityLines, nav, nowPage, site, siteUrl, textRule } from './site.ts';
 import { type Note, notePath } from './til.ts';
-import { isoDay, type Post, postPath, postsByTag } from './writing.ts';
-
-const rule = '-'.repeat(72);
+import { isoDay, nothingPublished, type Post, postPath, postsByTag } from './writing.ts';
 
 /** A built `.txt` page. Every text page ends in one newline. */
 export const textFile = (body: string) =>
   new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 
-const empty = '  Nothing published yet.';
+const empty = `  ${nothingPublished}`;
 
 /** Lines of `date  title`, then the URL under it, then `extra` lines, for a list of entries. */
 const dated = (date: Date, title: string, path: string, ...extra: string[]) => [
@@ -26,7 +34,7 @@ const dated = (date: Date, title: string, path: string, ...extra: string[]) => [
 
 /** A page's closing lines, with its HTML address. */
 const footer = (path: string) => [
-  rule,
+  textRule,
   `  ${'Page'.padEnd(10)} ${siteUrl}${path}`,
   `  ${'Home'.padEnd(10)} ${siteUrl}`,
   '',
@@ -50,24 +58,22 @@ const asciiRoom = String.raw`
 |____________________________________________________|___________|___|
 `.slice(1, -1);
 
-/** The page `curl ayagmar.dev` prints: who, recent writing and notes, projects, where to go next. */
+/**
+ * The page `curl ayagmar.dev` prints: who, recent writing and notes, projects, where to go next.
+ * `origin` is where this build is served, so a Preview's room command reaches its own room.
+ */
 export function renderPlainText(
   posts: readonly Post[],
   notes: readonly Note[],
-  projects: readonly ProjectSlug[]
+  projects: readonly ProjectSlug[],
+  origin: string
 ): string {
-  const writing =
-    posts.length === 0
-      ? [empty]
-      : posts
-          .slice(0, 10)
-          .flatMap((post) => dated(post.data.date, post.data.title, postPath(post.id)));
-  const til =
-    notes.length === 0
-      ? [empty]
-      : notes
-          .slice(0, 5)
-          .flatMap((note) => dated(note.data.date, note.data.title, notePath(note.id)));
+  const writing = posts
+    .slice(0, 10)
+    .flatMap((post) => dated(post.data.date, post.data.title, postPath(post.id)));
+  const til = notes
+    .slice(0, 5)
+    .flatMap((note) => dated(note.data.date, note.data.title, notePath(note.id)));
   const slugWidth = Math.max(0, ...projects.map((slug) => slug.length)) + 2;
   const projectLines = projects.map(
     (slug) =>
@@ -76,22 +82,19 @@ export function renderPlainText(
   return [
     asciiRoom,
     '',
-    `${site.name} | ${site.author}`,
-    `${site.role} in ${site.location}`,
-    rule,
-    'Writing',
-    ...writing,
-    rule,
-    'TIL',
-    ...til,
-    rule,
+    ...identityLines,
+    // As on the home page, a section appears once it has something in it.
+    ...(writing.length === 0 ? [] : [textRule, 'Writing', ...writing]),
+    ...(til.length === 0 ? [] : [textRule, 'TIL', ...til]),
+    textRule,
     'Projects',
     ...projectLines,
-    rule,
+    textRule,
     ...[...nav, nowPage].map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
     `  ${'RSS'.padEnd(10)} ${siteUrl}${feedPaths().rss}`,
     `  ${'Atom'.padEnd(10)} ${siteUrl}${feedPaths().atom}`,
     `  ${'GitHub'.padEnd(10)} ${site.links.github}`,
+    `  ${'In colour'.padEnd(10)} curl ${curlTarget(origin)}/room`,
     '',
   ].join('\n');
 }
@@ -101,7 +104,7 @@ export function renderWritingText(posts: readonly Post[]): string {
   const tags = [...postsByTag(posts).keys()];
   return [
     `Writing | ${site.name}`,
-    rule,
+    textRule,
     ...(posts.length === 0
       ? [empty]
       : posts.flatMap((post) =>
@@ -112,7 +115,7 @@ export function renderWritingText(posts: readonly Post[]): string {
             post.data.summary
           )
         )),
-    ...(tags.length === 0 ? [] : [rule, `Tags: ${tags.join(', ')}`]),
+    ...(tags.length === 0 ? [] : [textRule, `Tags: ${tags.join(', ')}`]),
     ...footer('/writing'),
   ].join('\n');
 }
@@ -122,11 +125,11 @@ export function renderTilText(notes: readonly Note[]): string {
   const articles = notes.map(noteArticle);
   return [
     `Today I learned | ${site.name}`,
-    rule,
+    textRule,
     ...(articles.length === 0
       ? [empty]
       : articles.flatMap((article, index) => [
-          ...(index === 0 ? [] : [rule]),
+          ...(index === 0 ? [] : [textRule]),
           article.title,
           ...articleMeta(article),
           `${siteUrl}${article.path}`,
@@ -144,11 +147,11 @@ export function renderProjectsText(
 ): string {
   return [
     `Projects | ${site.name}`,
-    rule,
+    textRule,
     ...projects.flatMap((project) => [
       project.slug,
       ...(project.summary === null ? [] : [`  ${project.summary}`]),
-      `  ${[postCount(postsAbout(posts, project.slug).length), project.status].filter(Boolean).join(', ')}`,
+      ...(projectRowLabel(project, posts) === '' ? [] : [`  ${projectRowLabel(project, posts)}`]),
       `  ${siteUrl}${projectPath(project.slug)}`,
       '',
     ]),
@@ -171,16 +174,16 @@ export function renderProjectText(
     `${project.slug} | ${site.name}`,
     ...(project.summary === null ? [] : [project.summary]),
     ...(project.status === null ? [] : [`Status: ${project.status}`]),
-    rule,
-    ...(description === undefined ? [] : [absoluteLinks(description, path).trim(), rule]),
+    textRule,
+    ...(description === undefined ? [] : [absoluteLinks(description, path).trim(), textRule]),
     'Numbers',
     ...(facts.length === 0
       ? [`  No live numbers for ${project.slug} right now.`]
       : facts.map(({ label, value }) => `  ${label}: ${value}`)),
-    rule,
+    textRule,
     'Links',
     ...projectLinks(project).map(({ label, href }) => `  ${label}: ${href}`),
-    rule,
+    textRule,
     `Writing about ${project.slug}`,
     ...(posts.length === 0
       ? [`  Nothing written about ${project.slug} yet.`]
@@ -200,14 +203,14 @@ export function renderAboutText(about: About): string {
     `${identity.name} | ${site.name}`,
     about.summary,
     about.nameNote,
-    rule,
+    textRule,
     'Experience',
     ...about.experience.flatMap((role) => [
       `  ${role.role}, ${role.company}`,
       `    ${role.place}, ${span(role.start, role.end)}`,
       ...role.outcomes.map((outcome) => `    - ${outcome}`),
     ]),
-    rule,
+    textRule,
     'Certifications',
     ...about.certifications.flatMap((cert) => [
       `  ${cert.name}`,
@@ -219,16 +222,16 @@ export function renderAboutText(about: About): string {
       )}${cert.credentialId === undefined ? '' : `. Credential ID ${cert.credentialId}`}.`,
       `    ${cert.verifyUrl}`,
     ]),
-    rule,
+    textRule,
     'Education',
     ...about.education.flatMap((school) => [
       `  ${school.school}`,
       `    ${[school.degree, ...(school.field === undefined ? [] : [school.field])].join(', ')}, ${span(school.start, school.end)}`,
     ]),
-    rule,
+    textRule,
     'Skills',
     `  ${about.skills.join(', ')}`,
-    rule,
+    textRule,
     'Elsewhere',
     ...aboutLinks(identity).map(
       ({ href, label }) => `  ${label.padEnd(10)} ${href.startsWith('/') ? siteUrl + href : href}`
@@ -242,20 +245,50 @@ export function renderUsesText(uses: Uses): string {
   return [
     `Uses | ${site.name}`,
     uses.intro,
-    rule,
+    textRule,
     ...uses.sections.flatMap((section) => [
       section.title,
       ...section.items.map((item) =>
         item.detail === undefined ? `  ${item.name}` : `  ${item.name}: ${item.detail}`
       ),
-      rule,
+      textRule,
     ]),
     ...uses.machines.flatMap((machine) => [
       machine.name,
       ...(machine.model === undefined ? [] : [`  ${machine.model}`]),
       ...machine.specs.map((spec) => `  ${spec.part}: ${spec.value}`),
-      rule,
+      textRule,
     ]),
     ...footer('/uses').slice(1),
+  ].join('\n');
+}
+
+/** `30 October 2026`: the day /now was last updated, as the page and its plain text say it. */
+export const updatedOn = (updated: Date) => longDate(isoDate(updated.getTime()));
+
+export const brewingTitle = 'Currently brewing';
+
+/**
+ * /now as plain text, what `curl ayagmar.dev/now` prints (worker/index.ts): the same frontmatter
+ * and Markdown body the page renders, the body left as Markdown, which reads as text.
+ */
+export function renderNowText(
+  { updated, brewing }: { updated: Date; brewing: readonly BrewingItem[] },
+  body: string
+): string {
+  const items = brewing.flatMap((item) => [
+    `  ${item.name}`,
+    `    ${item.note}`,
+    ...(item.url === undefined ? [] : [`    ${item.url}`]),
+  ]);
+  return [
+    `${nowPage.label} | ${site.name}`,
+    `Updated ${updatedOn(updated)}.`,
+    textRule,
+    ...(items.length === 0 ? [] : [brewingTitle, ...items, textRule]),
+    body.trim(),
+    textRule,
+    `  ${'Home'.padEnd(10)} ${siteUrl}`,
+    '',
   ].join('\n');
 }

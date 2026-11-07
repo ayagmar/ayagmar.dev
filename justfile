@@ -99,6 +99,10 @@ producers-dry-run:
 producers-local origin="http://127.0.0.1:8787":
     dir="$(mktemp -d)"; trap 'rm -rf "$dir"' EXIT; node producers/samples.ts "$dir"; for producer in desktop llm-usage; do name="PUSH_TOKEN_$(echo "$producer" | tr a-z- A-Z_)"; MIN7_TEST_ENDPOINT={{ quote(origin) }} MIN7_STATE_DIR="$dir/state-$producer" MIN7_TEST_TOKEN="$(sed -n "s/^$name=//p" apps/signals/.dev.vars)" node "producers/$producer.ts" --fixtures "$dir/$producer"; done
 
+# Every state of the home room on one contact sheet, apps/site/.room-states/sheet.png (never shipped)
+room-states: site-build
+    {{ site }} node scripts/room-states.ts
+
 # Browser tests against the built site served by its real Worker (wrangler dev)
 e2e: site-build e2e-test
 
@@ -294,6 +298,10 @@ signals-deploy: signals-migrate-remote
 # Signals: apply pending migrations to the shared preview database, then upload a Preview
 signals-preview: signals-migrate-preview
     {{ signals }} wrangler preview --var COMMIT_SHA:{{ commit_sha }} --message "{{ commit_sha }}"
+
+# Signals: arm a backfill of listening and weather days in production, both dates included (ADR 0038)
+signals-backfill from to:
+    {{ signals }} wrangler d1 execute DB --remote --command "INSERT INTO pull_progress (source, described_date, step, json) VALUES ('daily-backfill', '{{ to }}', 1, json_object('next', '{{ from }}', 'to', '{{ to }}', 'tries', 0)) ON CONFLICT (source) DO UPDATE SET described_date = excluded.described_date, step = step + 1, json = excluded.json"
 
 # Signals: create the production and preview D1 databases (once; put the ids in the configs)
 signals-db-create:

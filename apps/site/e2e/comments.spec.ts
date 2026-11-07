@@ -254,3 +254,18 @@ test('reloading the frame after an expired sign-in adds no history entry', {
   expect(await page.evaluate(() => localStorage.getItem('giscus-session'))).toBeNull();
   expect(await page.evaluate(() => history.length)).toBe(before);
 });
+
+// Catches the post's ending inheriting the reader's 19 to 22 px: the disclaimer outweighed the
+// last paragraph it follows.
+test('the end of a post is set smaller than its text', { tag: '@drafts' }, async ({ page }) => {
+  await page.goto('/writing/token-logs');
+  const size = (selector: string) =>
+    page
+      .locator(selector)
+      .first()
+      .evaluate((el) => Number.parseFloat(getComputedStyle(el).fontSize));
+  const text = await size('.prose p');
+  for (const ending of ['.reply', '#comments p', '.project-card p']) {
+    expect(await size(ending), ending).toBeLessThan(text * 0.8);
+  }
+});

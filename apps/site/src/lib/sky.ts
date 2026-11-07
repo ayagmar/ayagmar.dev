@@ -10,13 +10,11 @@
  * offset, since Morocco's offset has changed with Ramadan and, in 2026, by decree.
  */
 
-// Hassan Tower, Rabat. Africa/Casablanca is the IANA zone for all of Morocco.
-const rabat = { lat: 34.024, lon: -6.8228, timeZone: 'Africa/Casablanca' } as const;
+import { dayMs, rabatPoint, rabatTimeZone } from '@min7/contracts/rabat';
 
 const rad = Math.PI / 180;
 const sin = (deg: number) => Math.sin(deg * rad);
 const cos = (deg: number) => Math.cos(deg * rad);
-const dayMs = 86_400_000;
 
 /** Julian centuries since J2000.0 (UT; the difference from TT is about a minute). */
 const centuries = (time: number) => (time / dayMs + 2440587.5 - 2451545) / 36525;
@@ -47,9 +45,10 @@ function sunElevation(time: number): number {
       0.5 * y * y * sin(4 * l0) -
       1.25 * e * e * sin(2 * m));
   const minutes = (((time % dayMs) + dayMs) % dayMs) / 60_000;
-  const hourAngle = (minutes + equationOfTime + 4 * rabat.lon) / 4 - 180;
+  const hourAngle = (minutes + equationOfTime + 4 * rabatPoint.longitude) / 4 - 180;
   const cosZenith =
-    sin(rabat.lat) * sin(declination) + cos(rabat.lat) * cos(declination) * cos(hourAngle);
+    sin(rabatPoint.latitude) * sin(declination) +
+    cos(rabatPoint.latitude) * cos(declination) * cos(hourAngle);
   return 90 - Math.acos(Math.min(1, Math.max(-1, cosZenith))) / rad;
 }
 
@@ -116,39 +115,61 @@ export function moonAt(time: number): Moon {
   };
 }
 
+/** The moon's disc in the scene's 480x160 pixels, over the window (scripts/scene.py). */
+export const moonDisc = { x: 122, y: 25, r: 6 } as const;
+
+/** The moon's colour in the scene's palette. */
+export const moonColour = '#e8e8fa';
+
+/** The moon is in the window at dusk and at night; one this thin would be a pixel or none. */
+export const moonShown = (sky: Sky, moon: Moon) => sky !== 'day' && moon.fraction >= 0.03;
+
+/** The sentence the window says, `weather` being the words of `readWeather` if there are any. */
+export const windowWords = (sky: Sky, moon: Moon, weather?: string) =>
+  `Through the window: ${sky === 'day' ? 'daylight over Rabat' : `${sky} over Rabat, a ${moon.name}`}${weather ? `, ${weather}` : ''}.`;
+
 /**
- * The lit part of a pixel moon of radius `r` centred on (`x`, `y`), as an SVG path of unit
- * squares, run by run. Seen from the northern hemisphere: a waxing moon is lit on the right.
+ * Calls `run` for each row of the lit part of the pixel moon, with where it starts in the scene's
+ * pixels and how long it is. Seen from the northern hemisphere: a waxing moon is lit on the right.
+ * A callback rather than a list keeps the room script inside its allowance (ADR 0017).
  */
-export function moonPath(moon: Moon, x: number, y: number, r: number): string {
-  let path = '';
+export function moonRuns(moon: Moon, run: (x: number, y: number, width: number) => void): void {
+  const { x, y, r } = moonDisc;
   for (let row = -r; row < r; row++) {
     const half = Math.sqrt(r * r - (row + 0.5) ** 2);
     const edge = (1 - 2 * moon.fraction) * half;
     const [from, to] = moon.waxing ? [edge, half] : [-half, -edge];
     const start = Math.ceil(from - 0.5);
     const end = Math.floor(to - 0.5);
-    if (end >= start) path += `M${x + start} ${y + row}h${end - start + 1}v1h${start - end - 1}z`;
+    if (end >= start) run(x + start, y + row, end - start + 1);
   }
+}
+
+/** The lit part of the pixel moon as an SVG path of unit squares. */
+export function moonPath(moon: Moon): string {
+  let path = '';
+  moonRuns(moon, (x, y, width) => {
+    path += `M${x} ${y}h${width}v1h${-width}z`;
+  });
   return path;
 }
 
 // en-GB's short time is `HH:mm` on a 24-hour clock.
-const clock = new Intl.DateTimeFormat('en-GB', { timeZone: rabat.timeZone, timeStyle: 'short' });
+const clock = new Intl.DateTimeFormat('en-GB', { timeZone: rabatTimeZone, timeStyle: 'short' });
 
 /** The time in Rabat, `03:12`. */
 export const rabatTime = (time: number) => clock.format(time);
 
-/**
- * Whether the browser's tzdata knows Morocco's current rules: +00 for good since 2026-09-20
- * 01:00 UTC (tzdata 2026c). An older browser still says +01 and would put the lamp an hour off,
- * so the room then leaves the lamp and the note alone. If Morocco changes its clocks again,
- * this check moves with the new rules.
- */
-export const knowsRabatTime = () => rabatTime(Date.UTC(2026, 9, 1, 12)) === '12:00';
+const rabatHour = (time: number) => Number(rabatTime(time).slice(0, 2));
 
 /** Between 02:00 and 07:00 in Rabat the lamp is turned down: probably asleep. */
 export function isLate(time: number): boolean {
-  const hour = Number(rabatTime(time).slice(0, 2));
+  const hour = rabatHour(time);
   return hour >= 2 && hour < 7;
+}
+
+/** Between 02:00 and 05:00 in Rabat a cat sleeps on the windowsill. */
+export function isCatHour(time: number): boolean {
+  const hour = rabatHour(time);
+  return hour >= 2 && hour < 5;
 }

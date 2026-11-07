@@ -3,39 +3,20 @@
  * and again by the browser for each newer answer (src/scripts/stats-live.ts).
  */
 import type { LlmUsageSnapshot } from '@min7/contracts';
-import { rabatDate } from '@min7/contracts/rabat';
+import { dayMs, isoDate, rabatDate, utcDate } from '@min7/contracts/rabat';
+import { shortDate } from './day-words.ts';
+import { heatmap, noRecordWords } from './heat.ts';
 import { el, type Markup } from './markup.ts';
+import { plural } from './plural.ts';
+import { dateRange, dayWords, tokens } from './words.ts';
 
 const hourMs = 3_600_000;
-const dayMs = 86_400_000;
 
 /** `283 hours`, `7.5 hours`, `0 hours`: whole hours from 10 up, one decimal below. */
 export function hours(ms: number): string {
   const value = ms / hourMs;
   const shown = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${shown.toLocaleString('en')} ${shown === 1 ? 'hour' : 'hours'}`;
-}
-
-const units: [size: number, unit: string][] = [
-  [1e12, 'T'],
-  [1e9, 'B'],
-  [1e6, 'M'],
-  [1e3, 'K'],
-];
-const oneDecimal = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
-
-/** `41.0B`, `1.8B`, `61.3M`, `950.0K`, `999`: one decimal from a thousand up. */
-export function tokens(count: number): string {
-  const at = units.findIndex(([size]) => count >= size);
-  if (at === -1) return count.toLocaleString('en');
-  const shown = (index: number) => {
-    const [size, unit] = units[index] as [number, string];
-    return { value: Math.round((count / size) * 10) / 10, unit };
-  };
-  let { value, unit } = shown(at);
-  // 999,960 is 1,000.0K at one decimal: the next unit up says it better.
-  if (value >= 1000 && at > 0) ({ value, unit } = shown(at - 1));
-  return `${value.toLocaleString('en', oneDecimal)}${unit}`;
+  return plural(shown, 'hour', 'hours');
 }
 
 /**
@@ -48,64 +29,6 @@ export function share(fraction: number, count: number): string {
   const percent = Math.round(fraction * 100);
   return `${fraction < 1 ? Math.min(percent, 99) : percent}%`;
 }
-
-const utcDate = (date: string) => Date.parse(`${date}T00:00:00Z`);
-const isoDate = (time: number) => new Date(time).toISOString().slice(0, 10);
-const dayMonth = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-});
-const fullDate = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
-
-/** `1–26 Oct`, `28 Sept–4 Oct`, or `1 Oct` for a single day. */
-export function dateRange(from: string, to: string): string {
-  if (from === to) return dayMonth.format(utcDate(to));
-  const sameMonth = from.slice(0, 7) === to.slice(0, 7);
-  const start = sameMonth ? String(Number(from.slice(8))) : dayMonth.format(utcDate(from));
-  return `${start}–${dayMonth.format(utcDate(to))}`;
-}
-
-/**
- * The year heatmap: a cell per day for the 53 weeks ending on `end`, a column per week from
- * Monday, and a level from 0 (no tokens or no bucket) to 4. The levels are the quartiles of
- * the days with tokens, so one huge day does not wash out the rest.
- */
-export function heatmap(days: LlmUsageSnapshot['days'], end: string, weeks = 53) {
-  const last = utcDate(end);
-  const weekday = (new Date(last).getUTCDay() + 6) % 7;
-  const first = last - ((weeks - 1) * 7 + weekday) * dayMs;
-  const byDate = new Map(days.map((day) => [day.date, day.totalTokens]));
-  const cells = [];
-  for (let time = first; time <= last; time += dayMs) {
-    const date = isoDate(time);
-    cells.push({ date, tokens: byDate.get(date) });
-  }
-  const used = cells.flatMap(({ tokens: count }) => (count ? [count] : [])).sort((a, b) => a - b);
-  const quartiles = [0.25, 0.5, 0.75].map((q) => used[Math.floor(q * (used.length - 1))] as number);
-  const busiest = cells.reduce<(typeof cells)[number] | undefined>(
-    (top, cell) => ((cell.tokens ?? 0) > (top?.tokens ?? 0) ? cell : top),
-    undefined
-  );
-  return {
-    from: isoDate(first),
-    to: end,
-    activeDays: used.length,
-    busiest,
-    cells: cells.map((cell) => ({
-      ...cell,
-      level: cell.tokens ? 1 + quartiles.filter((q) => (cell.tokens as number) > q).length : 0,
-    })),
-  };
-}
-
-const plural = (count: number, one: string, many: string) =>
-  `${count.toLocaleString('en')} ${count === 1 ? one : many}`;
 
 /**
  * The panel's body for a snapshot taken at `fetchedAt`. The month, the last 7 days, the agents
@@ -171,7 +94,7 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
     el(
       'p',
       { class: 'llm-streak' },
-      `Streak on ${dayMonth.format(utcDate(date))}: ${plural(streak.currentDays, 'day', 'days')}.`
+      `Streak on ${dayWords(date)}: ${plural(streak.currentDays, 'day', 'days')}.`
     ),
     el('h3', {}, 'Agents this month'),
     month.agents.length === 0
@@ -217,10 +140,11 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
   );
   if (days.length === 0) return [period, longest];
   const heat = heatmap(days, date);
-  const summary =
+  const summary = `${
     heat.activeDays === 0 || !heat.busiest?.tokens
-      ? `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: none.`
-      : `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${fullDate.format(utcDate(heat.busiest.date))} with ${tokens(heat.busiest.tokens)}.`;
+      ? `Tokens per day from ${shortDate(heat.from)} to ${shortDate(heat.to)}: none.`
+      : `Tokens per day from ${shortDate(heat.from)} to ${shortDate(heat.to)}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${shortDate(heat.busiest.date)} with ${tokens(heat.busiest.tokens)}.`
+  }${heat.gaps ? ' Some days have no record.' : ''}`;
   return [
     period,
     longest,
@@ -239,10 +163,8 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
           { class: 'heat-cells', role: 'img', 'aria-label': summary },
           ...heat.cells.map(({ date: day, tokens: count, level }) =>
             el('i', {
-              'data-l': String(level),
-              ...(count === undefined
-                ? {}
-                : { title: `${dayMonth.format(utcDate(day))}: ${tokens(count)}` }),
+              'data-l': String(level ?? 'none'),
+              ...(count === undefined ? {} : { title: `${dayWords(day)}: ${tokens(count)}` }),
             })
           )
         )
@@ -250,11 +172,12 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
       el(
         'figcaption',
         { class: 'heat-cap' },
-        el(
-          'span',
-          {},
-          `${fullDate.format(utcDate(heat.from))} – ${fullDate.format(utcDate(heat.to))}`
-        )
+        el('span', {}, `${shortDate(heat.from)} – ${shortDate(heat.to)}`),
+        // How the squares look means nothing to a screen reader or the text copy: their words are
+        // in the summary above.
+        ...(heat.gaps
+          ? [el('span', { 'aria-hidden': 'true' }, `Squares: ${noRecordWords('faint')}`)]
+          : [])
       )
     ),
   ];

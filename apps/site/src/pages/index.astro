@@ -1,16 +1,25 @@
 ---
 import { getEntry } from 'astro:content';
+import { rabatDate } from '@min7/contracts/rabat';
 import HomeShipping from '../components/HomeShipping.astro';
+import Markup from '../components/Markup.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
 import Sample from '../components/Sample.astro';
 import { shippingStrip } from '../data/format.ts';
+import { roomSeed, scrubFrom } from '../data/room.ts';
 import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals.ts';
 import Base from '../layouts/Base.astro';
+import { dayPath } from '../lib/day-words.ts';
 import { getDays, getNotes, getPosts, getProjects } from '../lib/posts.ts';
 import { projectPath } from '../lib/projects.ts';
-import { roomObjects } from '../lib/room.ts';
+import { catName, catNote, hotspotWords, roomObjects } from '../lib/room.ts';
+import { seededInputs } from '../lib/room-clock.ts';
+import { daysBack } from '../lib/room-day.ts';
+import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
+import { roomState } from '../lib/room-state.ts';
 import { site } from '../lib/site.ts';
+import { moonColour } from '../lib/sky.ts';
 import { person, website } from '../lib/structured-data.ts';
 import { notePath } from '../lib/til.ts';
 import { isoDay } from '../lib/writing.ts';
@@ -32,7 +41,12 @@ const strip = shippingStrip(
   (await getDays()).dates
 );
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
-const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift until five.';
+const seed = await roomSeed();
+// The page is the room's `built` moment: no clock, so no sky, and every object carries its date.
+const room = roomState(seededInputs(seed, true), { kind: 'built', instant: seed.builtAt });
+// The scrub needs a past day to go back to (ADR 0044). Its script moves `min` as the days pass.
+const from = await scrubFrom();
+const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
 ---
 
 <Base structuredData={[website(), person(about.data.identity)]}>
@@ -43,6 +57,8 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
     <div
       class="scene"
       data-weather-src={signalsMode === 'api' ? `${signalsApiBase}/v1/weather` : undefined}
+      data-room-seed={JSON.stringify(seed)}
+      data-record={room.record.state === 'unknown' ? undefined : room.record.state}
     >
       <span
         class="room-art night"
@@ -52,32 +68,77 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
       <span
         class="room-art day"
         role="img"
-        aria-label="A pixel-art desk in Morocco by day. Sunlight fills the room and the lamp is off; an arched window looks out over whitewashed rooftops and Hassan Tower."
+        aria-label="A pixel-art desk in Morocco, in a whitewashed room; an arched window looks out over rooftops and Hassan Tower. The window's own label says what the sky is doing."
       ></span>
+      {/* What the room holds, from its state (ADR 0043): picture only, as each hotspot says it. */}
+      <ul class="room-pins room-lit" aria-hidden="true">
+        <Markup nodes={pinsMarkup(room.pins)} />
+      </ul>
+      <div class="room-screen heat room-lit" aria-hidden="true">
+        <Markup nodes={screenMarkup(room.screen)} />
+      </div>
+      <ol class="room-books room-lit" aria-hidden="true">
+        <Markup nodes={booksMarkup(room.shelf)} />
+      </ol>
+      <span class="room-record" aria-hidden="true"></span>
       <!-- The room's clock (ADR 0027): src/scripts/room.ts fills these in by Rabat time. -->
       <span class="room-window"></span>
       <svg class="room-moon" viewBox="0 0 480 160" preserveAspectRatio="none" aria-hidden="true">
-        <path fill="#e8e8fa"></path>
+        <path fill={moonColour}></path>
       </svg>
       <span class="room-weather" aria-hidden="true"></span>
       <p class="room-note" hidden>Probably asleep: it is <time>02:00</time> in Rabat.</p>
-      {/* Shown 02:00 to 05:00 in Rabat (room.css, by the hour src/scripts/room.ts sets). The art
-          is a layer of the whole scene; the spot over the cat holds its name and the note shown
-          on hover and focus. */}
+      {/* Shown 02:00 to 05:00 in Rabat, by `data-cat`. The art is a layer of the whole scene; the
+          spot over the cat holds its name and the note shown on hover and focus. */}
       <span class="room-cat">
         {/* biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so the keyboard gets the note a pointer gets on hover (WCAG 1.4.13); it does nothing else. */}
         <span class="room-cat-spot" tabindex="0" role="img" aria-label={catName}>
-          <span aria-hidden="true">The cat keeps the night shift until five.</span>
+          <span aria-hidden="true">{catNote}</span>
         </span>
       </span>
       {roomObjects.map((item) => (
         <a class="hotspot" href={item.href} data-room={item.id}>
-          <span>
-            {item.object}: {item.section}
-          </span>
+          <span>{hotspotWords(item, room)}</span>
         </a>
       ))}
     </div>
+    {/* Shown only with scripts (room.css); src/scripts/room-scrub.ts runs it from the first touch. */}
+    {daysHeld > 0 && (
+      <div
+        class="room-scrub"
+        data-from={from}
+        data-days-src={
+          signalsMode === 'api'
+            ? `${signalsApiBase}/v1/days/{series}?month={month}`
+            : '/sample/days/{series}/{month}.json'
+        }
+      >
+        <input
+          type="range"
+          min={-daysHeld}
+          max="0"
+          step="1"
+          value="0"
+          aria-label="Go back through past days"
+          aria-valuetext="Now"
+        >
+        <div class="room-scrub-line">
+          <p class="room-scrub-date">Back through the days</p>
+          <a class="room-scrub-read" href={dayPath(from as string)} hidden>
+            Read this day
+          </a>
+          <button type="button" class="room-scrub-now" hidden>
+            Back to now
+          </button>
+        </div>
+        <p class="room-scrub-failed" role="alert" hidden>
+          The past days could not be loaded. Reload the page to try again.
+        </p>
+        <ul class="room-scrub-facts" hidden></ul>
+        <p class="sr-only" role="status"></p>
+      </div>
+    )}
+    {room.sample && <Sample />}
     <!-- Open-Meteo's CC BY 4.0 credit is on the colophon, linked from the footer (ADR 0029). -->
   </section>
 
@@ -87,7 +148,8 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
       {roomObjects.map((item) => (
         <li>
           <a href={item.href} data-room-list={item.id}>
-            {item.object} <span>{item.section}</span>
+            <span class="room-object">{item.object}</span>{' '}
+            <span class="room-section">{item.section}</span>
           </a>
         </li>
       ))}
@@ -95,27 +157,30 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
   </nav>
 
   <div class="home-panels">
-    <section class="paper" aria-labelledby="writing">
-      <div class="panel-head">
-        <h2 id="writing">Writing</h2>
-        {notes.length === 0 ? <a href="/writing">All writing</a> : <a href="/til">All notes</a>}
-      </div>
-      {notes.length === 0 ? (
-        <PostList posts={posts} />
-      ) : (
-        <>
-          <p class="home-notes-lede">No posts yet. The latest short notes, from TIL:</p>
-          <ul class="home-notes">
-            {notes.map((note) => (
-              <li>
-                <time datetime={isoDay(note.data.date)}>{isoDay(note.data.date)}</time>
-                <a href={notePath(note.id)}>{note.data.title}</a>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </section>
+    {/* A section appears once it has something in it; the room still leads to its page. */}
+    {(posts.length > 0 || notes.length > 0) && (
+      <section class="paper" aria-labelledby="writing">
+        <div class="panel-head">
+          <h2 id="writing">Writing</h2>
+          {notes.length === 0 ? <a href="/writing">All writing</a> : <a href="/til">All notes</a>}
+        </div>
+        {notes.length === 0 ? (
+          <PostList posts={posts} />
+        ) : (
+          <>
+            <p class="home-notes-lede">No posts yet. The latest short notes, from TIL:</p>
+            <ul class="home-notes">
+              {notes.map((note) => (
+                <li>
+                  <time datetime={isoDay(note.data.date)}>{isoDay(note.data.date)}</time>
+                  <a href={notePath(note.id)}>{note.data.title}</a>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </section>
+    )}
 
     <section class="panel m-screen" aria-labelledby="projects">
       <div class="panel-head">
@@ -149,22 +214,20 @@ const catName = 'A ginger cat asleep on the windowsill. It keeps the night shift
         {listening.data !== null && <Sample />}
       </section>
 
-      <section class="panel m-cork" aria-labelledby="shipping">
-        <div class="panel-head">
-          <h2 id="shipping">Shipping</h2>
-          <a href="/stats#shipping">More</a>
-        </div>
-        <HomeShipping strip={strip} events={recentlyShipped} />
-        {(shipping.data !== null || strip !== null) && <Sample />}
-      </section>
+      {(strip !== null || recentlyShipped.length > 0) && (
+        <section class="panel m-cork" aria-labelledby="shipping">
+          <div class="panel-head">
+            <h2 id="shipping">Shipping</h2>
+            <a href="/stats#shipping">More</a>
+          </div>
+          <HomeShipping strip={strip} events={recentlyShipped} />
+          <Sample />
+        </section>
+      )}
     </div>
   </div>
 </Base>
 
 <script>
 import '../scripts/room.ts';
-</script>
-
-<script>
-import '../scripts/now-playing.ts';
 </script>

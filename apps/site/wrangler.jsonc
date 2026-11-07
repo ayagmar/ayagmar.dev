@@ -19,9 +19,11 @@
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
     // The Worker sees only the pages with a text or Markdown copy, to answer terminal clients and
-    // agents with it (ADR 0040); never their subresources, feeds or the copies themselves.
+    // agents with it (ADR 0040); never their subresources, feeds or the copies themselves. /room
+    // has no page: it is the room in colour for a terminal (ADR 0045).
     "run_worker_first": [
       "/",
+      "/room",
       "/now",
       "/about",
       "/uses",

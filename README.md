@@ -4,7 +4,7 @@ Source of [ayagmar.dev](https://ayagmar.dev) (min7), the personal site and writi
 
 The repo holds three units:
 - `apps/site`: the Astro site (static pages, feeds, search) and the small Worker that serves it.
-- `apps/signals`: a Cloudflare Worker on `api.ayagmar.dev` that will collect listening, project and usage data and serve it as JSON.
+- `apps/signals`: a Cloudflare Worker on `api.ayagmar.dev` that collects listening, project and usage data and serves it as JSON.
 - `packages/contracts`: the zod schemas both sides agree on, exported as JSON Schema for producers in other languages.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains how they fit together and [docs/adr/](docs/adr/) records why.
