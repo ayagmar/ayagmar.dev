@@ -57,7 +57,7 @@ export function dateRange(from: string, to: string): string {
 /**
  * `26 Oct, 09:00`, in Rabat: a time as pages show it without JavaScript, the same in every
  * browser and no longer than the relative times the page's script puts in its place
- * (src/lib/live.ts), so the swap moves nothing.
+ * (src/lib/live-page.ts), so the swap moves nothing.
  */
 export const rabatStamp = (iso: string) =>
   new Intl.DateTimeFormat('en-GB', {

@@ -821,7 +821,7 @@ h1 + .caption,
   line-height: 1.5;
 }
 
-/* A time the page's script keeps relative to now (src/lib/live.ts) sits in a box as wide as
+/* A time the page's script keeps relative to now (src/lib/live-page.ts) sits in a box as wide as
    the longest text it can hold ("59 minutes ago", or "26 Oct, 09:00" before the script
    runs), so rewriting it never reflows the page (CLS). */
 time[data-ago] {

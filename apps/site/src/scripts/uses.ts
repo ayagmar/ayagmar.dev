@@ -4,7 +4,7 @@
 // the panel holding them shows only while one of them does. In fixtures mode there is no
 // endpoint, no request and no panel.
 import { readDesktop, uptime } from '../lib/desktop.ts';
-import { poll, stamp, tick } from '../lib/live.ts';
+import { poll, stamp, tick } from '../lib/live-page.ts';
 import { readLlmUsage } from '../lib/llm-usage.ts';
 
 const panel = document.querySelector<HTMLElement>('.uses-live');

@@ -6,7 +6,8 @@
 import { nextDate, rabatDayStart } from '@min7/contracts/rabat';
 import { type HistoryYear, knowsRabat, readHistory, yearLine } from '../lib/history.ts';
 import { ask, due } from '../lib/live.ts';
-import { el, toNode } from '../lib/markup.ts';
+import { el } from '../lib/markup.ts';
+import { toNode } from '../lib/markup-page.ts';
 import { dayName } from '../lib/words.ts';
 
 const block = document.querySelector<HTMLElement>('.history');

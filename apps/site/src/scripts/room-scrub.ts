@@ -8,7 +8,7 @@
 import { rabatDate } from '@min7/contracts/rabat';
 import { dayPath } from '../lib/day-words.ts';
 import { ask } from '../lib/live.ts';
-import { toNode } from '../lib/markup.ts';
+import { toNode } from '../lib/markup-page.ts';
 import { hotspotWords, type RoomObject, roomObjects } from '../lib/room.ts';
 import { dateTitle, dayInstant, daysBack } from '../lib/room-day.ts';
 import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
