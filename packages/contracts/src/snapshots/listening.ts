@@ -72,7 +72,10 @@ export const listeningSnapshotSchema = z.object({
   nowPlaying: trackSchema.nullable(),
   /** Up to 10 finished scrobbles, newest first. The now-playing track is not repeated here. */
   recent: z.array(trackSchema.extend({ playedAt: timestampSchema })).max(10),
-  /** All-time top artists, up to 10; null when Last.fm did not answer this part. */
+  /**
+   * All-time top artists, up to 10, read about hourly (ADR 0009); between reads, or when a read
+   * fails, the last ones read. Null when Last.fm has not answered this part.
+   */
   topArtists: z
     .array(
       z.object({
@@ -84,8 +87,9 @@ export const listeningSnapshotSchema = z.object({
     .max(10)
     .nullable(),
   /**
-   * Scrobbles in the current and the previous week; weeks start Monday 00:00 UTC. Each is
-   * null when Last.fm did not answer that part.
+   * Scrobbles in the current and the previous week; weeks start Monday 00:00 UTC. Read about
+   * every 15 minutes and twice a week (ADR 0009); the last count read of that same week between
+   * reads or when a read fails. Each is null when Last.fm has not answered that part this week.
    */
   scrobbles: z.object({
     thisWeek: z.number().int().nonnegative().nullable(),

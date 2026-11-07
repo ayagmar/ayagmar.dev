@@ -82,8 +82,8 @@ async function pull(
 /**
  * One cron run: at most one pull adapter or one date of an armed backfill, then old push
  * deliveries in bounded batches.
- * Workers Free allows 10 ms of CPU and 50 subrequests per invocation, and one cold adapter
- * can need most of that (ADR 0009), so adapters never share an invocation. The one that runs
+ * The account is on Workers Free: 10 ms of CPU and 50 subrequests per invocation. One cold
+ * adapter can need all of that (ADR 0009), so adapters never share an invocation. The one that runs
  * is the most overdue: never tried first, then the one furthest past the time it is due,
  * `intervalSeconds` after its last attempt unless the adapter's `dueAt` says otherwise, and
  * never before a time the upstream gave in `Retry-After`. A

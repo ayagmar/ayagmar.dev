@@ -1,7 +1,7 @@
 // The CPU bench Worker (`just signals-cpu`, ADR 0030): runs one real cron invocation of a
 // pull adapter, D1 included, with Last.fm and Monkeytype answered from memory, so the CPU it takes is
 // signals' own work. Never deployed; scripts/signals-cpu.ts drives it.
-import { rawFixtures } from '@min7/contracts/fixtures';
+import { rawFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { readListeningDay } from '../src/adapters/pull/listening-days.ts';
 import { listeningHistory } from '../src/adapters/pull/listening-history.ts';
@@ -281,6 +281,8 @@ const scenarios: Record<
     seed?: () => ReturnType<typeof progress>;
     /** The run must leave a row in `daily`. */
     days?: boolean;
+    /** Stores a listening snapshot from this moment before each run, so the pull carries it. */
+    carries?: boolean;
     /** Arms one date of the backfill before each run, over stored snapshots. */
     backfill?: boolean;
     /** The activity history and snapshot stored before each run. */
@@ -289,7 +291,10 @@ const scenarios: Record<
 > = {
   // A cron invocation with no adapter due: what every scenario's number is measured against.
   baseline: { answers: () => new Map() },
+  // Every part read: a first run, or the rollover into a new week.
   listening: { adapter: listening, answers: listeningAnswers },
+  // The usual minute (ADR 0009): the recent tracks read, the rest carried.
+  'listening-carried': { adapter: listening, answers: listeningAnswers, carries: true },
   // The pulls that record days (ADR 0038): the hourly one, every weather pull, a backfill's date.
   'listening-days': { adapter: listeningInWindow, answers: listeningDayAnswers, days: true },
   weather: {
@@ -415,6 +420,13 @@ export default {
               ).bind(JSON.stringify(activity.days)),
             ]),
       ]);
+      if (scenario.carries === true) {
+        await env.DB.prepare(
+          "INSERT INTO snapshots (source, json, fetched_at) VALUES ('listening', ?, ?)"
+        )
+          .bind(JSON.stringify(snapshotFixtures.listening.ok), new Date().toISOString())
+          .run();
+      }
       if (scenario.backfill === true) {
         await env.DB.batch([
           env.DB.prepare(

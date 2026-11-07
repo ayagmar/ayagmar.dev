@@ -45,7 +45,7 @@ describe('network mocking', () => {
 });
 
 describe('pull adapter fetch', () => {
-  // Past the hourly window, when a listening pull asks only its four usual questions (ADR 0038).
+  // Past the hourly window and with no stored snapshot: a listening pull's four reads (ADR 0009).
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.parse('2026-10-26T09:30:00Z'));
