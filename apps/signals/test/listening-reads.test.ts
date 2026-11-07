@@ -29,7 +29,7 @@ const at = (time: string) => Date.parse(time);
 const monday = at('2026-11-09T00:00:00Z');
 
 type Part = 'recent' | 'top' | 'thisWeek' | 'lastWeek' | 'day';
-type Answer = 'ok' | 'down' | 'error-in-200' | { retryAfter: string };
+type Answer = 'ok' | 'down' | 'error-in-200' | 'html' | 'new-shape' | { retryAfter: string };
 
 /** Counts that say which week was asked for, so a carried one can be told from a fresh one. */
 const countOf = (from: number) => Math.floor(from / 1000) % 100_000;
@@ -53,6 +53,8 @@ function lastfm(answer: (part: Part) => Answer = () => 'ok') {
       const how = answer(part);
       if (how === 'down') return HttpResponse.error();
       if (how === 'error-in-200') return HttpResponse.json({ error: 11, message: 'offline' });
+      if (how === 'html') return HttpResponse.html('<html>maintenance</html>');
+      if (how === 'new-shape') return HttpResponse.json({ results: [] });
       if (typeof how === 'object') {
         return HttpResponse.json(
           { error: 29, message: 'slow down' },
@@ -163,17 +165,29 @@ describe('a listening pull', () => {
     expect(reads.filter((part) => part === 'day')).toHaveLength(10);
   });
 
-  // Catches a slow read's failure zeroing or clearing what the page shows.
+  // Catches a slow read's failure zeroing or clearing what the page shows, or carrying with
+  // nothing in the logs, the only place it shows while `stale` stays false.
   it.each<[string, Answer]>([
     ['is down', 'down'],
     ['answers an error in a 200', 'error-in-200'],
+    ['answers a 200 of HTML', 'html'],
+    ['answers a 200 of another shape', 'new-shape'],
   ])('keeps the stored parts while Last.fm %s for them and recent works', async (_, how) => {
     const due = at('2026-11-04T09:30:30Z');
     await storeAt(carrying(41, 90), due - 9 * minute);
     const reads = lastfm((part) => (part === 'recent' ? 'ok' : how));
+    const warn = vi.spyOn(console, 'warn');
 
     await runAt(due);
 
+    expect(warn.mock.calls.flat().map(String)).toContain(
+      JSON.stringify({
+        message: 'listening part unread',
+        source: 'listening',
+        parts: 'topArtists,thisWeek',
+      })
+    );
+    warn.mockRestore();
     expect(reads.toSorted()).toEqual(['recent', 'thisWeek', 'top'].toSorted());
     expect(await stored()).toMatchObject({
       topArtists: snapshotFixtures.listening.ok.topArtists,

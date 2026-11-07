@@ -3,7 +3,6 @@
 import {
   type ListeningSnapshot,
   lastfmArtistSchema,
-  lastfmErrorSchema,
   lastfmRecentTracksSchema,
   lastfmTopArtistsSchema,
   lastfmTrackSchema,
@@ -115,11 +114,11 @@ function slowParts(stored: StoredSnapshot | null, now: number) {
   };
 }
 
-/** Whether an answer gave nothing to use, which carrying would otherwise hide. */
-const unread = (response: UpstreamResponse | null) =>
-  response === null ||
-  response.status !== 200 ||
-  lastfmErrorSchema.safeParse(response.body).success;
+/** Whether normalize can use `part`'s answer: a failure carrying would otherwise hide. */
+const unread = (part: SlowPart, response: UpstreamResponse | null) =>
+  (part === 'topArtists'
+    ? readOptional(response, lastfmTopArtistsSchema)
+    : readOptional(response, lastfmRecentTracksSchema)) === null;
 
 export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
   id: 'listening',
@@ -160,7 +159,7 @@ export const listening: PullAdapter<ListeningRaw, ListeningSnapshot> = {
       ]);
       const answers = { topArtists, thisWeek, lastWeek };
       const failed = (Object.keys(answers) as SlowPart[]).filter(
-        (part) => due[part] && !held && unread(answers[part])
+        (part) => due[part] && !held && unread(part, answers[part])
       );
       if (failed.length > 0) {
         logEvent('warn', 'listening part unread', { source: 'listening', parts: failed.join() });
