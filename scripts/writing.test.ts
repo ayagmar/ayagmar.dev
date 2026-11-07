@@ -254,8 +254,7 @@ describe('publish', () => {
       // Unstaged, ` M`: the helper trims the first space, and a staged file would read `M  `.
       assert.equal(
         git(repo, 'status', '--porcelain'),
-        [`M ${sources}`, `?? ${map}`, '?? content/writing/cache-reads.md'].join('
-')
+        [`M ${sources}`, `?? ${map}`, '?? content/writing/cache-reads.md'].join('\n')
       );
     });
 
