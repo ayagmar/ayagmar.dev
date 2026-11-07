@@ -4,10 +4,11 @@
 // a browser that does not know Morocco's current clock rules (the date there would be an hour
 // off around midnight), and whenever the last answer is unusable or for another date.
 import { nextDate, rabatDayStart } from '@min7/contracts/rabat';
-import { type HistoryYear, knowsRabat, readHistory, yearLine } from '../lib/history.ts';
+import { type HistoryYear, readHistory, yearLine } from '../lib/history.ts';
 import { ask, due } from '../lib/live.ts';
 import { el } from '../lib/markup.ts';
 import { toNode } from '../lib/markup-page.ts';
+import { knowsRabat } from '../lib/rabat-date.ts';
 import { dayName } from '../lib/words.ts';
 
 const block = document.querySelector<HTMLElement>('.history');

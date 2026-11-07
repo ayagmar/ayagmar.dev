@@ -8,11 +8,12 @@ import { type Answer, ago, ask, due, follow, freshnessWords } from './live.ts';
 const exact = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 /**
- * Asks `endpoint` (`ask`) while the page is visible, one request at a time: on load, then every `everyMs`, and when the tab comes back once its last
- * request is a minute old (`due`). After each answer, every minute, and whenever the tab comes
- * back, `show(answer, now, failed)` decides again what the page shows. A failed request (an
- * error status, no answer in time, not JSON) keeps the last answer and sets `failed` until one
- * succeeds. Without an endpoint (fixtures mode) it never asks, and `show` still runs.
+ * Asks `endpoint` (`ask`) while the page is visible, one request at a time: on load, then every
+ * `everyMs`, and when the tab comes back once its last request is a minute old (`due`). After each
+ * answer, every minute, and whenever the tab comes back, `show(answer, now, failed)` decides again
+ * what the page shows. A failed request (an error status, no answer in time, not JSON) keeps the
+ * last answer and sets `failed` until one succeeds. Without an endpoint (fixtures mode) it never
+ * asks, and `show` still runs.
  */
 export function poll(
   endpoint: string | undefined,

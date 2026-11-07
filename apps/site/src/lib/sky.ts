@@ -10,10 +10,7 @@
  * offset, since Morocco's offset has changed with Ramadan and, in 2026, by decree.
  */
 
-import { dayMs, rabatTimeZone } from '@min7/contracts/rabat';
-
-// Hassan Tower, Rabat.
-const rabat = { lat: 34.024, lon: -6.8228 } as const;
+import { dayMs, rabatPoint, rabatTimeZone } from '@min7/contracts/rabat';
 
 const rad = Math.PI / 180;
 const sin = (deg: number) => Math.sin(deg * rad);
@@ -48,9 +45,10 @@ function sunElevation(time: number): number {
       0.5 * y * y * sin(4 * l0) -
       1.25 * e * e * sin(2 * m));
   const minutes = (((time % dayMs) + dayMs) % dayMs) / 60_000;
-  const hourAngle = (minutes + equationOfTime + 4 * rabat.lon) / 4 - 180;
+  const hourAngle = (minutes + equationOfTime + 4 * rabatPoint.longitude) / 4 - 180;
   const cosZenith =
-    sin(rabat.lat) * sin(declination) + cos(rabat.lat) * cos(declination) * cos(hourAngle);
+    sin(rabatPoint.latitude) * sin(declination) +
+    cos(rabatPoint.latitude) * cos(declination) * cos(hourAngle);
   return 90 - Math.acos(Math.min(1, Math.max(-1, cosZenith))) / rad;
 }
 

@@ -5,10 +5,10 @@
 // the Listening panel's line from `/v1/listening` (ADR 0015). The corkboard, the shelf and the
 // framed screen stay as the build drew them, until a reader scrubs to a past day: the control
 // loads src/scripts/room-scrub.ts on first touch (ADR 0044), and the live answers keep arriving
-// behind it. Also the keys 1 to 7, which open the room's objects in reading order, unless the list of keys has turned single-key shortcuts off. Without this
-// script the room is the build's: the static scene of the page's theme, with no moon, note, cat
-// or weather; a browser with outdated time zone rules gets the sky and the moon, but not the
-// lamp, the note or the cat.
+// behind it. Also the keys 1 to 7, which open the room's objects in reading order, unless the
+// list of keys has turned single-key shortcuts off. Without this script the room is the build's:
+// the static scene of the page's theme, with no moon, note, cat or weather; a browser with
+// outdated time zone rules gets the sky and the moon, but not the lamp, the note or the cat.
 
 import { readListening } from '../lib/listening.ts';
 import { live, poll } from '../lib/live-page.ts';

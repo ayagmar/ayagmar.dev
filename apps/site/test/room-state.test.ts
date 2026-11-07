@@ -5,18 +5,16 @@ import { describe, expect, it } from 'vitest';
 import { readListening } from '../src/lib/listening.ts';
 import { follow } from '../src/lib/live.ts';
 import { hotspotWords, roomObjects } from '../src/lib/room.ts';
+import { changedParts, liveReading, seededInputs } from '../src/lib/room-clock.ts';
 import { dayFacts } from '../src/lib/room-day.ts';
 import { roomSeed } from '../src/lib/room-seed.ts';
 import {
-  changedParts,
-  liveReading,
   type Reading,
   type RoomInputs,
   type RoomListening,
   type RoomMoment,
   type RoomPost,
   roomState,
-  seededInputs,
   shelfSlots,
 } from '../src/lib/room-state.ts';
 

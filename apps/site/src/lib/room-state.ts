@@ -238,5 +238,3 @@ export interface RoomSeed {
   listeningLimitMs: number;
   inputs: Pick<RoomInputs, 'posts' | 'shipping' | 'usage' | 'listening'>;
 }
-
-export { changedParts, liveReading, seededInputs } from './room-clock.ts';

@@ -10,6 +10,9 @@ export const utcDate = (date: string) => Date.parse(`${date}T00:00:00Z`);
 /** `2026-10-26`: the UTC date at `time` (Unix ms). */
 export const isoDate = (time: number) => new Date(time).toISOString().slice(0, 10);
 
+/** Hassan Tower, Rabat: where the room's sun rises and the weather is read. */
+export const rabatPoint = { latitude: 34.024, longitude: -6.8228 } as const;
+
 /** The IANA zone for all of Morocco. Its offset has changed many times; tzdata knows each one. */
 export const rabatTimeZone = 'Africa/Casablanca';
 

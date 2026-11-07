@@ -8,7 +8,7 @@ import {
   type WeatherStoredDay,
   weatherStoredDaySchema,
 } from '@min7/contracts';
-import { rabatDate, rabatDayStart } from '@min7/contracts/rabat';
+import { rabatDate, rabatDayStart, rabatPoint } from '@min7/contracts/rabat';
 import { weatherCodes } from '@min7/contracts/weather-codes';
 import { logEvent } from '../../security/log.ts';
 import { type DayValue, mergedRows, parsedDay } from '../../storage/daily.ts';
@@ -22,8 +22,11 @@ import {
   type UpstreamResponse,
 } from './http.ts';
 
-/** Hassan Tower, Rabat, as in the site's room clock (apps/site/src/lib/sky.ts). */
-export const rabatPoint = { latitude: '34.0240', longitude: '-6.8228' };
+/** `rabatPoint` as Open-Meteo is asked for it. */
+export const rabatQuery = {
+  latitude: rabatPoint.latitude.toFixed(4),
+  longitude: rabatPoint.longitude.toFixed(4),
+};
 
 type Slot = 'day' | 'night';
 
@@ -112,7 +115,7 @@ export function weatherDaysHistory(snapshot: WeatherSnapshot): PullHistory {
 /** The archive's URL for one date: the same place as the forecast pull, no key. */
 export const archiveUrl = (date: string) =>
   `https://archive-api.open-meteo.com/v1/archive?${new URLSearchParams({
-    ...rabatPoint,
+    ...rabatQuery,
     start_date: date,
     end_date: date,
     hourly: 'weather_code',
