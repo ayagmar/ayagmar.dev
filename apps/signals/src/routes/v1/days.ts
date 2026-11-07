@@ -11,7 +11,7 @@ import {
   type ShippingActivitySnapshot,
   type ShippingActivityStoredDay,
 } from '@min7/contracts';
-import { nextDate, rabatDate, rabatDayStart } from '@min7/contracts/rabat';
+import { dayMs, isoDate, nextDate, rabatDate, rabatDayStart, utcDate } from '@min7/contracts/rabat';
 import { type Context, Hono } from 'hono';
 import type { AppEnv } from '../../env.ts';
 import { methodNotAllowed, notFound } from '../../errors.ts';
@@ -21,20 +21,15 @@ import { serveEnvelope } from './snapshot.ts';
 
 /** The path of every series; any other answers the JSON 404. */
 const seriesPath = `/:series{${dailySources.join('|')}}`;
-const dayMs = 24 * 60 * 60 * 1000;
-
-const utcDate = (time: number) => new Date(time).toISOString().slice(0, 10);
 
 /** Today in the series' zone. */
 const today = (series: DailySource, now: number) =>
-  dailyZones[series] === 'UTC' ? utcDate(now) : rabatDate(now);
+  dailyZones[series] === 'UTC' ? isoDate(now) : rabatDate(now);
 
 /** Unix ms when the day after `date` begins in the series' zone. */
 function nextDayStart(series: DailySource, date: string): number {
   const next = nextDate(date);
-  return dailyZones[series] === 'UTC'
-    ? Date.parse(`${next}T00:00:00Z`)
-    : rabatDayStart(next) * 1000;
+  return dailyZones[series] === 'UTC' ? utcDate(next) : rabatDayStart(next) * 1000;
 }
 
 /**
@@ -52,13 +47,13 @@ function block(series: DailySource, query: URLSearchParams, now: number) {
     // The block moves at midnight in the series' zone: its end date is part of its cache key,
     // and no copy outlives the day (ADR 0038).
     const to = today(series, now);
-    const from = utcDate(Date.parse(`${to}T00:00:00Z`) - (daysLast - 1) * dayMs);
+    const from = isoDate(utcDate(to) - (daysLast - 1) * dayMs);
     return { key: `last=${daysLast}&to=${to}`, from, to, until: nextDayStart(series, to) };
   }
   if (month === null || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return null;
   if (month < daysFirstMonth || month > today(series, now).slice(0, 7)) return null;
   const [year = 0, index = 0] = month.split('-').map(Number);
-  const to = utcDate(Date.UTC(year, index, 0));
+  const to = isoDate(Date.UTC(year, index, 0));
   return { key: `month=${month}`, from: `${month}-01`, to, until: undefined };
 }
 

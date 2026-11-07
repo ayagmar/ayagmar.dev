@@ -6,6 +6,7 @@
  * page's room script and the /stats and /uses scripts; nothing here loads zod or the
  * contracts' schemas.
  */
+import { dayMs } from '@min7/contracts/rabat';
 
 const instant =
   /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
@@ -104,7 +105,7 @@ const exact = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyl
 /** Days since the epoch of `time`'s calendar date in the reader's own time zone. */
 export const day = (time: number) => {
   const date = new Date(time);
-  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000;
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / dayMs;
 };
 
 /**

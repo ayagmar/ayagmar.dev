@@ -9,7 +9,7 @@ import type {
   ShippingEvent,
   ShippingSnapshot,
 } from '@min7/contracts';
-import { rabatDate } from '@min7/contracts/rabat';
+import { dayMs, isoDate, rabatDate, utcDate } from '@min7/contracts/rabat';
 import { instantMs } from './live.ts';
 import {
   isCode,
@@ -22,7 +22,6 @@ import {
   type RoomSeed,
   screenWeeks,
 } from './room-state.ts';
-import { dayMs, isoDate, utcDate } from './words.ts';
 
 /** Every event of the newest pins, wherever it sits in the feed, and the newest code event. */
 function pinEvents(events: readonly ShippingEvent[]): ShippingEvent[] {

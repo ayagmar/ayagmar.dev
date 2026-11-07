@@ -3,11 +3,11 @@
  * and again by the browser for each newer answer (src/scripts/stats-live.ts).
  */
 import type { LlmUsageSnapshot } from '@min7/contracts';
-import { rabatDate } from '@min7/contracts/rabat';
+import { dayMs, isoDate, rabatDate, utcDate } from '@min7/contracts/rabat';
 import { heatmap, noRecordWords } from './heat.ts';
 import { el, type Markup } from './markup.ts';
 import { plural } from './plural.ts';
-import { dateRange, dayMs, dayWords, isoDate, tokens, utcDate } from './words.ts';
+import { dateRange, dayWords, shortDate, tokens } from './words.ts';
 
 const hourMs = 3_600_000;
 
@@ -15,7 +15,7 @@ const hourMs = 3_600_000;
 export function hours(ms: number): string {
   const value = ms / hourMs;
   const shown = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
-  return `${shown.toLocaleString('en')} ${shown === 1 ? 'hour' : 'hours'}`;
+  return plural(shown, 'hour', 'hours');
 }
 
 /**
@@ -28,13 +28,6 @@ export function share(fraction: number, count: number): string {
   const percent = Math.round(fraction * 100);
   return `${fraction < 1 ? Math.min(percent, 99) : percent}%`;
 }
-
-const fullDate = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
 
 /**
  * The panel's body for a snapshot taken at `fetchedAt`. The month, the last 7 days, the agents
@@ -148,8 +141,8 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
   const heat = heatmap(days, date);
   const summary = `${
     heat.activeDays === 0 || !heat.busiest?.tokens
-      ? `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: none.`
-      : `Tokens per day from ${fullDate.format(utcDate(heat.from))} to ${fullDate.format(utcDate(heat.to))}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${fullDate.format(utcDate(heat.busiest.date))} with ${tokens(heat.busiest.tokens)}.`
+      ? `Tokens per day from ${shortDate(heat.from)} to ${shortDate(heat.to)}: none.`
+      : `Tokens per day from ${shortDate(heat.from)} to ${shortDate(heat.to)}: ${plural(heat.activeDays, 'day', 'days')} with use, the busiest ${shortDate(heat.busiest.date)} with ${tokens(heat.busiest.tokens)}.`
   }${heat.gaps ? ' Some days have no record.' : ''}`;
   return [
     period,
@@ -178,11 +171,7 @@ export function llmUsagePanel(data: LlmUsageSnapshot, fetchedAt: string): Markup
       el(
         'figcaption',
         { class: 'heat-cap' },
-        el(
-          'span',
-          {},
-          `${fullDate.format(utcDate(heat.from))} – ${fullDate.format(utcDate(heat.to))}`
-        ),
+        el('span', {}, `${shortDate(heat.from)} – ${shortDate(heat.to)}`),
         // How the squares look means nothing to a screen reader or the text copy: their words are
         // in the summary above.
         ...(heat.gaps

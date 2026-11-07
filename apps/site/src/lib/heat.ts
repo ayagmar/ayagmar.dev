@@ -4,7 +4,7 @@
  * step and one huge day cannot wash out the rest. The ramp they index is `--heat-1` to `--heat-4`
  * in src/styles/base.css.
  */
-import { dayMs, isoDate, utcDate } from './words.ts';
+import { dayMs, isoDate, utcDate } from '@min7/contracts/rabat';
 
 export type HeatLevel = 0 | 1 | 2 | 3 | 4;
 

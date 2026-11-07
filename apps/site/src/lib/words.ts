@@ -2,9 +2,7 @@
  * Numbers, names and dates in words, for every page, text copy and the room. Every script shares
  * this module, so what only one of them needs belongs in that script's own.
  */
-import { rabatTimeZone } from '@min7/contracts/rabat';
-
-export const dayMs = 86_400_000;
+import { rabatTimeZone, utcDate } from '@min7/contracts/rabat';
 
 const units: [size: number, unit: string][] = [
   [1e12, 'T'],
@@ -34,16 +32,20 @@ export const repoName = (repo: string) => repo.slice(repo.indexOf('/') + 1);
 /** `2026-10-24` from an RFC 3339 timestamp, in UTC. */
 export const utcDay = (iso: string) => new Date(iso).toISOString().slice(0, 10);
 
-export const utcDate = (date: string) => Date.parse(`${date}T00:00:00Z`);
-export const isoDate = (time: number) => new Date(time).toISOString().slice(0, 10);
-const dayMonth = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'short',
-});
+/** A calendar date in words: `date` is a day, so it is read and written in UTC. */
+const dateWords = (options: Intl.DateTimeFormatOptions) => {
+  const format = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...options });
+  return (date: string) => format.format(utcDate(date));
+};
 
-/** `26 Oct`, of a calendar date. */
-export const dayWords = (date: string) => dayMonth.format(utcDate(date));
+/** `26 Oct`. */
+export const dayWords = dateWords({ day: 'numeric', month: 'short' });
+/** `26 October`. */
+export const dayName = dateWords({ day: 'numeric', month: 'long' });
+/** `26 Oct 2026`. */
+export const shortDate = dateWords({ day: 'numeric', month: 'short', year: 'numeric' });
+/** `26 October 2026`. */
+export const longDate = dateWords({ day: 'numeric', month: 'long', year: 'numeric' });
 
 /** `1–26 Oct`, `28 Sept–4 Oct`, or `1 Oct` for a single day. */
 export function dateRange(from: string, to: string): string {

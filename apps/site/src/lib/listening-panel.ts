@@ -5,10 +5,10 @@
  * build renders it (src/pages/stats.astro) and so does a live answer (src/scripts/stats-live.ts).
  */
 import type { ListeningSnapshot } from '@min7/contracts';
-import { count } from '../data/format.ts';
 import { artistUrl } from './lastfm.ts';
 import { trackBy } from './listening.ts';
 import { el, type Markup, stampMarkup } from './markup.ts';
+import { plural } from './plural.ts';
 import { weekCount, statsWords as words } from './stats.ts';
 import { capped } from './stats-panels.ts';
 
@@ -36,7 +36,7 @@ export function listeningBody({ scrobbles, recent, topArtists }: ListeningSnapsh
             )
           ),
           5,
-          (rest) => (rest === 1 ? '1 more track' : `${rest} more tracks`)
+          (rest) => plural(rest, 'more track', 'more tracks')
         )),
     el('h3', {}, words.top),
     topArtists === null || topArtists.length === 0
@@ -49,7 +49,7 @@ export function listeningBody({ scrobbles, recent, topArtists }: ListeningSnapsh
               'li',
               {},
               el('a', { href: url ?? artistUrl(artist) }, artist),
-              `, ${count(plays)} plays`
+              `, ${plural(plays, 'play', 'plays')}`
             )
           )
         ),

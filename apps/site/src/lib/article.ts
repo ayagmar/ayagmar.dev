@@ -3,7 +3,7 @@
  * Markdown body with links that work away from the page, and a renderer for each format.
  */
 import { type MdastNode, markdownToMdast } from 'satteri';
-import { site, siteUrl } from './site.ts';
+import { site, siteUrl, textRule } from './site.ts';
 import { type Note, notePath, noteSummary } from './til.ts';
 import { isoDay, type Post, postPath } from './writing.ts';
 
@@ -162,13 +162,12 @@ export function articleMeta({ date, updated, draft, tags }: Article): string[] {
 
 /** What `curl ayagmar.dev/writing/<slug>` prints. */
 export function renderArticleText(article: Article): string {
-  const rule = '-'.repeat(72);
   return [
     `${article.title} | ${site.name}`,
     ...articleMeta(article),
-    rule,
+    textRule,
     textBody(article),
-    rule,
+    textRule,
     `  ${'Page'.padEnd(10)} ${siteUrl}${article.path}`,
     `  ${'Markdown'.padEnd(10)} ${siteUrl}${article.path}.md`,
     `  ${'Home'.padEnd(10)} ${siteUrl}`,

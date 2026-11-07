@@ -1,6 +1,6 @@
 import type { ListeningSnapshot, LlmUsageSnapshot, ShippingEvent } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
-import { rabatDate } from '@min7/contracts/rabat';
+import { dayMs, rabatDate } from '@min7/contracts/rabat';
 import { describe, expect, it } from 'vitest';
 import { readListening } from '../src/lib/listening.ts';
 import { follow } from '../src/lib/live.ts';
@@ -19,7 +19,6 @@ import {
   seededInputs,
   shelfSlots,
 } from '../src/lib/room-state.ts';
-import { dayMs } from '../src/lib/words.ts';
 
 // The room's truth (ADR 0043), through `roomState` and the reader: the clock is an argument and
 // nothing else is faked.

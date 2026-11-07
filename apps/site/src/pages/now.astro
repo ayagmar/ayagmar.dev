@@ -2,7 +2,8 @@
 import { getEntry, render } from 'astro:content';
 import Brewing from '../components/Brewing.astro';
 import Base from '../layouts/Base.astro';
-import { staleAfterDays, updatedOn } from '../lib/now.ts';
+import { staleAfterDays } from '../lib/now.ts';
+import { updatedOn } from '../lib/plaintext.ts';
 import { nowPage } from '../lib/site.ts';
 import { isoDay } from '../lib/writing.ts';
 

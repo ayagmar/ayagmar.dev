@@ -9,12 +9,12 @@ import type {
   ShippingEvent,
   ShippingSnapshot,
 } from '@min7/contracts';
-import { count, describeEvent, projectsSummary } from '../data/format.ts';
-import { dayName } from './history.ts';
+import { describeEvent, projectsSummary } from '../data/format.ts';
 import { el, type Markup, stampMarkup } from './markup.ts';
+import { plural } from './plural.ts';
 import { starTotals, statsWords as words } from './stats.ts';
-import { bestRows, dayDate, headline, typingWords } from './typing.ts';
-import { repoName } from './words.ts';
+import { bestRows, headline, typingWords } from './typing.ts';
+import { dayName, repoName, shortDate } from './words.ts';
 
 /**
  * The first `keep` items of a list, then the rest in a disclosure that opens without
@@ -59,7 +59,7 @@ export const shippingItem = (event: ShippingEvent) =>
 /** The shipping events as a log: all of `events`, or the first `keep` and the rest folded. */
 export const shippingList = (events: readonly ShippingEvent[], keep = events.length) =>
   capped('ul', { class: 'shipping log' }, events.map(shippingItem), keep, (rest) =>
-    rest === 1 ? '1 earlier event' : `${rest} earlier events`
+    plural(rest, 'earlier event', 'earlier events')
   );
 
 /**
@@ -88,13 +88,13 @@ export function shippingBody(data: ShippingSnapshot, featured: readonly string[]
                 el(
                   'span',
                   { class: 'row-value' },
-                  `${count(entry.stars)} ${entry.stars === 1 ? 'star' : 'stars'} on `,
+                  `${plural(entry.stars, 'star', 'stars')} on `,
                   el('time', { datetime: entry.date }, dayName(entry.date))
                 )
               )
             ),
             5,
-            (rest) => (rest === 1 ? '1 more repository' : `${rest} more repositories`)
+            (rest) => plural(rest, 'more repository', 'more repositories')
           ),
         ]),
   ];
@@ -118,11 +118,7 @@ export function projectsBody({ projects }: ProjectsSnapshot): Markup[] {
                 'li',
                 {},
                 el('a', { href: `/projects/${project.slug}` }, project.slug),
-                el(
-                  'span',
-                  { class: 'row-value' },
-                  `${count(project.stars ?? 0)} ${project.stars === 1 ? 'star' : 'stars'}`
-                )
+                el('span', { class: 'row-value' }, plural(project.stars ?? 0, 'star', 'stars'))
               )
             )
           ),
@@ -138,7 +134,7 @@ export function projectsBody({ projects }: ProjectsSnapshot): Markup[] {
 }
 
 /** The day a best was set; the page's script reads it relative to now (`relabelDays`). */
-const bestDay = (date: string) => el('time', { datetime: date, 'data-day': '' }, dayDate(date));
+const bestDay = (date: string) => el('time', { datetime: date, 'data-day': '' }, shortDate(date));
 
 /** /stats's typing body: the 60-second best as a sentence, then one aligned row per best. */
 export function typingBody(data: MonkeytypeSnapshot): Markup[] {

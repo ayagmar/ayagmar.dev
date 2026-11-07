@@ -10,8 +10,7 @@
  * offset, since Morocco's offset has changed with Ramadan and, in 2026, by decree.
  */
 
-import { rabatTimeZone } from '@min7/contracts/rabat';
-import { dayMs } from './words.ts';
+import { dayMs, rabatTimeZone } from '@min7/contracts/rabat';
 
 // Hassan Tower, Rabat.
 const rabat = { lat: 34.024, lon: -6.8228 } as const;

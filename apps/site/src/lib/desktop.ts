@@ -4,11 +4,12 @@
  * tests share them. The value allowlists are the contract's own, from a module without zod.
  */
 import { kernelReleasePattern, niriVersionPattern } from '@min7/contracts/desktop';
+import { dayMs } from '@min7/contracts/rabat';
 import { instantMs } from './live.ts';
 import { plural } from './plural.ts';
 
 /** `staleAfterSeconds.desktop` in contracts (which loads zod); a test keeps them equal. */
-export const desktopStaleAfterMs = 2 * 24 * 60 * 60 * 1000;
+export const desktopStaleAfterMs = 2 * dayMs;
 
 export interface DesktopFacts {
   fetchedAt: string;

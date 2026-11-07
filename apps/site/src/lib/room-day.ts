@@ -7,7 +7,7 @@
  * So the words name the date, and name what is not known rather than leave it to look like zero.
  */
 import type { ListeningDay, ShippingActivityDay, WeatherDay } from '@min7/contracts';
-import { nextDate, rabatDayStart } from '@min7/contracts/rabat';
+import { dayMs, isoDate, nextDate, rabatDayStart, utcDate } from '@min7/contracts/rabat';
 import { weatherCodes } from '@min7/contracts/weather-codes';
 import { type Counts, shipped, shippedCount } from './day-words.ts';
 import { heatmap } from './heat.ts';
@@ -16,7 +16,7 @@ import { calendarDate, instantMs, list, readAnswer, text, whole } from './live.t
 import { plural } from './plural.ts';
 import { type PastDay, pinSlots, type RoomPin, type RoomState, screenWeeks } from './room-state.ts';
 import { rabatTime } from './sky.ts';
-import { dayMs, dayWords, isoDate, rabatStamp, tokens, utcDate } from './words.ts';
+import { dayName, dayWords, rabatStamp, tokens } from './words.ts';
 
 /** Every date is drawn at this hour in Rabat: dark all year, so the moon shows its phase. */
 const roomHour = 21;
@@ -252,17 +252,11 @@ export function dayFacts(date: string, lookup: Lookup): PastDay {
 }
 
 const weekday = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'long' });
-const dayMonth = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'UTC',
-  day: 'numeric',
-  month: 'long',
-});
 
 /** `Tuesday 14 October`, with the year when it is not `today`'s. */
 export function dateTitle(date: string, today: string): string {
-  const time = utcDate(date);
   const year = date.slice(0, 4) === today.slice(0, 4) ? '' : ` ${date.slice(0, 4)}`;
-  return `${weekday.format(time)} ${dayMonth.format(time)}${year}`;
+  return `${weekday.format(utcDate(date))} ${dayName(date)}${year}`;
 }
 
 /** The date `back` days before `today`, and how many days `date` is before it. */
