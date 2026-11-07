@@ -49,6 +49,11 @@
   --heat-2: light-dark(oklch(0.57 0.085 66), oklch(0.57 0.075 66));
   --heat-3: light-dark(oklch(0.5 0.085 62), oklch(0.64 0.08 70));
   --heat-4: light-dark(oklch(0.435 0.08 58), oklch(0.71 0.085 74));
+  /* Post art (ADR 0027), every one a room colour: lit cream, indigo shade and amber at night, ink,
+     bone and ember by day, when lit planes print as ink. */
+  --art-bright: light-dark(#14172e, #f0e6c8);
+  --art-dim: light-dark(#968a70, #6470aa);
+  --art-accent: light-dark(#b06846, #fac468);
 
   /* Writing: paper and ink. Paper is lamp-lit cream at night and brighter by day. */
   --paper: light-dark(#fbf6ea, #efe3c6);
@@ -1284,29 +1289,21 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .art-dots .bright {
-  stroke: light-dark(#14172e, #f0e6c8);
+  stroke: var(--art-bright);
 }
 
 .art-dots .dim {
-  stroke: light-dark(#968a70, #6470aa);
+  stroke: var(--art-dim);
 }
 
 .art-dots .accent {
-  stroke: light-dark(#b06846, #fac468);
+  stroke: var(--art-accent);
 }
 
 /* Paper is white whichever theme is chosen, and browsers drop backgrounds when printing. */
 @media print {
-  .art-dots .bright {
-    stroke: #14172e;
-  }
-
-  .art-dots .dim {
-    stroke: #968a70;
-  }
-
-  .art-dots .accent {
-    stroke: #b06846;
+  .art-dots {
+    color-scheme: light;
   }
 }
 

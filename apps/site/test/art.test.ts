@@ -35,17 +35,20 @@ describe('post art', () => {
     expect(renderArt(name)).toContain('class="bright"');
   });
 
-  // Catches a colour that is not the room's, on any object or in the page's day tones.
-  it('uses only colours from the room palette', () => {
+  // Catches a colour that is not the room's, on any object or in the page's tones, and a card
+  // that drifts from the page: the SVG's attributes are the night half of the tokens.
+  it('uses only colours from the room palette, the same on the card as on the page', () => {
     const room = new Set(roomPalette.map(hex));
     const css = readFileSync(join(import.meta.dirname, '..', 'src/styles/base.css'), 'utf8');
-    const block = css.slice(css.indexOf('.art-dots .ground'), css.indexOf('.prose {'));
-    const used = [
-      ...roomObjects.flatMap((name) => renderArt(name).match(/#[0-9a-f]{6}/g) ?? []),
-      ...(block.match(/#[0-9a-f]{6}/g) ?? []),
-    ];
-    expect(used.length).toBeGreaterThan(6);
-    expect(used.filter((color) => !room.has(color))).toEqual([]);
+    const tokens = [...css.matchAll(/--art-(\w+): light-dark\((#[0-9a-f]{6}), (#[0-9a-f]{6})\);/g)];
+    expect(tokens.map(([, tone]) => tone)).toEqual(['bright', 'dim', 'accent']);
+    const objects = roomObjects.flatMap((name) => renderArt(name).match(/#[0-9a-f]{6}/g) ?? []);
+    const used = [...objects, ...tokens.flatMap(([, , day, night]) => [day, night])];
+    expect(used.filter((color) => !room.has(color as string))).toEqual([]);
+    const card = renderMap('#.+\n');
+    const stroke = (tone: unknown) =>
+      new RegExp(`class="${tone}" stroke="(#[0-9a-f]{6})"`).exec(card)?.[1];
+    expect(tokens.map(([, tone]) => stroke(tone))).toEqual(tokens.map(([, , , night]) => night));
   });
 
   // Catches the art palette drifting from the scene's: both are the room's 41 colours.
