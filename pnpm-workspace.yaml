@@ -41,5 +41,5 @@ overrides:
   # old, and keeps the `minimatch` and `Minimatch` Stryker imports. GHSA-4mjr-xmp4-gh2g,
   # GHSA-6pq8-jhm2-2vcw, GHSA-q8mj-m7cp-5q26 and GHSA-x5fp-wj9c-mxmx in qs 6.15.1 (through
   # typed-rest-client 2.3.1), fixed by 6.16.1.
-  "@stryker-mutator/core>minimatch": 11.0.4
+  "@stryker-mutator/core>minimatch": 11.0.5
   "typed-rest-client>qs": 6.17.1
