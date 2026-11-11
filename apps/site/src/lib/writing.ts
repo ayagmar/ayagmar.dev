@@ -1,3 +1,4 @@
+import { nav, nowPage } from './site.ts';
 import type { WritingFrontmatter } from './writing-schema.ts';
 
 /** A post as every renderer sees it; `id` is the file name without `.md`, `body` its Markdown. */
@@ -38,9 +39,39 @@ export const lastUpdated = (post: Post) => post.data.updated ?? post.data.date;
 export const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
 /** What /writing, /til and their text copies say while they have nothing to list. */
-export const nothingPublished = 'Nothing published yet.';
+export const nothingYet = {
+  writing: "No posts yet. They'll be about software I build and the tools I use.",
+  til: "No notes yet. They'll be short, one thing at a time, picked up while working.",
+} as const;
 
-/** The same of a day or year already over. */
+/** What an empty /writing or /til says before the pages that do have something to read. */
+export const meanwhile = 'Until then, try';
+
+/**
+ * Where the 404 and an empty /writing or /til send a reader, in the nav's order. Writing and TIL
+ * join once they list something, so neither empty section points at the other, and both come
+ * back without an edit when the first entry is published.
+ */
+export function pagesToRead({ posts, notes }: { posts: number; notes: number }) {
+  const shown = new Set<string>([
+    ...(posts > 0 ? ['/writing'] : []),
+    ...(notes > 0 ? ['/til'] : []),
+    '/projects',
+    '/about',
+  ]);
+  return [...nav.filter((item) => shown.has(item.href)), nowPage];
+}
+
+/**
+ * The header's link while Search has not hydrated or scripts are off: the posts once there are
+ * some, the projects until then, so it is never a link to an empty page.
+ */
+export const browseLink = (posts: number) =>
+  posts > 0
+    ? { href: '/writing', label: 'Browse writing' }
+    : { href: '/projects', label: 'Browse projects' };
+
+/** What a day or year page says when nothing was published in it. */
 export const nothingPublishedThen = 'Nothing published.';
 
 /** Whole minutes to read a post's Markdown at 220 words a minute, never under one. */

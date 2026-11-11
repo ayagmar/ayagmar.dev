@@ -207,14 +207,14 @@ function merge(pull: ShippingActivityPull, stored: StoredHistory) {
 }
 
 /**
- * Whether the last attempt recorded neither a failure nor a success: the run was cut off. An
- * attempt that stored nothing because its answer was not newer looks the same; it only makes
- * the next pull a 35-day one.
+ * Whether the last attempt stored its answer, or there was none. A failure's code stays
+ * through later attempts until a success, and a run cut off by the CPU limit records only its
+ * attempt. After either, and after an answer that was not newer, the next pull asks for 35
+ * days, so the series advances while the 400 days keep failing.
  */
-const endedSilently = (status: SourceStatus | undefined) =>
-  status?.lastAttemptAt != null &&
-  status.lastErrorCode === null &&
-  (status.lastSuccessAt === null || Date.parse(status.lastSuccessAt) < status.lastAttemptAt);
+const endedStored = (status: SourceStatus | undefined) =>
+  status?.lastAttemptAt == null ||
+  (status.lastErrorCode === null && Date.parse(status.lastSuccessAt ?? '') >= status.lastAttemptAt);
 
 const isIncomplete = ({ status, body }: UpstreamResponse) =>
   status === 200 && isRecord(body) && body.complete === false;
@@ -235,14 +235,15 @@ export const shippingActivity: HistoryAdapter<UpstreamResponse, ShippingActivity
 
   /**
    * The whole 400 days on the first pull of a UTC date, and the last 35 on the others, which
-   * cost less CPU to check and merge (ADR 0038); 35 too after a pull that ended without
-   * recording how, as one cut off by the CPU limit does, so the series still advances. An
-   * incomplete answer is asked for once more at once, while repo-pulse's gate is warm.
+   * cost less CPU to check and merge (ADR 0038); 35 too after a pull that did not store its
+   * answer, so a 400-day answer that keeps failing is tried every other pull and the series
+   * still advances. An incomplete answer is asked for once more at once, while repo-pulse's
+   * gate is warm.
    */
   async fetch(env, signal, previous) {
     const stored = await new D1SnapshotStore(env.DB).get('shipping-activity');
     const fullOn = (stored?.snapshot as { fullOn?: unknown } | null | undefined)?.fullOn;
-    const whole = fullOn !== isoDate(Date.now()) && !endedSilently(previous);
+    const whole = fullOn !== isoDate(Date.now()) && endedStored(previous);
     const days = whole ? activityMaxDays : activityRecentDays;
     const url = `${activityUrl}?days=${days}`;
     const answer = await getJson(url, { signal, maxBytes });
