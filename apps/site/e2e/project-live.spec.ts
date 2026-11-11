@@ -1,4 +1,5 @@
-// A project's numbers and its log of releases and merges, kept current by the browser (ADR 0015).
+// A project's numbers and its log of releases and merges, kept current by the browser (ADR 0015,
+// ADR 0046).
 // The e2e build runs in fixtures mode, where the page asks signals for nothing. Each test turns
 // the page's panels live as an api mode build would (an endpoint, and a freshness line where the
 // sample tape is), answers the API itself, and fixes the browser's clock.
@@ -7,7 +8,7 @@ import type { Browser, Locator, Page, Route } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
 const api = 'https://api.ayagmar.dev/v1';
-type Source = 'projects' | 'shipping';
+type Source = 'projects' | 'project-events';
 type Answer = Parameters<Route['fulfill']>[0] | ((route: Route) => unknown);
 // The build's snapshots were taken at 09:00 (fixturesCapturedAt).
 const noon = '2026-10-26T12:00:00Z';
@@ -50,7 +51,7 @@ async function visit(page: Page, path: string, answers: Partial<Record<Source, A
 }
 
 const numbers = (page: Page) => page.locator('[data-live="projects"]');
-const log = (page: Page) => page.locator('[data-live="shipping"]');
+const log = (page: Page) => page.locator('[data-live="project-events"]');
 
 /** The markup under `locator` as text, whitespace collapsed, without the build's comments. */
 const html = (locator: Locator) =>
@@ -77,7 +78,7 @@ test('a live answer renders as the build renders the same snapshot', async ({ pa
   const fresh = await page.context().newPage();
   await visit(fresh, '/projects/pi-extmgr', {
     projects: envelope('projects'),
-    shipping: envelope('shipping'),
+    'project-events': envelope('project-events'),
   });
   for (const panel of [numbers(fresh), log(fresh)]) {
     await expect(panel.locator('.freshness time')).toHaveAttribute(
@@ -135,51 +136,72 @@ test('a project missing from the answer has no numbers', async ({ page }) => {
 test('a failed or invalid answer keeps the build', async ({ page }) => {
   await visit(page, '/projects/pi-extmgr', {
     projects: { status: 502, body: '' },
-    shipping: envelope('shipping', { events: 'none' }),
+    'project-events': envelope('project-events', { projects: 'none' }),
   });
   await expect(numbers(page).locator('.freshness')).toHaveText('Updated 3 hours ago');
   await expect(numbers(page).locator('dd').nth(1)).toHaveText('72');
-  await expect(log(page).locator('li')).toHaveCount(4);
+  await expect(log(page).locator('li')).toHaveCount(20);
 });
 
-// Catches an empty box on a project with nothing recent, and a log that never appears once the
-// feed has something for it.
-test('the log shows only while the feed has something for the project', async ({ page }) => {
+const logs = snapshotFixtures['project-events'].ok.projects;
+
+// Catches an empty box on a project with nothing shipped, and a log that never appears once
+// GitHub has something for it.
+test('the log shows only while the project has something', async ({ page }) => {
   const merge = {
     type: 'merge',
     repo: 'ayagmar/headroom',
-    at: '2026-10-26T11:30:00Z',
+    at: '2026-10-26T12:10:00Z',
     url: 'https://github.com/ayagmar/headroom/pull/3',
     number: 3,
     title: 'docs: say it is archived',
   };
-  let answer = envelope('shipping', { events: [], starHistory: [] });
-  await visit(page, '/projects/headroom', { shipping: (route) => route.fulfill(answer) });
+  const headroom = (events: unknown[]) => ({
+    projects: [{ slug: 'headroom', repo: 'ayagmar/headroom', events }],
+  });
+  let answer = envelope('project-events', headroom([]));
+  await visit(page, '/projects/headroom', { 'project-events': (route) => route.fulfill(answer) });
   await expect(log(page).locator('.freshness')).toHaveText('Updated 1 minute ago');
   await expect(log(page)).toBeHidden();
-  answer = envelope('shipping', { events: [merge], starHistory: [] }, '2026-10-26T12:04:00Z');
-  // Five minutes on, the next request brings the merge.
-  await page.clock.runFor(5 * 60_000);
+  answer = envelope('project-events', headroom([merge]), '2026-10-26T12:29:00Z');
+  // Half an hour on, the next request brings the merge.
+  await page.clock.runFor(30 * 60_000);
   await expect(log(page)).toBeVisible();
   await expect(log(page).locator('li')).toHaveText(
-    '35 minutes ago merged #3: docs: say it is archived'
+    '20 minutes ago merged #3: docs: say it is archived'
   );
   await expect(log(page).getByRole('link')).toHaveAttribute('href', merge.url);
 });
 
-// Catches each push to signals redrawing an unchanged log: the fold the reader opened closed,
-// and the link they had reached with the keyboard lost focus.
+// Catches a log kept on the page after signals stopped naming its repository: made private,
+// deleted or moved to another account (ADR 0046).
+test('a project the newer answer leaves out loses its log', async ({ page }) => {
+  await visit(page, '/projects/pi-extmgr', {
+    'project-events': envelope('project-events', {
+      projects: logs.filter((project) => project.slug !== 'pi-extmgr'),
+    }),
+  });
+  await expect(log(page)).toBeHidden();
+  await expect(log(page).locator('li')).toHaveCount(0);
+});
+
+// Catches each new answer from signals redrawing an unchanged log: the fold the reader opened
+// closed, and the link they had reached with the keyboard lost focus.
 test('a newer answer with the same events keeps the open fold and the focus', async ({ page }) => {
-  let answer = envelope('shipping');
-  await visit(page, '/projects/ccdesk', { shipping: (route) => route.fulfill(answer) });
+  let answer = envelope('project-events');
+  await visit(page, '/projects/ccdesk', { 'project-events': (route) => route.fulfill(answer) });
   const freshness = log(page).locator('.freshness time');
   await expect(freshness).toHaveAttribute('datetime', '2026-10-26T11:59:00Z');
   await log(page).locator('details summary').click();
   const link = log(page).locator('details a').first();
   await link.focus();
-  answer = envelope('shipping', snapshotFixtures.shipping.ok, '2026-10-26T12:04:00Z');
-  await page.clock.runFor(5 * 60_000);
-  await expect(freshness).toHaveAttribute('datetime', '2026-10-26T12:04:00Z');
+  answer = envelope(
+    'project-events',
+    snapshotFixtures['project-events'].ok,
+    '2026-10-26T12:29:00Z'
+  );
+  await page.clock.runFor(30 * 60_000);
+  await expect(freshness).toHaveAttribute('datetime', '2026-10-26T12:29:00Z');
   await expect(log(page).locator('details')).toHaveAttribute('open', '');
   await expect(link).toBeFocused();
 });

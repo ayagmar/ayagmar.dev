@@ -80,15 +80,6 @@ export function projectsByGroup<P extends Pick<SiteProject, 'group'>>(projects: 
   }));
 }
 
-/**
- * The names a project's repository goes by: the one in contracts, then the one GitHub reports now
- * if it was renamed. Shipping events name the repository as it was called when they happened.
- */
-export const projectRepos = ({ slug, repo }: Pick<SiteProject, 'slug' | 'repo'>) => {
-  const listed = featuredProjects.find((entry) => entry.slug === slug)?.repo ?? repo;
-  return listed === repo ? [repo] : [listed, repo];
-};
-
 /** Where a project lives: its repository, its own site and its npm package. */
 export const projectLinks = ({ repo, repoUrl, homepage, npmUrl }: SiteProject) => [
   { href: repoUrl, label: `${repo} on GitHub` },
