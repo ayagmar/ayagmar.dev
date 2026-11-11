@@ -1,6 +1,6 @@
 # 0039. Checks against weak tests and narrating comments
 
-Status: accepted, 2026-11-03
+Status: accepted, 2026-11-03. Amended 2026-11-11: a todo test with a body and no reason fails `check-tests`.
 
 ## Context
 
@@ -19,6 +19,7 @@ Most changes here are written with coding agents. Agents add mocks to tests more
 | A test whose only assertions are `toBeDefined()`, `toBeTruthy()`, `not.toBeNull()`, or `assert(x)`/`assert.ok(x)` on a plain value | Almost any wrong value passes.                                                                                                                                                                                                                                                             |
 | `.only` (or `only: true`)                                                                                                          | Every other test in the file stops running.                                                                                                                                                                                                                                                |
 | `test.skip(...)`, `describe.skip(...)` or `skip: true` with neither a reason string nor a condition                                | A test switched off with no reason stays off. Playwright's `test.skip(condition, reason)` and vitest's `skipIf` pass.                                                                                                                                                                      |
+| `test.todo(name, fn)` or `todo: true` with no reason                                                                               | A test that cannot fail: node:test runs it and ignores its failure, vitest never runs it. A bare `it.todo(name)` placeholder and `todo: 'reason'` pass.                                                                                                                                    |
 
 `// check-tests: allow <reason>` on the finding's line or the line above silences it; the repo has none. Biome's `suspicious/noFocusedTests` also flags `.only` in the editor.
 
