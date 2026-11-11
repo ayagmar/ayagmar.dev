@@ -574,6 +574,30 @@
   }
 }
 
+/* And the reverse: an object under the pointer or focus lights its row in the list, so the row
+   reads as the object's other name. One line per object, as above. */
+@supports selector(:has(*)) {
+  main:has([data-room="corkboard"]:is(:hover, :focus-visible))
+    [data-room-list="corkboard"]
+    .room-section,
+  main:has([data-room="frame"]:is(:hover, :focus-visible)) [data-room-list="frame"] .room-section,
+  main:has([data-room="notebook"]:is(:hover, :focus-visible))
+    [data-room-list="notebook"]
+    .room-section,
+  main:has([data-room="monitor"]:is(:hover, :focus-visible))
+    [data-room-list="monitor"]
+    .room-section,
+  main:has([data-room="keyboard"]:is(:hover, :focus-visible))
+    [data-room-list="keyboard"]
+    .room-section,
+  main:has([data-room="tea"]:is(:hover, :focus-visible)) [data-room-list="tea"] .room-section,
+  main:has([data-room="record-player"]:is(:hover, :focus-visible))
+    [data-room-list="record-player"]
+    .room-section {
+    color: var(--lamp);
+  }
+}
+
 .hotspot span {
   position: absolute;
   bottom: 100%;
@@ -840,8 +864,8 @@
   color: var(--lamp);
 }
 
-/* With the room's hotspots in reach the list steps back: one muted row of section names, each
-   lighting its object in the scene. The object's name stays for screen readers. */
+/* With the room's hotspots in reach the list steps back: one muted row, each section over the
+   object it sits on, lighting that object in the scene. */
 @media (min-width: 60rem) {
   .room-list {
     margin-top: 1.5rem;
@@ -850,15 +874,6 @@
   .room-list a {
     padding: 0.25rem 0;
     border-top: 0;
-  }
-
-  .room-object {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   .room-section {
