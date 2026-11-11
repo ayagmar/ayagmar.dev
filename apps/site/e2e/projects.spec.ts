@@ -78,7 +78,7 @@ test('search results name the project a post is about', { tag: '@drafts' }, asyn
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('ephemeral runners');
+  await dialog.getByLabel('Search the site').fill('ephemeral runners');
   const result = dialog.getByRole('listitem').filter({
     has: page.getByRole('link', { name: /ephemeral CI runners/ }),
   });
