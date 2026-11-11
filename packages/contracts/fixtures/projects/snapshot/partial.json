@@ -20,25 +20,6 @@
       }
     },
     {
-      "slug": "ccdesk",
-      "repo": "ayagmar/claude-desk",
-      "name": "claude-desk",
-      "url": "https://github.com/ayagmar/claude-desk",
-      "description": "See and manage everything that shapes Claude Code on your machine: instructions, settings, permissions, hooks, MCP servers, agents, skills and memory. npx ccdesk",
-      "language": "TypeScript",
-      "stars": 4,
-      "archived": false,
-      "latestRelease": {
-        "tag": "v0.5.13",
-        "url": "https://github.com/ayagmar/claude-desk/releases/tag/v0.5.13",
-        "publishedAt": "2026-10-25T11:48:51Z"
-      },
-      "npm": {
-        "package": "ccdesk",
-        "monthlyDownloads": null
-      }
-    },
-    {
       "slug": "pi-mobile",
       "repo": "ayagmar/pi-mobile",
       "name": "pi-mobile",
@@ -70,6 +51,37 @@
       }
     },
     {
+      "slug": "ccdesk",
+      "repo": "ayagmar/claude-desk",
+      "name": "claude-desk",
+      "url": "https://github.com/ayagmar/claude-desk",
+      "description": "See and manage everything that shapes Claude Code on your machine: instructions, settings, permissions, hooks, MCP servers, agents, skills and memory. npx ccdesk",
+      "language": "TypeScript",
+      "stars": 4,
+      "archived": false,
+      "latestRelease": {
+        "tag": "v0.5.13",
+        "url": "https://github.com/ayagmar/claude-desk/releases/tag/v0.5.13",
+        "publishedAt": "2026-10-25T11:48:51Z"
+      },
+      "npm": {
+        "package": "ccdesk",
+        "monthlyDownloads": null
+      }
+    },
+    {
+      "slug": "niri-computer-use",
+      "repo": "ayagmar/niri-computer-use",
+      "name": "niri-computer-use",
+      "url": "https://github.com/ayagmar/niri-computer-use",
+      "description": "MCP server for AI agents to observe and drive a niri Wayland desktop. Early development.",
+      "language": "Rust",
+      "stars": 6,
+      "archived": false,
+      "latestRelease": null,
+      "npm": null
+    },
+    {
       "slug": "runnerd",
       "repo": "ayagmar/runnerd",
       "name": "runnerd",
@@ -82,25 +94,51 @@
       "npm": null
     },
     {
-      "slug": "kipple",
-      "repo": "ayagmar/kipple",
-      "name": "kipple",
-      "url": "https://github.com/ayagmar/kipple",
+      "slug": "pi-codex-web-search",
+      "repo": "ayagmar/pi-codex-web-search",
+      "name": "pi-codex-web-search",
+      "url": "https://github.com/ayagmar/pi-codex-web-search",
       "description": null,
-      "language": null,
-      "stars": 1,
+      "language": "TypeScript",
+      "stars": 27,
       "archived": false,
-      "latestRelease": null,
-      "npm": null
+      "latestRelease": {
+        "tag": "v0.2.0",
+        "url": "https://github.com/ayagmar/pi-codex-web-search/releases/tag/v0.2.0",
+        "publishedAt": "2026-10-04T10:12:40Z"
+      },
+      "npm": {
+        "package": "pi-codex-web-search",
+        "monthlyDownloads": 4483
+      }
     },
     {
-      "slug": "niri-computer-use",
-      "repo": "ayagmar/niri-computer-use",
-      "name": "niri-computer-use",
-      "url": "https://github.com/ayagmar/niri-computer-use",
-      "description": "MCP server for AI agents to observe and drive a niri Wayland desktop. Early development.",
-      "language": "Rust",
-      "stars": 6,
+      "slug": "pi-promptsmith",
+      "repo": "ayagmar/pi-promptsmith",
+      "name": "pi-promptsmith",
+      "url": "https://github.com/ayagmar/pi-promptsmith",
+      "description": null,
+      "language": "TypeScript",
+      "stars": 22,
+      "archived": false,
+      "latestRelease": {
+        "tag": "v0.4.0",
+        "url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.4.0",
+        "publishedAt": "2026-05-12T18:03:11Z"
+      },
+      "npm": {
+        "package": "pi-promptsmith",
+        "monthlyDownloads": 74
+      }
+    },
+    {
+      "slug": "claude-modmgr",
+      "repo": "ayagmar/claude-modmgr",
+      "name": "claude-modmgr",
+      "url": "https://github.com/ayagmar/claude-modmgr",
+      "description": null,
+      "language": null,
+      "stars": 3,
       "archived": false,
       "latestRelease": null,
       "npm": null

@@ -22,7 +22,10 @@ beforeEach(() => {
     "---\nimport { getCollection } from 'astro:content';\nconst posts = await getCollection('writing');\nconst projects = await getCollection('projects');\n---\n<p>{posts.length} {projects.length}</p>\n"
   );
   fixture.write('content/writing/fine.md', post('[runnerd]'));
-  fixture.write('content/projects/runnerd.md', '---\nslug: runnerd\nstatus: active\n---\n');
+  fixture.write(
+    'content/projects/runnerd.md',
+    '---\nslug: runnerd\nstatus: active\ngroup: self-hosted\n---\n'
+  );
 });
 afterEach(() => {
   fixture.remove();
@@ -81,7 +84,7 @@ it.each([
   [
     "a project file's slug differs from its name",
     'content/projects/ccdesk.md',
-    '---\nslug: runnerd\nstatus: active\n---\n',
+    '---\nslug: runnerd\nstatus: active\ngroup: self-hosted\n---\n',
     'slug "runnerd" must match the file name (ccdesk)',
   ],
 ])(

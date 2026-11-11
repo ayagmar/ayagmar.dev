@@ -15,7 +15,7 @@ const { items } = Astro.props;
     <ul class="brewing">
       {items.map((item) => (
         <li>
-          <strong>{item.url === undefined ? item.name : <a href={item.url}>{item.name}</a>}</strong>
+          <strong>{item.url === undefined ? item.name : <a href={item.url}>{item.name}</a>}</strong>{' '}
           <span>{item.note}</span>
         </li>
       ))}

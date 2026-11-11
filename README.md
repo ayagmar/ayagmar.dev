@@ -53,7 +53,7 @@ just publish title-of-the-post  # branch, commit, push, pull request
 
 ## Edit the about page
 
-`content/about.json` holds the facts for the about page: identity, summary, the note on the name (`nameNote`, a quiet line under the summary), experience (newest first), certifications, education, skills. Months are written `YYYY-MM`; `"end": null` marks the current role. A wrong or misspelled field fails the build with a message naming it.
+`content/about.json` holds the facts for the about page: identity, summary, the note on the name (`nameNote`, a quiet line under the summary), experience (newest first), certifications, education, stack (languages, frameworks and platforms). Months are written `YYYY-MM`; `"end": null` marks the current role. A wrong or misspelled field fails the build with a message naming it.
 
 ## Deploy
 

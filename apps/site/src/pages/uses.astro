@@ -16,7 +16,7 @@ const api = (source: string) =>
 <Base title="Uses" description={uses.intro}>
   {/* Its scripts read the API as the page loads; in fixtures mode they make no request. */}
   {signalsMode === 'api' && <link slot="head" rel="preconnect" href={signalsApiBase} crossorigin>}
-  <div class="column">
+  <div class="column" data-pagefind-body data-pagefind-meta="title:Uses">
     <h1>Uses</h1>
     <p class="caption">{uses.intro}</p>
 
@@ -27,7 +27,7 @@ const api = (source: string) =>
           <ul>
             {section.items.map((item) => (
               <li>
-                <span>{item.name}</span>
+                {item.url ? <a href={item.url}>{item.name}</a> : <span>{item.name}</span>}
                 {item.detail && (
                   <span class="uses-detail">
                     <span class="sr-only">, </span>
@@ -47,8 +47,7 @@ const api = (source: string) =>
           <dl>
             {machine.specs.map((spec) => (
               <div>
-                <dt>{spec.part}</dt>
-                <dd>{spec.value}</dd>
+                <dt>{spec.part}</dt> <dd>{spec.value}</dd>
               </div>
             ))}
           </dl>
@@ -56,7 +55,7 @@ const api = (source: string) =>
       ))}
 
       {/* Filled in, and shown, by src/scripts/uses.ts; hidden without it. */}
-      <section class="panel uses-live" aria-labelledby="uses-live" hidden>
+      <section class="panel uses-live" aria-labelledby="uses-live" hidden data-pagefind-ignore>
         <h2 id="uses-live">From my machines</h2>
         <div class="desktop-facts" data-desktop-src={api('desktop')} hidden>
           <h3>Desktop</h3>

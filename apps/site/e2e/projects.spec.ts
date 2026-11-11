@@ -78,7 +78,7 @@ test('search results name the project a post is about', { tag: '@drafts' }, asyn
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('ephemeral runners');
+  await dialog.getByLabel('Search the site').fill('ephemeral runners');
   const result = dialog.getByRole('listitem').filter({
     has: page.getByRole('link', { name: /ephemeral CI runners/ }),
   });
@@ -95,7 +95,7 @@ for (const path of ['/', '/projects/pi-mobile', '/projects', '/writing/token-log
     await page.goto(path);
     const filled = await page
       .locator(
-        '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a:not(.heading-link), .home-projects a, .home-projects p, .posts a'
+        '.project-summary, .projects p, .project-stats dd, .project-links a, .project h1, h2 a:not(.heading-link), .projects h3 a, .home-projects a, .home-projects p, .posts a'
       )
       .evaluateAll((elements) => {
         for (const element of elements) element.textContent = 'A'.repeat(80);

@@ -83,6 +83,16 @@ The `daily` table, the activity pull and `/v1/days` ship in signals; the strip r
 
 The llm-usage history fills with the next accepted push; `/v1/days/llm-usage?month=YYYY-MM` shows it.
 
+## Changing the featured projects (ADR 0009)
+
+Production builds the site from the stored `projects` snapshot, and the merge that changes `featuredProjects` deploys signals and the site together. The site is therefore built from the snapshot of the old list: new projects show no numbers and `/stats` counts the old set, until the site is built again. After merging, wait for the first `projects` pull (up to 6 hours), then rebuild the site (a merge to `main`, or a retry of the last site build in Workers Builds):
+
+```sh
+curl -s https://api.ayagmar.dev/v1/health | jq '.sources[] | select(.source == "projects")'
+```
+
+The pull has run when `lastSuccessAt` is later than the deploy.
+
 ## Listening and weather days (ADR 0038)
 
 These need no migration and no new secret. Merging to `main` deploys them through Workers Builds, and recording starts on its own: weather at the next pull, listening in the first minutes of the next hour. A Worker rollback needs nothing either: the older version ignores the new rows and answers 404 on the two new routes.

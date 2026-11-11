@@ -10,5 +10,13 @@
   "pi-extmgr": {
     "status": 503,
     "body": null
+  },
+  "pi-codex-web-search": {
+    "status": 503,
+    "body": null
+  },
+  "pi-promptsmith": {
+    "status": 503,
+    "body": null
   }
 }

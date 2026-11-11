@@ -1,3 +1,4 @@
+import type { Route } from '@playwright/test';
 import { expect, test } from './fixtures.ts';
 
 test('Ctrl+K opens search and finds a post', { tag: '@drafts' }, async ({ page }) => {
@@ -7,7 +8,7 @@ test('Ctrl+K opens search and finds a post', { tag: '@drafts' }, async ({ page }
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel('Search posts').fill('token logs');
+  await dialog.getByLabel('Search the site').fill('token logs');
 
   const result = dialog.getByRole('link', { name: /what 17 coding agents taught me/ });
   await expect(result).toHaveAttribute('href', '/writing/token-logs');
@@ -21,9 +22,68 @@ test('/ opens search; drafts are not in the index', async ({ page }) => {
 
   await page.keyboard.press('/');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('ricing');
+  await dialog.getByLabel('Search the site').fill('ricing');
   await expect(dialog.getByRole('status')).toHaveText('No results.');
 });
+
+// Catches the project pages falling out of the index: with no published post, search on
+// production finds little else.
+test('finds a project by its name', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  await dialog.getByLabel('Search the site').fill('runnerd');
+  const result = dialog.getByRole('link', { name: 'runnerd', exact: true });
+  await expect(result).toHaveAttribute('href', '/projects/runnerd');
+});
+
+// Catches words in neighbouring inline elements running together in an excerpt, as
+// "repo-pulseA self-hosted" and "CPUAMD Ryzen" did.
+for (const { term, title, words } of [
+  { term: 'self-hosted Cloudflare Worker', title: 'Now', words: 'repo-pulse A self-hosted' },
+  { term: 'Ryzen', title: 'Uses', words: 'CPU AMD Ryzen' },
+]) {
+  test(`the ${title} excerpt for "${term}" keeps its words apart`, async ({ page }) => {
+    await page.goto('/about');
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    await page.keyboard.press('Control+k');
+    const dialog = page.getByRole('dialog', { name: 'Search' });
+    await dialog.getByLabel('Search the site').fill(term);
+    const result = dialog
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('link', { name: title, exact: true }) });
+    await expect(result).toContainText(words);
+  });
+}
+
+// Catches an older search painting its answer, or its failure, over a newer input: clearing
+// the field while "runner" is still loading must leave the dialog empty.
+for (const outcome of ['answers', 'fails'] as const) {
+  test(`a search that ${outcome} after the field is cleared shows nothing`, async ({ page }) => {
+    const held: Route[] = [];
+    await page.route('**/pagefind/fragment/**', (route) => {
+      held.push(route);
+    });
+    await page.goto('/about');
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    await page.keyboard.press('Control+k');
+    const dialog = page.getByRole('dialog', { name: 'Search' });
+    const field = dialog.getByLabel('Search the site');
+    await field.fill('runner');
+    await expect.poll(() => held.length).toBeGreaterThan(0);
+    await field.fill('');
+    for (const route of held) {
+      if (outcome === 'fails') await route.abort();
+      else await route.continue();
+    }
+    await Promise.all(held.map((route) => route.request().response()));
+    // The fragments are decoded and painted within a few tasks of arriving.
+    await page.waitForTimeout(500);
+    await expect(dialog.getByRole('status')).toHaveText('');
+    await expect(dialog.getByRole('listitem')).toHaveCount(0);
+  });
+}
 
 // Catches `/` taken from someone typing in a field, or from a browser shortcut that adds a
 // modifier to it.
@@ -92,7 +152,7 @@ test('the open search dialog keeps 24px targets and fits a 320px screen', {
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('token logs');
+  await dialog.getByLabel('Search the site').fill('token logs');
   await expect(dialog.getByRole('link').first()).toBeVisible();
 
   const targets = dialog.locator('input, button, a');

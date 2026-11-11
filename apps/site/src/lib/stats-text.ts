@@ -5,11 +5,11 @@
  */
 import {
   type Envelope,
-  featuredProjects,
   type ListeningSnapshot,
   type LlmUsageSnapshot,
   type MonkeytypeSnapshot,
   type ProjectsSnapshot,
+  pulledProjects,
   type ShippingSnapshot,
 } from '@min7/contracts';
 import { nowPlaying, nowPlayingMarkup } from './listening.ts';
@@ -42,7 +42,7 @@ function freshness(envelope: Envelope<unknown>, sample: boolean): string[] {
 /** What `curl ayagmar.dev/stats` prints: each panel's numbers as of the build. */
 export function renderStatsText(sources: StatsSources, sample: boolean): string {
   const { listening, projects, typing, shipping, llmUsage } = sources;
-  const featured = featuredProjects.map((project) => project.repo);
+  const featured = pulledProjects.map((project) => project.repo);
   const played =
     listening.data === null || listening.fetchedAt === null
       ? null

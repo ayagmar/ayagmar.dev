@@ -89,24 +89,6 @@
       }
     }
   },
-  "ayagmar/kipple": {
-    "repo": {
-      "status": 404,
-      "body": {
-        "message": "Not Found",
-        "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository",
-        "status": "404"
-      }
-    },
-    "release": {
-      "status": 404,
-      "body": {
-        "message": "Not Found",
-        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
-        "status": "404"
-      }
-    }
-  },
   "ayagmar/niri-computer-use": {
     "repo": {
       "status": 404,
@@ -125,7 +107,61 @@
       }
     }
   },
-  "ayagmar/headroom": {
+  "ayagmar/pi-codex-web-search": {
+    "repo": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository",
+        "status": "404"
+      }
+    },
+    "release": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
+        "status": "404"
+      }
+    }
+  },
+  "ayagmar/pi-promptsmith": {
+    "repo": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository",
+        "status": "404"
+      }
+    },
+    "release": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
+        "status": "404"
+      }
+    }
+  },
+  "ayagmar/claude-modmgr": {
+    "repo": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/repos/repos#get-a-repository",
+        "status": "404"
+      }
+    },
+    "release": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
+        "status": "404"
+      }
+    }
+  },
+  "ayagmar/repo-pulse": {
     "repo": {
       "status": 404,
       "body": {
