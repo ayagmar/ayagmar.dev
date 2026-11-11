@@ -1,6 +1,7 @@
 import type { ProjectsSnapshot, ShippingEvent, ShippingSnapshot } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
+import type { Element } from '../src/lib/markup.ts';
 import { markupLines } from '../src/lib/markup-text.ts';
 import { projectEvents, projectLog, projectStats } from '../src/lib/project-panel.ts';
 import { projectRepos, siteProjects } from '../src/lib/projects.ts';
@@ -65,8 +66,11 @@ describe("a project's log", () => {
 
   // Catches a log that runs down the page: five open, the rest folded where no JavaScript is needed.
   it('keeps five open and folds the rest, each line time first and linked to GitHub', () => {
-    const lines = markupLines(projectLog(shipping.events, ['ayagmar/ccdesk']));
-    expect(lines).toEqual([
+    const log = projectLog(shipping.events, ['ayagmar/ccdesk']);
+    const [open, fold] = log as Element[];
+    expect([open?.tag, open?.children.length, fold?.tag]).toEqual(['ul', 5, 'details']);
+    expect(fold?.children[0]).toEqual({ tag: 'summary', attrs: {}, children: ['4 earlier ones'] });
+    expect(markupLines(log)).toEqual([
       '  25 Oct, 11:48 released v0.5.13',
       '  25 Oct, 11:47 merged #74: chore: update Claude Code data (claude-agent-sdk 0.3.310)',
       '  25 Oct, 02:35 released v0.5.12',
