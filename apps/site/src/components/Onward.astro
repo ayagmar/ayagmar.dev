@@ -1,0 +1,21 @@
+---
+interface Props {
+  /** The words before the links, such as "Until then, try". */
+  lead: string;
+  pages: readonly { href: string; label: string }[];
+}
+
+const { lead, pages } = Astro.props;
+const separator = (index: number) =>
+  index === 0 ? ' ' : index === pages.length - 1 ? ' or ' : ', ';
+---
+
+<p class="onward">
+  {lead}
+  {pages.map((page, index) => (
+    <>
+      {separator(index)}
+      <a href={page.href}>{page.label}</a>
+    </>
+  ))}.
+</p>

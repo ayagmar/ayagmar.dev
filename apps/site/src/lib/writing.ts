@@ -1,3 +1,4 @@
+import { nav, nowPage } from './site.ts';
 import type { WritingFrontmatter } from './writing-schema.ts';
 
 /** A post as every renderer sees it; `id` is the file name without `.md`, `body` its Markdown. */
@@ -38,9 +39,47 @@ export const lastUpdated = (post: Post) => post.data.updated ?? post.data.date;
 export const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
 /** What /writing, /til and their text copies say while they have nothing to list. */
-export const nothingPublished = 'Nothing published yet.';
+export const nothingYet = {
+  writing: 'No posts yet. When I publish one, it will be about software I build or tools I use.',
+  til: 'No notes yet. Each one will be a short thing I learned while working.',
+} as const;
 
-/** The same of a day or year already over. */
+/** What an empty /writing or /til says before the pages that do have something to read. */
+export const meanwhile = 'Until then, try';
+
+/**
+ * Where the 404 and an empty /writing or /til send a reader, in the nav's order. Writing and TIL
+ * join once they list something, so neither empty section points at the other, and both come
+ * back without an edit when the first entry is published.
+ */
+export function pagesToRead({ posts, notes }: { posts: number; notes: number }) {
+  const shown = new Set<string>([
+    ...(posts > 0 ? ['/writing'] : []),
+    ...(notes > 0 ? ['/til'] : []),
+    '/projects',
+    '/about',
+  ]);
+  return [...nav.filter((item) => shown.has(item.href)), nowPage];
+}
+
+/**
+ * What search finds, for the 404: the pages marked `data-pagefind-body`, posts and notes once
+ * there are some.
+ */
+export function searchCovers({ posts, notes }: { posts: number; notes: number }) {
+  const parts = [
+    ...(posts > 0 ? ['every post'] : []),
+    ...(notes > 0 ? ['every note'] : []),
+    'the projects',
+    'Skills',
+    'About',
+    'Uses',
+    'Now',
+  ];
+  return `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
+}
+
+/** What a day or year page says when nothing was published in it. */
 export const nothingPublishedThen = 'Nothing published.';
 
 /** Whole minutes to read a post's Markdown at 220 words a minute, never under one. */

@@ -1,6 +1,7 @@
 // The production build: no draft note reaches /til, a feed, search, index.txt or the sitemap.
 // Notes on a build that shows drafts are in til-preview.spec.ts.
 
+import { nothingYet } from '../src/lib/writing.ts';
 import { notes } from './content.ts';
 import { expectValidFeed } from './feed-rules.ts';
 import { expect, test } from './fixtures.ts';
@@ -15,7 +16,7 @@ test.describe('without published notes', () => {
   test('/til says nothing is published and offers its feeds', async ({ page }) => {
     await page.goto('/til');
     await expect(page.getByRole('heading', { level: 1, name: 'Today I learned' })).toBeVisible();
-    await expect(page.getByText('Nothing published yet.')).toBeVisible();
+    await expect(page.getByText(nothingYet.til)).toBeVisible();
     await expect(page.locator('.til-note')).toHaveCount(0);
     await expect(page.locator('.reader').getByRole('link', { name: 'RSS' })).toHaveAttribute(
       'href',

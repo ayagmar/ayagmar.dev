@@ -1,11 +1,15 @@
 ---
+import Onward from '../../components/Onward.astro';
 import PostList from '../../components/PostList.astro';
 import Base from '../../layouts/Base.astro';
-import { getPosts } from '../../lib/posts.ts';
-import { postsByTag, tagPath } from '../../lib/writing.ts';
+import { feedPaths } from '../../lib/feed.ts';
+import { getNotes, getPosts } from '../../lib/posts.ts';
+import { meanwhile, nothingYet, pagesToRead, postsByTag, tagPath } from '../../lib/writing.ts';
 
 const posts = await getPosts();
+const notes = await getNotes();
 const tags = [...postsByTag(posts).keys()];
+const feeds = feedPaths();
 ---
 
 <Base
@@ -14,7 +18,14 @@ const tags = [...postsByTag(posts).keys()];
 >
   <div class="paper column">
     <h1>Writing</h1>
-    <PostList posts={posts} />
+    {posts.length === 0 ? (
+      <>
+        <p>{nothingYet.writing}</p>
+        <Onward lead={meanwhile} pages={pagesToRead({ posts: 0, notes: notes.length })} />
+      </>
+    ) : (
+      <PostList posts={posts} />
+    )}
     {tags.length > 0 && (
       <section aria-labelledby="tags">
         <h2 id="tags">Tags</h2>
@@ -27,5 +38,8 @@ const tags = [...postsByTag(posts).keys()];
         </ul>
       </section>
     )}
+    <p class="caption">
+      Follow the posts: <a href={feeds.rss}>RSS</a>, <a href={feeds.atom}>Atom</a>.
+    </p>
   </div>
 </Base>

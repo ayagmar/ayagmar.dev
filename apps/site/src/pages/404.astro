@@ -1,13 +1,18 @@
 ---
+import Onward from '../components/Onward.astro';
 import Base from '../layouts/Base.astro';
+import { getNotes, getPosts } from '../lib/posts.ts';
+import { pagesToRead, searchCovers } from '../lib/writing.ts';
+
+const counts = { posts: (await getPosts()).length, notes: (await getNotes()).length };
 ---
 
 <Base title="Not found" description="No page lives at this address on min7." noindex>
   <div class="paper column t-error">
     <h1>Nothing here</h1>
     <p>
-      No page lives at this address. Try <a href="/writing">the writing index</a>, use Search above,
-      or go back to <a href="/">the room</a>.
+      {`No page lives at this address. Search, at the top of the page, looks through ${searchCovers(counts)}.`}
     </p>
+    <Onward lead="Or go to" pages={[...pagesToRead(counts), { href: '/', label: 'the room' }]} />
   </div>
 </Base>

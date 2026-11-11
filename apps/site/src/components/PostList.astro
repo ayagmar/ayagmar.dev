@@ -1,17 +1,17 @@
 ---
-import { isoDay, nothingPublished, type Post, postPath } from '../lib/writing.ts';
+import { isoDay, type Post, postPath } from '../lib/writing.ts';
 
 interface Props {
   posts: readonly Post[];
-  /** What to say when there are no posts. */
+  /** What to say when there are no posts; /writing says it with its own links instead. */
   empty?: string;
 }
 
-const { posts, empty = nothingPublished } = Astro.props;
+const { posts, empty } = Astro.props;
 ---
 
 {posts.length === 0 ? (
-  <p>{empty}</p>
+  empty !== undefined && <p>{empty}</p>
 ) : (
   <ul class="posts">
     {posts.map((post) => (

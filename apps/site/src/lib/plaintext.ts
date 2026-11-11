@@ -22,13 +22,36 @@ import {
 import { curlTarget, identityLine, nav, nowPage, site, siteUrl, textRule } from './site.ts';
 import { type Note, notePath } from './til.ts';
 import { rabatStamp } from './words.ts';
-import { isoDay, nothingPublished, type Post, postPath, postsByTag } from './writing.ts';
+import {
+  isoDay,
+  meanwhile,
+  nothingYet,
+  type Post,
+  pagesToRead,
+  postPath,
+  postsByTag,
+} from './writing.ts';
 
 /** A built `.txt` page. Every text page ends in one newline. */
 export const textFile = (body: string) =>
   new Response(body, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
 
-const empty = `  ${nothingPublished}`;
+/**
+ * An empty /writing or /til as its page says it: what will be there, its feeds, and the pages
+ * that have something to read now.
+ */
+const empty = (
+  words: string,
+  feeds: { rss: string; atom: string },
+  counts: Parameters<typeof pagesToRead>[0]
+) => [
+  `  ${words}`,
+  `  ${'RSS'.padEnd(10)} ${siteUrl}${feeds.rss}`,
+  `  ${'Atom'.padEnd(10)} ${siteUrl}${feeds.atom}`,
+  '',
+  `  ${meanwhile}:`,
+  ...pagesToRead(counts).map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
+];
 
 /** Lines of `date  title`, then the URL under it, then `extra` lines, for a list of entries. */
 const dated = (date: Date, title: string, path: string, ...extra: string[]) => [
@@ -107,14 +130,14 @@ export function renderPlainText(
   ].join('\n');
 }
 
-/** /writing: every post with its summary, then the tags. */
-export function renderWritingText(posts: readonly Post[]): string {
+/** /writing: every post with its summary, then the tags. `notes` counts for the empty page's links. */
+export function renderWritingText(posts: readonly Post[], notes: readonly Note[]): string {
   const tags = [...postsByTag(posts).keys()];
   return [
     `Writing | ${site.name}`,
     textRule,
     ...(posts.length === 0
-      ? [empty]
+      ? empty(nothingYet.writing, feedPaths(), { posts: 0, notes: notes.length })
       : posts.flatMap((post) =>
           dated(
             post.data.date,
@@ -128,14 +151,14 @@ export function renderWritingText(posts: readonly Post[]): string {
   ].join('\n');
 }
 
-/** /til: every note in full, as the page shows them. */
-export function renderTilText(notes: readonly Note[]): string {
+/** /til: every note in full, as the page shows them. `posts` counts for the empty page's links. */
+export function renderTilText(notes: readonly Note[], posts: readonly Post[]): string {
   const articles = notes.map(noteArticle);
   return [
     `Today I learned | ${site.name}`,
     textRule,
     ...(articles.length === 0
-      ? [empty]
+      ? empty(nothingYet.til, feedPaths({ til: true }), { posts: posts.length, notes: 0 })
       : articles.flatMap((article, index) => [
           ...(index === 0 ? [] : [textRule]),
           article.title,
