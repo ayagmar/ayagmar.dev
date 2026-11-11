@@ -40,9 +40,9 @@ test('finds a project by its name', async ({ page }) => {
 
 // Catches words in neighbouring inline elements running together in an excerpt, as
 // "repo-pulseA self-hosted" and "CPUAMD Ryzen" did.
-for (const [term, title, words] of [
-  ['self-hosted Cloudflare Worker', 'Now', 'repo-pulse A self-hosted'],
-  ['Ryzen', 'Uses', 'CPU AMD Ryzen'],
+for (const { term, title, words } of [
+  { term: 'self-hosted Cloudflare Worker', title: 'Now', words: 'repo-pulse A self-hosted' },
+  { term: 'Ryzen', title: 'Uses', words: 'CPU AMD Ryzen' },
 ]) {
   test(`the ${title} excerpt for "${term}" keeps its words apart`, async ({ page }) => {
     await page.goto('/about');
