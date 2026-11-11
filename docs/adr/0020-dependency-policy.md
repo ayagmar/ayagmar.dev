@@ -64,7 +64,7 @@ Release binaries, pinned by version and sha256 in `scripts/bootstrap.sh` (Linux 
 | osv-scanner | 2.7.0    | Known vulnerabilities in `pnpm-lock.yaml` when dependencies change.                                |
 | lychee      | 0.24.2   | Links in the built site.                                                                           |
 | actionlint  | 1.7.12   | Workflow syntax, expressions and the shell in `run:` blocks (with shellcheck).                     |
-| zizmor      | 1.31.1   | Workflow security audits.                                                                          |
+| zizmor      | 1.32.0   | Workflow security audits.                                                                          |
 | shellcheck  | 0.11.0   | Shell script lint.                                                                                 |
 | shfmt       | 3.14.1   | Shell script formatting.                                                                           |
 | renovate    | 44.178.3 | `renovate-config-validator` for `renovate.json`, run with `npm exec` (pin in `.renovate-version`). |
