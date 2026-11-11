@@ -26,7 +26,7 @@
       {
         "name": "stats script",
         "file": "/_astro/stats.astro_astro_type_script_index_0_lang.*.js",
-        "bytes": 5600
+        "bytes": 4400
       },
       {
         "name": "shipping and project reads",
@@ -45,8 +45,13 @@
       },
       {
         "name": "listening reads",
-        "file": "/_astro/markup-page.*.js",
-        "bytes": 1840
+        "file": "/_astro/now-playing-page.*.js",
+        "bytes": 1080
+      },
+      {
+        "name": "markup in the page",
+        "file": "/_astro/markup.*.js",
+        "bytes": 1050
       },
       {
         "name": "agent reads",
@@ -56,7 +61,7 @@
       {
         "name": "project script",
         "file": "/_astro/ProjectStats.astro_astro_type_script_index_0_lang.*.js",
-        "bytes": 900
+        "bytes": 930
       }
     ]
   },
