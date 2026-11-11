@@ -99,7 +99,7 @@ const href = (url: string) => url.replace(/\.html$/, '');
 <dialog bind:this={dialog} aria-labelledby="search-title">
   <search>
     <h2 id="search-title">Search</h2>
-    <label for="search-input">Search posts</label>
+    <label for="search-input">Search the site</label>
     <!-- svelte-ignore a11y_autofocus -->
     <input
       id="search-input"

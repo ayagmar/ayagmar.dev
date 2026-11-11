@@ -7,7 +7,7 @@ test('Ctrl+K opens search and finds a post', { tag: '@drafts' }, async ({ page }
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
   await expect(dialog).toBeVisible();
-  await dialog.getByLabel('Search posts').fill('token logs');
+  await dialog.getByLabel('Search the site').fill('token logs');
 
   const result = dialog.getByRole('link', { name: /what 17 coding agents taught me/ });
   await expect(result).toHaveAttribute('href', '/writing/token-logs');
@@ -21,8 +21,20 @@ test('/ opens search; drafts are not in the index', async ({ page }) => {
 
   await page.keyboard.press('/');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('ricing');
+  await dialog.getByLabel('Search the site').fill('ricing');
   await expect(dialog.getByRole('status')).toHaveText('No results.');
+});
+
+// Catches the project pages falling out of the index: with no published post, search on
+// production finds little else.
+test('finds a project by its name', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  await dialog.getByLabel('Search the site').fill('runnerd');
+  const result = dialog.getByRole('link', { name: 'runnerd', exact: true });
+  await expect(result).toHaveAttribute('href', '/projects/runnerd');
 });
 
 // Catches `/` taken from someone typing in a field, or from a browser shortcut that adds a
@@ -92,7 +104,7 @@ test('the open search dialog keeps 24px targets and fits a 320px screen', {
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('token logs');
+  await dialog.getByLabel('Search the site').fill('token logs');
   await expect(dialog.getByRole('link').first()).toBeVisible();
 
   const targets = dialog.locator('input, button, a');

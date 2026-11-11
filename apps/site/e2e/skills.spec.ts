@@ -85,7 +85,7 @@ test('search finds the shelf, labelled Skills', async ({ page }) => {
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('falsify');
+  await dialog.getByLabel('Search the site').fill('falsify');
   await expect(dialog.getByRole('link', { name: 'Skills' })).toHaveAttribute('href', '/skills');
 });
 

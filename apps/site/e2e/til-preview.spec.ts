@@ -134,7 +134,7 @@ test('search finds a note and labels it TIL', async ({ page }) => {
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
-  await dialog.getByLabel('Search posts').fill('brace group');
+  await dialog.getByLabel('Search the site').fill('brace group');
   const result = dialog.getByRole('link', { name: /^TIL: A brace group/ });
   await expect(result).toHaveAttribute('href', `/til/${longLine}`);
 });
