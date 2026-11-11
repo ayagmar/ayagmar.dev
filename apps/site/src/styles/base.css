@@ -1932,6 +1932,81 @@ main:has(.toc) .reader ~ .project-card {
   margin-bottom: 0;
 }
 
+/* Certifications: small cards on hairlines, two across where they fit. Each has a drawn initial
+   in place of the issuer's logo, which is theirs and an image from another origin. One in its
+   last three months or expired has its end in the text colour, like /now's out-of-date line. */
+.certs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 36rem) {
+  .certs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.cert {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.875rem;
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: calc(var(--radius) * 2);
+}
+
+.cert > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cert-mark {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--fg-2);
+  font: 600 0.9375rem / 1 var(--serif);
+}
+
+.cert h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.cert p {
+  margin: 0;
+  color: var(--fg-2);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.cert time,
+.cert-id {
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.cert:is([data-state="expiring"], [data-state="expired"]) .cert-expiry {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+/* The link sits at the foot of the card, level across a row. */
+.cert-verify {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
 /* /stats: two stacks of panels side by side from 60rem, one column on a phone. */
 .stats-grid {
   display: grid;

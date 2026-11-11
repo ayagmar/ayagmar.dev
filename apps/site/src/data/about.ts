@@ -71,7 +71,8 @@ export const aboutSchema = z.strictObject({
       })
       .refine(endAfterStart, endMessage)
   ),
-  skills: z.array(text).min(1, 'must list at least one skill'),
+  /** Languages, frameworks and platforms, shown as "Stack" so it is not read as /skills. */
+  stack: z.array(text).min(1, 'must list at least one item'),
 });
 
 export type About = z.output<typeof aboutSchema>;
@@ -91,6 +92,29 @@ const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 export function formatMonth(value: string): string {
   const [year, monthNumber] = value.split('-');
   return `${months[Number(monthNumber) - 1]} ${year}`;
+}
+
+/** How many months, its end month included, a certification shows as expiring. */
+const expiringWithin = 3;
+
+const monthNumber = (value: string) => {
+  const [year, monthOfYear] = value.split('-').map(Number);
+  return (year ?? 0) * 12 + (monthOfYear ?? 0);
+};
+
+/**
+ * Where a certification with an end month stands on `today`, in the words /about and its text
+ * copy share. It is still valid through its end month. Decided at build, since /about runs no
+ * script, and nothing rebuilds the site on a schedule: so an expiring one says "Valid to" like a
+ * valid one, and only its style differs. Both "Valid to" and "Expired" stay true however old the
+ * build is.
+ */
+export function certificationExpiry(expires: string, today: Date) {
+  const left = monthNumber(expires) - monthNumber(today.toISOString().slice(0, 7));
+  const state = left < 0 ? 'expired' : left < expiringWithin ? 'expiring' : 'valid';
+  const lead = state === 'expired' ? 'Expired' : 'Valid to';
+  const month = formatMonth(expires);
+  return { state, lead, month, text: `${lead} ${month}` };
 }
 
 /** A role's or school's months as the page says them; a null end is the current one. */

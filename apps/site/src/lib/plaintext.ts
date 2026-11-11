@@ -1,7 +1,7 @@
 import type { ProjectSlug } from '@min7/contracts';
 import { isoDate } from '@min7/contracts/rabat';
 import type { About } from '../data/about.ts';
-import { aboutLinks, formatMonth, monthSpan } from '../data/about.ts';
+import { aboutLinks, certificationExpiry, formatMonth, monthSpan } from '../data/about.ts';
 import { projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
@@ -193,7 +193,7 @@ export function renderProjectText(
 }
 
 /** /about: the CV the page shows, from the same file. */
-export function renderAboutText(about: About): string {
+export function renderAboutText(about: About, today: Date): string {
   const { identity } = about;
   const span = (start: string, end: string | null) => {
     const dates = monthSpan(start, end);
@@ -216,11 +216,10 @@ export function renderAboutText(about: About): string {
       `  ${cert.name}`,
       `    ${[
         `${cert.issuer}, issued ${formatMonth(cert.issued)}`,
-        ...(cert.expires === undefined ? [] : [`expires ${formatMonth(cert.expires)}`]),
-      ].join(
-        ', '
-      )}${cert.credentialId === undefined ? '' : `. Credential ID ${cert.credentialId}`}.`,
-      `    ${cert.verifyUrl}`,
+        ...(cert.expires === undefined ? [] : [certificationExpiry(cert.expires, today).text]),
+        ...(cert.credentialId === undefined ? [] : [`Credential ID ${cert.credentialId}`]),
+      ].join('. ')}.`,
+      `    Verify: ${cert.verifyUrl}`,
     ]),
     textRule,
     'Education',
@@ -229,8 +228,8 @@ export function renderAboutText(about: About): string {
       `    ${[school.degree, ...(school.field === undefined ? [] : [school.field])].join(', ')}, ${span(school.start, school.end)}`,
     ]),
     textRule,
-    'Skills',
-    `  ${about.skills.join(', ')}`,
+    'Stack',
+    `  ${about.stack.join(', ')}`,
     textRule,
     'Elsewhere',
     ...aboutLinks(identity).map(
@@ -248,9 +247,10 @@ export function renderUsesText(uses: Uses): string {
     textRule,
     ...uses.sections.flatMap((section) => [
       section.title,
-      ...section.items.map((item) =>
-        item.detail === undefined ? `  ${item.name}` : `  ${item.name}: ${item.detail}`
-      ),
+      ...section.items.flatMap((item) => [
+        item.detail === undefined ? `  ${item.name}` : `  ${item.name}: ${item.detail}`,
+        ...(item.url === undefined ? [] : [`    ${item.url}`]),
+      ]),
       textRule,
     ]),
     ...uses.machines.flatMap((machine) => [

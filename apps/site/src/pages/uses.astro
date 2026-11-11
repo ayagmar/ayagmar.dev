@@ -27,7 +27,7 @@ const api = (source: string) =>
           <ul>
             {section.items.map((item) => (
               <li>
-                <span>{item.name}</span>
+                {item.url ? <a href={item.url}>{item.name}</a> : <span>{item.name}</span>}
                 {item.detail && (
                   <span class="uses-detail">
                     <span class="sr-only">, </span>
