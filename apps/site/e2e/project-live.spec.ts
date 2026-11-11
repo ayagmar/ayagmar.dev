@@ -54,12 +54,14 @@ const log = (page: Page) => page.locator('[data-live="shipping"]');
 
 /** The markup under `locator` as text, whitespace collapsed, without the build's comments. */
 const html = (locator: Locator) =>
-  locator.evaluate((root) =>
-    root.innerHTML
-      .replace(/<!--[\s\S]*?-->/g, '')
-      .replace(/\s+/g, ' ')
-      .replace(/> </g, '><')
-  );
+  locator.evaluate((root) => {
+    const copy = root.cloneNode(true) as Element;
+    const walker = document.createTreeWalker(copy, NodeFilter.SHOW_COMMENT);
+    const comments: Node[] = [];
+    while (walker.nextNode()) comments.push(walker.currentNode);
+    for (const comment of comments) comment.parentNode?.removeChild(comment);
+    return copy.innerHTML.replace(/\s+/g, ' ').replace(/> </g, '><');
+  });
 
 // Catches the browser's renderer drifting from the build's: the same snapshots, built into the
 // page or read live, must give the same numbers and log, links and times included.
