@@ -1,7 +1,7 @@
 // The CPU bench Worker (`just signals-cpu`, ADR 0030): runs one real cron invocation of a
 // pull adapter, D1 included, with every upstream answered from memory, so the CPU it takes is
 // signals' own work. Never deployed; scripts/signals-cpu.ts drives it.
-import { featuredProjects } from '@min7/contracts';
+import { featuredProjects, projectMergesAsked } from '@min7/contracts';
 import { rawFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { readListeningDay } from '../src/adapters/pull/listening-days.ts';
@@ -258,8 +258,8 @@ function storedActivity(repos: number, wholeToday: boolean) {
 
 /**
  * GitHub's answer for the project logs (ADR 0046) with every node at its longest: for each
- * featured project 10 releases with 60-character tags and 20 merged PRs with 300-character
- * titles, about 190 KB.
+ * featured project 10 releases with 60-character tags and 30 merged PRs with 300-character
+ * titles, about 240 KB.
  */
 function projectEventsMaxAnswer(): string {
   const now = Date.now();
@@ -282,7 +282,7 @@ function projectEventsMaxAnswer(): string {
           }),
         },
         pullRequests: {
-          nodes: Array.from({ length: 20 }, (_, i) => ({
+          nodes: Array.from({ length: projectMergesAsked }, (_, i) => ({
             number: 1000 - i,
             title: `Change ${i} `.padEnd(300, 'x'),
             url: `https://github.com/${repo}/pull/${1000 - i}`,
@@ -365,7 +365,7 @@ const scenarios: Record<
       ]),
   },
   'monkeytype-max': { adapter: monkeytype, answers: monkeytypeAnswers },
-  // The project logs: the real answer of 2026-11-11 (58 KB), and every node at its longest.
+  // The project logs: the real answer of 2026-11-11 (70 KB), and every node at its longest.
   'project-events': {
     adapter: projectEventsWithToken,
     answers: () => new Map([['graphql', JSON.stringify(rawFixtures['github-graphql'].ok.body)]]),

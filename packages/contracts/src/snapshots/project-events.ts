@@ -14,7 +14,7 @@ export const projectMergesKept = 10;
  * Merged pull requests asked for: GitHub orders them by update, not by merge, and some are
  * bots', so more are asked than kept (ADR 0046).
  */
-export const projectMergesAsked = 20;
+export const projectMergesAsked = 30;
 
 /** One alias of the answer: a repository GitHub answered for. Nodes are read one by one. */
 export const githubProjectRepoSchema = z.object({

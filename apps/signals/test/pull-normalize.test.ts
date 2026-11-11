@@ -2,6 +2,7 @@
 // normalize to exactly that snapshot (so no field outside the contract leaks through and
 // none goes missing); a case without one must fail with a PullError of the listed code.
 import {
+  type GithubProjectRepo,
   githubMergedPullSchema,
   githubReleaseNodeSchema,
   repoPulseActivityDaySchema,
@@ -210,7 +211,7 @@ describe('project-events (GitHub GraphQL)', () => {
   // today sits in a full page above months of merges that are not in it.
   it('lists no merge older than a full page reaches, and every one newer', () => {
     // #12, merged in March and updated today, would sit under these with months missing. The
-    // bots' PRs still count toward the page.
+    // bots' PRs still count toward the page, and github-actions' release PRs fill its end.
     expect(log('runnerd')).toEqual([100, 99, 97, 95, 93, 91, 89, 'v0.3.0', 'v0.2.0', 'v0.1.0']);
     // A short page is all there is, however old.
     expect(log('pi-extmgr')).toEqual([24, 23]);
@@ -220,6 +221,33 @@ describe('project-events (GitHub GraphQL)', () => {
   // bot without `[bot]`, and a deleted account's PR dropped with them.
   it('leaves out bots, drafts, unreadable nodes and repeats', () => {
     expect(log('llm-usage-metrics')).toEqual([50, 'v2.0.0-rc.1', 46, 'v1.7.0']);
+  });
+
+  // Catches a batch of bot PRs emptying a log: on a repository without releases, 20 Dependabot
+  // merges updated last must leave room in the page for the owner's merges behind them.
+  it('shows the merges behind a batch of twenty bot PRs', () => {
+    const merge = (number: number, login: string) => {
+      const at = new Date(Date.UTC(2026, 10, 10, 0, number)).toISOString();
+      return {
+        number,
+        title: `Change ${number}`,
+        url: `https://github.com/ayagmar/kipple/pull/${number}`,
+        mergedAt: at,
+        updatedAt: at,
+        author: { login },
+      };
+    };
+    const body = structuredClone(raw.ok.body) as { data: { p_kipple: GithubProjectRepo } };
+    body.data.p_kipple.pullRequests.nodes = [
+      ...Array.from({ length: 20 }, (_, i) => merge(30 - i, 'dependabot')),
+      ...Array.from({ length: 10 }, (_, i) => merge(10 - i, 'ayagmar')),
+    ];
+    const kipple = projectEvents
+      .normalize({ ...raw.ok, body })
+      .projects.find((project) => project.slug === 'kipple');
+    expect(kipple?.events.map((event) => event.type === 'merge' && event.number)).toEqual([
+      10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+    ]);
   });
 
   // Catches merges crowding out releases on a busy repository: runnerd's 20 newest events on

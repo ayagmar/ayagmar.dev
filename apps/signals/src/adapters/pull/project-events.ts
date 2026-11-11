@@ -24,9 +24,9 @@ import { readSecret } from './secrets.ts';
 import { midnightYieldMs } from './shipping-activity.ts';
 
 const endpoint = 'https://api.github.com/graphql';
-// The answer for 14 projects was 58 KB on 2026-11-11, and about 190 KB with every title and tag
-// at its longest; 30 projects, the snapshot's limit, would be about 400 KB.
-const maxBytes = 512 * 1024;
+// The answer for 14 projects was 70 KB on 2026-11-11; with every title and tag at its longest
+// and 30 projects, the snapshot's limit, it is about 600 KB (ADR 0046).
+const maxBytes = 768 * 1024;
 const intervalMs = 60 * 60 * 1000;
 
 /** A project's alias in the query. GraphQL names allow no hyphen, and slugs have no underscore. */

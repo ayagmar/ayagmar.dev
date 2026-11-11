@@ -384,6 +384,106 @@
               "author": {
                 "login": "dependabot"
               }
+            },
+            {
+              "number": 81,
+              "title": "chore(release): version packages 81",
+              "url": "https://github.com/ayagmar/runnerd/pull/81",
+              "mergedAt": "2026-11-10T03:00:00Z",
+              "updatedAt": "2026-11-10T03:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 80,
+              "title": "chore(release): version packages 80",
+              "url": "https://github.com/ayagmar/runnerd/pull/80",
+              "mergedAt": "2026-11-10T02:00:00Z",
+              "updatedAt": "2026-11-10T02:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 79,
+              "title": "chore(release): version packages 79",
+              "url": "https://github.com/ayagmar/runnerd/pull/79",
+              "mergedAt": "2026-11-10T01:00:00Z",
+              "updatedAt": "2026-11-10T01:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 78,
+              "title": "chore(release): version packages 78",
+              "url": "https://github.com/ayagmar/runnerd/pull/78",
+              "mergedAt": "2026-11-10T00:00:00Z",
+              "updatedAt": "2026-11-10T00:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 77,
+              "title": "chore(release): version packages 77",
+              "url": "https://github.com/ayagmar/runnerd/pull/77",
+              "mergedAt": "2026-11-09T23:00:00Z",
+              "updatedAt": "2026-11-09T23:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 76,
+              "title": "chore(release): version packages 76",
+              "url": "https://github.com/ayagmar/runnerd/pull/76",
+              "mergedAt": "2026-11-09T22:00:00Z",
+              "updatedAt": "2026-11-09T22:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 75,
+              "title": "chore(release): version packages 75",
+              "url": "https://github.com/ayagmar/runnerd/pull/75",
+              "mergedAt": "2026-11-09T21:00:00Z",
+              "updatedAt": "2026-11-09T21:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 74,
+              "title": "chore(release): version packages 74",
+              "url": "https://github.com/ayagmar/runnerd/pull/74",
+              "mergedAt": "2026-11-09T20:00:00Z",
+              "updatedAt": "2026-11-09T20:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 73,
+              "title": "chore(release): version packages 73",
+              "url": "https://github.com/ayagmar/runnerd/pull/73",
+              "mergedAt": "2026-11-09T19:00:00Z",
+              "updatedAt": "2026-11-09T19:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 72,
+              "title": "chore(release): version packages 72",
+              "url": "https://github.com/ayagmar/runnerd/pull/72",
+              "mergedAt": "2026-11-09T18:00:00Z",
+              "updatedAt": "2026-11-09T18:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
             }
           ]
         }

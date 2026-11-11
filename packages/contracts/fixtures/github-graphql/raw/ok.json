@@ -270,6 +270,106 @@
               "author": {
                 "login": "ayagmar"
               }
+            },
+            {
+              "number": 332,
+              "title": "fix(statusline): share a built line across ticks",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/332",
+              "mergedAt": "2026-11-06T20:25:29Z",
+              "updatedAt": "2026-11-06T20:25:29Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 335,
+              "title": "refactor(core): share SQLite source setup between Goose and OpenCode",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/335",
+              "mergedAt": "2026-11-06T20:22:27Z",
+              "updatedAt": "2026-11-06T20:22:28Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 334,
+              "title": "refactor(cli): consolidate duplicated logic in src",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/334",
+              "mergedAt": "2026-11-06T20:22:20Z",
+              "updatedAt": "2026-11-06T20:22:20Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 333,
+              "title": "docs: consolidation pass over upgrading, architecture, overview and landing",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/333",
+              "mergedAt": "2026-11-06T20:14:22Z",
+              "updatedAt": "2026-11-06T20:14:22Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 328,
+              "title": "feat(cli): print the share report's data with --share-json",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/328",
+              "mergedAt": "2026-11-01T18:58:45Z",
+              "updatedAt": "2026-11-01T18:58:46Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 329,
+              "title": "fix(deps): override minimatch to 11.0.3 for GHSA-g3hv-75wg-m249",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/329",
+              "mergedAt": "2026-11-01T18:51:44Z",
+              "updatedAt": "2026-11-01T18:51:44Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 324,
+              "title": "chore(deps): consolidate dependency upgrades",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/324",
+              "mergedAt": "2026-10-24T18:28:50Z",
+              "updatedAt": "2026-10-24T18:28:50Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 323,
+              "title": "chore(deps): upgrade astro, @astrojs/check, esbuild, smol-toml and typescript-eslint",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/323",
+              "mergedAt": "2026-10-23T13:47:41Z",
+              "updatedAt": "2026-10-23T13:47:41Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 322,
+              "title": "feat(machines): count another machine's repository under the local clone with the same remote",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/322",
+              "mergedAt": "2026-10-23T13:12:30Z",
+              "updatedAt": "2026-10-23T13:12:30Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 321,
+              "title": "feat(projects): count aliased folders as one project with projectAliases",
+              "url": "https://github.com/ayagmar/llm-usage-metrics/pull/321",
+              "mergedAt": "2026-10-23T12:44:57Z",
+              "updatedAt": "2026-10-23T12:44:57Z",
+              "author": {
+                "login": "ayagmar"
+              }
             }
           ]
         }
@@ -289,7 +389,7 @@
               "mergedAt": "2026-10-03T15:56:10Z",
               "updatedAt": "2026-10-03T15:56:11Z",
               "author": {
-                "login": "a-contributor"
+                "login": "Bokai-Bi"
               }
             },
             {
@@ -319,7 +419,7 @@
               "mergedAt": "2026-07-09T16:38:40Z",
               "updatedAt": "2026-07-10T12:30:59Z",
               "author": {
-                "login": "a-contributor"
+                "login": "lack"
               }
             },
             {
@@ -329,7 +429,7 @@
               "mergedAt": "2026-07-09T16:39:34Z",
               "updatedAt": "2026-07-09T16:39:34Z",
               "author": {
-                "login": "a-contributor"
+                "login": "lack"
               }
             },
             {
@@ -339,7 +439,7 @@
               "mergedAt": "2026-07-09T16:39:05Z",
               "updatedAt": "2026-07-09T16:39:05Z",
               "author": {
-                "login": "a-contributor"
+                "login": "lack"
               }
             },
             {
@@ -471,7 +571,7 @@
               "mergedAt": "2026-10-21T19:37:09Z",
               "updatedAt": "2026-10-21T19:37:09Z",
               "author": {
-                "login": "a-contributor"
+                "login": "ZeR020"
               }
             },
             {
@@ -481,7 +581,7 @@
               "mergedAt": "2026-10-21T18:32:19Z",
               "updatedAt": "2026-10-21T19:23:37Z",
               "author": {
-                "login": "a-contributor"
+                "login": "ZeR020"
               }
             },
             {
@@ -491,7 +591,7 @@
               "mergedAt": "2026-10-21T18:37:00Z",
               "updatedAt": "2026-10-21T18:37:00Z",
               "author": {
-                "login": "a-contributor"
+                "login": "ZeR020"
               }
             },
             {
@@ -501,7 +601,7 @@
               "mergedAt": "2026-10-21T18:32:28Z",
               "updatedAt": "2026-10-21T18:32:28Z",
               "author": {
-                "login": "a-contributor"
+                "login": "ZeR020"
               }
             },
             {
@@ -511,7 +611,7 @@
               "mergedAt": "2026-10-16T16:12:40Z",
               "updatedAt": "2026-10-16T16:12:40Z",
               "author": {
-                "login": "a-contributor"
+                "login": "derrik-fleming"
               }
             },
             {
@@ -561,7 +661,7 @@
               "mergedAt": "2026-07-14T16:16:02Z",
               "updatedAt": "2026-07-14T16:28:55Z",
               "author": {
-                "login": "a-contributor"
+                "login": "Hor1zonZzz"
               }
             },
             {
@@ -662,6 +762,36 @@
               "updatedAt": "2026-03-11T15:37:39Z",
               "author": {
                 "login": "ayagmar"
+              }
+            },
+            {
+              "number": 5,
+              "title": "bug fixes",
+              "url": "https://github.com/ayagmar/pi-extmgr/pull/5",
+              "mergedAt": "2026-02-24T17:31:53Z",
+              "updatedAt": "2026-02-24T17:31:53Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 3,
+              "title": "Feat/extension package configuration",
+              "url": "https://github.com/ayagmar/pi-extmgr/pull/3",
+              "mergedAt": "2026-02-23T21:25:01Z",
+              "updatedAt": "2026-02-23T21:32:13Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 1,
+              "title": "Disables update on startup if autoupdate is off",
+              "url": "https://github.com/ayagmar/pi-extmgr/pull/1",
+              "mergedAt": "2026-02-16T01:05:00Z",
+              "updatedAt": "2026-02-16T01:05:00Z",
+              "author": {
+                "login": "thevinter"
               }
             }
           ]
@@ -935,6 +1065,106 @@
               "author": {
                 "login": "github-actions"
               }
+            },
+            {
+              "number": 49,
+              "title": "docs(site): retake the screenshots and describe deleted folders",
+              "url": "https://github.com/ayagmar/ccdesk/pull/49",
+              "mergedAt": "2026-10-14T13:38:40Z",
+              "updatedAt": "2026-10-14T13:38:42Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 48,
+              "title": "feat(ui): hide the rail, and fold the main directory list",
+              "url": "https://github.com/ayagmar/ccdesk/pull/48",
+              "mergedAt": "2026-10-14T13:13:25Z",
+              "updatedAt": "2026-10-14T13:13:29Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 47,
+              "title": "chore: update Claude Code data (claude-agent-sdk 0.3.299)",
+              "url": "https://github.com/ayagmar/ccdesk/pull/47",
+              "mergedAt": "2026-10-14T12:55:09Z",
+              "updatedAt": "2026-10-14T12:55:12Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 46,
+              "title": "docs(core): cite memory#how-it-works for the 4 MiB instruction file limit",
+              "url": "https://github.com/ayagmar/ccdesk/pull/46",
+              "mergedAt": "2026-10-14T12:38:49Z",
+              "updatedAt": "2026-10-14T12:38:51Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 45,
+              "title": "chore: update the settings catalog, built-in tools and docs fingerprints",
+              "url": "https://github.com/ayagmar/ccdesk/pull/45",
+              "mergedAt": "2026-10-14T12:33:08Z",
+              "updatedAt": "2026-10-14T12:33:10Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 44,
+              "title": "chore: update Claude Code data (claude-agent-sdk 0.3.299)",
+              "url": "https://github.com/ayagmar/ccdesk/pull/44",
+              "mergedAt": "2026-10-14T12:28:24Z",
+              "updatedAt": "2026-10-14T12:28:27Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 42,
+              "title": "feat: forget a directory whose folder no longer exists",
+              "url": "https://github.com/ayagmar/ccdesk/pull/42",
+              "mergedAt": "2026-10-14T11:37:10Z",
+              "updatedAt": "2026-10-14T11:37:13Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 43,
+              "title": "feat: watch ~/.claude.json and push changes over server-sent events",
+              "url": "https://github.com/ayagmar/ccdesk/pull/43",
+              "mergedAt": "2026-10-14T11:35:51Z",
+              "updatedAt": "2026-10-14T11:35:53Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 41,
+              "title": "feat(view): settings scope filter and default marks",
+              "url": "https://github.com/ayagmar/ccdesk/pull/41",
+              "mergedAt": "2026-10-14T11:24:09Z",
+              "updatedAt": "2026-10-14T11:24:12Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 40,
+              "title": "feat(ui): fold deleted folders away and shorten extension badges",
+              "url": "https://github.com/ayagmar/ccdesk/pull/40",
+              "mergedAt": "2026-10-14T10:46:30Z",
+              "updatedAt": "2026-10-14T10:46:33Z",
+              "author": {
+                "login": "ayagmar"
+              }
             }
           ]
         }
@@ -1198,6 +1428,106 @@
               "url": "https://github.com/ayagmar/niri-computer-use/pull/45",
               "mergedAt": "2026-10-30T14:47:41Z",
               "updatedAt": "2026-10-30T14:47:41Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 44,
+              "title": "fix(tools): name argument mistakes and log them",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/44",
+              "mergedAt": "2026-10-30T14:06:26Z",
+              "updatedAt": "2026-10-30T14:06:26Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 43,
+              "title": "docs: launch polish for the readme, safety page and skill",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/43",
+              "mergedAt": "2026-10-30T13:47:52Z",
+              "updatedAt": "2026-10-30T13:47:53Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 29,
+              "title": "fix(input): type symbols only on keys Chromium receives",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/29",
+              "mergedAt": "2026-10-30T13:29:22Z",
+              "updatedAt": "2026-10-30T13:29:22Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 42,
+              "title": "chore(deps): update rmcp, astro and ci actions",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/42",
+              "mergedAt": "2026-10-30T13:15:25Z",
+              "updatedAt": "2026-10-30T13:15:25Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 41,
+              "title": "fix(deps): update tokio to 1.53.3 for RUSTSEC-2026-0386",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/41",
+              "mergedAt": "2026-10-30T13:12:02Z",
+              "updatedAt": "2026-10-30T13:12:02Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 28,
+              "title": "chore(release): 0.1.5",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/28",
+              "mergedAt": "2026-10-18T04:22:58Z",
+              "updatedAt": "2026-10-18T04:22:58Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 27,
+              "title": "Name Noctalia commands in the log, the watch feed and the panel",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/27",
+              "mergedAt": "2026-10-18T04:09:45Z",
+              "updatedAt": "2026-10-18T04:09:45Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 26,
+              "title": "Tidy the Noctalia plugin's panel",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/26",
+              "mergedAt": "2026-10-18T03:47:30Z",
+              "updatedAt": "2026-10-18T03:47:30Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 25,
+              "title": "feat(site): draw the errand on the home page",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/25",
+              "mergedAt": "2026-10-18T03:00:31Z",
+              "updatedAt": "2026-10-18T03:00:31Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 24,
+              "title": "feat(site): set the home page as one flow",
+              "url": "https://github.com/ayagmar/niri-computer-use/pull/24",
+              "mergedAt": "2026-10-18T01:42:52Z",
+              "updatedAt": "2026-10-18T01:42:53Z",
               "author": {
                 "login": "ayagmar"
               }
@@ -1470,6 +1800,106 @@
               "url": "https://github.com/ayagmar/runnerd/pull/274",
               "mergedAt": "2026-11-10T09:22:35Z",
               "updatedAt": "2026-11-10T09:22:38Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 273,
+              "title": "ci: retire the state debt file now that nothing is left on it",
+              "url": "https://github.com/ayagmar/runnerd/pull/273",
+              "mergedAt": "2026-11-10T08:52:59Z",
+              "updatedAt": "2026-11-10T08:53:01Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 272,
+              "title": "refactor: seal what admission keeps between plans",
+              "url": "https://github.com/ayagmar/runnerd/pull/272",
+              "mergedAt": "2026-11-10T08:44:46Z",
+              "updatedAt": "2026-11-10T08:44:49Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 271,
+              "title": "refactor: keep a repository's pools in one sealed map",
+              "url": "https://github.com/ayagmar/runnerd/pull/271",
+              "mergedAt": "2026-11-10T08:28:22Z",
+              "updatedAt": "2026-11-10T08:28:26Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 270,
+              "title": "fix: keep a forced pause's cancel deadline over a restart",
+              "url": "https://github.com/ayagmar/runnerd/pull/270",
+              "mergedAt": "2026-11-10T08:12:30Z",
+              "updatedAt": "2026-11-10T08:12:33Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 269,
+              "title": "fix: give an adopted runner that takes a job before the first listing its claim",
+              "url": "https://github.com/ayagmar/runnerd/pull/269",
+              "mergedAt": "2026-11-10T08:00:43Z",
+              "updatedAt": "2026-11-10T08:00:45Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 268,
+              "title": "fix: count the job an adopted runner takes under this daemon as started here",
+              "url": "https://github.com/ayagmar/runnerd/pull/268",
+              "mergedAt": "2026-11-10T07:49:57Z",
+              "updatedAt": "2026-11-10T07:50:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 267,
+              "title": "refactor: keep what a slot's runner is doing in one value",
+              "url": "https://github.com/ayagmar/runnerd/pull/267",
+              "mergedAt": "2026-11-10T07:38:41Z",
+              "updatedAt": "2026-11-10T07:38:44Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 266,
+              "title": "refactor: keep the jobs the engine follows in one ledger",
+              "url": "https://github.com/ayagmar/runnerd/pull/266",
+              "mergedAt": "2026-11-10T02:38:24Z",
+              "updatedAt": "2026-11-10T02:38:26Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 265,
+              "title": "test: pin how the engine follows queued and closing jobs",
+              "url": "https://github.com/ayagmar/runnerd/pull/265",
+              "mergedAt": "2026-11-10T02:29:40Z",
+              "updatedAt": "2026-11-10T02:29:44Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 263,
+              "title": "fix: follow a job whose runner went as closing alone",
+              "url": "https://github.com/ayagmar/runnerd/pull/263",
+              "mergedAt": "2026-11-10T02:17:23Z",
+              "updatedAt": "2026-11-10T02:17:26Z",
               "author": {
                 "login": "ayagmar"
               }
@@ -1869,6 +2299,16 @@
         "pullRequests": {
           "nodes": [
             {
+              "number": 46,
+              "title": "fix(config): leave Discord actions off unless a secret turns them on",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/46",
+              "mergedAt": "2026-11-11T23:32:35Z",
+              "updatedAt": "2026-11-11T23:32:35Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
               "number": 45,
               "title": "perf(core): index the delivery prune by status and finish time",
               "url": "https://github.com/ayagmar/repo-pulse/pull/45",
@@ -2066,6 +2506,86 @@
               "updatedAt": "2026-10-13T21:13:16Z",
               "author": {
                 "login": "ayagmar"
+              }
+            },
+            {
+              "number": 19,
+              "title": "fix(push): announce fast-forwards to the default branch",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/19",
+              "mergedAt": "2026-10-12T19:01:04Z",
+              "updatedAt": "2026-10-12T19:02:43Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 18,
+              "title": "feat: announce default-branch pushes and releases",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/18",
+              "mergedAt": "2026-10-11T14:01:42Z",
+              "updatedAt": "2026-10-12T19:02:43Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 17,
+              "title": "perf: revive dependencies and reuse Worker routes",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/17",
+              "mergedAt": "2026-10-11T13:23:07Z",
+              "updatedAt": "2026-10-12T19:02:43Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 10,
+              "title": "chore(ci)(deps): bump codecov/codecov-action from 5 to 6",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/10",
+              "mergedAt": "2026-03-30T12:40:25Z",
+              "updatedAt": "2026-03-30T12:40:34Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 4,
+              "title": "chore(ci)(deps): bump actions/checkout from 4 to 6",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/4",
+              "mergedAt": "2026-03-13T19:25:50Z",
+              "updatedAt": "2026-03-13T19:25:58Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 3,
+              "title": "chore(ci)(deps): bump actions/setup-node from 4 to 6",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/3",
+              "mergedAt": "2026-03-13T19:17:14Z",
+              "updatedAt": "2026-03-13T19:17:26Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 2,
+              "title": "chore(ci)(deps): bump codecov/codecov-action from 4 to 5",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/2",
+              "mergedAt": "2026-03-13T18:23:09Z",
+              "updatedAt": "2026-03-13T18:23:17Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 1,
+              "title": "chore(ci)(deps): bump actions/upload-artifact from 4 to 7",
+              "url": "https://github.com/ayagmar/repo-pulse/pull/1",
+              "mergedAt": "2026-03-13T18:06:20Z",
+              "updatedAt": "2026-03-13T18:06:27Z",
+              "author": {
+                "login": "dependabot"
               }
             }
           ]
