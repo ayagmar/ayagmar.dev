@@ -7,10 +7,9 @@
 import type { ListeningSnapshot } from '@min7/contracts';
 import { artistUrl } from './lastfm.ts';
 import { trackBy } from './listening.ts';
-import { el, type Markup, stampMarkup } from './markup.ts';
+import { capped, el, type Markup, stampMarkup } from './markup.ts';
 import { plural } from './plural.ts';
 import { weekCount, statsWords as words } from './stats.ts';
-import { capped } from './stats-panels.ts';
 
 export function listeningBody({ scrobbles, recent, topArtists }: ListeningSnapshot): Markup[] {
   return [
