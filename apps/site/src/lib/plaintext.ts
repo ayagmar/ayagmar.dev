@@ -229,8 +229,8 @@ export function renderAboutText(about: About): string {
       `    ${[school.degree, ...(school.field === undefined ? [] : [school.field])].join(', ')}, ${span(school.start, school.end)}`,
     ]),
     textRule,
-    'Skills',
-    `  ${about.skills.join(', ')}`,
+    'Stack',
+    `  ${about.stack.join(', ')}`,
     textRule,
     'Elsewhere',
     ...aboutLinks(identity).map(

@@ -71,7 +71,8 @@ export const aboutSchema = z.strictObject({
       })
       .refine(endAfterStart, endMessage)
   ),
-  skills: z.array(text).min(1, 'must list at least one skill'),
+  /** Languages, frameworks and platforms, shown as "Stack" so it is not read as /skills. */
+  stack: z.array(text).min(1, 'must list at least one item'),
 });
 
 export type About = z.output<typeof aboutSchema>;
