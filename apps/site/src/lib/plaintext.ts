@@ -248,9 +248,10 @@ export function renderUsesText(uses: Uses): string {
     textRule,
     ...uses.sections.flatMap((section) => [
       section.title,
-      ...section.items.map((item) =>
-        item.detail === undefined ? `  ${item.name}` : `  ${item.name}: ${item.detail}`
-      ),
+      ...section.items.flatMap((item) => [
+        item.detail === undefined ? `  ${item.name}` : `  ${item.name}: ${item.detail}`,
+        ...(item.url === undefined ? [] : [`    ${item.url}`]),
+      ]),
       textRule,
     ]),
     ...uses.machines.flatMap((machine) => [

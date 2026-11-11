@@ -1,6 +1,7 @@
 import { z } from 'astro/zod';
 
 const text = z.string({ error: 'is required' }).trim().min(1, 'must not be empty');
+const url = z.url({ protocol: /^https$/, error: 'must be an https:// URL' });
 
 /**
  * content/uses.json: the hand-kept part of /uses. Hardware is written down rather than read
@@ -14,7 +15,7 @@ export const usesSchema = z.strictObject({
       z.strictObject({
         title: text,
         items: z
-          .array(z.strictObject({ name: text, detail: text.optional() }))
+          .array(z.strictObject({ name: text, url: url.optional(), detail: text.optional() }))
           .min(1, 'must list at least one item'),
       })
     )

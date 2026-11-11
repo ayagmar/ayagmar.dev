@@ -4,23 +4,77 @@
     {
       "title": "System",
       "items": [
-        { "name": "Arch Linux" },
-        { "name": "niri", "detail": "a scrollable-tiling Wayland compositor" },
-        { "name": "Noctalia", "detail": "the desktop shell on top of it" }
+        {
+          "name": "Arch Linux",
+          "url": "https://archlinux.org/",
+          "detail": "a rolling-release Linux distribution"
+        },
+        {
+          "name": "niri",
+          "url": "https://github.com/niri-wm/niri",
+          "detail": "a scrollable-tiling Wayland compositor"
+        },
+        {
+          "name": "Noctalia",
+          "url": "https://noctalia.dev/",
+          "detail": "the desktop shell on top of it"
+        },
+        {
+          "name": "dotfiles",
+          "url": "https://github.com/ayagmar/dotfiles",
+          "detail": "my config for all of this, kept with chezmoi"
+        }
       ]
     },
     {
       "title": "Editor and terminal",
       "items": [
-        { "name": "VS Code" },
-        { "name": "kitty" },
-        { "name": "zsh" },
-        { "name": "herdr", "detail": "a terminal multiplexer for coding agents" }
+        {
+          "name": "VS Code",
+          "url": "https://code.visualstudio.com/",
+          "detail": "the editor"
+        },
+        {
+          "name": "kitty",
+          "url": "https://sw.kovidgoyal.net/kitty/",
+          "detail": "a GPU-accelerated terminal"
+        },
+        {
+          "name": "zsh",
+          "url": "https://www.zsh.org/",
+          "detail": "the shell"
+        },
+        {
+          "name": "herdr",
+          "url": "https://herdr.dev/",
+          "detail": "a terminal multiplexer for coding agents"
+        }
       ]
     },
     {
       "title": "Agents",
-      "items": [{ "name": "Claude Code" }, { "name": "Codex" }, { "name": "pi" }]
+      "items": [
+        {
+          "name": "Claude Code",
+          "url": "https://claude.com/product/claude-code",
+          "detail": "Anthropic's coding agent"
+        },
+        {
+          "name": "Codex",
+          "url": "https://openai.com/codex/",
+          "detail": "OpenAI's coding agent"
+        },
+        {
+          "name": "pi",
+          "url": "https://pi.dev/",
+          "detail": "a small coding agent for the terminal"
+        },
+        {
+          "name": "niri-computer-use",
+          "url": "https://github.com/ayagmar/niri-computer-use",
+          "detail": "my MCP server for agents to see and drive niri"
+        }
+      ]
     }
   ],
   "machines": [
