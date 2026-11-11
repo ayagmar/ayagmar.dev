@@ -46,13 +46,17 @@ const feeds = feedPaths({ project: project.slug });
   ]}
 >
   <article class="project column">
-    <header class="panel m-screen">
+    <header class="panel m-screen" data-pagefind-body data-pagefind-meta={`title:${project.slug}`}>
       <h1>{project.slug}</h1>
       {project.summary !== null && <p class="project-summary">{project.summary}</p>}
       {project.status !== null && <p class="project-status">Status: {project.status}</p>}
     </header>
     {Content !== undefined && (
-      <section class="paper project-description" aria-label={`About ${project.slug}`}>
+      <section
+        class="paper project-description"
+        aria-label={`About ${project.slug}`}
+        data-pagefind-body
+      >
         <div class="prose">
           <Content />
         </div>
