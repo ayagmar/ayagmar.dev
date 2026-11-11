@@ -5,6 +5,7 @@ Status: accepted, 2026-10-26. Amended 2026-11-06: the cat's hours and the record
 ## Context
 
 ADR 0026 left the room static and the post page's `art` slot empty. The owner asked for six details, and nothing more:
+
 1. The window shows the real moon phase, and its sky follows the real sun over Rabat: day, dusk, night. The page theme's Auto stays on `prefers-color-scheme`; the window is the room's clock, not the visitor's.
 2. The record turns only when Last.fm says something is playing now.
 3. Between 02:00 and 07:00 Rabat time the lamp dims and a small "probably asleep" note appears.
@@ -19,6 +20,7 @@ Every detail has to keep what ADRs 0019, 0026 and the budgets of ADR 0017 promis
 ### The room's clock: window, moon, lamp
 
 `apps/site/src/lib/sky.ts` computes everything from an instant, with no state. `apps/site/src/scripts/room.ts` runs it on the home page only, once on load and then every minute, and sets three things on `.scene`:
+
 - `data-sky` is `day`, `dusk` or `night`. `room.css` then shows one of three window layers, `window-{day,dusk,night}.png`. Each is the full 480x160 scene, transparent except the view through the window, so it lines up with the scene at any size. The window frame, the mullions and the lamp in front stay in the room's own scene, so they keep the room's light. Only the layer in use downloads (1.3 to 1.4 KiB each).
 - The moon is an inline SVG over the scene in the same 480x160 coordinates. The script writes its `path`: the lit part of a 12-pixel disc, a run of unit squares per row, lit on the right while waxing as seen from Morocco, in the palette's moon colour `#e8e8fa`. It is drawn at dusk and at night, and left out when less than 3 % is lit.
 - `data-late` between 02:00 and 07:00 Rabat time swaps the night scene for `room-night-dim.png` (the lamp at a third of its light, the bulb a dim amber) and shows the note `Probably asleep: it is 03:12 in Rabat.` The note sits over the desk's front edge, below every hotspot, positioned absolutely, so showing it moves nothing. In the day theme the same dim room comes over the day scene (see below), with the note.
@@ -33,6 +35,7 @@ Day is when the sun's centre is above −0.833° (NOAA's sunrise and sunset), du
 `scripts/scene.py` (`just scene`) draws the three window layers and the dim room next to the two scenes. It records which pixels are the view while it draws the sky and skyline; anything drawn later (the mullions, the lamp) clears them, and only the remaining view goes into a layer.
 
 **Sources.**
+
 - Sun: the NOAA Solar Calculator's own equations, from its code (`calcSunDeclination`, `calcEquationOfTime`, `calcAzEl` in https://gml.noaa.gov/grad/solcalc/main.js, read 2026-10-26), which follow Meeus. The terms in t² and t³ are left out: this century they move the sun by under 0.0001°.
 - Moon: Meeus, _Astronomical Algorithms_, 2nd edition (Willmann-Bell, 1998): the mean elongation D and the anomalies M and M′ of chapter 47, and the phase angle i of formula 48.4 with its six periodic terms. The illuminated fraction is (1 + cos i) / 2. A named phase (new, first quarter, full, last quarter) is shown within about half a day of its instant (6.1° of elongation); the in-between names otherwise. Chapter 49's phase instants are not needed: the elongation gives the phase at any instant directly.
 - Time: `Intl.DateTimeFormat` with `timeZone: 'Africa/Casablanca'`, which reads the browser's IANA tzdata. No offset is written down anywhere.
@@ -42,6 +45,7 @@ Day is when the sun's centre is above −0.833° (NOAA's sunrise and sunset), du
 **The visitor's clock is trusted.** The sky, the moon and the lamp all start from the device's `Date.now()`. A device clock that is hours off shows the wrong sky, and one that is an hour off near 02:00 or 07:00 shows the note when it should not, or hides it. This is an accepted limitation, not checked for: the three details are decoration, the page has no trustworthy time without an extra request (a same-origin time anchor would cost a request on every visit and a new route), and a device clock that far off already breaks TLS certificate checks and most of the web for that visitor. The time zone the visitor picks never matters; only the clock does.
 
 **Checks** (`apps/site/test/sky.test.ts`):
+
 - Moon: the illuminated fraction on 12 dates in 2026 is within 3 points of NASA SVS Dial-A-Moon (https://svs.gsfc.nasa.gov/api/dialamoon/, JPL ephemeris; it measured within 0.25 points). The named phase at 12 instants over 2026 and 2027 from Espenak's catalogue (https://eclipse.gsfc.nasa.gov/phase/phases2001.html) matches, and the elongation is within one day's motion of the phase (it measured within 0.6 hours). The USNO API and timeanddate.com refused connections from the build machine, so these two sources stand in for them.
 - Sun: sunrise and sunset on 8 dates, both sides of each 2026 clock change plus both solstices, are within 2 minutes of NOAA's calculator in Rabat local time (they measured within 1 minute).
 - Lamp: over 2,000 seeded instants in 2026 and 2027, both sides of each clock change, and 01:59, 02:00, 06:59 and 07:00 local on days at either offset, `isLate` agrees with the hour read through `toLocaleString`.
@@ -61,6 +65,7 @@ A live answer stays live only until its `fetchedAt` plus the same 15 minutes (th
 `theme.js`, which every page already loads, now also handles two keys: `t` swaps day and night (from Auto it picks the opposite of the system theme), and `?` opens `dialog.keys`, a static list in `Base.astro`. On the home page `room.ts` adds `1` to `7`, which open the room's objects in reading order, and the list shows them. Search keeps `/` and Ctrl+K. Keys are ignored while typing in a field, while a dialog is open, and with Ctrl, Alt or Meta (for search's `/` too since 2026-11-03, so Ctrl+/ and the like stay the browser's; the Search button's hint names `/`, or Ctrl K while single-key shortcuts are off). AltGr is not a modifier here: Windows reports it as Ctrl+Alt, and some layouts need it to type `/` or `?`. Without JavaScript the list never opens and no key does anything.
 
 These are single-character shortcuts, which WCAG 2.1.4 (level A) allows only if they can be turned off, remapped, or work only while their component has focus. The owner wants the playful keys, so they stay, with a way to turn them off:
+
 - A **Keys** button at the end of every page's footer opens the same list, so the list and its switch are reachable with no shortcut at all. It shows only once `theme.js` has run, like the theme switch.
 - The list has a switch, "Single-key shortcuts", on by default: a native checkbox with `role="switch"`. Turning it off stores `shortcuts=off` in `localStorage`, so it holds on every page and every visit, and `theme.js` mirrors it as `data-shortcuts="off"` on `<html>` before the first paint. `theme.js` (`?`, `t`), `room.ts` (`1` to `7`) and search (`/`) all check that attribute; Ctrl+K and Cmd+K keep opening search, since they use a modifier. When storage is blocked, the switch holds for the current page only.
 - Escape on a dialog drops focus from the field or switch it held, so a hidden control does not swallow the next key.
