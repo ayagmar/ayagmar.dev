@@ -33,12 +33,13 @@ const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 const about = await getEntry('about', 'about');
 if (about === undefined) throw new Error('content/about.json is missing');
+const { dates, years } = await getDays();
 // The strip is drawn once, with the page: from the daily history, else from the events.
 const strip = shippingStrip(
   await signals.readDays('shipping-activity'),
   shipping,
   new Date(),
-  (await getDays()).dates
+  dates
 );
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 const seed = await roomSeed();
@@ -220,7 +221,7 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
             <h2 id="shipping">Shipping</h2>
             <a href="/stats#shipping">More</a>
           </div>
-          <HomeShipping strip={strip} events={recentlyShipped} />
+          <HomeShipping strip={strip} events={recentlyShipped} year={years.at(-1)} />
           <Sample />
         </section>
       )}

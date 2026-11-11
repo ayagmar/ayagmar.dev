@@ -1,6 +1,6 @@
 # 0041. Year pages
 
-Status: accepted, 2026-11-06. Amended 2026-11-11: each year has its own link-preview image (see Search). Amended 2026-11-06: the calendar opens on the first month with data, and a day with no record in it is a faint square, not an outline. Amends ADR 0038 (`readHistory` names the months that failed) and ADR 0015 (the fixtures gain a history of their own).
+Status: accepted, 2026-11-06. Amended 2026-11-11: each year has its own link-preview image, and the home page's Shipping panel links the latest year (see Search and The way in). Amended 2026-11-06: the calendar opens on the first month with data, and a day with no record in it is a faint square, not an outline. Amends ADR 0038 (`readHistory` names the months that failed) and ADR 0015 (the fixtures gain a history of their own).
 
 ## Context
 
@@ -30,7 +30,7 @@ Signals keeps a row per series per calendar day for good (ADR 0038), and the onl
 
 **Search.** A year page has text of its own, so it is indexed, with its own title and description, and the sitemap follows. Its link-preview image (`/og/year/YYYY.png`, `renderYearCard` in `src/lib/og-card.ts`) is the year, its shipping calendar as one row of Monday-first weeks under the month names, and up to three figures under it: PRs merged and days with something shipped, then agent tokens, then what was published. The figures come from the model (`figures` in `src/lib/years.ts`), counted from the same sums as the page's facts, with the same "on record" and "so far", and left out wherever the page leaves out a series' totals. The card draws only days with a record, so it depends on the history alone and not on the build date: a fixtures build draws the same image every day of that year. Its text alternative names the calendar's range, the months left blank because they could not be read, and the figures. A year that only says it could not be read is `noindex` until the next good build.
 
-**The way in.** A link under the strip on /stats, to the latest year, and one on every day page, to that day's year. /stats is where someone looking at numbers asks what came before the last 28 days, and a day page is where the square led them. The home page is left as it is: it would cost its strip a link for readers who came for the room.
+**The way in.** A link under the strip on /stats, to the latest year, and one on every day page, to that day's year. /stats is where someone looking at numbers asks what came before the last 28 days, and a day page is where the square led them. The home page's Shipping panel has the same link under its strip: with only /stats leading there, the pages were hard to find, and one line of text under the squares costs the room nothing. The header is unchanged (ADR 0035).
 
 **Fixtures.** `historyFixtures` (`fixtures/<series>/history/ok.json`, invented) holds the days before the `ok` block, in a directory of its own since it is longer than one block's 31 days. Fixtures mode reads both month by month. The history stops on 28 September, before the strip's window, so the strip's outlined days and the tests on them stay as they were.
 

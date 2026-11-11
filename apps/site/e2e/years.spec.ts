@@ -34,7 +34,10 @@ test('the year shows its calendar, each square leading to an existing day', asyn
 });
 
 // Catches the year's link pointing at a year without a page, and neighbours linked the wrong way.
-test('/stats leads to the latest year, which links the one before', async ({ page }) => {
+test('home and /stats lead to the latest year, which links the one before', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'All of 2026' }).click();
+  await expect(page).toHaveURL('/2026');
   await page.goto('/stats');
   await page.getByRole('link', { name: 'All of 2026' }).click();
   await expect(page).toHaveURL('/2026');

@@ -9,11 +9,18 @@ interface Props {
   strip: ShippingStrip | null;
   /** The newest few events. */
   events: readonly ShippingEvent[];
+  /** The latest year page (ADR 0041), linked under the strip as on /stats. */
+  year?: { path: string; year: string } | undefined;
 }
 
-const { strip, events } = Astro.props;
+const { strip, events, year } = Astro.props;
 ---
 
 {/* The strip has its own source: it shows whether or not the event list has anything. */}
 {strip !== null && <ShippingHeat strip={strip} />}
+{year !== undefined && (
+  <p>
+    <a href={year.path}>All of {year.year}</a>
+  </p>
+)}
 {events.length > 0 && <ShippingList events={events} />}
