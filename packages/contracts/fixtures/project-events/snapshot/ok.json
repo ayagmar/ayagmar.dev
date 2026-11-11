@@ -419,26 +419,10 @@
         },
         {
           "repo": "ayagmar/ccdesk",
-          "at": "2026-10-29T20:55:14Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/ccdesk/pull/79",
-          "number": 79,
-          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.312)"
-        },
-        {
-          "repo": "ayagmar/ccdesk",
           "at": "2026-10-25T11:48:51Z",
           "type": "release",
           "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.13",
           "tag": "v0.5.13"
-        },
-        {
-          "repo": "ayagmar/ccdesk",
-          "at": "2026-10-25T11:47:54Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/ccdesk/pull/74",
-          "number": 74,
-          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.310)"
         },
         {
           "repo": "ayagmar/ccdesk",
@@ -464,14 +448,6 @@
         },
         {
           "repo": "ayagmar/ccdesk",
-          "at": "2026-10-25T01:42:52Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/ccdesk/pull/72",
-          "number": 72,
-          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.310)"
-        },
-        {
-          "repo": "ayagmar/ccdesk",
           "at": "2026-10-25T01:38:30Z",
           "type": "merge",
           "url": "https://github.com/ayagmar/ccdesk/pull/71",
@@ -484,14 +460,6 @@
           "type": "release",
           "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.10",
           "tag": "v0.5.10"
-        },
-        {
-          "repo": "ayagmar/ccdesk",
-          "at": "2026-10-21T20:50:54Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/ccdesk/pull/65",
-          "number": 65,
-          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.306)"
         },
         {
           "repo": "ayagmar/ccdesk",
@@ -517,14 +485,6 @@
         },
         {
           "repo": "ayagmar/ccdesk",
-          "at": "2026-10-20T17:35:30Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/ccdesk/pull/61",
-          "number": 61,
-          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.304)"
-        },
-        {
-          "repo": "ayagmar/ccdesk",
           "at": "2026-10-20T03:56:30Z",
           "type": "release",
           "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.7",
@@ -547,10 +507,50 @@
         },
         {
           "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T03:33:58Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/59",
+          "number": 59,
+          "title": "feat(cli): warn about ignored settings in check and at session start"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
           "at": "2026-10-20T02:51:20Z",
           "type": "release",
           "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.5",
           "tag": "v0.5.5"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T02:39:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/58",
+          "number": 58,
+          "title": "feat(ui): link a nested setting to the setting that holds it"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T02:30:30Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/57",
+          "number": 57,
+          "title": "fix(data): keep bulleted lists in setting descriptions"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T02:19:46Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/56",
+          "number": 56,
+          "title": "fix(ui): show why a settings file cannot be picked"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-16T14:16:20Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/52",
+          "number": 52,
+          "title": "feat(release): Slack announcements, hourly SDK check, and auto-merged data PRs"
         }
       ]
     },
@@ -1359,27 +1359,11 @@
         },
         {
           "repo": "ayagmar/agents-skills",
-          "at": "2026-10-12T01:26:01Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/agents-skills/pull/14",
-          "number": 14,
-          "title": "chore(release): version packages"
-        },
-        {
-          "repo": "ayagmar/agents-skills",
           "at": "2026-10-12T01:24:41Z",
           "type": "merge",
           "url": "https://github.com/ayagmar/agents-skills/pull/13",
           "number": 13,
           "title": "feat(evals): add skill evals and fix what they found"
-        },
-        {
-          "repo": "ayagmar/agents-skills",
-          "at": "2026-10-11T18:47:48Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/agents-skills/pull/12",
-          "number": 12,
-          "title": "chore(release): version packages"
         },
         {
           "repo": "ayagmar/agents-skills",
@@ -1391,27 +1375,27 @@
         },
         {
           "repo": "ayagmar/agents-skills",
-          "at": "2026-10-11T00:42:55Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/agents-skills/pull/10",
-          "number": 10,
-          "title": "chore(release): version packages"
-        },
-        {
-          "repo": "ayagmar/agents-skills",
-          "at": "2026-10-08T09:56:58Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/agents-skills/pull/9",
-          "number": 9,
-          "title": "chore(release): version packages"
-        },
-        {
-          "repo": "ayagmar/agents-skills",
           "at": "2026-10-08T02:42:24Z",
           "type": "merge",
           "url": "https://github.com/ayagmar/agents-skills/pull/8",
           "number": 8,
           "title": "feat(x-post-craft): add X/Twitter post writing skill"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-08T01:59:25Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/6",
+          "number": 6,
+          "title": "docs: final README and docs pass"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-08T01:40:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/4",
+          "number": 4,
+          "title": "fix: summarize model and improve quick keyword"
         }
       ]
     },

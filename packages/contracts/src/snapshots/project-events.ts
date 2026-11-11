@@ -12,7 +12,7 @@ export const projectReleasesKept = 10;
 export const projectMergesKept = 10;
 /**
  * Merged pull requests asked for: GitHub orders them by update, not by merge, and some are
- * dependency bots', so more are asked than kept (ADR 0046).
+ * bots', so more are asked than kept (ADR 0046).
  */
 export const projectMergesAsked = 20;
 
@@ -39,7 +39,7 @@ export const githubMergedPullSchema = z.object({
   url: githubUrlSchema,
   mergedAt: timestampSchema,
   updatedAt: timestampSchema,
-  /** null for a deleted account. Read only to leave dependency bots out; never stored. */
+  /** null for a deleted account. Read only to leave bots out; never stored. */
   author: z.object({ login: z.string().min(1).max(100) }).nullable(),
 });
 
@@ -79,7 +79,7 @@ export const projectEventsSnapshotSchema = z.object({
         /** `owner/name` as GitHub reports it now (after a rename). */
         repo: repoFullNameSchema,
         /**
-         * The newest releases and merged pull requests (dependency bots' left out), up to 10
+         * The newest releases and merged pull requests (bots' left out), up to 10
          * of each, newest first. Empty: none yet.
          */
         events: z.array(projectEventSchema).max(projectReleasesKept + projectMergesKept),

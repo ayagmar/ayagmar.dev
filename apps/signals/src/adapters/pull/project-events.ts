@@ -53,10 +53,17 @@ const projectEventsQuery = `query { ${featuredProjects
   .join(' ')} } fragment log on Repository { ${fields} }`;
 
 /**
- * Authors whose pull requests are left out of the log: dependency updates, not work. GraphQL
- * names a bot without `[bot]`, REST and the web with it.
+ * Authors whose pull requests are left out of the log: dependency updates, data bumps and release
+ * PRs, not work. GraphQL names a bot without `[bot]`, REST and the web with it.
  */
-const dependencyBots = new Set(['dependabot', 'dependabot[bot]', 'renovate', 'renovate[bot]']);
+const automationBots = new Set([
+  'dependabot',
+  'dependabot[bot]',
+  'renovate',
+  'renovate[bot]',
+  'github-actions',
+  'github-actions[bot]',
+]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -152,7 +159,7 @@ function projectLog(repo: GithubProjectRepo): ProjectEvent[] {
     (node) => node.mergedAt,
     projectMergesAsked
   ).flatMap((node): ProjectEvent[] =>
-    node.author !== null && dependencyBots.has(node.author.login.toLowerCase())
+    node.author !== null && automationBots.has(node.author.login.toLowerCase())
       ? []
       : [
           {

@@ -216,9 +216,9 @@ describe('project-events (GitHub GraphQL)', () => {
     expect(log('pi-extmgr')).toEqual([24, 23]);
   });
 
-  // Catches dependency bumps filling the log, GraphQL naming a bot without `[bot]`, and a
-  // deleted account's PR dropped with them.
-  it('leaves out dependency bots, drafts, unreadable nodes and repeats', () => {
+  // Catches dependency bumps and GitHub Actions' release PRs filling the log, GraphQL naming a
+  // bot without `[bot]`, and a deleted account's PR dropped with them.
+  it('leaves out bots, drafts, unreadable nodes and repeats', () => {
     expect(log('llm-usage-metrics')).toEqual([50, 'v2.0.0-rc.1', 46, 'v1.7.0']);
   });
 

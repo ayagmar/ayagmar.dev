@@ -44,6 +44,16 @@
               "author": null
             },
             {
+              "number": 51,
+              "title": "chore(release): version packages",
+              "url": "https://github.com/ayagmar/llm-usage/pull/51",
+              "mergedAt": "2026-11-10T11:00:00Z",
+              "updatedAt": "2026-11-10T11:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
               "number": 49,
               "title": "Bump vitest from 4.1 to 4.2",
               "url": "https://github.com/ayagmar/llm-usage/pull/49",

@@ -44,13 +44,13 @@ describe("a project's log", () => {
     expect(markupLines(log)).toEqual([
       "  29 Oct, 21:53 merged #80: fix(core): read credential variables in a remote MCP server's URL as empty",
       '  29 Oct, 20:56 released v0.5.14',
-      '  29 Oct, 20:55 merged #79: chore: update Claude Code data (claude-agent-sdk 0.3.312)',
       '  25 Oct, 11:48 released v0.5.13',
-      '  25 Oct, 11:47 merged #74: chore: update Claude Code data (claude-agent-sdk 0.3.310)',
       '  25 Oct, 02:35 released v0.5.12',
       '  25 Oct, 02:34 merged #73: fix(ui): scroll and layout paper cuts',
       '  25 Oct, 01:43 released v0.5.11',
-      '  25 Oct, 01:42 merged #72: chore: update Claude Code data (claude-agent-sdk 0.3.310)',
+      '  25 Oct, 01:38 merged #71: chore(deps): consolidate dependency upgrades',
+      '  21 Oct, 20:52 released v0.5.10',
+      '  20 Oct, 17:43 released v0.5.9',
     ]);
   });
 
