@@ -766,6 +766,7 @@
   min-height: 24px;
   padding-block: 0.25rem;
   color: var(--muted);
+  text-decoration: none;
 }
 
 .intro-links a:hover {
@@ -996,6 +997,17 @@
 
 .home-projects li:first-child {
   padding-top: 0;
+}
+
+/* Rows six and seven only level the two columns (index.astro); stacked, there is nothing to level. */
+.home-projects li:nth-child(n + 6) {
+  display: none;
+}
+
+@media (min-width: 60rem) {
+  .home-projects li:nth-child(n + 6) {
+    display: block;
+  }
 }
 
 .home-projects a {

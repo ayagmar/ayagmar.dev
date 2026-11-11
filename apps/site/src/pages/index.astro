@@ -30,7 +30,7 @@ const posts = (await getPosts()).slice(0, 4);
 const notes = posts.length === 0 ? (await getNotes()).slice(0, 3) : [];
 const writing = posts.length > 0 || notes.length > 0;
 // Without Writing above them, Projects stands beside Listening and Shipping alone: two more rows
-// keep its column about as long as theirs.
+// keep its column about as long as theirs. Where the panels stack, room.css hides those two.
 const projects = (await getProjects()).projects.slice(0, writing ? 5 : 7);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
