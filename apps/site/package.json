@@ -9,7 +9,7 @@
     "@min7/contracts": "workspace:*",
     "astro": "7.4.7",
     "pele": "1.13.0",
-    "satteri": "0.10.5",
+    "satteri": "0.11.7",
     "svelte": "5.57.3"
   },
   "devDependencies": {
