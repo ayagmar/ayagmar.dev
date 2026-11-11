@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { noNumbers } from '../src/lib/project-panel.ts';
 import { projectSchema } from '../src/lib/project-schema.ts';
 import {
   checkProjectFiles,
   morePostsAbout,
-  noNumbers,
   projectsByGroup,
   siteProjects,
 } from '../src/lib/projects.ts';

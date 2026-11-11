@@ -12,7 +12,7 @@
 
 import { readListening } from '../lib/listening.ts';
 import { live, poll } from '../lib/live-page.ts';
-import { renderNowPlaying } from '../lib/markup-page.ts';
+import { renderNowPlaying } from '../lib/now-playing-page.ts';
 import { knowsRabat } from '../lib/rabat-date.ts';
 import { hotspotName, roomObjects } from '../lib/room.ts';
 import { changedParts, liveReading, roomClock, seededInputs } from '../lib/room-clock.ts';

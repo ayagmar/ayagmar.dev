@@ -91,7 +91,8 @@ function tickSoon(): void {
 }
 
 /**
- * Keeps the panel `[data-live=<source>]` current. Its HTML is the build's snapshot, taken at
+ * Keeps each panel `[data-live=<source>]` current, each on its own (a post can show two project
+ * cards). A panel's HTML is the build's snapshot, taken at
  * `data-fetched-at` (absent when the build had none), and `data-stale-after` gives the
  * source's threshold in seconds. In api mode `data-live-src` names the endpoint, asked every
  * `everyMs` while the page is visible. Which answer shows is `follow`'s rule, and a new one
@@ -107,8 +108,19 @@ export function live<Data>(
   render: (panel: HTMLElement, answer: Answer<Data>, now: boolean) => void,
   relabel?: (now: number) => void
 ): void {
-  const panel = document.querySelector<HTMLElement>(`[data-live="${source}"]`);
-  if (!panel) return;
+  for (const panel of document.querySelectorAll<HTMLElement>(`[data-live="${source}"]`)) {
+    keep(panel, source, everyMs, read, render, relabel);
+  }
+}
+
+function keep<Data>(
+  panel: HTMLElement,
+  source: string,
+  everyMs: number,
+  read: (data: unknown) => Data | undefined,
+  render: (panel: HTMLElement, answer: Answer<Data>, now: boolean) => void,
+  relabel?: (now: number) => void
+): void {
   const { liveSrc, fetchedAt, staleAfter } = panel.dataset;
   const freshness = panel.querySelector<HTMLElement>('.freshness');
   const refreshed = follow(source, Number(staleAfter) * 1000, read, fetchedAt);

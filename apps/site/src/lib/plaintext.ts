@@ -1,25 +1,27 @@
-import type { ProjectSlug } from '@min7/contracts';
+import type { ProjectSlug, ShippingEvent } from '@min7/contracts';
 import { isoDate } from '@min7/contracts/rabat';
 import type { About } from '../data/about.ts';
 import { aboutLinks, certificationExpiry, formatMonth, monthSpan } from '../data/about.ts';
-import { projectFacts } from '../data/format.ts';
+import { describeEvent, projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
 import { longDate } from './day-words.ts';
 import { feedPaths } from './feed.ts';
 import type { BrewingItem } from './now-schema.ts';
+import { noNumbers, projectEvents } from './project-panel.ts';
 import {
-  noNumbers,
   postCount,
   postsAbout,
   projectLinks,
   projectPath,
+  projectRepos,
   projectRowLabel,
   projectsByGroup,
   type SiteProject,
 } from './projects.ts';
 import { curlTarget, identityLine, nav, nowPage, site, siteUrl, textRule } from './site.ts';
 import { type Note, notePath } from './til.ts';
+import { rabatStamp } from './words.ts';
 import { isoDay, nothingPublished, type Post, postPath, postsByTag } from './writing.ts';
 
 /** A built `.txt` page. Every text page ends in one newline. */
@@ -177,10 +179,12 @@ export function renderProjectsText(
 export function renderProjectText(
   project: SiteProject,
   posts: readonly Post[],
-  description: string | undefined
+  description: string | undefined,
+  events: readonly ShippingEvent[]
 ): string {
   const path = projectPath(project.slug);
   const facts = projectFacts(project);
+  const shipped = projectEvents(events, projectRepos(project));
   return [
     `${project.slug} | ${site.name}`,
     ...(project.summary === null ? [] : [project.summary]),
@@ -192,6 +196,16 @@ export function renderProjectText(
       ? [`  ${noNumbers(project)}`]
       : facts.map(({ label, value }) => `  ${label}: ${value}`)),
     textRule,
+    ...(shipped.length === 0
+      ? []
+      : [
+          'Recently shipped',
+          ...shipped.flatMap((event) => [
+            `  ${rabatStamp(event.at).padEnd(13)}  ${describeEvent(event)}`,
+            `                 ${event.url}`,
+          ]),
+          textRule,
+        ]),
     'Links',
     ...projectLinks(project).map(({ label, href }) => `  ${label}: ${href}`),
     textRule,

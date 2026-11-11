@@ -45,7 +45,9 @@ The site and signals deploy as two separate Workers. Either can ship, roll back 
                                                               /v1/monkeytype,
                                                               /v1/listening-history and
                                                               /v1/llm-usage, /uses script reads
-                                                              /v1/desktop and /v1/llm-usage
+                                                              /v1/desktop and /v1/llm-usage,
+                                                              project script reads /v1/projects
+                                                              and /v1/shipping,
                                                               room scrub reads /v1/days/* by
                                                               month, once a reader moves it,
                                                      site Worker: /room reads /v1/listening and
@@ -106,15 +108,15 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | Post frontmatter schema                                                   | `apps/site/src/lib/writing-schema.ts`                                                                                                              |
 | Post list, tags, drafts                                                   | `apps/site/src/lib/writing.ts`, `src/lib/posts.ts`                                                                                                 |
 | TIL notes: schema, model, summary, page and feeds (ADR 0028)              | `apps/site/src/lib/{til-schema,til}.ts`, `src/pages/til/`, `src/components/TilNote.astro`                                                          |
-| Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025)                                                                            |
+| Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025); numbers and log in `src/lib/project-panel.ts`                             |
 | RSS and Atom (one model, two renderers; writing and TIL)                  | `apps/site/src/lib/feed.ts`                                                                                                                        |
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                                                              |
 | Copy buttons on code blocks in posts and notes                            | `apps/site/src/lib/markdown/code-copy.ts`, `src/scripts/code-copy.ts`                                                                              |
 | Text and Markdown copies of pages, /llms.txt (ADR 0040)                   | `apps/site/src/lib/{plaintext,article,stats-text,llms}.ts`, `src/pages/**/*.{txt,md}.ts`                                                           |
 | Security headers and CSP                                                  | `apps/site/src/lib/security-headers.ts`, written to `dist/_headers` by `scripts/postbuild.ts`                                                      |
 | Build-time snapshot reader (`fixtures` or `api` mode)                     | `apps/site/src/data/`                                                                                                                              |
-| Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/{live,live-page}.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{room,stats-live}.ts`                             |
-| Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/{markup,markup-page}.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                                  |
+| Live panels in the browser: polling, answer checks, relative times        | `apps/site/src/lib/{live,live-page}.ts`, readers in `src/lib/{listening,stats}.ts`, `src/scripts/{room,stats-live,project-live}.ts`                |
+| Markup both the build and the browser render; Last.fm links               | `apps/site/src/lib/{markup,markup-page,now-playing-page}.ts`, `src/components/Markup.astro`, `src/lib/{listening-panel,lastfm}.ts`                 |
 | Search island                                                             | `apps/site/src/components/Search.svelte` (Pagefind index built after `astro build`)                                                                |
 | Site Worker (which copy a request gets, ADR 0040)                         | `apps/site/worker/index.ts`                                                                                                                        |
 | The room in a terminal: frames, words, live answers (ADR 0045)            | `apps/site/src/lib/terminal-room.ts`, `src/pages/terminal/`, `worker/room.ts`                                                                      |

@@ -22,6 +22,10 @@ const noPreloadHelper = () => ({
     id === '\0vite/preload-helper.js' ? 'export const __vitePreload = (load) => load();' : null,
 });
 
+/** The modules every live page loads: polling, answer checks, markup, words and the Rabat date. */
+const liveModules =
+  /(?:apps\/site\/src\/lib\/(?:live|live-page|markup|markup-page|rabat-date|words)|packages\/contracts\/src\/rabat)\.ts$/;
+
 export default defineConfig({
   site: siteUrl,
   output: 'static',
@@ -45,7 +49,22 @@ export default defineConfig({
   integrations: [svelte(), sitemap(), sitemapFromPages()],
   // Never inline a script or asset into the page: the CSP has no `data:` and allows no inline
   // script except Astro's own (ADR 0019), so the home page's room script stays a file (ADR 0027).
-  vite: { build: { assetsInlineLimit: 0 }, plugins: [noPreloadHelper()] },
+  vite: {
+    build: {
+      assetsInlineLimit: 0,
+      // Every live page polls and draws markup through these modules. Left to itself, the bundler
+      // splits them by which pages share each one, and home loaded four chunks a level deeper than
+      // it needs, which its mobile LCP paid for under simulated throttling (ADR 0017).
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [{ name: 'live', test: liveModules }],
+          },
+        },
+      },
+    },
+    plugins: [noPreloadHelper()],
+  },
   env: {
     schema: {
       COMMIT_SHA: envField.string({ context: 'server', access: 'public', default: 'dev' }),

@@ -26,7 +26,12 @@
       {
         "name": "stats script",
         "file": "/_astro/stats.astro_astro_type_script_index_0_lang.*.js",
-        "bytes": 5600
+        "bytes": 4400
+      },
+      {
+        "name": "shipping and project reads",
+        "file": "/_astro/stats.*.js",
+        "bytes": 1650
       },
       {
         "name": "uses script",
@@ -35,18 +40,23 @@
       },
       {
         "name": "live reads",
-        "file": "/_astro/rabat-date.*.js",
-        "bytes": 1900
+        "file": "/_astro/live.*.js",
+        "bytes": 2770
       },
       {
         "name": "listening reads",
-        "file": "/_astro/markup-page.*.js",
-        "bytes": 1840
+        "file": "/_astro/now-playing-page.*.js",
+        "bytes": 1030
       },
       {
         "name": "agent reads",
         "file": "/_astro/llm-usage.*.js",
         "bytes": 940
+      },
+      {
+        "name": "project script",
+        "file": "/_astro/ProjectStats.astro_astro_type_script_index_0_lang.*.js",
+        "bytes": 930
       }
     ]
   },

@@ -2,7 +2,6 @@
 import type { Envelope } from '@min7/contracts';
 import { projectPath, type SiteProject } from '../lib/projects.ts';
 import { type Post, postPath } from '../lib/writing.ts';
-import Freshness from './Freshness.astro';
 import ProjectLinks from './ProjectLinks.astro';
 import ProjectStats from './ProjectStats.astro';
 
@@ -20,9 +19,8 @@ const headingId = `project-${project.slug}`;
 <aside class="panel m-screen project-card" aria-labelledby={headingId}>
   <h2 id={headingId}>About <a href={projectPath(project.slug)}>{project.slug}</a></h2>
   {project.summary !== null && <p class="project-summary">{project.summary}</p>}
-  <ProjectStats project={project} />
+  <ProjectStats project={project} envelope={envelope} />
   <ProjectLinks project={project} />
-  {project.live !== null && <Freshness envelope={envelope} />}
   {more.length > 0 && (
     <section class="project-more" aria-labelledby={`${headingId}-more`}>
       <h3 id={`${headingId}-more`}>More on {project.slug}</h3>

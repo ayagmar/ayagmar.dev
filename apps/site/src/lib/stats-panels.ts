@@ -10,36 +10,13 @@ import type {
   ShippingSnapshot,
 } from '@min7/contracts';
 import { describeEvent, projectsSummary } from '../data/format.ts';
+import { capped } from './capped.ts';
 import { dayName, shortDate } from './day-words.ts';
 import { el, type Markup, stampMarkup } from './markup.ts';
 import { plural } from './plural.ts';
 import { starTotals, statsWords as words } from './stats.ts';
 import { bestRows, headline, typingWords } from './typing.ts';
 import { repoName } from './words.ts';
-
-/**
- * The first `keep` items of a list, then the rest in a disclosure that opens without
- * JavaScript, so a long panel stays short on a phone and nothing is out of reach.
- */
-export function capped(
-  tag: 'ul' | 'ol',
-  attrs: Record<string, string>,
-  items: Markup[],
-  keep: number,
-  more: (rest: number) => string
-): Markup[] {
-  const shown = el(tag, attrs, ...items.slice(0, keep));
-  if (items.length <= keep) return [shown];
-  const rest = el(
-    tag,
-    tag === 'ol' ? { ...attrs, start: String(keep + 1) } : attrs,
-    ...items.slice(keep)
-  );
-  return [
-    shown,
-    el('details', { class: 'more' }, el('summary', {}, more(items.length - keep)), rest),
-  ];
-}
 
 // The time, then the event in one element, so the two make the log's columns (base.css).
 export const shippingItem = (event: ShippingEvent) =>
