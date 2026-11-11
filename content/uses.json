@@ -61,7 +61,7 @@
         },
         {
           "name": "Codex",
-          "url": "https://openai.com/codex/",
+          "url": "https://github.com/openai/codex",
           "detail": "OpenAI's coding agent"
         },
         {
