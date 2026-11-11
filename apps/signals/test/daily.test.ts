@@ -190,12 +190,14 @@ describe('the activity pull', () => {
     expect(asked).toEqual(['400', '35', '400']);
   });
 
-  // A run cut off by the CPU limit records its attempt and nothing else. Catches a series that
-  // asks for 400 days after every such run, and so never advances if the 400 days are too many.
+  // A run cut off by the CPU limit records its attempt and nothing else; a failure keeps its
+  // code until the next success. Catches a series that asks for 400 days after every such run,
+  // and so never advances while the 400 days are too many or keep failing.
   it.each([
-    ['ended without a word', undefined, '35'],
-    ['failed with a code', 'store_failed', '400'],
-  ])('asks the next date for 35 days after a pull that %s', async (_case, code, days) => {
+    ['ended without a word', undefined],
+    ['failed with a code', 'store_failed'],
+    ['came back incomplete', 'upstream_incomplete'],
+  ])('asks the next date for 35 days after a pull that %s', async (_case, code) => {
     const asked: string[] = [];
     network.use(
       http.get(activityUrl, ({ request }) => {
@@ -212,7 +214,27 @@ describe('the activity pull', () => {
     }
 
     await pullAt(nextDate + hour);
-    expect(asked).toEqual(['400', days]);
+    expect(asked).toEqual(['400', '35']);
+  });
+
+  // Catches a series stopped by one old day that breaks a check: every pull asked for the
+  // 400 days and failed, though the last 35 would have been stored.
+  it('records the last 35 days while the 400-day answer keeps failing', async () => {
+    const asked: string[] = [];
+    const broken = later(okAnswer.generatedAt, (body) => {
+      const oldest = body.days[0];
+      if (oldest !== undefined) oldest.pushes = 1;
+    });
+    answer(broken);
+    network.use(
+      http.get(activityUrl, ({ request }) => {
+        asked.push(new URL(request.url).searchParams.get('days') ?? '');
+      })
+    );
+    for (let pull = 0; pull < 4; pull++) await pullAt(capturedAt + pull * hour);
+
+    expect(asked).toEqual(['400', '35', '400', '35']);
+    expect(await rows()).toHaveLength(15);
   });
 
   it.each([
@@ -754,6 +776,8 @@ describe('history over generated sequences', () => {
     const next = random(seed);
     let model: Model = { token: null, snapshot: null, days: new Map() };
     let clock = Date.parse('2026-10-26T12:00:00Z');
+    /** Whether the last pull stored its answer: only then is the next one a 400-day one. */
+    let lastStored = true;
 
     for (let step = 0; step < 60; step++) {
       clock += 2 * hour;
@@ -764,7 +788,9 @@ describe('history over generated sequences', () => {
       const since = sinces[Math.floor(next() * sinces.length)] ?? '2026-10-14';
       const body = generated(next, token, since);
       const asked =
-        model.snapshot?.fullOn === new Date(clock).toISOString().slice(0, 10) ? 35 : 400;
+        lastStored && model.snapshot?.fullOn !== new Date(clock).toISOString().slice(0, 10)
+          ? 400
+          : 35;
       const cut =
         roll >= 0.7 && roll < 0.75 ? 'snapshots' : roll >= 0.75 && roll < 0.8 ? 'daily' : null;
 
@@ -778,10 +804,12 @@ describe('history over generated sequences', () => {
       else await failingInserts(cut, () => pullAt(clock));
       network.resetHandlers();
 
+      lastStored = false;
       if (roll >= 0.3 && (model.token === null || token > model.token)) {
         const after = stored(model, body, body.days.slice(-asked));
         const failed = cut === 'snapshots' || (cut === 'daily' && changesRows(model, after));
         if (!failed) model = after;
+        lastStored = !failed;
       }
 
       const label = `seed ${seed} step ${step}`;
