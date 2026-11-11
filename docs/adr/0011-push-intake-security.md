@@ -29,6 +29,7 @@ Three producers push to signals over the public internet: the llm-usage-metrics 
 ### Order of checks
 
 `src/intake/handle.ts`, in this order; the first failure answers:
+
 1. Content type is `application/json` (parameters allowed), else **415**.
 2. Body read as a stream, at most 64 KiB (`maxPushBodyBytes` in contracts). Reading stops as soon as the stream passes the cap, whatever `Content-Length` says or whether there is one; a declared length over the cap is refused before reading. **413**.
 3. Authentication, else **401** `{ "error": "unauthorized" }`, the same body for every reason:

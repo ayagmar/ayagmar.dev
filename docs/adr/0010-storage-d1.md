@@ -27,6 +27,7 @@ signals keeps the latest snapshot of five sources, takes pushes from two produce
 ### Push admission is one batch
 
 `admitPush` (`src/storage/admission.ts`) sends two statements in one `db.batch`, which D1 runs as one transaction:
+
 1. Upsert the snapshot, only if the delivery id is not recorded, at least 60 s have passed since the producer's last accepted push (the hard ceiling of ADR 0011), and the stored `fetched_at` is not later than this push's `sentAt`. The upsert writes the delivery id into `last_delivery_id`.
 2. Insert the delivery row, only if the snapshot row now carries this delivery id.
 
@@ -55,6 +56,7 @@ One trigger, every minute (`* * * * *`). `runScheduled` (`src/cron/run.ts`) read
 ### Previews
 
 Configured per the current [Previews configuration](https://developers.cloudflare.com/workers/previews/configuration/) and [resources](https://developers.cloudflare.com/workers/previews/resources/) docs, checked against Wrangler 4.152's schema:
+
 - `previews.vars`, `previews.d1_databases` (the shared `min7-signals-preview` database) and `previews.ratelimits` (namespace `1002`, production uses `1001`). Previews inherit none of the production bindings.
 - The preview database's migrations use `wrangler.preview-migrations.jsonc`, which must name the same database. `scripts/workers-config.test.ts` fails if a Preview binds a production database or rate-limit namespace, or if the two files disagree.
 - Secrets cannot go in config. Previews take theirs from the Preview base config (`wrangler preview base-config secret put`), filled with random fake values by `just signals-preview-secrets`. Wrangler 4.152 rejects `previews.secrets`, so `secrets.required` applies to production deploys only.

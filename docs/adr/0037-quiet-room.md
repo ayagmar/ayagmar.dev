@@ -27,6 +27,7 @@ After the quiet windows (ADR 0034) the owner still found the site cartoony and g
 **Header and footer as words.** Search, Menu and the theme switch have no borders; the current page and the chosen theme are text over a 1 px lamp underline. The footer is one muted serif line.
 
 **Details.**
+
 - `-webkit-font-smoothing: antialiased` on the whole page.
 - `text-wrap: balance` on headings, `text-wrap: pretty` on paragraphs, list items and definitions.
 - `tabular-nums` on every time, number and data cell, so a ticking "3 minutes ago" or a column of counts does not shift.
