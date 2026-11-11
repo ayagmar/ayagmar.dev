@@ -38,6 +38,25 @@ test('finds a project by its name', async ({ page }) => {
   await expect(result).toHaveAttribute('href', '/projects/runnerd');
 });
 
+// Catches words in neighbouring inline elements running together in an excerpt, as
+// "repo-pulseA self-hosted" and "CPUAMD Ryzen" did.
+for (const [term, title, words] of [
+  ['self-hosted Cloudflare Worker', 'Now', 'repo-pulse A self-hosted'],
+  ['Ryzen', 'Uses', 'CPU AMD Ryzen'],
+]) {
+  test(`the ${title} excerpt for "${term}" keeps its words apart`, async ({ page }) => {
+    await page.goto('/about');
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    await page.keyboard.press('Control+k');
+    const dialog = page.getByRole('dialog', { name: 'Search' });
+    await dialog.getByLabel('Search the site').fill(term);
+    const result = dialog
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('link', { name: title, exact: true }) });
+    await expect(result).toContainText(words);
+  });
+}
+
 // Catches an older search painting its answer, or its failure, over a newer input: clearing
 // the field while "runner" is still loading must leave the dialog empty.
 for (const outcome of ['answers', 'fails'] as const) {
