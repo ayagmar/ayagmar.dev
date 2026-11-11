@@ -1,6 +1,6 @@
 ---
 import { getEntry } from 'astro:content';
-import { aboutLinks, formatMonth, monthSpan as span } from '../data/about.ts';
+import { aboutLinks, certificationExpiry, formatMonth, monthSpan as span } from '../data/about.ts';
 import Base from '../layouts/Base.astro';
 import { person, profilePage, website } from '../lib/structured-data.ts';
 
@@ -10,6 +10,7 @@ if (entry === undefined) throw new Error('content/about.json is missing');
 const about = entry.data;
 const { identity } = about;
 const links = aboutLinks(identity);
+const built = new Date();
 ---
 
 <Base
@@ -17,7 +18,7 @@ const links = aboutLinks(identity);
   description={about.summary}
   structuredData={[website(), person(identity), profilePage('/about')]}
 >
-  <div class="column">
+  <div class="column" data-pagefind-body data-pagefind-meta="title:About">
     <header class="panel m-tea t-about">
       <h1>{identity.name}</h1>
       <p class="lede">{about.summary}</p>
@@ -54,24 +55,41 @@ const links = aboutLinks(identity);
 
       <section aria-labelledby="certifications">
         <h2 id="certifications">Certifications</h2>
-        <ul class="timeline">
-          {about.certifications.map((cert) => (
-            <li>
-              <h3>{cert.name}</h3>
-              <p>
-                {cert.issuer}, issued <time datetime={cert.issued}>{formatMonth(cert.issued)}</time>
-                {cert.expires !== undefined && (
-                  <>
-                    , expires <time datetime={cert.expires}>{formatMonth(cert.expires)}</time>
-                  </>
-                )}
-                {cert.credentialId !== undefined && <>. Credential ID {cert.credentialId}</>}.{' '}
-                <a href={cert.verifyUrl} aria-label={`Verify ${cert.name}`}>
-                  Verify
-                </a>
-              </p>
-            </li>
-          ))}
+        <ul class="certs">
+          {about.certifications.map((cert) => {
+            const expiry =
+              cert.expires === undefined ? undefined : certificationExpiry(cert.expires, built);
+            return (
+              <li class="cert" data-state={expiry?.state}>
+                {/* A plain initial in the site's type, not the issuer's logo. */}
+                <span class="cert-mark" aria-hidden="true">
+                  {cert.issuer.slice(0, 1)}
+                </span>
+                <div>
+                  <h3>{cert.name}</h3>
+                  <p>
+                    {cert.issuer}, issued{' '}
+                    <time datetime={cert.issued}>{formatMonth(cert.issued)}</time>
+                  </p>
+                  {expiry !== undefined && (
+                    <p class="cert-expiry">
+                      {expiry.lead} <time datetime={cert.expires}>{expiry.month}</time>
+                    </p>
+                  )}
+                  {cert.credentialId !== undefined && (
+                    <p>
+                      Credential ID <span class="cert-id">{cert.credentialId}</span>
+                    </p>
+                  )}
+                  <p class="cert-verify">
+                    <a href={cert.verifyUrl} aria-label={`Verify ${cert.name}`}>
+                      Verify
+                    </a>
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -94,12 +112,12 @@ const links = aboutLinks(identity);
         </ul>
       </section>
 
-      <section aria-labelledby="skills">
-        <h2 id="skills">Skills</h2>
-        <p>{about.skills.join(', ')}</p>
+      <section aria-labelledby="stack">
+        <h2 id="stack">Stack</h2>
+        <p>{about.stack.join(', ')}</p>
       </section>
 
-      <section aria-labelledby="elsewhere">
+      <section aria-labelledby="elsewhere" data-pagefind-ignore>
         <h2 id="elsewhere">Elsewhere</h2>
         <ul class="inline-list">
           {links.map((link) => (
