@@ -28,7 +28,10 @@ import '../styles/room.css';
 const posts = (await getPosts()).slice(0, 4);
 // Until the first post, the Writing window shows the latest TIL notes instead of an empty box.
 const notes = posts.length === 0 ? (await getNotes()).slice(0, 3) : [];
-const projects = (await getProjects()).projects.slice(0, 5);
+const writing = posts.length > 0 || notes.length > 0;
+// Without Writing above them, Projects stands beside Listening and Shipping alone: two more rows
+// keep its column about as long as theirs.
+const projects = (await getProjects()).projects.slice(0, writing ? 5 : 7);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 const about = await getEntry('about', 'about');
@@ -167,7 +170,7 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
 
   <div class="home-panels">
     {/* A section appears once it has something in it; the room still leads to its page. */}
-    {(posts.length > 0 || notes.length > 0) && (
+    {writing && (
       <section class="paper" aria-labelledby="writing">
         <div class="panel-head">
           <h2 id="writing">Writing</h2>
