@@ -9,8 +9,11 @@
 import { publicDir, srcDir } from 'astro:config/server';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import sharp from 'sharp';
+import { dayMs, utcDate } from '@min7/contracts/rabat';
+import sharp, { type OverlayOptions } from 'sharp';
 import { ogSize } from './og.ts';
+import { site } from './site.ts';
+import type { YearPage } from './years.ts';
 
 // The night tokens of src/styles/base.css: --ground, --text, --muted.
 const ground = '#0e0c13';
@@ -29,20 +32,21 @@ const serif = file(srcDir, 'fonts/ttf/serif-roman.ttf');
 const markup = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
-/** The text block at one title size, wrapped at words and, inside a word too long for a line, at characters. */
-async function renderText(title: string, line: string, size: number) {
-  const { data, info } = await sharp({
-    text: {
-      text: `<span font="min7 Serif Semi-Bold ${size}" foreground="${text}">${markup(title)}</span>\n<span font="min7 Serif 14"> </span>\n<span font="min7 Serif 28" foreground="${muted}">${markup(line)}</span>`,
-      fontfile: serif,
-      width: textBox.width,
-      dpi: 72,
-      rgba: true,
-      wrap: 'word-char',
-    },
+/** Pango markup in the site's serif as a transparent PNG, wrapped to `width`, cropped to its ink. */
+const pango = (marked: string, width: number) =>
+  sharp({
+    text: { text: marked, fontfile: serif, width, dpi: 72, rgba: true, wrap: 'word-char' },
   })
     .png()
     .toBuffer({ resolveWithObject: true });
+
+/** A title, a gap and a muted line, as one Pango layout (see `textBlock`). */
+const titled = (title: string, size: number, line: string, lineSize: number) =>
+  `<span font="min7 Serif Semi-Bold ${size}" foreground="${text}">${markup(title)}</span>\n<span font="min7 Serif 14"> </span>\n<span font="min7 Serif ${lineSize}" foreground="${muted}">${markup(line)}</span>`;
+
+/** The text block at one title size, wrapped at words and, inside a word too long for a line, at characters. */
+async function renderText(title: string, line: string, size: number) {
+  const { data, info } = await pango(titled(title, size, line, 28), textBox.width);
   return { data, fits: info.width <= textBox.width && info.height <= textBox.height };
 }
 
@@ -121,3 +125,98 @@ export function renderIcon(size: number, background?: string): Promise<Buffer> {
 }
 
 export const iconGround = ground;
+
+// The night heat ramp of src/styles/base.css in sRGB: --rule for a recorded zero, then --heat-1
+// to --heat-4 (oklch there).
+const heat = ['#26222e', '#805a38', '#966e46', '#ac8455', '#c19a64'];
+// A year is at most 54 Monday-first weeks (a leap year that starts on a Sunday): 54 columns of
+// 17 px fit the 960 px between the margins.
+const calendar = { labels: 226, top: 256, pitch: 17, cell: 14 } as const;
+const figures = { top: 430, gap: 30, bottom: 590 } as const;
+const shortMonth = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'short' });
+
+/**
+ * A year page's card: the year and a muted line, the shipping calendar as one row of weeks with
+ * the months above, and up to three figures under it. Only days with a record are drawn, so the
+ * image depends on the history alone and not on the day it was built: a fixtures build draws the
+ * same card every day of the year. A series with nothing to draw is a line instead of the
+ * calendar, as on the page.
+ */
+export async function renderYearCard(page: YearPage): Promise<Buffer> {
+  const { year, shipping } = page;
+  const first = utcDate(`${year}-01-01`);
+  const weekday = (date: string) => (new Date(utcDate(date)).getUTCDay() + 6) % 7;
+  const offset = weekday(`${year}-01-01`);
+  const week = (date: string) => Math.floor(((utcDate(date) - first) / dayMs + offset) / 7);
+  const column = (date: string) => picture.left + week(date) * calendar.pitch;
+  const line = `${site.name} · ${page.current ? 'The year so far' : 'The year'}`;
+  const layers: OverlayOptions[] = [
+    {
+      input: (await pango(titled(year, 72, line, 28), textBox.width)).data,
+      left: picture.left,
+      top: picture.top,
+    },
+  ];
+  if (shipping.empty !== null) {
+    layers.push({
+      input: (
+        await pango(
+          `<span font="min7 Serif 28" foreground="${muted}">${markup(shipping.empty)}</span>`,
+          textBox.width
+        )
+      ).data,
+      left: picture.left,
+      top: calendar.top,
+    });
+  } else {
+    const squares = shipping.months
+      .flatMap((month) => month.cells ?? [])
+      .filter((cell) => cell.level !== null)
+      .map((cell) => {
+        const x = column(cell.date) - picture.left;
+        const y = weekday(cell.date) * calendar.pitch;
+        return `<rect x="${x}" y="${y}" width="${calendar.cell}" height="${calendar.cell}" rx="2" fill="${heat[cell.level ?? 0]}"/>`;
+      });
+    layers.push({
+      input: Buffer.from(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${picture.width}" height="${7 * calendar.pitch}">${squares.join('')}</svg>`
+      ),
+      left: picture.left,
+      top: calendar.top,
+    });
+    // Every month up to the last with a record or an unread one, so the blank months before them
+    // keep their place and the labels, like the squares, do not grow with the build date.
+    const known = shipping.months.filter(
+      ({ cells }) => cells === null || cells.some((cell) => cell.level !== null)
+    );
+    const last = Number(known.at(-1)?.month.slice(5) ?? 12);
+    for (let month = 1; month <= last; month++) {
+      const date = `${year}-${String(month).padStart(2, '0')}-01`;
+      // sharp crops text to its ink: a transparent `Ég` gives every label the same top and bottom.
+      const label = await pango(
+        `<span font="min7 Serif 20" foreground="${muted}">${shortMonth.format(utcDate(date))}<span alpha="1">Ég</span></span>`,
+        80
+      );
+      layers.push({ input: label.data, left: column(date), top: calendar.labels });
+    }
+  }
+  const width = (textBox.width - (page.figures.length - 1) * figures.gap) / page.figures.length;
+  for (const [index, figure] of page.figures.entries()) {
+    const block = await pango(
+      `<span font="min7 Serif Semi-Bold 56" foreground="${text}">${markup(figure.value)}</span>\n<span font="min7 Serif 22" foreground="${muted}">${markup(figure.label)}</span>`,
+      Math.floor(width)
+    );
+    if (figures.top + block.info.height > figures.bottom) {
+      throw new Error(`og-card: "${figure.label}" does not fit the year card`);
+    }
+    layers.push({
+      input: block.data,
+      left: picture.left + Math.round(index * (width + figures.gap)),
+      top: figures.top,
+    });
+  }
+  return sharp({ create: { ...ogSize, channels: 3, background: ground } })
+    .composite(layers)
+    .png({ palette: true, compressionLevel: 9, effort: 10 })
+    .toBuffer();
+}

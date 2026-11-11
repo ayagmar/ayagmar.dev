@@ -41,6 +41,15 @@ export interface Fact {
   value: { text: string; path: string | null }[];
 }
 
+/**
+ * A number the year's link-preview image shows (src/lib/og-card.ts): `214` over its label,
+ * `PRs merged on record so far`. Counted with the page's facts, from the same sums.
+ */
+interface Figure {
+  value: string;
+  label: string;
+}
+
 /** A month of the calendar; `cells` is null when the month failed to load. */
 interface CalendarMonth {
   month: string;
@@ -59,6 +68,8 @@ type ShippingYear =
       months: CalendarMonth[];
       strip: ShippingStrip;
       facts: Fact[];
+      /** Empty when a month is unknown, like the facts. */
+      figures: Figure[];
       /** Said when facts are left out, or when they count repositories they do not name. */
       notes: string[];
     };
@@ -77,6 +88,7 @@ type UsageYear =
       /** The year's row; null when a month is unknown. */
       total: (UsageRow & { state: 'recorded' }) | null;
       facts: Fact[];
+      figures: Figure[];
       notes: string[];
     };
 
@@ -97,6 +109,8 @@ export interface YearPage {
   shipping: ShippingYear;
   usage: UsageYear;
   published: Published[];
+  /** Up to three numbers for the link-preview image: shipping's first, then usage, then writing. */
+  figures: Figure[];
   /** The neighbouring years that have a page. */
   previous: YearLink | null;
   next: YearLink | null;
@@ -137,7 +151,7 @@ function shownMonths(
   return first === '' ? [] : months.filter((month) => month >= first);
 }
 
-const list = (names: string[]) =>
+export const list = (names: string[]) =>
   names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
 /** The dates of `year` that have happened on `today`. */
@@ -197,15 +211,8 @@ function longestRun(active: ReadonlySet<string>, year: string): string | null {
     .join(', ');
 }
 
-/** What the shipping half lists, from a year with no unknown month and a recorded day. */
-function shippingFacts(
-  days: readonly ShippingActivityDay[],
-  all: readonly ShippingActivityDay[],
-  year: string,
-  end: string,
-  partial: boolean,
-  pages: ReadonlySet<string>
-): Fact[] {
+/** What a year's shipping adds up to: its counts and the days with something shipped. */
+function shippingTotals(days: readonly ShippingActivityDay[]) {
   const zero: Counts = { pushes: 0, commits: 0, merges: 0, releases: 0, stars: 0 };
   const total = days.reduce(
     (sum, day): Counts => ({
@@ -217,6 +224,25 @@ function shippingFacts(
     }),
     zero
   );
+  return { total, active: days.filter((day) => shippedCount(day) > 0).length };
+}
+
+/** A count and what it counts, the label in the singular for one. */
+const figure = (value: number, one: string, many: string, end: string): Figure => ({
+  value: count(value),
+  label: `${value === 1 ? one : many}${end}`,
+});
+
+/** What the shipping half lists, from a year with no unknown month and a recorded day. */
+function shippingFacts(
+  days: readonly ShippingActivityDay[],
+  all: readonly ShippingActivityDay[],
+  { total, active }: ReturnType<typeof shippingTotals>,
+  year: string,
+  end: string,
+  partial: boolean,
+  pages: ReadonlySet<string>
+): Fact[] {
   const busiest = largest(days, shippedCount);
   if (busiest === null) {
     const nothing = partial ? 'Nothing shipped on recorded days.' : 'Nothing shipped.';
@@ -232,7 +258,6 @@ function shippingFacts(
       repos.set(entry.repo, (repos.get(entry.repo) ?? 0) + shippedCount(entry));
     }
   }
-  const active = days.filter((day) => shippedCount(day) > 0).length;
   const [month, monthCount] = largest([...months], ([, value]) => value) ?? ['', 0];
   const run = longestRun(
     new Set(all.filter((day) => shippedCount(day) > 0).map((day) => day.date)),
@@ -316,19 +341,27 @@ function shippingYear(
   const partial = days.length < expected;
   const end = labelEnd(year, today, partial);
   if (failed.length > 0) {
-    return { empty: null, months, strip, facts: [], notes: [unknownNote(failed)] };
+    return { empty: null, months, strip, facts: [], figures: [], notes: [unknownNote(failed)] };
   }
+  const totals = shippingTotals(days);
   return {
     empty: null,
     months,
     strip,
-    facts: shippingFacts(days, history.days, year, end, partial, pages),
+    facts: shippingFacts(days, history.days, totals, year, end, partial, pages),
+    figures: [
+      figure(totals.total.merges, 'PR merged', 'PRs merged', end),
+      figure(totals.active, 'day with something shipped', 'days with something shipped', end),
+    ],
     notes: [
       ...(partial ? [coverageNote(days.length, expected)] : []),
       ...(days.some((day) => !day.reposComplete) ? [unnamedRepos] : []),
     ],
   };
 }
+
+const tokenSum = (days: readonly LlmUsageDay[]) =>
+  days.reduce((sum, day) => sum + day.totalTokens, 0);
 
 /**
  * The numbers of one month of usage, or of the year, whose `expected` dates have happened. With a
@@ -344,7 +377,7 @@ function usageRow(name: string, days: readonly LlmUsageDay[], expected: number) 
   return {
     name,
     state: 'recorded' as const,
-    tokens: `${floor}${tokens(days.reduce((sum, day) => sum + day.totalTokens, 0))}`,
+    tokens: `${floor}${tokens(tokenSum(days))}`,
     time: timed.length === 0 ? null : `${timeFloor}${hours(ms)}`,
     days: `${floor}${count(used.length)}`,
   };
@@ -395,6 +428,8 @@ function usageYear(
               ],
             },
           ],
+    figures:
+      failed.length > 0 ? [] : [{ value: tokens(tokenSum(days)), label: `agent tokens${end}` }],
     notes:
       failed.length > 0
         ? [unknownNote(failed)]
@@ -402,6 +437,19 @@ function usageYear(
           ? [coverageNote(days.length, expected)]
           : [],
   };
+}
+
+/** `3` over `posts and notes published so far`, naming only the kinds the year has. */
+function publishedFigure(entries: readonly Published[], current: boolean): Figure {
+  const posts = entries.filter((entry) => entry.kind === 'Post').length;
+  const kinds =
+    posts === 0
+      ? ['note', 'notes']
+      : posts === entries.length
+        ? ['post', 'posts']
+        : ['post or note', 'posts and notes'];
+  const [one = '', many = ''] = kinds;
+  return figure(entries.length, `${one} published`, `${many} published`, current ? ' so far' : '');
 }
 
 /**
@@ -457,6 +505,11 @@ export function yearPages(
       shipping,
       usage,
       published: entries,
+      figures: [
+        ...(shipping.empty === null ? shipping.figures : []),
+        ...(usage.empty === null ? usage.figures : []),
+        ...(entries.length === 0 ? [] : [publishedFigure(entries, current)]),
+      ].slice(0, 3),
       previous: link(years[index - 1]),
       next: link(years[index + 1]),
     };

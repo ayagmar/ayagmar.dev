@@ -142,7 +142,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 ## Site build
 
 `just site-build` runs these steps:
-1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the text and Markdown copies, `llms.txt`, the feeds, the sitemap, the icons and a link-preview PNG for each post and note plus one for every other page.
+1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the text and Markdown copies, `llms.txt`, the feeds, the sitemap, the icons and a link-preview PNG for each post, note and year page plus one for every other page.
 2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` (post and note bodies) into `dist/pagefind/`.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
