@@ -26,27 +26,48 @@ export const featuredProjectSchema = z.object({
   repo: repoFullNameSchema,
   /** The npm package published from the repository, if any. */
   npmPackage: npmPackageNameSchema.optional(),
+  /**
+   * `false`: signals asks GitHub and npm nothing about it. For a project with no release or
+   * package to count, so the pull stays within Workers Free's 50 subrequests (ADR 0009).
+   */
+  pull: z.literal(false).optional(),
 });
 
 /**
- * The featured projects, in display order: what signals fetches from GitHub and npm and what
- * the site links posts to. Identifiers only; descriptions come from GitHub. A slug stays the
- * same when the repository is renamed.
+ * The featured projects, strongest first: what the site lists and links posts to, and, unless
+ * `pull: false`, what signals fetches from GitHub and npm. Identifiers only; descriptions are
+ * in content/projects. A slug stays the same when the repository is renamed.
  */
 export const featuredProjects = [
   { slug: 'llm-usage-metrics', repo: 'ayagmar/llm-usage-metrics', npmPackage: 'llm-usage-metrics' },
-  { slug: 'ccdesk', repo: 'ayagmar/ccdesk', npmPackage: 'ccdesk' },
   { slug: 'pi-mobile', repo: 'ayagmar/pi-mobile' },
   { slug: 'pi-extmgr', repo: 'ayagmar/pi-extmgr', npmPackage: 'pi-extmgr' },
-  { slug: 'runnerd', repo: 'ayagmar/runnerd' },
-  { slug: 'kipple', repo: 'ayagmar/kipple' },
+  { slug: 'ccdesk', repo: 'ayagmar/ccdesk', npmPackage: 'ccdesk' },
   { slug: 'niri-computer-use', repo: 'ayagmar/niri-computer-use' },
-  { slug: 'headroom', repo: 'ayagmar/headroom' },
+  { slug: 'runnerd', repo: 'ayagmar/runnerd' },
+  {
+    slug: 'pi-codex-web-search',
+    repo: 'ayagmar/pi-codex-web-search',
+    npmPackage: 'pi-codex-web-search',
+  },
+  { slug: 'pi-promptsmith', repo: 'ayagmar/pi-promptsmith', npmPackage: 'pi-promptsmith' },
+  { slug: 'claude-modmgr', repo: 'ayagmar/claude-modmgr' },
+  { slug: 'repo-pulse', repo: 'ayagmar/repo-pulse' },
+  { slug: 'agents-skills', repo: 'ayagmar/agents-skills', pull: false },
+  { slug: 'kipple', repo: 'ayagmar/kipple', pull: false },
+  { slug: 'dotfiles', repo: 'ayagmar/dotfiles', pull: false },
+  { slug: 'headroom', repo: 'ayagmar/headroom', pull: false },
 ] as const satisfies readonly FeaturedProject[];
 
 export type FeaturedProject = z.infer<typeof featuredProjectSchema>;
 
 export type ProjectSlug = (typeof featuredProjects)[number]['slug'];
+
+/** The featured projects signals fetches from GitHub and npm, in the same order. */
+export const pulledProjects = featuredProjects.filter(
+  (project): project is Exclude<(typeof featuredProjects)[number], { pull: false }> =>
+    !('pull' in project)
+);
 
 const slugs: ReadonlySet<string> = new Set(featuredProjects.map((project) => project.slug));
 

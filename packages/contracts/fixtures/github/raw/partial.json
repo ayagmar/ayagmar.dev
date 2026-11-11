@@ -212,50 +212,6 @@
     "repo": null,
     "release": null
   },
-  "ayagmar/kipple": {
-    "repo": {
-      "status": 200,
-      "body": {
-        "id": 1006,
-        "node_id": "R_kgDOfixture",
-        "name": "kipple",
-        "full_name": "ayagmar/kipple",
-        "private": false,
-        "owner": {
-          "login": "ayagmar",
-          "id": 1,
-          "type": "User",
-          "site_admin": false
-        },
-        "html_url": "https://github.com/ayagmar/kipple",
-        "description": null,
-        "fork": false,
-        "homepage": null,
-        "size": 1234,
-        "stargazers_count": 1,
-        "watchers_count": 1,
-        "language": null,
-        "forks_count": 0,
-        "archived": false,
-        "disabled": false,
-        "open_issues_count": 2,
-        "topics": [],
-        "visibility": "public",
-        "default_branch": "main",
-        "subscribers_count": 1,
-        "created_at": "2026-01-01T00:00:00Z",
-        "pushed_at": "2026-10-25T00:00:00Z"
-      }
-    },
-    "release": {
-      "status": 404,
-      "body": {
-        "message": "Not Found",
-        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
-        "status": "404"
-      }
-    }
-  },
   "ayagmar/niri-computer-use": {
     "repo": {
       "status": 200,
@@ -296,7 +252,161 @@
       "body": null
     }
   },
-  "ayagmar/headroom": {
+  "ayagmar/pi-codex-web-search": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1021,
+        "node_id": "R_kgDOfixture",
+        "name": "pi-codex-web-search",
+        "full_name": "ayagmar/pi-codex-web-search",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/pi-codex-web-search",
+        "description": null,
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 27,
+        "watchers_count": 27,
+        "language": "TypeScript",
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "id": 1,
+        "tag_name": "v0.2.0",
+        "name": "v0.2.0",
+        "draft": false,
+        "prerelease": false,
+        "html_url": "https://github.com/ayagmar/pi-codex-web-search/releases/tag/v0.2.0",
+        "published_at": "2026-10-04T10:12:40Z",
+        "created_at": "2026-10-04T10:12:40Z",
+        "author": {
+          "login": "ayagmar",
+          "id": 1
+        },
+        "body": "",
+        "assets": []
+      }
+    }
+  },
+  "ayagmar/pi-promptsmith": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1022,
+        "node_id": "R_kgDOfixture",
+        "name": "pi-promptsmith",
+        "full_name": "ayagmar/pi-promptsmith",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/pi-promptsmith",
+        "description": null,
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 22,
+        "watchers_count": 22,
+        "language": "TypeScript",
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "id": 1,
+        "tag_name": "v0.4.0",
+        "name": "v0.4.0",
+        "draft": false,
+        "prerelease": false,
+        "html_url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.4.0",
+        "published_at": "2026-05-12T18:03:11Z",
+        "created_at": "2026-05-12T18:03:11Z",
+        "author": {
+          "login": "ayagmar",
+          "id": 1
+        },
+        "body": "",
+        "assets": []
+      }
+    }
+  },
+  "ayagmar/claude-modmgr": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "id": 1023,
+        "node_id": "R_kgDOfixture",
+        "name": "claude-modmgr",
+        "full_name": "ayagmar/claude-modmgr",
+        "private": false,
+        "owner": {
+          "login": "ayagmar",
+          "id": 1,
+          "type": "User",
+          "site_admin": false
+        },
+        "html_url": "https://github.com/ayagmar/claude-modmgr",
+        "description": null,
+        "fork": false,
+        "homepage": null,
+        "size": 1234,
+        "stargazers_count": 3,
+        "watchers_count": 3,
+        "language": null,
+        "forks_count": 0,
+        "archived": false,
+        "disabled": false,
+        "open_issues_count": 2,
+        "topics": [],
+        "visibility": "public",
+        "default_branch": "main",
+        "subscribers_count": 1,
+        "created_at": "2026-01-01T00:00:00Z",
+        "pushed_at": "2026-10-25T00:00:00Z"
+      }
+    },
+    "release": {
+      "status": 404,
+      "body": {
+        "message": "Not Found",
+        "documentation_url": "https://docs.github.com/rest/releases/releases#get-the-latest-release",
+        "status": "404"
+      }
+    }
+  },
+  "ayagmar/repo-pulse": {
     "repo": {
       "status": 404,
       "body": {

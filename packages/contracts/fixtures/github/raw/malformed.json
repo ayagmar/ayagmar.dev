@@ -74,21 +74,6 @@
       }
     }
   },
-  "ayagmar/kipple": {
-    "repo": {
-      "status": 200,
-      "body": {
-        "message": "API rate limit exceeded",
-        "stargazers_count": "many"
-      }
-    },
-    "release": {
-      "status": 200,
-      "body": {
-        "tag_name": 7
-      }
-    }
-  },
   "ayagmar/niri-computer-use": {
     "repo": {
       "status": 200,
@@ -104,7 +89,52 @@
       }
     }
   },
-  "ayagmar/headroom": {
+  "ayagmar/pi-codex-web-search": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/pi-promptsmith": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/claude-modmgr": {
+    "repo": {
+      "status": 200,
+      "body": {
+        "message": "API rate limit exceeded",
+        "stargazers_count": "many"
+      }
+    },
+    "release": {
+      "status": 200,
+      "body": {
+        "tag_name": 7
+      }
+    }
+  },
+  "ayagmar/repo-pulse": {
     "repo": {
       "status": 200,
       "body": {

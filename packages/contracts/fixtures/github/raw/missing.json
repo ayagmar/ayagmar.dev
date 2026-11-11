@@ -74,21 +74,6 @@
       }
     }
   },
-  "ayagmar/kipple": {
-    "repo": {
-      "status": 403,
-      "body": {
-        "message": "API rate limit exceeded for 203.0.113.7.",
-        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
-      }
-    },
-    "release": {
-      "status": 403,
-      "body": {
-        "message": "API rate limit exceeded for 203.0.113.7."
-      }
-    }
-  },
   "ayagmar/niri-computer-use": {
     "repo": {
       "status": 403,
@@ -104,7 +89,52 @@
       }
     }
   },
-  "ayagmar/headroom": {
+  "ayagmar/pi-codex-web-search": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/pi-promptsmith": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/claude-modmgr": {
+    "repo": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7.",
+        "documentation_url": "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
+      }
+    },
+    "release": {
+      "status": 403,
+      "body": {
+        "message": "API rate limit exceeded for 203.0.113.7."
+      }
+    }
+  },
+  "ayagmar/repo-pulse": {
     "repo": {
       "status": 403,
       "body": {

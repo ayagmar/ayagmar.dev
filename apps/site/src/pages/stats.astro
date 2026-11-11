@@ -1,5 +1,5 @@
 ---
-import { featuredProjects } from '@min7/contracts';
+import { pulledProjects } from '@min7/contracts';
 import Freshness from '../components/Freshness.astro';
 import Markup from '../components/Markup.astro';
 import NowPlaying from '../components/NowPlaying.astro';
@@ -35,7 +35,7 @@ const llmUsage = await signals.read('llm-usage');
 const music = listening.data;
 // The projects window counts these repositories' stars; shipping's star list leaves them out,
 // in the build and in the live script, which reads them from data-featured.
-const featured = featuredProjects.map((project) => project.repo);
+const featured = pulledProjects.map((project) => project.repo);
 ---
 
 <Base

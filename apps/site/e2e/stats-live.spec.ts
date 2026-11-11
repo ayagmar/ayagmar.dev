@@ -167,7 +167,7 @@ test('a newer answer replaces what the build showed', async ({ page }) => {
     panel(page, 'shipping').getByRole('heading', { name: 'Stars on other repositories' })
   ).toHaveCount(0);
   await expect(panel(page, 'projects').locator('.projects-body')).toHaveText(
-    /7 featured projects, at least 233 stars; GitHub did not answer for 1\. All projects\.$/
+    /9 projects, at least 284 stars; GitHub did not answer for 1\. All projects\.$/
   );
   // No 60-second best: no headline borrowed from another length. Each day reads back from now.
   const typing = panel(page, 'monkeytype').locator('.typing-body');

@@ -55,7 +55,10 @@ export default defineConfig({
   fixture.write('content/til/shown-note.md', entry('Shown note', false));
   fixture.write('content/til/hidden-note.md', entry('Hidden note', true));
   fixture.write('content/now.md', "---\nupdated: '2026-10-01'\n---\n\nNow.\n");
-  fixture.write('content/projects/runnerd.md', '---\nslug: runnerd\nstatus: active\n---\n');
+  fixture.write(
+    'content/projects/runnerd.md',
+    '---\nslug: runnerd\nstatus: active\ngroup: self-hosted\n---\n'
+  );
 });
 afterEach(() => {
   fixture.remove();

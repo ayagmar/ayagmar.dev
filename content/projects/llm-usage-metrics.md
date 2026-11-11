@@ -3,6 +3,7 @@
 slug: llm-usage-metrics
 tagline: 'Token and cost reports for AI coding agents, read from their local session logs.'
 status: active
+group: agents
 ---
 
 `llm-usage-metrics` is a command-line tool that reads the session logs AI coding tools leave on disk: Claude Code, Codex, Gemini CLI, OpenCode, Copilot, pi and others, 17 in all, on this machine and on others it reaches over ssh. It turns them into one usage history and reports tokens and estimated cost by day, hour, project or session.

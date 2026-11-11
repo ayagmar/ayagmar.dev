@@ -19,5 +19,19 @@
       "downloads": -3,
       "package": "pi-extmgr"
     }
+  },
+  "pi-codex-web-search": {
+    "status": 200,
+    "body": {
+      "downloads": -3,
+      "package": "pi-codex-web-search"
+    }
+  },
+  "pi-promptsmith": {
+    "status": 200,
+    "body": {
+      "downloads": -3,
+      "package": "pi-promptsmith"
+    }
   }
 }
