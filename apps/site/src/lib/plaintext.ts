@@ -18,7 +18,7 @@ import {
   projectsByGroup,
   type SiteProject,
 } from './projects.ts';
-import { curlTarget, identityLines, nav, nowPage, site, siteUrl, textRule } from './site.ts';
+import { curlTarget, identityLine, nav, nowPage, site, siteUrl, textRule } from './site.ts';
 import { type Note, notePath } from './til.ts';
 import { isoDay, nothingPublished, type Post, postPath, postsByTag } from './writing.ts';
 
@@ -62,9 +62,11 @@ const asciiRoom = String.raw`
 
 /**
  * The page `curl ayagmar.dev` prints: who, recent writing and notes, projects, where to go next.
- * `origin` is where this build is served, so a Preview's room command reaches its own room.
+ * `summary` is the pitch the home page shows under the name, from content/about.json. `origin` is
+ * where this build is served, so a Preview's room command reaches its own room.
  */
 export function renderPlainText(
+  summary: string,
   posts: readonly Post[],
   notes: readonly Note[],
   projects: readonly ProjectSlug[],
@@ -84,7 +86,8 @@ export function renderPlainText(
   return [
     asciiRoom,
     '',
-    ...identityLines,
+    identityLine,
+    summary,
     // As on the home page, a section appears once it has something in it.
     ...(writing.length === 0 ? [] : [textRule, 'Writing', ...writing]),
     ...(til.length === 0 ? [] : [textRule, 'TIL', ...til]),
@@ -95,6 +98,7 @@ export function renderPlainText(
     ...[...nav, nowPage].map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
     `  ${'RSS'.padEnd(10)} ${siteUrl}${feedPaths().rss}`,
     `  ${'Atom'.padEnd(10)} ${siteUrl}${feedPaths().atom}`,
+    `  ${'Email'.padEnd(10)} ${site.email}`,
     `  ${'GitHub'.padEnd(10)} ${site.links.github}`,
     `  ${'In colour'.padEnd(10)} curl ${curlTarget(origin)}/room`,
     '',

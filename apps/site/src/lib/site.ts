@@ -32,8 +32,11 @@ export const textRule = '-'.repeat(72);
 /** What a build from the shared fixtures says about its numbers (ADR 0015). */
 export const sampleNote = 'Sample data, not live';
 
-/** Who this is, the first lines of the plain-text home page and the terminal room. */
-export const identityLines = [`${site.name} | ${site.author}`, `${site.role} in ${site.location}`];
+/** Who this is: the first line of the plain-text home page and the terminal room. */
+export const identityLine = `${site.name} | ${site.author}`;
+
+/** The terminal room's short intro; the plain-text home page has the pitch from /about instead. */
+export const identityLines = [identityLine, `${site.role} in ${site.location}`];
 
 /**
  * Comments under posts and notes are GitHub Discussions in `repo`, category `category`, shown by

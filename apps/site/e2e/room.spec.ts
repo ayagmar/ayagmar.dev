@@ -208,6 +208,46 @@ test('hovering or focusing a row of the list lights its object in the room', asy
   }
 });
 
+// Catches an object that lights no row, or the wrong one: the reverse rule in room.css also names
+// each object.
+test('hovering or focusing an object lights its row in the list', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await page.goto('/');
+  const lamp = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--lamp)';
+    document.body.append(probe);
+    return getComputedStyle(probe).color;
+  });
+  const lit = () =>
+    page
+      .locator('[data-room-list]')
+      .evaluateAll(
+        (rows, colour) =>
+          rows
+            .filter(
+              (row) =>
+                getComputedStyle(row.querySelector('.room-section') as Element).color === colour
+            )
+            .map((row) => row.getAttribute('data-room-list')),
+        lamp
+      );
+  // Polled: a hover's colour change is a 120 ms transition (ADR 0037).
+  for (const spot of await page.locator('.hotspot').all()) {
+    const id = await spot.getAttribute('data-room');
+    await spot.hover();
+    await expect.poll(lit).toEqual([id]);
+    await page.mouse.move(0, 0);
+    await expect.poll(lit).toEqual([]);
+    await spot.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect.poll(lit).toEqual([id]);
+    await spot.blur();
+  }
+});
+
 // Catches the entrance replaying on a reload or a return to home, playing on arrival from another
 // page, moving anything for readers who asked for less motion, or hiding the name without scripts.
 test.describe('the entrance', () => {
