@@ -43,11 +43,13 @@ export interface Fact {
 
 /**
  * A number the year's link-preview image shows (src/lib/og-card.ts): `214` over its label,
- * `PRs merged on record so far`. Counted with the page's facts, from the same sums.
+ * `PRs merged`. Counted with the page's facts, from the same sums; `partial` when its series has
+ * dates without a record, which the card says once for all its figures (`figureScope`).
  */
 interface Figure {
   value: string;
   label: string;
+  partial: boolean;
 }
 
 /** A month of the calendar; `cells` is null when the month failed to load. */
@@ -111,6 +113,8 @@ export interface YearPage {
   published: Published[];
   /** Up to three numbers for the link-preview image: shipping's first, then usage, then writing. */
   figures: Figure[];
+  /** What the figures cover beyond the year: `so far, on record`, `so far`, `on record` or empty. */
+  figureScope: string;
   /** The neighbouring years that have a page. */
   previous: YearLink | null;
   next: YearLink | null;
@@ -228,9 +232,10 @@ function shippingTotals(days: readonly ShippingActivityDay[]) {
 }
 
 /** A count and what it counts, the label in the singular for one. */
-const figure = (value: number, one: string, many: string, end: string): Figure => ({
+const figure = (value: number, one: string, many: string, partial: boolean): Figure => ({
   value: count(value),
-  label: `${value === 1 ? one : many}${end}`,
+  label: value === 1 ? one : many,
+  partial,
 });
 
 /** What the shipping half lists, from a year with no unknown month and a recorded day. */
@@ -350,8 +355,8 @@ function shippingYear(
     strip,
     facts: shippingFacts(days, history.days, totals, year, end, partial, pages),
     figures: [
-      figure(totals.total.merges, 'PR merged', 'PRs merged', end),
-      figure(totals.active, 'day with something shipped', 'days with something shipped', end),
+      figure(totals.total.merges, 'PR merged', 'PRs merged', partial),
+      figure(totals.active, 'day shipped', 'days shipped', partial),
     ],
     notes: [
       ...(partial ? [coverageNote(days.length, expected)] : []),
@@ -429,7 +434,7 @@ function usageYear(
             },
           ],
     figures:
-      failed.length > 0 ? [] : [{ value: tokens(tokenSum(days)), label: `agent tokens${end}` }],
+      failed.length > 0 ? [] : [{ value: tokens(tokenSum(days)), label: 'agent tokens', partial }],
     notes:
       failed.length > 0
         ? [unknownNote(failed)]
@@ -439,8 +444,8 @@ function usageYear(
   };
 }
 
-/** `3` over `posts and notes published so far`, naming only the kinds the year has. */
-function publishedFigure(entries: readonly Published[], current: boolean): Figure {
+/** `3` over `posts and notes published`, naming only the kinds the year has. */
+function publishedFigure(entries: readonly Published[]): Figure {
   const posts = entries.filter((entry) => entry.kind === 'Post').length;
   const kinds =
     posts === 0
@@ -449,7 +454,7 @@ function publishedFigure(entries: readonly Published[], current: boolean): Figur
         ? ['post', 'posts']
         : ['post or note', 'posts and notes'];
   const [one = '', many = ''] = kinds;
-  return figure(entries.length, `${one} published`, `${many} published`, current ? ' so far' : '');
+  return figure(entries.length, `${one} published`, `${many} published`, false);
 }
 
 /**
@@ -496,6 +501,11 @@ export function yearPages(
       .toSorted((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title));
     const shipping = shippingYear(shippingHistory, year, shippingToday, pages);
     const usage = usageYear(usageHistory, year, usageToday, pages);
+    const figures = [
+      ...(shipping.empty === null ? shipping.figures : []),
+      ...(usage.empty === null ? usage.figures : []),
+      ...(entries.length === 0 ? [] : [publishedFigure(entries)]),
+    ].slice(0, 3);
     return {
       year,
       path: yearPath(year),
@@ -505,11 +515,10 @@ export function yearPages(
       shipping,
       usage,
       published: entries,
-      figures: [
-        ...(shipping.empty === null ? shipping.figures : []),
-        ...(usage.empty === null ? usage.figures : []),
-        ...(entries.length === 0 ? [] : [publishedFigure(entries, current)]),
-      ].slice(0, 3),
+      figures,
+      figureScope: [current && 'so far', figures.some((entry) => entry.partial) && 'on record']
+        .filter(Boolean)
+        .join(', '),
       previous: link(years[index - 1]),
       next: link(years[index + 1]),
     };

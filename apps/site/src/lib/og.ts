@@ -51,7 +51,8 @@ export const noteOgImage = (slug: string, title: string): OgImage => ({
 
 /**
  * A year page's image (src/lib/years.ts): the year, its shipping calendar and its figures. The
- * text says what the card draws: the calendar's range, the months it leaves blank, the figures.
+ * text says what the card draws: the calendar's range, the months it marks unread, the figures
+ * and, once for all of them, what they cover.
  */
 export function yearOgImage(page: YearPage): OgImage {
   const { shipping, year } = page;
@@ -59,13 +60,14 @@ export function yearOgImage(page: YearPage): OgImage {
   if (shipping.empty === null) {
     const { from, to } = shipping.strip;
     const unread = shipping.months.filter((month) => month.cells === null).map(({ name }) => name);
-    const blank = unread.length === 0 ? '' : `, ${list(unread)} blank as unread`;
+    const blank = unread.length === 0 ? '' : `, ${list(unread)} marked unread`;
     parts.push(
       `a square for each day with shipping on record, ${from === to ? from : `${from} to ${to}`}${blank}`
     );
   }
   if (page.figures.length > 0) {
-    parts.push(list(page.figures.map((figure) => `${figure.value} ${figure.label}`)));
+    const figures = list(page.figures.map((figure) => `${figure.value} ${figure.label}`));
+    parts.push(page.figureScope === '' ? figures : `the year ${page.figureScope}: ${figures}`);
   }
   return {
     path: `/og/year/${year}.png`,

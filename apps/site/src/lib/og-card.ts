@@ -136,20 +136,22 @@ const figures = { top: 430, gap: 30, bottom: 590 } as const;
 const shortMonth = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', month: 'short' });
 
 /**
- * A year page's card: the year and a muted line, the shipping calendar as one row of weeks with
- * the months above, and up to three figures under it. Only days with a record are drawn, so the
- * image depends on the history alone and not on the day it was built: a fixtures build draws the
- * same card every day of the year. A series with nothing to draw is a line instead of the
- * calendar, as on the page.
+ * A year page's card: the year and a muted line saying once what the figures cover, the shipping
+ * calendar as one row of weeks with the months above, and up to three figures under it. The
+ * calendar opens on the week of the first month the page shows (ADR 0041), and an unread month
+ * says so under its name. Only days with a record are drawn, so the image depends on the history
+ * alone and not on the day it was built: a fixtures build draws the same card every day of the
+ * year. A series with nothing to draw is a line instead of the calendar, as on the page.
  */
 export async function renderYearCard(page: YearPage): Promise<Buffer> {
   const { year, shipping } = page;
-  const first = utcDate(`${year}-01-01`);
   const weekday = (date: string) => (new Date(utcDate(date)).getUTCDay() + 6) % 7;
-  const offset = weekday(`${year}-01-01`);
-  const week = (date: string) => Math.floor(((utcDate(date) - first) / dayMs + offset) / 7);
-  const column = (date: string) => picture.left + week(date) * calendar.pitch;
-  const line = `${site.name} · ${page.current ? 'The year so far' : 'The year'}`;
+  // The Monday of the week that holds the first shown month's first day.
+  const opening = `${shipping.empty === null ? (shipping.months[0]?.month ?? `${year}-01`) : `${year}-01`}-01`;
+  const origin = utcDate(opening) - weekday(opening) * dayMs;
+  const column = (date: string) =>
+    picture.left + Math.floor((utcDate(date) - origin) / dayMs / 7) * calendar.pitch;
+  const line = `${site.name} · The year${page.figureScope === '' ? '' : ` ${page.figureScope}`}`;
   const layers: OverlayOptions[] = [
     {
       input: (await pango(titled(year, 72, line, 28), textBox.width)).data,
@@ -184,20 +186,26 @@ export async function renderYearCard(page: YearPage): Promise<Buffer> {
       left: picture.left,
       top: calendar.top,
     });
-    // Every month up to the last with a record or an unread one, so the blank months before them
-    // keep their place and the labels, like the squares, do not grow with the build date.
-    const known = shipping.months.filter(
+    // The shown months up to the last with a record or an unread one, so the labels, like the
+    // squares, do not grow with the build date.
+    const known = shipping.months.findLastIndex(
       ({ cells }) => cells === null || cells.some((cell) => cell.level !== null)
     );
-    const last = Number(known.at(-1)?.month.slice(5) ?? 12);
-    for (let month = 1; month <= last; month++) {
-      const date = `${year}-${String(month).padStart(2, '0')}-01`;
+    for (const { month, cells } of shipping.months.slice(0, known + 1)) {
+      const date = `${month}-01`;
       // sharp crops text to its ink: a transparent `Ég` gives every label the same top and bottom.
       const label = await pango(
         `<span font="min7 Serif 20" foreground="${muted}">${shortMonth.format(utcDate(date))}<span alpha="1">Ég</span></span>`,
         80
       );
       layers.push({ input: label.data, left: column(date), top: calendar.labels });
+      if (cells === null) {
+        const unread = await pango(
+          `<span font="min7 Serif 18" foreground="${muted}">unread</span>`,
+          80
+        );
+        layers.push({ input: unread.data, left: column(date), top: calendar.top + 2 });
+      }
     }
   }
   const width = (textBox.width - (page.figures.length - 1) * figures.gap) / page.figures.length;

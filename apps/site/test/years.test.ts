@@ -549,8 +549,8 @@ describe('generated histories', () => {
 });
 
 describe("the link-preview image's figures", () => {
-  // Catches the card stating a total the page leaves out (a year with an unknown month) or one
-  // without the page's "on record" when dates are missing, and a plural on a count of one.
+  // Catches the card stating a total the page leaves out (a year with an unknown month) or
+  // dropping the page's "on record" when dates are missing, and a plural on a count of one.
   it('come from the same sums as the page, and only where the page has totals', () => {
     const merged = { ...shipped('2025-03-03'), merges: 1 };
     const full = run('2025-01-01', '2025-12-31').map((date) =>
@@ -569,11 +569,14 @@ describe("the link-preview image's figures", () => {
       after,
       none
     );
-    expect(page(whole, '2025').figures).toEqual([
-      { value: '1', label: 'PR merged' },
-      { value: '365', label: 'days with something shipped' },
-      { value: '365.0K', label: 'agent tokens' },
-    ]);
+    expect(page(whole, '2025')).toMatchObject({
+      figures: [
+        { value: '1', label: 'PR merged', partial: false },
+        { value: '365', label: 'days shipped', partial: false },
+        { value: '365.0K', label: 'agent tokens', partial: false },
+      ],
+      figureScope: '',
+    });
 
     const holed = yearPages(
       history(full, [used('2025-02-01', 1000), used('2025-02-02', 2000)], {
@@ -583,9 +586,12 @@ describe("the link-preview image's figures", () => {
       after,
       none
     );
-    expect(page(holed, '2025').figures).toEqual([
-      { value: '3.0K', label: 'agent tokens on record' },
-      { value: '2', label: 'posts and notes published' },
-    ]);
+    expect(page(holed, '2025')).toMatchObject({
+      figures: [
+        { value: '3.0K', label: 'agent tokens', partial: true },
+        { value: '2', label: 'posts and notes published', partial: false },
+      ],
+      figureScope: 'on record',
+    });
   });
 });

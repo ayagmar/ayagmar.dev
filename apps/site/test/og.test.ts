@@ -165,9 +165,27 @@ describe('year card', () => {
     expect(square(52, 0)).toEqual(ground);
   });
 
-  // Catches a text alternative claiming what the card leaves out: an unread month drawn as quiet,
-  // or a figure the card does not show.
-  it('says what the card draws and leaves blank', () => {
+  // Catches a year whose record starts late drawn from January, its squares crowded at the right
+  // under a row of empty months. The page opens on October 2025, whose 1st is a Wednesday, so
+  // the first column is the week from Monday 29 September.
+  it('opens on the week of the first month with a record', async () => {
+    const png = await renderYearCard(
+      year([day('2025-10-01', 2), day('2025-10-06', 2)], '2026-06-01T12:00:00Z')
+    );
+    const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+    const square = (column: number, row: number) => {
+      const at = ((256 + row * 17 + 7) * info.width + 120 + column * 17 + 7) * info.channels;
+      return [...data.subarray(at, at + 3)];
+    };
+    const ground = [14, 12, 19];
+    expect(square(0, 2)).not.toEqual(ground);
+    expect(square(1, 0)).not.toEqual(ground);
+    expect(square(0, 0)).toEqual(ground);
+  });
+
+  // Catches a text alternative that says what the card does not: an unread month the card leaves
+  // unmarked, a figure it does not show, or a qualifier the card says once repeated on each.
+  it('says what the card draws and marks', () => {
     const page = year(
       [day('2026-03-02', 1), day('2026-03-03', 2, 1), day('2026-05-04', 1)],
       '2026-06-10T12:00:00Z',
@@ -175,12 +193,12 @@ describe('year card', () => {
     );
     expect(yearOgImage(page)).toEqual({
       path: '/og/year/2026.png',
-      alt: '2026 on min7: a square for each day with shipping on record, 2 Mar to 4 May, April blank as unread.',
+      alt: '2026 on min7: a square for each day with shipping on record, 2 Mar to 4 May, April marked unread.',
     });
     expect(
       yearOgImage(year([day('2026-03-02', 1), day('2026-03-03', 2, 1)], '2026-06-10T12:00:00Z')).alt
     ).toBe(
-      '2026 on min7: a square for each day with shipping on record, 2 Mar to 3 Mar; 1 PR merged on record so far and 2 days with something shipped on record so far.'
+      '2026 on min7: a square for each day with shipping on record, 2 Mar to 3 Mar; the year so far, on record: 1 PR merged and 2 days shipped.'
     );
   });
 });
