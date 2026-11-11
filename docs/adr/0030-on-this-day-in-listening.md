@@ -15,6 +15,7 @@ The owner dropped the Last.fm permission question on 2026-10-26: no approval gat
 ### Today's date in Rabat
 
 Every date here is a calendar date in `Africa/Casablanca`, from the runtime's tzdata through `Intl`, never a fixed offset. `packages/contracts/src/rabat.ts` is the one definition, shared by signals and the `/stats` script (it has no zod, so the browser can load it):
+
 - `rabatDate(time)` is the date there at a Unix time.
 - A day is the set of instants with that local date: from `rabatDayStart(date)`, the first second whose date is `date`, to `rabatDayStart` of the next date. Both ends are found on their own, by a binary search within three hours of midnight UTC (Rabat has been at +00 or +01 since 1913), so a day can be 23 or 25 hours long and can start at 01:00. The search assumes the date never steps back, which holds for all 72 Africa/Casablanca transitions since 1913 in tzdata 2026e: each fall-back near midnight repeats 23:00 of the same date, and each spring-forward skips 23:59:59 to 01:00.
 - `apps/signals/test/listening-history.test.ts` checks the bounds against `zdump -v -c 2008,2027 Africa/Casablanca` (tzcode and tzdata 2026e), quoted in the test: 2008-06-01 starting at 01:00 (no midnight), 2008-08-31 lasting 25 hours (23:00 twice), the 2025 Ramadan changes on 23 February and 6 April, and the move to +00 for good on 2026-09-20. It also tests requests at a day's start − 1, start, end − 1 and end.
@@ -23,6 +24,7 @@ Every date here is a calendar date in `Africa/Casablanca`, from the runtime's tz
 ### signals: the `listening-history` source
 
 A source of its own, apart from `listening`: its own snapshot, interval, failures and staleness. `apps/signals/src/adapters/pull/listening-history.ts`, following ADR 0009:
+
 - **Requests.** `user.getInfo` for min7_'s registration time, then for each past year from the registration year to last year, `user.getRecentTracks` with `limit=200`, `page=1`, and `from` and `to` as that year's day bounds. Each is a POST with the key in the form, as for listening, so the key is never in a URL that Workers traces record. On 2026-10-26 Last.fm's `from` was inclusive and `to` exclusive (`from=T&to=T` returned nothing; `from=T&to=T+1` returned the scrobble at T), pages come newest first, and an empty range answers `{"track":[],"@attr":{…,"total":"0"}}`. Body caps: 16 KiB for `user.getInfo`, 384 KiB per page (scrobbles came to about 720 B each on 2026-10-26, so about 140 KiB for a full page).
 - **Registration.** The year comes from `user.registered.unixtime`, converted to Rabat, never the display text. Missing, unreadable, before 2002 or after today is `upstream_malformed`: a failure, never an empty history. Registered this year means no past year to ask about and an empty list. More than 24 past years is `over_budget`.
 - **A day's page.** Its own wire schema (`lastfmHistoryPageSchema`), not listening's: at most 201 items (200 and a now-playing track). The page must be page 1 of min7_'s, `perPage` 200 and `totalPages` agreeing with `total`; it must hold exactly `min(total, 200)` dated scrobbles, each inside the day asked for and newest first, with a non-empty artist and title after trimming spaces at either end. Anything else fails the pull with `upstream_malformed`, since skipping a scrobble would change a count. The now-playing track is left out. Error bodies with HTTP 200 are read as for listening: 29 is `upstream_rate_limited`, 6 `upstream_not_found`, others `upstream_error`.
@@ -33,6 +35,7 @@ A source of its own, apart from `listening`: its own snapshot, interval, failure
 ### One year per cron invocation
 
 A whole pull in one invocation measured 11 ms of CPU warm and 22 ms cold locally for this account's three years, and 48 ms for 24 years, so the pull is spread over invocations of the same Rabat date and published only when every year is read:
+
 - The first invocation of a pull captures `describedDate` once, asks for the registration and reads the newest year; each later one reads one more year. What has been read is kept in D1 (`pull_progress`, migration `0002`), not in memory, so a restarted isolate carries on. Each write names the version its invocation loaded, so of two overlapping invocations only one adds its year (below).
 - Until the last year, the invocation fails with `in_progress`: the runner records it as an attempt (logged at `log` level, not as a warning), and the stored snapshot, `fetched_at` and `last_success_at` stay as they were. The last invocation marks the progress finished and returns the whole snapshot, written in one statement.
 - All or nothing: a failure at any year, or in the registration, publishes nothing. The progress stays, so the next try resumes at the failed year.
@@ -44,6 +47,7 @@ Each invocation makes at most 2 subrequests (registration and one page, or one p
 ### Who may write the progress
 
 Amended 2026-11-03 (#117). Before, a save for another date replaced the row unconditionally, a clear deleted it unconditionally, and a fresh pull started again at step 1, so a write held past midnight could replace or delete the new date's progress, and a late clear could delete a later pull's. `D1ProgressStore` (`src/storage/progress.ts`) now holds the rules, with no schema change:
+
 - **One row per source, kept for good.** `step` is the row's version: it advances by one on every write and is never reset, not on a new date, a finished pull, a refresh or a fresh start from progress that does not read. A finished pull leaves its date, its step and the JSON `null`, so no late write can find the row gone and recreate it. Migration `0002`'s comment ("deleted when the snapshot is complete") predates this; applied migrations are not edited.
 - **Each write is one conditional statement.** The invocation passes what its `load` returned to `save` or `finish`. With a row loaded, the UPDATE applies only if `step` is still the loaded one and the stored date is not later than the invocation's; with none, an INSERT applies only if there is still no row. A write that changes no row returns false and leaves the stored progress as it was. No write is a read followed by an unconditional write, and none needs a batch.
 - **The date never goes back.** An older date's write never replaces or finishes a later date's progress, after that pull finished too. Dates compare as `YYYY-MM-DD` text. This is the cron's policy for today's date, not a freshness token: a clock stepped back across midnight, or a replay of a past date, is not supported, and its writes change nothing.
@@ -58,6 +62,7 @@ What this does not promise: exactly one publication per pull (the progress and t
 ### When it runs
 
 The runner is unchanged in kind: one adapter per invocation, the most overdue. It now asks an adapter when it is due (`PullAdapter.dueAt`), and this one answers by date:
+
 - **New date in Rabat**, with the last snapshot for an earlier one: due since its last attempt, so the first trigger of the date runs it ahead of sources only just due, even if the last attempt was minutes ago. The same after a success that published an earlier date's snapshot: if D1 holds the last write of yesterday's pull past midnight, its `fetched_at` is today but its `describedDate` is not, and the new date's pull starts at the next trigger (`test/listening-history.test.ts` delays that write by 7 seconds).
 - **Pull in progress** on today's date: due 30 seconds after the last part.
 - **Today's snapshot stored**, by its `describedDate` (the runner's status list reads it from the stored JSON), never by when it was written: due 7 hours after the last attempt, so at most four successful pulls a Rabat day (about 00:00, 07:00, 14:00, 21:00).
@@ -92,6 +97,7 @@ These are measurements, not a check that passed. The PR's review ran the same be
 ### The site: `/stats`, in the browser only
 
 The build never reads the history, so a page built yesterday cannot show it. `stats.astro` puts a block at the end of the listening panel, `hidden` in the HTML: without JavaScript, in `fixtures` mode (local, CI, Previews: no endpoint attribute, no request), or in a browser that cannot work out the date in Rabat, it stays hidden. In `api` mode it carries `data-history-src="${SIGNALS_API_BASE}/v1/listening-history"`, and `src/scripts/history.ts`, the page's only script of its own:
+
 - Asks on load when the page is visible, then on a minute tick when due: every 5 minutes while there is nothing for today to show, hourly once there is; and when the tab comes back, once the last request is a minute old (`due` in `src/lib/live.ts`, ADR 0015). One request at a time, `AbortSignal.timeout(5000)`; an error status, a failure or the deadline drops the history, as the room's weather does (ADR 0029).
 - Shows an answer only through `readHistory` (`src/lib/history.ts`): `source` `listening-history`, `version` 1, `stale` false, a readable `fetchedAt`, every value of its type and in the contract's range, and `describedDate` equal to today's date in Rabat by the browser's own tzdata, at the moment it checks. `test/history.test.ts` checks that `readHistory` and the contract agree on the whole corpus and every snapshot fixture.
 - Checks again at the start of the next date in Rabat (a timer set to that instant), on every minute tick, and on `visibilitychange`, `focus` and `pageshow`, so a tab that slept or came back from the back/forward cache hides yesterday's history at once.

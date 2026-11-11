@@ -104,6 +104,7 @@ The build fails when `slug` is not a featured project or differs from the file n
 ## Styling
 
 The design is the late-night room ([ADR 0026](docs/adr/0026-visual-design-late-night-room.md)).
+
 - Colors are tokens in `apps/site/src/styles/base.css`, each a `light-dark(day, night)` pair. Use a token, not a raw color, and check both themes: the switch in the header, or your system's dark mode. `just e2e` runs axe in both.
 - A `.panel` or `.paper` is a section of the page, not a box: a hairline (`--rule`) above it, its heading, and space around it ([ADR 0037](docs/adr/0037-quiet-room.md)). Every page but home and /stats sits in one `.column`; lists are quiet rows, logs put the time first. One accent, `--lamp`, for links and the current page; rose only marks sample data. Headings are the serif at 600; JetBrains Mono is for data (dates, numbers, versions, repository names, code), not labels or buttons.
 - No `style=""` attributes or inline `<style>`/`<script>`: the CSP blocks them (ADR 0019).
