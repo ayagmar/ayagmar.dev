@@ -1,0 +1,605 @@
+{
+  "status": 200,
+  "body": {
+    "data": {
+      "p_llm_usage_metrics": {
+        "nameWithOwner": "ayagmar/llm-usage",
+        "isPrivate": false,
+        "releases": {
+          "nodes": [
+            {
+              "tagName": "v2.0.0-rc.1",
+              "url": "https://github.com/ayagmar/llm-usage/releases/tag/v2.0.0-rc.1",
+              "createdAt": "2026-11-09T12:00:00Z",
+              "publishedAt": "2026-11-09T12:00:00Z"
+            },
+            {
+              "tagName": "v1.9.0",
+              "url": "https://github.com/ayagmar/llm-usage/releases/tag/v1.9.0",
+              "createdAt": "2026-11-08T12:00:00Z",
+              "publishedAt": null
+            },
+            {
+              "tagName": "v1.8.0",
+              "url": "https://example.com/v1.8.0",
+              "createdAt": "2026-11-07T12:00:00Z",
+              "publishedAt": "2026-11-07T12:00:00Z"
+            },
+            {
+              "tagName": "v1.7.0",
+              "url": "https://github.com/ayagmar/llm-usage/releases/tag/v1.7.0",
+              "createdAt": "2026-11-06T12:00:00Z",
+              "publishedAt": "2026-11-06T12:00:00Z"
+            }
+          ]
+        },
+        "pullRequests": {
+          "nodes": [
+            {
+              "number": 50,
+              "title": "Count cached tokens",
+              "url": "https://github.com/ayagmar/llm-usage/pull/50",
+              "mergedAt": "2026-11-10T12:00:00Z",
+              "updatedAt": "2026-11-10T12:00:00Z",
+              "author": null
+            },
+            {
+              "number": 51,
+              "title": "chore(release): version packages",
+              "url": "https://github.com/ayagmar/llm-usage/pull/51",
+              "mergedAt": "2026-11-10T11:00:00Z",
+              "updatedAt": "2026-11-10T11:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 49,
+              "title": "Bump vitest from 4.1 to 4.2",
+              "url": "https://github.com/ayagmar/llm-usage/pull/49",
+              "mergedAt": "2026-11-09T13:00:00Z",
+              "updatedAt": "2026-11-09T13:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 48,
+              "title": "Update dependency zod to v4.7",
+              "url": "https://github.com/ayagmar/llm-usage/pull/48",
+              "mergedAt": "2026-11-09T12:00:00Z",
+              "updatedAt": "2026-11-09T12:00:00Z",
+              "author": {
+                "login": "renovate[bot]"
+              }
+            },
+            {
+              "number": 47,
+              "title": "Lock file maintenance",
+              "url": "https://github.com/ayagmar/llm-usage/pull/47",
+              "mergedAt": "2026-11-09T11:00:00Z",
+              "updatedAt": "2026-11-09T11:00:00Z",
+              "author": {
+                "login": "Renovate"
+              }
+            },
+            {
+              "number": 46,
+              "title": "Read Codex logs",
+              "url": "https://github.com/ayagmar/llm-usage/pull/46",
+              "mergedAt": "2026-11-08T12:00:00Z",
+              "updatedAt": "2026-11-08T12:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 46,
+              "title": "Read Codex logs",
+              "url": "https://github.com/ayagmar/llm-usage/pull/46",
+              "mergedAt": "2026-11-08T12:00:00Z",
+              "updatedAt": "2026-11-08T12:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            }
+          ]
+        }
+      },
+      "p_pi_mobile": null,
+      "p_pi_extmgr": {
+        "nameWithOwner": "ayagmar/pi-extmgr",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": [
+            {
+              "number": 23,
+              "title": "Show updates first",
+              "url": "https://github.com/ayagmar/pi-extmgr/pull/23",
+              "mergedAt": "2026-05-04T08:00:00Z",
+              "updatedAt": "2026-11-10T12:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 24,
+              "title": "Install from a path",
+              "url": "https://github.com/ayagmar/pi-extmgr/pull/24",
+              "mergedAt": "2026-11-06T12:00:00Z",
+              "updatedAt": "2026-11-06T12:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            }
+          ]
+        }
+      },
+      "p_ccdesk": {
+        "nameWithOwner": "ayagmar/ccdesk",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_niri_computer_use": {
+        "nameWithOwner": "ayagmar/niri-computer-use",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_runnerd": {
+        "nameWithOwner": "ayagmar/runnerd",
+        "isPrivate": false,
+        "releases": {
+          "nodes": [
+            {
+              "tagName": "v0.3.0",
+              "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.3.0",
+              "createdAt": "2026-11-03T12:00:00Z",
+              "publishedAt": "2026-11-03T12:00:00Z"
+            },
+            {
+              "tagName": "v0.2.0",
+              "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.2.0",
+              "createdAt": "2026-11-02T12:00:00Z",
+              "publishedAt": "2026-11-02T12:00:00Z"
+            },
+            {
+              "tagName": "v0.1.0",
+              "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.1.0",
+              "createdAt": "2026-11-01T12:00:00Z",
+              "publishedAt": "2026-11-01T12:00:00Z"
+            }
+          ]
+        },
+        "pullRequests": {
+          "nodes": [
+            {
+              "number": 12,
+              "title": "Keep jobs in order",
+              "url": "https://github.com/ayagmar/runnerd/pull/12",
+              "mergedAt": "2026-03-01T09:00:00Z",
+              "updatedAt": "2026-11-10T23:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 100,
+              "title": "Change 100",
+              "url": "https://github.com/ayagmar/runnerd/pull/100",
+              "mergedAt": "2026-11-10T22:00:00Z",
+              "updatedAt": "2026-11-10T22:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 99,
+              "title": "Change 99",
+              "url": "https://github.com/ayagmar/runnerd/pull/99",
+              "mergedAt": "2026-11-10T21:00:00Z",
+              "updatedAt": "2026-11-10T21:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 98,
+              "title": "Change 98",
+              "url": "https://github.com/ayagmar/runnerd/pull/98",
+              "mergedAt": "2026-11-10T20:00:00Z",
+              "updatedAt": "2026-11-10T20:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 97,
+              "title": "Change 97",
+              "url": "https://github.com/ayagmar/runnerd/pull/97",
+              "mergedAt": "2026-11-10T19:00:00Z",
+              "updatedAt": "2026-11-10T19:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 96,
+              "title": "Change 96",
+              "url": "https://github.com/ayagmar/runnerd/pull/96",
+              "mergedAt": "2026-11-10T18:00:00Z",
+              "updatedAt": "2026-11-10T18:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 95,
+              "title": "Change 95",
+              "url": "https://github.com/ayagmar/runnerd/pull/95",
+              "mergedAt": "2026-11-10T17:00:00Z",
+              "updatedAt": "2026-11-10T17:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 94,
+              "title": "Change 94",
+              "url": "https://github.com/ayagmar/runnerd/pull/94",
+              "mergedAt": "2026-11-10T16:00:00Z",
+              "updatedAt": "2026-11-10T16:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 93,
+              "title": "Change 93",
+              "url": "https://github.com/ayagmar/runnerd/pull/93",
+              "mergedAt": "2026-11-10T15:00:00Z",
+              "updatedAt": "2026-11-10T15:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 92,
+              "title": "Change 92",
+              "url": "https://github.com/ayagmar/runnerd/pull/92",
+              "mergedAt": "2026-11-10T14:00:00Z",
+              "updatedAt": "2026-11-10T14:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 91,
+              "title": "Change 91",
+              "url": "https://github.com/ayagmar/runnerd/pull/91",
+              "mergedAt": "2026-11-10T13:00:00Z",
+              "updatedAt": "2026-11-10T13:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 90,
+              "title": "Change 90",
+              "url": "https://github.com/ayagmar/runnerd/pull/90",
+              "mergedAt": "2026-11-10T12:00:00Z",
+              "updatedAt": "2026-11-10T12:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 89,
+              "title": "Change 89",
+              "url": "https://github.com/ayagmar/runnerd/pull/89",
+              "mergedAt": "2026-11-10T11:00:00Z",
+              "updatedAt": "2026-11-10T11:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            },
+            {
+              "number": 88,
+              "title": "Change 88",
+              "url": "https://github.com/ayagmar/runnerd/pull/88",
+              "mergedAt": "2026-11-10T10:00:00Z",
+              "updatedAt": "2026-11-10T10:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 87,
+              "title": "Change 87",
+              "url": "https://github.com/ayagmar/runnerd/pull/87",
+              "mergedAt": "2026-11-10T09:00:00Z",
+              "updatedAt": "2026-11-10T09:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 86,
+              "title": "Change 86",
+              "url": "https://github.com/ayagmar/runnerd/pull/86",
+              "mergedAt": "2026-11-10T08:00:00Z",
+              "updatedAt": "2026-11-10T08:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 85,
+              "title": "Change 85",
+              "url": "https://github.com/ayagmar/runnerd/pull/85",
+              "mergedAt": "2026-11-10T07:00:00Z",
+              "updatedAt": "2026-11-10T07:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 84,
+              "title": "Change 84",
+              "url": "https://github.com/ayagmar/runnerd/pull/84",
+              "mergedAt": "2026-11-10T06:00:00Z",
+              "updatedAt": "2026-11-10T06:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 83,
+              "title": "Change 83",
+              "url": "https://github.com/ayagmar/runnerd/pull/83",
+              "mergedAt": "2026-11-10T05:00:00Z",
+              "updatedAt": "2026-11-10T05:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 82,
+              "title": "Change 82",
+              "url": "https://github.com/ayagmar/runnerd/pull/82",
+              "mergedAt": "2026-11-10T04:00:00Z",
+              "updatedAt": "2026-11-10T04:00:00Z",
+              "author": {
+                "login": "dependabot"
+              }
+            },
+            {
+              "number": 81,
+              "title": "chore(release): version packages 81",
+              "url": "https://github.com/ayagmar/runnerd/pull/81",
+              "mergedAt": "2026-11-10T03:00:00Z",
+              "updatedAt": "2026-11-10T03:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 80,
+              "title": "chore(release): version packages 80",
+              "url": "https://github.com/ayagmar/runnerd/pull/80",
+              "mergedAt": "2026-11-10T02:00:00Z",
+              "updatedAt": "2026-11-10T02:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 79,
+              "title": "chore(release): version packages 79",
+              "url": "https://github.com/ayagmar/runnerd/pull/79",
+              "mergedAt": "2026-11-10T01:00:00Z",
+              "updatedAt": "2026-11-10T01:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 78,
+              "title": "chore(release): version packages 78",
+              "url": "https://github.com/ayagmar/runnerd/pull/78",
+              "mergedAt": "2026-11-10T00:00:00Z",
+              "updatedAt": "2026-11-10T00:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 77,
+              "title": "chore(release): version packages 77",
+              "url": "https://github.com/ayagmar/runnerd/pull/77",
+              "mergedAt": "2026-11-09T23:00:00Z",
+              "updatedAt": "2026-11-09T23:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 76,
+              "title": "chore(release): version packages 76",
+              "url": "https://github.com/ayagmar/runnerd/pull/76",
+              "mergedAt": "2026-11-09T22:00:00Z",
+              "updatedAt": "2026-11-09T22:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 75,
+              "title": "chore(release): version packages 75",
+              "url": "https://github.com/ayagmar/runnerd/pull/75",
+              "mergedAt": "2026-11-09T21:00:00Z",
+              "updatedAt": "2026-11-09T21:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 74,
+              "title": "chore(release): version packages 74",
+              "url": "https://github.com/ayagmar/runnerd/pull/74",
+              "mergedAt": "2026-11-09T20:00:00Z",
+              "updatedAt": "2026-11-09T20:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            },
+            {
+              "number": 73,
+              "title": "chore(release): version packages 73",
+              "url": "https://github.com/ayagmar/runnerd/pull/73",
+              "mergedAt": "2026-11-09T19:00:00Z",
+              "updatedAt": "2026-11-09T19:00:00Z",
+              "author": {
+                "login": "github-actions"
+              }
+            },
+            {
+              "number": 72,
+              "title": "chore(release): version packages 72",
+              "url": "https://github.com/ayagmar/runnerd/pull/72",
+              "mergedAt": "2026-11-09T18:00:00Z",
+              "updatedAt": "2026-11-09T18:00:00Z",
+              "author": {
+                "login": "github-actions[bot]"
+              }
+            }
+          ]
+        }
+      },
+      "p_pi_codex_web_search": {
+        "nameWithOwner": "ayagmar/pi-codex-web-search",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_pi_promptsmith": {
+        "nameWithOwner": "ayagmar/pi-promptsmith",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_claude_modmgr": {
+        "nameWithOwner": "ayagmar/claude-modmgr",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_repo_pulse": {
+        "nameWithOwner": "ayagmar/repo-pulse",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_agents_skills": {
+        "nameWithOwner": "ayagmar/agents-skills",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_kipple": {
+        "nameWithOwner": "ayagmar/kipple",
+        "isPrivate": true,
+        "releases": {
+          "nodes": [
+            {
+              "tagName": "v1.0.0",
+              "url": "https://github.com/ayagmar/kipple/releases/tag/v1.0.0",
+              "createdAt": "2026-11-05T12:00:00Z",
+              "publishedAt": "2026-11-05T12:00:00Z"
+            }
+          ]
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      },
+      "p_dotfiles": {
+        "nameWithOwner": "someone-else/dotfiles",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": [
+            {
+              "number": 1,
+              "title": "Add niri config",
+              "url": "https://github.com/someone-else/dotfiles/pull/1",
+              "mergedAt": "2026-11-04T12:00:00Z",
+              "updatedAt": "2026-11-04T12:00:00Z",
+              "author": {
+                "login": "ayagmar"
+              }
+            }
+          ]
+        }
+      },
+      "p_headroom": {
+        "nameWithOwner": "ayagmar/headroom",
+        "isPrivate": false,
+        "releases": {
+          "nodes": []
+        },
+        "pullRequests": {
+          "nodes": []
+        }
+      }
+    },
+    "errors": [
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_pi_mobile"],
+        "locations": [
+          {
+            "line": 1,
+            "column": 10
+          }
+        ],
+        "message": "Could not resolve to a Repository with the name 'ayagmar/pi-mobile'."
+      },
+      "an error item this reader cannot use"
+    ]
+  }
+}

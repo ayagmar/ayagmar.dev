@@ -24,7 +24,8 @@
   },
   // Set with `just signals-secrets`. Deploys fail while one is missing. The *_NEXT slots hold
   // the next value during a rotation and a random unused value otherwise (docs/operations.md).
-  // GITHUB_TOKEN is optional (ADR 0009), so it is not listed; set it with `just signals-secret`.
+  // GITHUB_TOKEN is not listed: the projects numbers work without it (ADR 0009). The project
+  // logs need it (ADR 0046); set it with `just signals-secret`.
   "secrets": {
     "required": [
       "LASTFM_API_KEY",

@@ -20,6 +20,7 @@ export interface UpstreamCases {
   lastfm?: Cases<'lastfm'>;
   lastfmHistory?: Cases<'lastfm-history'>;
   github?: Cases<'github'>;
+  githubGraphql?: Cases<'github-graphql'>;
   npm?: Cases<'npm'>;
   repoPulse?: Cases<'repo-pulse'>;
   repoPulseActivity?: Cases<'repo-pulse-activity'>;
@@ -42,6 +43,7 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
   const github: Record<string, { repo: Recorded; release: Recorded }> =
     rawFixtures.github[cases.github ?? 'ok'];
   const npm: Record<string, Recorded> = rawFixtures.npm[cases.npm ?? 'ok'];
+  const githubGraphql: Recorded = rawFixtures['github-graphql'][cases.githubGraphql ?? 'ok'];
   const repoPulse: Recorded = rawFixtures['repo-pulse'][cases.repoPulse ?? 'ok'];
   const activity: Recorded = rawFixtures['repo-pulse-activity'][cases.repoPulseActivity ?? 'ok'];
   const openMeteo: Recorded = rawFixtures['open-meteo'][cases.openMeteo ?? 'ok'];
@@ -86,6 +88,17 @@ export function upstreamHandlers(cases: UpstreamCases = {}) {
     http.get('https://api.github.com/repos/:owner/:repo/releases/latest', ({ params }) =>
       reply(github[`${params.owner}/${params.repo}`]?.release)
     ),
+    // The project logs (ADR 0046): answered only with a token and a JSON body holding a query.
+    http.post('https://api.github.com/graphql', async ({ request }) => {
+      const body: unknown = await request.json().catch(() => null);
+      const query = (body as { query?: unknown } | null)?.query;
+      const valid =
+        /^Bearer \S+$/.test(request.headers.get('authorization') ?? '') &&
+        request.headers.get('content-type') === 'application/json' &&
+        typeof query === 'string' &&
+        query.startsWith('query {');
+      return valid ? reply(githubGraphql) : HttpResponse.error();
+    }),
     http.get('https://api.github.com/repos/:owner/:repo', ({ params }) =>
       reply(github[`${params.owner}/${params.repo}`]?.repo)
     ),

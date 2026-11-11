@@ -1,0 +1,11 @@
+{
+  "status": 200,
+  "body": {
+    "errors": [
+      {
+        "type": "RATE_LIMITED",
+        "message": "API rate limit exceeded for user ID 1."
+      }
+    ]
+  }
+}

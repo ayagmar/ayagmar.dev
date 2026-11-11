@@ -1,12 +1,22 @@
 // Every normalizer against every shared fixture case. A case with a snapshot fixture must
 // normalize to exactly that snapshot (so no field outside the contract leaks through and
 // none goes missing); a case without one must fail with a PullError of the listed code.
-import { repoPulseActivityDaySchema } from '@min7/contracts';
+import {
+  type GithubProjectRepo,
+  githubMergedPullSchema,
+  githubReleaseNodeSchema,
+  repoPulseActivityDaySchema,
+} from '@min7/contracts';
 import { rawFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { PullError, type PullErrorCode } from '../src/adapters/pull/index.ts';
 import { listening, weekStart } from '../src/adapters/pull/listening.ts';
 import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
+import {
+  projectEvents,
+  readMergedPull,
+  readReleaseNode,
+} from '../src/adapters/pull/project-events.ts';
 import { type ProjectsRaw, projects } from '../src/adapters/pull/projects.ts';
 import { shipping } from '../src/adapters/pull/shipping.ts';
 import { readActivityDay, shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
@@ -159,6 +169,191 @@ describe('the activity day reader', () => {
   it('agrees with the contract on every day of the fixtures', () => {
     expect(days.length).toBeGreaterThan(400);
     for (const value of days) agrees(value);
+  });
+});
+
+describe('project-events (GitHub GraphQL)', () => {
+  const raw = rawFixtures['github-graphql'];
+  const expected: Record<keyof typeof raw, Expected> = {
+    ok: { snapshot: snapshotFixtures['project-events'].ok },
+    // Deleted, private, moved away and renamed repositories; drafts, bots, a bad node, a URL
+    // twice, a full page with an old PR updated today, a short page.
+    partial: { snapshot: snapshotFixtures['project-events'].partial },
+    // Every repository deleted or private: nothing to show, and GitHub did answer for each.
+    empty: { snapshot: snapshotFixtures['project-events'].empty },
+    // One repository GitHub failed to answer for: the whole pull fails (ADR 0046).
+    unresolved: { error: 'upstream_error' },
+    'rate-limited': { error: 'upstream_rate_limited' },
+    missing: { error: 'upstream_unauthorized' },
+    malformed: { error: 'upstream_malformed' },
+  };
+
+  it.each(Object.entries(raw))('normalizes the %s case', (name, answer) => {
+    check(() => projectEvents.normalize(answer), expected[name as keyof typeof expected]);
+  });
+
+  const partial = projectEvents.normalize(raw.partial);
+  const log = (slug: string) =>
+    partial.projects
+      .find((project) => project.slug === slug)
+      ?.events.map((event) => (event.type === 'merge' ? event.number : event.tag));
+
+  // Catches a log that names a repository GitHub would not show the public: deleted or private
+  // (`NOT_FOUND` to a public-only token), private to a broader token, or moved to another account.
+  it('leaves out repositories that are not public and the owner’s', () => {
+    for (const slug of ['pi-mobile', 'kipple', 'dotfiles']) expect(log(slug)).toBeUndefined();
+    expect(partial.projects.find((project) => project.slug === 'llm-usage-metrics')?.repo).toBe(
+      'ayagmar/llm-usage'
+    );
+  });
+
+  // Catches a merge window with a gap: GitHub orders merged PRs by update, so an old PR touched
+  // today sits in a full page above months of merges that are not in it.
+  it('lists no merge older than a full page reaches, and every one newer', () => {
+    // #12, merged in March and updated today, would sit under these with months missing. The
+    // bots' PRs still count toward the page, and github-actions' release PRs fill its end.
+    expect(log('runnerd')).toEqual([100, 99, 97, 95, 93, 91, 89, 'v0.3.0', 'v0.2.0', 'v0.1.0']);
+    // A short page is all there is, however old.
+    expect(log('pi-extmgr')).toEqual([24, 23]);
+  });
+
+  // Catches dependency bumps and GitHub Actions' release PRs filling the log, GraphQL naming a
+  // bot without `[bot]`, and a deleted account's PR dropped with them.
+  it('leaves out bots, drafts, unreadable nodes and repeats', () => {
+    expect(log('llm-usage-metrics')).toEqual([50, 'v2.0.0-rc.1', 46, 'v1.7.0']);
+  });
+
+  // Catches a batch of bot PRs emptying a log: on a repository without releases, 20 Dependabot
+  // merges updated last must leave room in the page for the owner's merges behind them.
+  it('shows the merges behind a batch of twenty bot PRs', () => {
+    const merge = (number: number, login: string) => {
+      const at = new Date(Date.UTC(2026, 10, 10, 0, number)).toISOString();
+      return {
+        number,
+        title: `Change ${number}`,
+        url: `https://github.com/ayagmar/kipple/pull/${number}`,
+        mergedAt: at,
+        updatedAt: at,
+        author: { login },
+      };
+    };
+    const body = structuredClone(raw.ok.body) as { data: { p_kipple: GithubProjectRepo } };
+    body.data.p_kipple.pullRequests.nodes = [
+      ...Array.from({ length: 20 }, (_, i) => merge(30 - i, 'dependabot')),
+      ...Array.from({ length: 10 }, (_, i) => merge(10 - i, 'ayagmar')),
+    ];
+    const kipple = projectEvents
+      .normalize({ ...raw.ok, body })
+      .projects.find((project) => project.slug === 'kipple');
+    expect(kipple?.events.map((event) => event.type === 'merge' && event.number)).toEqual([
+      10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+    ]);
+  });
+
+  // Catches merges crowding out releases on a busy repository: runnerd's 20 newest events on
+  // 2026-11-11 were all merges, and its releases must still show.
+  it('keeps ten releases and ten merges per project at most, each on its own', () => {
+    const ok = projectEvents.normalize(raw.ok);
+    const runnerd = ok.projects.find((project) => project.slug === 'runnerd')?.events ?? [];
+    expect(runnerd.filter((event) => event.type === 'release')).toHaveLength(10);
+    expect(runnerd.filter((event) => event.type === 'merge')).toHaveLength(10);
+    for (const project of ok.projects) {
+      const count = (type: string) => project.events.filter((event) => event.type === type).length;
+      expect(count('release')).toBeLessThanOrEqual(10);
+      expect(count('merge')).toBeLessThanOrEqual(10);
+    }
+  });
+});
+
+// Nodes are read by hand, since zod per node is too slow in workerd (ADR 0046). Catches a reader
+// that stores what the contract refuses, or refuses what it accepts.
+describe('the GitHub node readers', () => {
+  const release = {
+    tagName: 'v1.0.0',
+    url: 'https://github.com/ayagmar/runnerd/releases/tag/v1.0.0',
+    createdAt: '2026-11-10T12:00:00Z',
+    publishedAt: '2026-11-10T12:01:00Z',
+  };
+  const merge = {
+    number: 7,
+    title: 'Keep jobs in order',
+    url: 'https://github.com/ayagmar/runnerd/pull/7',
+    mergedAt: '2026-11-10T12:00:00Z',
+    updatedAt: '2026-11-10T12:00:05Z',
+    author: { login: 'ayagmar' },
+  };
+  const releaseEdges: Record<string, unknown> = {
+    ok: release,
+    draft: { ...release, publishedAt: null },
+    'extra key': { ...release, isDraft: false },
+    'published missing': { ...release, publishedAt: undefined },
+    'tag empty': { ...release, tagName: '' },
+    'tag 200': { ...release, tagName: 'v'.repeat(200) },
+    'tag 201': { ...release, tagName: 'v'.repeat(201) },
+    'url off github': { ...release, url: 'https://example.com/v1.0.0' },
+    'url with a space': { ...release, url: 'https://github.com/a b' },
+    'url 2048': { ...release, url: `https://github.com/${'a'.repeat(2029)}` },
+    'url 2049': { ...release, url: `https://github.com/${'a'.repeat(2030)}` },
+    'time with offset': { ...release, createdAt: '2026-11-10T12:00:00+01:00' },
+    'time with fraction': { ...release, createdAt: '2026-11-10T12:00:00.123Z' },
+    'time without zone': { ...release, createdAt: '2026-11-10T12:00:00' },
+    'not a date': { ...release, createdAt: '2026-02-30T12:00:00Z' },
+    'a list': [release],
+    null: null,
+  };
+  const mergeEdges: Record<string, unknown> = {
+    ok: merge,
+    ghost: { ...merge, author: null },
+    'author missing': { ...merge, author: undefined },
+    'author without login': { ...merge, author: {} },
+    'login 101': { ...merge, author: { login: 'a'.repeat(101) } },
+    'extra key in author': { ...merge, author: { login: 'ayagmar', url: 'https://github.com/x' } },
+    'number zero': { ...merge, number: 0 },
+    'number fractional': { ...merge, number: 1.5 },
+    'number past safe': { ...merge, number: 2 ** 53 },
+    'number as text': { ...merge, number: '7' },
+    'title 300': { ...merge, title: 't'.repeat(300) },
+    'title 301': { ...merge, title: 't'.repeat(301) },
+    'title empty': { ...merge, title: '' },
+    'merged missing': { ...merge, mergedAt: null },
+    'updated missing': { ...merge, updatedAt: undefined },
+  };
+  const nodes = Object.values(rawFixtures['github-graphql']).flatMap(({ body }) =>
+    Object.values((body as { data?: Record<string, unknown> | null }).data ?? {}).flatMap(
+      (repo) => {
+        const { releases, pullRequests } = (repo ?? {}) as {
+          releases?: { nodes?: unknown };
+          pullRequests?: { nodes?: unknown };
+        };
+        return [
+          ...(Array.isArray(releases?.nodes)
+            ? releases.nodes.map((node) => ['release', node] as const)
+            : []),
+          ...(Array.isArray(pullRequests?.nodes)
+            ? pullRequests.nodes.map((node) => ['merge', node] as const)
+            : []),
+        ];
+      }
+    )
+  );
+
+  const agrees = (kind: 'release' | 'merge', value: unknown) => {
+    const parsed = (
+      kind === 'release' ? githubReleaseNodeSchema : githubMergedPullSchema
+    ).safeParse(value);
+    const read = kind === 'release' ? readReleaseNode(value) : readMergedPull(value);
+    expect(read).toEqual(parsed.success ? parsed.data : null);
+  };
+
+  it.each(Object.entries(releaseEdges))('reads a release as the contract on %s', (_, value) =>
+    agrees('release', value)
+  );
+  it.each(Object.entries(mergeEdges))('reads a merge as the contract on %s', (_, value) =>
+    agrees('merge', value)
+  );
+  it('reads every node of the fixtures as the contract', () => {
+    expect(nodes.length).toBeGreaterThan(250);
+    for (const [kind, value] of nodes) agrees(kind, value);
   });
 });
 

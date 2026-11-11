@@ -14,6 +14,7 @@ import { listeningSnapshotSchema } from './snapshots/listening.ts';
 import { listeningHistoryEnvelopeSchema } from './snapshots/listening-history.ts';
 import { llmUsageEnvelopeSchema } from './snapshots/llm-usage.ts';
 import { monkeytypeEnvelopeSchema } from './snapshots/monkeytype.ts';
+import { projectEventsEnvelopeSchema } from './snapshots/project-events.ts';
 import { projectsSnapshotSchema } from './snapshots/projects.ts';
 import { shelfEnvelopeSchema } from './snapshots/shelf.ts';
 import { repoPulseFeedSchema, shippingSnapshotSchema } from './snapshots/shipping.ts';
@@ -40,6 +41,8 @@ export const jsonSchemas: Readonly<Record<string, z.ZodType>> = {
   'listening-history': listeningHistoryEnvelopeSchema,
   desktop: desktopEnvelopeSchema,
   monkeytype: monkeytypeEnvelopeSchema,
+  // Each featured project's releases and merged pull requests (ADR 0046).
+  'project-events': projectEventsEnvelopeSchema,
   // Daily history blocks, `GET /v1/days/<series>` (ADR 0038).
   'days-shipping-activity': shippingActivityDaysEnvelopeSchema,
   'days-llm-usage': llmUsageDaysEnvelopeSchema,

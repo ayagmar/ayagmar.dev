@@ -1,6 +1,7 @@
 import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
-import { staleAfterSeconds } from '@min7/contracts';
+import { projectEventsEnvelopeSchema, staleAfterSeconds } from '@min7/contracts';
+import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app } from '../src/app.ts';
 import { clearState, fetchApi } from './helpers.ts';
@@ -43,6 +44,18 @@ describe('read API', () => {
 
     expect((await get('/v1/projects').then((r) => r.json<{ stale: boolean }>())).stale).toBe(true);
     expect((await get('/v1/shipping').then((r) => r.json<{ stale: boolean }>())).stale).toBe(false);
+  });
+
+  // Catches the project logs' route left unmounted, or served outside its contract, which the
+  // site would read as no log at all (ADR 0046).
+  it('serves the project logs as their contract envelope', async () => {
+    const stored = snapshotFixtures['project-events'].ok;
+    await seed('project-events', stored, 1000);
+
+    const body = projectEventsEnvelopeSchema.parse(
+      await get('/v1/project-events').then((r) => r.json())
+    );
+    expect(body).toMatchObject({ source: 'project-events', stale: false, data: stored });
   });
 
   it('answers HEAD like GET without a body', async () => {
@@ -159,6 +172,7 @@ describe('health', () => {
       { source: 'desktop', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'monkeytype', lastSuccessAt: null, stale: true, lastErrorCode: null },
       { source: 'shipping-activity', lastSuccessAt: null, stale: true, lastErrorCode: null },
+      { source: 'project-events', lastSuccessAt: null, stale: true, lastErrorCode: null },
     ]);
   });
 });

@@ -1,4 +1,4 @@
-import type { ProjectSlug, ShippingEvent } from '@min7/contracts';
+import type { ProjectEvent, ProjectSlug } from '@min7/contracts';
 import { isoDate } from '@min7/contracts/rabat';
 import type { About } from '../data/about.ts';
 import { aboutLinks, certificationExpiry, formatMonth, monthSpan } from '../data/about.ts';
@@ -8,13 +8,12 @@ import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts'
 import { longDate } from './day-words.ts';
 import { feedPaths } from './feed.ts';
 import type { BrewingItem } from './now-schema.ts';
-import { noNumbers, projectEvents } from './project-panel.ts';
+import { noNumbers } from './project-panel.ts';
 import {
   postCount,
   postsAbout,
   projectLinks,
   projectPath,
-  projectRepos,
   projectRowLabel,
   projectsByGroup,
   type SiteProject,
@@ -197,17 +196,17 @@ export function renderProjectsText(
 
 /**
  * /projects/<slug>: the summary, the description as written, the numbers from the build's
- * snapshot, the links and the posts. `description` is the project file's Markdown, if it has one.
+ * snapshot, its log, the links and the posts. `description` is the project file's Markdown, if
+ * it has one; `shipped` is the project's log as its page draws it.
  */
 export function renderProjectText(
   project: SiteProject,
   posts: readonly Post[],
   description: string | undefined,
-  events: readonly ShippingEvent[]
+  shipped: readonly ProjectEvent[]
 ): string {
   const path = projectPath(project.slug);
   const facts = projectFacts(project);
-  const shipped = projectEvents(events, projectRepos(project));
   return [
     `${project.slug} | ${site.name}`,
     ...(project.summary === null ? [] : [project.summary]),

@@ -1,0 +1,214 @@
+{
+  "source": "project-events",
+  "version": 1,
+  "fetchedAt": "2026-11-11T10:00:04.000Z",
+  "stale": false,
+  "data": {
+    "projects": [
+      {
+        "slug": "llm-usage-metrics",
+        "repo": "ayagmar/llm-usage",
+        "events": [
+          {
+            "type": "push",
+            "repo": "ayagmar/llm-usage",
+            "at": "2026-11-10T12:00:00Z",
+            "url": "https://github.com/ayagmar/llm-usage/compare/a...b",
+            "commits": 3
+          },
+          {
+            "repo": "ayagmar/llm-usage",
+            "at": "2026-11-09T12:00:00Z",
+            "type": "release",
+            "url": "https://github.com/ayagmar/llm-usage/releases/tag/v2.0.0-rc.1",
+            "tag": "v2.0.0-rc.1"
+          },
+          {
+            "repo": "ayagmar/llm-usage",
+            "at": "2026-11-08T12:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/llm-usage/pull/46",
+            "number": 46,
+            "title": "Read Codex logs"
+          },
+          {
+            "repo": "ayagmar/llm-usage",
+            "at": "2026-11-06T12:00:00Z",
+            "type": "release",
+            "url": "https://github.com/ayagmar/llm-usage/releases/tag/v1.7.0",
+            "tag": "v1.7.0"
+          }
+        ]
+      },
+      {
+        "slug": "pi-extmgr",
+        "repo": "ayagmar/pi-extmgr",
+        "events": [
+          {
+            "repo": "ayagmar/pi-extmgr",
+            "at": "2026-11-06T12:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/pi-extmgr/pull/24",
+            "number": 24,
+            "title": "Install from a path"
+          },
+          {
+            "repo": "ayagmar/pi-extmgr",
+            "at": "2026-05-04T08:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/pi-extmgr/pull/23",
+            "number": 23,
+            "title": "Show updates first"
+          }
+        ]
+      },
+      {
+        "slug": "ccdesk",
+        "repo": "ayagmar/ccdesk",
+        "events": []
+      },
+      {
+        "slug": "niri-computer-use",
+        "repo": "ayagmar/niri-computer-use",
+        "events": []
+      },
+      {
+        "slug": "runnerd",
+        "repo": "ayagmar/runnerd",
+        "events": [
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T22:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/100",
+            "number": 100,
+            "title": "Change 100"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T21:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/99",
+            "number": 99,
+            "title": "Change 99"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T20:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/98",
+            "number": 98,
+            "title": "Change 98"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T19:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/97",
+            "number": 97,
+            "title": "Change 97"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T18:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/96",
+            "number": 96,
+            "title": "Change 96"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T16:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/94",
+            "number": 94,
+            "title": "Change 94"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T15:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/93",
+            "number": 93,
+            "title": "Change 93"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T14:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/92",
+            "number": 92,
+            "title": "Change 92"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T13:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/91",
+            "number": 91,
+            "title": "Change 91"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-10T12:00:00Z",
+            "type": "merge",
+            "url": "https://github.com/ayagmar/runnerd/pull/90",
+            "number": 90,
+            "title": "Change 90"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-03T12:00:00Z",
+            "type": "release",
+            "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.3.0",
+            "tag": "v0.3.0"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-02T12:00:00Z",
+            "type": "release",
+            "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.2.0",
+            "tag": "v0.2.0"
+          },
+          {
+            "repo": "ayagmar/runnerd",
+            "at": "2026-11-01T12:00:00Z",
+            "type": "release",
+            "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.1.0",
+            "tag": "v0.1.0"
+          }
+        ]
+      },
+      {
+        "slug": "pi-codex-web-search",
+        "repo": "ayagmar/pi-codex-web-search",
+        "events": []
+      },
+      {
+        "slug": "pi-promptsmith",
+        "repo": "ayagmar/pi-promptsmith",
+        "events": []
+      },
+      {
+        "slug": "claude-modmgr",
+        "repo": "ayagmar/claude-modmgr",
+        "events": []
+      },
+      {
+        "slug": "repo-pulse",
+        "repo": "ayagmar/repo-pulse",
+        "events": []
+      },
+      {
+        "slug": "agents-skills",
+        "repo": "ayagmar/agents-skills",
+        "events": []
+      },
+      {
+        "slug": "headroom",
+        "repo": "ayagmar/headroom",
+        "events": []
+      }
+    ]
+  }
+}

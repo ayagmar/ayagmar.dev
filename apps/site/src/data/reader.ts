@@ -17,7 +17,9 @@ import {
   llmUsageEnvelopeSchema,
   type MonkeytypeSnapshot,
   monkeytypeEnvelopeSchema,
+  type ProjectEventsSnapshot,
   type ProjectsSnapshot,
+  projectEventsEnvelopeSchema,
   projectsEnvelopeSchema,
   type ShippingActivityDays,
   type ShippingSnapshot,
@@ -34,6 +36,7 @@ const envelopeSchemas = {
   listening: listeningEnvelopeSchema,
   shipping: shippingEnvelopeSchema,
   projects: projectsEnvelopeSchema,
+  'project-events': projectEventsEnvelopeSchema,
   monkeytype: monkeytypeEnvelopeSchema,
   'llm-usage': llmUsageEnvelopeSchema,
 };
@@ -42,6 +45,7 @@ interface Snapshots {
   listening: ListeningSnapshot;
   shipping: ShippingSnapshot;
   projects: ProjectsSnapshot;
+  'project-events': ProjectEventsSnapshot;
   monkeytype: MonkeytypeSnapshot;
   'llm-usage': LlmUsageSnapshot;
 }

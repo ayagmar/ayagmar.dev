@@ -5,6 +5,7 @@ import {
   listeningSnapshotSchema,
   llmUsageSnapshotSchema,
   monkeytypeSnapshotSchema,
+  projectEventsSnapshotSchema,
   projectsSnapshotSchema,
   shippingSnapshotSchema,
 } from '@min7/contracts';
@@ -13,7 +14,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { nowPlaying, readListening } from '../src/lib/listening.ts';
 import { ago, readAnswer } from '../src/lib/live.ts';
 import { readLlmUsageSnapshot } from '../src/lib/llm-usage.ts';
-import { readProjects, readShipping } from '../src/lib/stats.ts';
+import { readProjectEvents, readProjects, readShipping } from '../src/lib/stats.ts';
 import { daysAgo, readMonkeytype } from '../src/lib/typing.ts';
 
 const corpus = join(import.meta.dirname, '../../../packages/contracts/corpus');
@@ -81,6 +82,23 @@ const readers = [
     },
     // Not projects at all, though each has a star count /stats could add up.
     raw: { 'a project with only its stars': { projects: [{ stars: 9000 }] } },
+  },
+  {
+    source: 'project-events',
+    read: readProjectEvents,
+    schema: projectEventsSnapshotSchema,
+    edges: {
+      'a push in a log': { projects: [{ events: [{ type: 'push', commits: 3 }] }] },
+      'stars in a log': { projects: [{ events: [{ type: 'stars', gained: 1, total: 2 }] }] },
+      'a merge linked off GitHub': { projects: [{ events: [{ url: 'https://gitlab.com/x' }] }] },
+      'a merge number of zero': { projects: [{ events: [{ number: 0 }] }] },
+      'a release on 31 April': { projects: [{ events: [{ at: '2026-04-31T10:00:00Z' }] }] },
+      'a slug with capitals': { projects: [{ slug: 'Runnerd' }] },
+      'twenty-one events': {
+        projects: [{ events: Array.from({ length: 21 }, () => ({})) }],
+      },
+    },
+    envelopes: true,
   },
   {
     source: 'monkeytype',

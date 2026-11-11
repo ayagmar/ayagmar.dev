@@ -56,6 +56,10 @@ If a value leaked, do steps 1 to 4 at once and skip waiting in step 2: after ste
 
 `just signals-preview-secrets` again. Base config secrets apply to Previews created afterwards; existing Previews keep theirs until they are recreated.
 
+## GitHub token
+
+`GITHUB_TOKEN` (docs/deploy.md) is a fine-grained token, and those expire. When it does, the project logs stop updating and `/v1/health` shows `upstream_unauthorized` for `project-events`. Before it expires, make a new one with the same settings (no permissions, public repositories only) and set it with `just signals-secret GITHUB_TOKEN`; within an hour `project-events` shows a new `lastSuccessAt`.
+
 ## Checking the Worker
 
 - `GET https://api.ayagmar.dev/v1/health`: deployed commit, and per source `lastSuccessAt`, `stale` and `lastErrorCode`.

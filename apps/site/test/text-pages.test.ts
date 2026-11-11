@@ -1,4 +1,4 @@
-import type { ProjectsSnapshot, ShippingSnapshot } from '@min7/contracts';
+import type { ProjectEventsSnapshot, ProjectsSnapshot } from '@min7/contracts';
 import { fixturesCapturedAt, snapshotFixtures } from '@min7/contracts/fixtures';
 import { type MdastNode, markdownToMdast } from 'satteri';
 import { describe, expect, it } from 'vitest';
@@ -16,6 +16,7 @@ import {
   renderTilText,
   renderWritingText,
 } from '../src/lib/plaintext.ts';
+import { projectEvents } from '../src/lib/project-panel.ts';
 import { projectRowLabel, type SiteProject, siteProjects } from '../src/lib/projects.ts';
 import { renderStatsText, type StatsSources } from '../src/lib/stats-text.ts';
 import type { Note } from '../src/lib/til.ts';
@@ -319,11 +320,13 @@ describe('a project page', () => {
   it('gives what shipped recently with its links, and no heading when nothing did', () => {
     const ccdesk = siteProjects([], null).find((candidate) => candidate.slug === 'ccdesk');
     if (ccdesk === undefined) throw new Error('ccdesk is not featured');
-    const events = (snapshotFixtures.shipping.ok as ShippingSnapshot).events;
-    expect(renderProjectText(ccdesk, [], undefined, events)).toContain(
+    const logs = snapshotFixtures['project-events'].ok as ProjectEventsSnapshot;
+    expect(renderProjectText(ccdesk, [], undefined, projectEvents(logs, 'ccdesk'))).toContain(
       'Recently shipped\n' +
-        '  25 Oct, 11:48  released v0.5.13\n' +
-        '                 https://github.com/ayagmar/ccdesk/releases/tag/v0.5.13\n'
+        "  29 Oct, 21:53  merged #80: fix(core): read credential variables in a remote MCP server's URL as empty\n" +
+        '                 https://github.com/ayagmar/ccdesk/pull/80\n' +
+        '  29 Oct, 20:56  released v0.5.14\n' +
+        '                 https://github.com/ayagmar/ccdesk/releases/tag/v0.5.14\n'
     );
     expect(renderProjectText(project, [], undefined, [])).not.toContain('Recently shipped');
   });

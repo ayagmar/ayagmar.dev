@@ -91,17 +91,17 @@ Both databases exist (created 2026-10-26 with `just signals-db-create`), and the
 
 ## Secrets (signals)
 
-`LASTFM_API_KEY` (from https://www.last.fm/api/account/create) and the eight push secrets are required; the push secrets and their rotation are in [docs/operations.md](operations.md). `GITHUB_TOKEN` is optional: a fine-grained token with no permissions (public data). `MONKEYTYPE_APE_KEY` is optional too: an ApeKey from Monkeytype's account settings, for the typing bests on `/stats` (ADR 0033). Once, before the first signals deploy:
+`LASTFM_API_KEY` (from https://www.last.fm/api/account/create) and the eight push secrets are required; the push secrets and their rotation are in [docs/operations.md](operations.md). `GITHUB_TOKEN` is a fine-grained token with no permissions and access to public repositories only. The project logs need it (ADR 0046): GitHub's GraphQL API answers no anonymous request. The projects numbers work without it. `MONKEYTYPE_APE_KEY` is optional too: an ApeKey from Monkeytype's account settings, for the typing bests on `/stats` (ADR 0033). Once, before the first signals deploy:
 
 ```sh
 just signals-secrets                                  # production: prompts for each required value
-just signals-secret GITHUB_TOKEN                      # production, optional
+just signals-secret GITHUB_TOKEN                      # production, needed for project logs
 just signals-secret MONKEYTYPE_APE_KEY                # production, optional
 just signals-preview-secrets                          # Preview base config: random fake values
 just signals-preview-secret MONKEYTYPE_APE_KEY        # Preview base config: a random fake
 ```
 
-`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a required secret is missing; `GITHUB_TOKEN` and `MONKEYTYPE_APE_KEY` are not in that list. Without the ApeKey the typing pull asks Monkeytype nothing, records `not_configured` at each hourly attempt and keeps the last snapshot. Without it GitHub allows 60 requests an hour per IP, shared with other Workers, so a projects pull (every 6 hours) may be refused. Locally, without `LASTFM_API_KEY` in `.dev.vars`, the listening pull fails with `not_configured`.
+`secrets.required` in `wrangler.jsonc` makes a production deploy fail while a required secret is missing; `GITHUB_TOKEN` and `MONKEYTYPE_APE_KEY` are not in that list. Without the ApeKey the typing pull asks Monkeytype nothing, records `not_configured` at each hourly attempt and keeps the last snapshot. Without `GITHUB_TOKEN` the project logs pull asks nothing and records `not_configured` at each hourly attempt, so every log stays at its last snapshot; GitHub allows the numbers pull 60 requests an hour per IP, shared with other Workers, so it may be refused (every 6 hours). A refused or expired token shows as `upstream_unauthorized` for `project-events` on `/v1/health`, a spent hourly quota (shared with anything else the token is used for) as `upstream_rate_limited`. Locally, without `LASTFM_API_KEY` in `.dev.vars`, the listening pull fails with `not_configured`.
 
 Wrangler rejects `secrets` under `previews`, so Previews are not checked the same way; a Preview without its base config secrets answers every push with 401. The fake `LASTFM_API_KEY` and `MONKEYTYPE_APE_KEY` in Previews are never used, because the cron never runs there. A Preview made before a base config secret was set keeps running without it until it is recreated.
 

@@ -1,10 +1,11 @@
 /**
- * Which `/v1/shipping` and `/v1/projects` data /stats may show when its script reads them in
- * the browser (ADR 0015), checked whole as the contract states it: an answer that is not a
- * snapshot of featured projects is not counted, whatever star counts it carries. The browser
- * does not load the contracts' zod schemas; test/live.test.ts holds these readers to them.
+ * Which `/v1/shipping`, `/v1/projects` and `/v1/project-events` data /stats and the project
+ * pages may show when their scripts read them in the browser (ADR 0015), checked whole as the
+ * contract states it: an answer that is not a snapshot of featured projects is not counted,
+ * whatever star counts it carries. The browser does not load the contracts' zod schemas;
+ * test/live.test.ts holds these readers to them.
  */
-import type { ProjectsSnapshot, ShippingSnapshot } from '@min7/contracts';
+import type { ProjectEventsSnapshot, ProjectsSnapshot, ShippingSnapshot } from '@min7/contracts';
 import { calendarDate, instantMs, list, text, whole } from './live.ts';
 
 const repo = (value: unknown) =>
@@ -45,6 +46,29 @@ export function readShipping(data: unknown): ShippingSnapshot | undefined {
     : undefined;
 }
 
+const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** `data` if it is a snapshot of the projects' logs (ADR 0046), else undefined. */
+export function readProjectEvents(data: unknown): ProjectEventsSnapshot | undefined {
+  return list(Object(data).projects, 30, (item) => {
+    const { slug, repo: name, events } = Object(item);
+    return (
+      typeof slug === 'string' &&
+      slug.length <= 100 &&
+      slugPattern.test(slug) &&
+      repo(name) &&
+      list(
+        events,
+        20,
+        (value) =>
+          (Object(value).type === 'release' || Object(value).type === 'merge') && event(value)
+      )
+    );
+  })
+    ? (data as ProjectEventsSnapshot)
+    : undefined;
+}
+
 const string = (value: unknown) => value === null || typeof value === 'string';
 
 function project(value: unknown) {
@@ -62,7 +86,7 @@ function project(value: unknown) {
   return (
     typeof slug === 'string' &&
     slug.length <= 100 &&
-    /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) &&
+    slugPattern.test(slug) &&
     repo(name) &&
     text(title) &&
     github(url) &&

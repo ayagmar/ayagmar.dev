@@ -7,6 +7,9 @@ export const contractVersion = 1;
 /** RFC 3339 timestamp with an explicit offset, e.g. `2026-10-26T09:00:00Z`. */
 export const timestampSchema = z.iso.datetime({ offset: true });
 
+/** What `timestampSchema` accepts, for code that checks a timestamp without zod. */
+export const timestampPattern = z.regexes.datetime({ offset: true });
+
 /**
  * Every read API response. `data` is null until the source has succeeded once;
  * `fetchedAt` is when `data` was last refreshed.

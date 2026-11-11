@@ -14,7 +14,8 @@
         "listening-history",
         "desktop",
         "monkeytype",
-        "shipping-activity"
+        "shipping-activity",
+        "project-events"
       ]
     },
     "version": {

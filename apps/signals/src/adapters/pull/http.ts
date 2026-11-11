@@ -83,7 +83,7 @@ const requestTimeoutMs = 5_000;
 const userAgent = 'min7-signals (+https://ayagmar.dev)';
 
 /**
- * GETs `url`, or POSTs `form` to it, and reads at most `maxBytes` of the response body as
+ * GETs `url`, or POSTs `form` or `json` to it, and reads at most `maxBytes` of the response body as
  * JSON. Throws a `PullError` when the request fails, times out or the body is too large; any
  * HTTP status is returned as is. Workers traces record request URLs, so a secret goes in
  * `form` or a header, never in `url`.
@@ -95,6 +95,8 @@ export async function getJson(
     maxBytes: number;
     headers?: Record<string, string>;
     form?: URLSearchParams;
+    /** A body sent as JSON, for a GraphQL query (ADR 0046). */
+    json?: unknown;
     /** This request's own deadline, whatever `signal` does. */
     timeoutMs?: number;
     /**
@@ -106,12 +108,19 @@ export async function getJson(
 ): Promise<UpstreamResponse> {
   const timeout = AbortSignal.timeout(options.timeoutMs ?? requestTimeoutMs);
   const signal = AbortSignal.any([options.signal, timeout]);
+  const json = options.json === undefined ? undefined : JSON.stringify(options.json);
+  const body = options.form ?? json;
   try {
     const response = await fetch(url, {
-      headers: { accept: 'application/json', 'user-agent': userAgent, ...options.headers },
+      headers: {
+        accept: 'application/json',
+        'user-agent': userAgent,
+        ...(json === undefined ? {} : { 'content-type': 'application/json' }),
+        ...options.headers,
+      },
       signal,
       ...(options.redirect === undefined ? {} : { redirect: options.redirect }),
-      ...(options.form === undefined ? {} : { method: 'POST', body: options.form }),
+      ...(body === undefined ? {} : { method: 'POST', body }),
     });
     const retryAt = retryAfter(response.headers.get('retry-after'), Date.now());
     const text = await readText(response, options.maxBytes, signal);

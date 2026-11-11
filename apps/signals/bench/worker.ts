@@ -1,11 +1,13 @@
 // The CPU bench Worker (`just signals-cpu`, ADR 0030): runs one real cron invocation of a
-// pull adapter, D1 included, with Last.fm and Monkeytype answered from memory, so the CPU it takes is
+// pull adapter, D1 included, with every upstream answered from memory, so the CPU it takes is
 // signals' own work. Never deployed; scripts/signals-cpu.ts drives it.
+import { featuredProjects, projectMergesAsked } from '@min7/contracts';
 import { rawFixtures, snapshotFixtures } from '@min7/contracts/fixtures';
 import { listening } from '../src/adapters/pull/listening.ts';
 import { readListeningDay } from '../src/adapters/pull/listening-days.ts';
 import { listeningHistory } from '../src/adapters/pull/listening-history.ts';
 import { monkeytype } from '../src/adapters/pull/monkeytype.ts';
+import { projectAlias, projectEvents } from '../src/adapters/pull/project-events.ts';
 import { shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
 import { weather } from '../src/adapters/pull/weather.ts';
 import type { PullAdapter } from '../src/adapters/types.ts';
@@ -254,6 +256,54 @@ function storedActivity(repos: number, wholeToday: boolean) {
   };
 }
 
+/**
+ * GitHub's answer for the project logs (ADR 0046) with every node at its longest: for each
+ * featured project 10 releases with 60-character tags and 30 merged PRs with 300-character
+ * titles, about 240 KB.
+ */
+function projectEventsMaxAnswer(): string {
+  const now = Date.now();
+  const at = (minutes: number) => new Date(now - minutes * 60_000).toISOString();
+  const data = Object.fromEntries(
+    featuredProjects.map(({ slug, repo }) => [
+      projectAlias(slug),
+      {
+        nameWithOwner: repo,
+        isPrivate: false,
+        releases: {
+          nodes: Array.from({ length: 10 }, (_, i) => {
+            const tag = `v${i}.`.padEnd(60, '0');
+            return {
+              tagName: tag,
+              url: `https://github.com/${repo}/releases/tag/${tag}`,
+              createdAt: at(60 * i + 5),
+              publishedAt: at(60 * i),
+            };
+          }),
+        },
+        pullRequests: {
+          nodes: Array.from({ length: projectMergesAsked }, (_, i) => ({
+            number: 1000 - i,
+            title: `Change ${i} `.padEnd(300, 'x'),
+            url: `https://github.com/${repo}/pull/${1000 - i}`,
+            mergedAt: at(30 * i + 1),
+            updatedAt: at(30 * i),
+            author: { login: i % 5 === 0 ? 'dependabot' : 'ayagmar' },
+          })),
+        },
+      },
+    ])
+  );
+  return JSON.stringify({ data });
+}
+
+/** The project logs pull with a token, which the bench's config has none of. */
+const projectEventsWithToken: typeof projectEvents = {
+  ...projectEvents,
+  // An optional secret, so the generated `Env` does not declare it (secrets.ts).
+  fetch: (env, signal) => projectEvents.fetch({ ...env, GITHUB_TOKEN: 'bench' } as Env, signal),
+};
+
 /** What earlier invocations of a pull saved: `read` of the date's years, each summarized. */
 const progress = (years: number, read: number, name = 'Track') => {
   const today = dateAt(Date.now() / 1000);
@@ -315,6 +365,15 @@ const scenarios: Record<
       ]),
   },
   'monkeytype-max': { adapter: monkeytype, answers: monkeytypeAnswers },
+  // The project logs: the real answer of 2026-11-11 (70 KB), and every node at its longest.
+  'project-events': {
+    adapter: projectEventsWithToken,
+    answers: () => new Map([['graphql', JSON.stringify(rawFixtures['github-graphql'].ok.body)]]),
+  },
+  'project-events-max': {
+    adapter: projectEventsWithToken,
+    answers: () => new Map([['graphql', projectEventsMaxAnswer()]]),
+  },
   // The first activity pull, every one of its 400 days new: three repositories a day (a busy
   // year for this account), and twelve, near the adapter's 512 KiB body cap.
   activity: { adapter: shippingActivity, answers: () => activityAnswers(3, 400) },
@@ -370,6 +429,10 @@ async function answer(request: Request): Promise<Response> {
   }
   if (url.host === 'api.open-meteo.com' || url.host === 'archive-api.open-meteo.com') {
     const body = prepared?.get(url.host === 'api.open-meteo.com' ? 'forecast' : 'archive');
+    return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
+  }
+  if (url.host === 'api.github.com') {
+    const body = prepared?.get('graphql');
     return body === undefined ? new Response('{}', { status: 404 }) : new Response(body);
   }
   if (url.host === 'api.monkeytype.com') {

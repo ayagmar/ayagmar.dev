@@ -3,13 +3,13 @@
 // valid answer from signals replaces it, drawn from the markup the build draws it from
 // (src/lib/project-panel.ts). In fixtures mode no panel has an endpoint and nothing is requested.
 
-import type { ProjectsSnapshot, ShippingSnapshot } from '@min7/contracts';
+import type { ProjectEventsSnapshot, ProjectsSnapshot } from '@min7/contracts';
 import type { Answer } from '../lib/live.ts';
 import { live } from '../lib/live-page.ts';
 import type { Markup } from '../lib/markup.ts';
 import { toNode } from '../lib/markup-page.ts';
-import { projectLog, projectStats } from '../lib/project-panel.ts';
-import { readProjects, readShipping } from '../lib/stats.ts';
+import { projectEvents, projectLog, projectStats } from '../lib/project-panel.ts';
+import { readProjectEvents, readProjects } from '../lib/stats.ts';
 
 // What each panel draws now, as JSON; absent while it shows the build's HTML.
 const drawn = new WeakMap<HTMLElement, string>();
@@ -43,11 +43,17 @@ live('projects', 30 * 60_000, readProjects, (panel, answer: Answer<ProjectsSnaps
   );
 });
 
-// repo-pulse is pulled every 15 minutes; asking every 5 keeps the log within 20 minutes of it.
-// The log is hidden while the project has nothing in the feed, so it is never an empty box.
-live('shipping', 5 * 60_000, readShipping, (panel, answer: Answer<ShippingSnapshot>) => {
-  const log = projectLog(answer.data.events, panel.dataset.repos?.split(' ') ?? []);
-  if (redraw(panel, '.project-log-body', answer.fetchedAt, log)) {
-    panel.hidden = log.length === 0;
+// GitHub is pulled hourly (ADR 0046); asking every half hour is soon enough. The log is hidden
+// while the project has nothing, or the newest snapshot leaves it out (private, deleted or
+// moved), so it is never an empty box and never keeps what signals stopped naming.
+live(
+  'project-events',
+  30 * 60_000,
+  readProjectEvents,
+  (panel, answer: Answer<ProjectEventsSnapshot>) => {
+    const log = projectLog(projectEvents(answer.data, panel.dataset.project ?? ''));
+    if (redraw(panel, '.project-log-body', answer.fetchedAt, log)) {
+      panel.hidden = log.length === 0;
+    }
   }
-});
+);

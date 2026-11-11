@@ -1,6 +1,6 @@
 # 0008. Contracts: zod schemas as the source, JSON Schema generated
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: a source added within v1 (`weather`, ADR 0029; `listening-history`, ADR 0030; `desktop`, ADR 0032; `monkeytype`, ADR 0033) gets its own exported and frozen envelope; optional fields added to an existing source (`activeMs`, ADR 0014) are tested against its unchanged frozen consumer.
+Status: accepted, 2026-10-26. Amended 2026-10-26: a source added within v1 (`weather`, ADR 0029; `listening-history`, ADR 0030; `desktop`, ADR 0032; `monkeytype`, ADR 0033; `project-events`, ADR 0046) gets its own exported and frozen envelope; optional fields added to an existing source (`activeMs`, ADR 0014) are tested against its unchanged frozen consumer.
 
 ## Context
 

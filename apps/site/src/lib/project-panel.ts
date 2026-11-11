@@ -1,9 +1,9 @@
 /**
  * A project's numbers and its log of releases and merges: drawn by the build (ProjectStats.astro,
  * src/pages/projects/[slug].astro) and again by the browser for each newer answer from
- * `/v1/projects` or `/v1/shipping` (src/scripts/project-live.ts), from this one markup.
+ * `/v1/projects` or `/v1/project-events` (src/scripts/project-live.ts), from this one markup.
  */
-import type { Project, ShippingEvent } from '@min7/contracts';
+import type { Project, ProjectEvent, ProjectEventsSnapshot } from '@min7/contracts';
 import { describeEvent, projectFacts } from '../data/format.ts';
 import { capped } from './capped.ts';
 import { el, type Markup, stampMarkup } from './markup.ts';
@@ -48,21 +48,16 @@ export function projectStats(project: { slug: string; pulled: boolean }, live: P
 }
 
 /**
- * The releases and merges in `events` whose repository is one of `repos`, newest first as the
- * feed gives them. `repos` holds the name in contracts and the one GitHub reports now, since a
- * renamed repository's older events keep its old name; GitHub treats names without case.
+ * The project's log from a `/v1/project-events` snapshot: its entry's releases and merges,
+ * newest first. Empty when the snapshot has no entry for it (private, deleted, moved, or no
+ * snapshot at all), so the page never shows a log signals has stopped naming (ADR 0046).
  */
-export function projectEvents(events: readonly ShippingEvent[], repos: readonly string[]) {
-  const names = new Set(repos.map((repo) => repo.toLowerCase()));
-  return events.filter(
-    (event): event is Extract<ShippingEvent, { type: 'release' | 'merge' }> =>
-      (event.type === 'release' || event.type === 'merge') && names.has(event.repo.toLowerCase())
-  );
-}
+export const projectEvents = (snapshot: ProjectEventsSnapshot | null, slug: string) =>
+  snapshot?.projects.find((project) => project.slug === slug)?.events ?? [];
 
 /** The project's log, time first (ADR 0037), five open and the rest folded; empty for none. */
-export function projectLog(events: readonly ShippingEvent[], repos: readonly string[]): Markup[] {
-  const items = projectEvents(events, repos).map((event) =>
+export function projectLog(events: readonly ProjectEvent[]): Markup[] {
+  const items = events.map((event) =>
     el(
       'li',
       {},
