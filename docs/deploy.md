@@ -9,6 +9,7 @@ Workers Builds has Node and pnpm but not `just`. `scripts/bootstrap.sh` download
 Do this once per Worker in the Cloudflare dashboard: **Workers & Pages → Create → Import a repository**, pick `ayagmar/ayagmar.dev`, then fill in the settings below. The Worker name must match `name` in the Worker's `wrangler.jsonc`.
 
 Both projects:
+
 - **Root directory:** the repository root (leave empty or `/`).
 - **Node.js:** read from `.node-version`. Do not set `NODE_VERSION`.
 - **pnpm:** read from `packageManager` in `package.json`. Do not set `PNPM_VERSION`.
@@ -130,6 +131,7 @@ Read from the configs with Wrangler 4.152's `unstable_readConfig` and `wrangler 
 The commit SHA is the version: it is in the colophon (`/colophon`) and in `GET https://api.ayagmar.dev/v1/health`.
 
 To roll back one Worker without touching the other:
+
 1. Find the version: `just deployments site` (or `signals`), or the Worker's **Deployments** tab in the dashboard. Each version's message is the commit SHA.
 2. Roll back: `just rollback site <version-id>`, or **Rollback** next to that version in the dashboard. Without an id, `just rollback site` goes to the previous version.
 3. Revert the commit on `main` so the next deploy does not bring the problem back.

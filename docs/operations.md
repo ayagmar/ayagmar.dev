@@ -44,6 +44,7 @@ The current Worker ignores secrets it does not use, so setting them early is saf
 ### Rotate a token or key
 
 Example for the trellis token; the same steps work for every secret.
+
 1. Generate the new value and set it in the next slot: `just signals-secret PUSH_TOKEN_TRELLIS_NEXT`. signals now accepts the old and the new value.
 2. Switch the producer to the new value and check one push gets 2xx (`GET https://api.ayagmar.dev/v1/health` shows the source's `lastSuccessAt` move).
 3. Set the same new value in the current slot: `just signals-secret PUSH_TOKEN_TRELLIS`.

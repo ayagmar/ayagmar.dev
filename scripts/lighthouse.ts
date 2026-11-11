@@ -208,8 +208,10 @@ export function measuringTools(site: string, lockfile: string): string[] {
   }
   const found = new Map<string, string>();
   const visit = (from: string, name: string, optional: boolean) => {
+    // The trailing slash makes Node look in node_modules for a package named like a core
+    // module (bl depends on the npm `buffer`); for the bare name resolve.paths returns null.
     const dir = createRequire(join(from, 'package.json'))
-      .resolve.paths(name)
+      .resolve.paths(`${name}/`)
       ?.map((modules) => join(modules, name))
       .find((candidate) => existsSync(join(candidate, 'package.json')));
     if (!dir) {
