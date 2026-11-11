@@ -2,6 +2,7 @@
 
 updated: "2026-10-30"
 brewing:
+
 - name: repo-pulse
   note: A self-hosted Cloudflare Worker that posts GitHub activity to Discord, with retries and a delivery log.
   url: https://github.com/ayagmar/repo-pulse

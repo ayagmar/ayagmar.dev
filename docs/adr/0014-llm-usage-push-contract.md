@@ -49,6 +49,7 @@ Null costs stay null. A guessed 0 would show a free month. Size cap 64 KiB; a fu
 ### Estimated agent hours
 
 `activeMs` is llm-usage's active time: within each session, the time between consecutive logged events, each gap capped at 5 minutes, and the union over all sessions, sources and machines (the laptop included, as llm-usage counts it by default), so overlapping sessions count once. It is an estimate, not measured runtime and not the owner's time at the keyboard:
+
 - A session with a single event counts 0, and so do sources that log one event per session (droid, goose). Rows without their own time collapse onto the session start.
 - A 20-minute build between two events counts 5 minutes; part of an idle gap counts too.
 - A session that crosses midnight is split there, and the gap across midnight counts on neither day.
@@ -69,6 +70,7 @@ The build renders the panel from its snapshot and the browser replaces it with a
 ### Producer
 
 `producers/llm-usage.ts`, run by a systemd user timer every hour ([docs/producers/llm-usage.md](../producers/llm-usage.md)). It runs three commands, all with `--timezone Africa/Casablanca` and the same default scope (every source, every machine, no filter):
+
 1. `llm-usage summary --timezone Africa/Casablanca --json`, first. Its `timezone` must be Africa/Casablanca and `activity.to` must be the reporting date when collection started; its window `activity.from`–`activity.to` fixes the dates of the other two.
 2. `llm-usage daily --since <from> --until <to> --timezone Africa/Casablanca --json`, for the daily costs.
 3. `llm-usage trends --metric active-hours --since <from> --until <to> --timezone Africa/Casablanca --json`, for the hours.

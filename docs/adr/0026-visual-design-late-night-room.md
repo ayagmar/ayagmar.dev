@@ -13,6 +13,7 @@ The design has to keep what earlier ADRs promise: a strict CSP with no new inlin
 ### Tokens
 
 `apps/site/src/styles/base.css` holds one token layer. Every color is a `light-dark(day, night)` pair, so a theme is one switch: `color-scheme` on `<html>`.
+
 - Night: indigo-black ground `#0c0b14`, amber lamp `#f2b457` for links and dates, mint screen glow `#7fe0b4` for projects, cream text.
 - Day: the same room in daylight, not an inversion. Warm sunlit wall `#ece2cf`, dark ink text, the lamp darkened to `#7f4100` and the glow to `#155a46` so both stay above 4.5:1 on every day surface.
 - Paper (`--paper`, `--ink`): lamp-lit cream at night, brighter cream by day, ink the same in both, with a perforated left edge. The index pages and about sit on it; a post or note does not (see "The reader"), but its diagrams are paper cards.
@@ -38,6 +39,7 @@ Budget: this script adds one named file, `theme.*.js`, of under 1 KB gzip on eve
 ### Type
 
 Source Serif 4 for everything read, JetBrains Mono for data (dates, counts, the `min7` wordmark, code). Both are self-hosted WOFF2, built by `apps/site/scripts/fonts.py` (`just fonts`, needs `uv`) from the upstream releases (Source Serif 4.005R, JetBrains Mono 2.304), each checked against a sha256:
+
 - Subset to Basic Latin, Latin-1, and the typographic punctuation and arrows the site uses.
 - Weights cut to 400 to 700. Both serif faces are pinned to the text optical size (`opsz` 16). Keeping the axis gave headings Source Serif's display cut, but it made the roman 101 KiB, and that preloaded file pushed mobile LCP on home past 2 s. The price: no automatic optical sizing, so large headings use the text cut, which is a little heavier and looser than the display cut.
 - `font-display: swap`; only the roman is preloaded.
@@ -78,6 +80,7 @@ Pele diagrams keep the class rewrite of ADR 0024; only the `--pele-*` variables 
 ### The reader
 
 The owner reads on a phone and found the post cramped. At 390 px the paper card's margins and its perforated edge took about 70 px, the text column was about 300 px, and the header was three rows (wordmark, search and theme switch, nav). Posts and TIL notes (`/til` and `/til/<slug>`) now read like this:
+
 - **No card.** The text sits on the room's ground (`--ground`, `--text`, links in `--lamp`) in both themes. At 390 px the column is 354 px, the page gutter is 18 px, body text is 19 px at a line height of 1.65, and the measure is 66ch from 40 rem up. The bright cream slab was the weakest part of the design at night: a large lit rectangle in a dark room that read worse than cream text on indigo, and a phone held at night makes it worse. Day keeps ink on the sunlit wall.
 - **Edge to edge on phones.** Code blocks, tables, the per-post art and diagrams run to the screen edge below 40 rem and scroll inside themselves; the page never does. Tables keep a 7 rem minimum column so a wide table scrolls instead of squeezing into slivers. A lone image in a paragraph bleeds too. From 40 rem pixel-stepped corners return on code and diagrams.
 - **Diagrams are paper cards**, pinned to the ground. Pele's colors were chosen for the paper, so the cards keep their contrast in both themes without a second set of `--pele-*` values. They are the only paper left on a post.

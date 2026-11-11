@@ -245,8 +245,10 @@ describe('runs and pages', () => {
 describe('measuring tools', () => {
   const installed = {
     '@lhci/cli': ['0.15.1', { lighthouse: '12.6.1' }],
-    lighthouse: ['12.6.1', { 'axe-core': '^4' }],
+    lighthouse: ['12.6.1', { 'axe-core': '^4', buffer: '^5' }],
     'axe-core': ['4.14.0', {}],
+    // An npm package named like a Node core module, as Lighthouse 13 pulls in through bl.
+    buffer: ['5.7.1', {}],
     '@playwright/test': ['1.64.1', { 'playwright-core': '1.64.1' }],
     'playwright-core': ['1.64.1', {}],
     wrangler: ['4.156.0', { workerd: '1' }],
@@ -284,10 +286,12 @@ describe('measuring tools', () => {
   const tools = (lock = lockfile()) => measuringTools(join(root, 'apps/site'), lock);
 
   // Catches a cached base measured with another axe-core (its accessibility score) or workerd
-  // being reused, and a bump of an unrelated tool (knip) throwing the cache away.
+  // being reused, a bump of an unrelated tool (knip) throwing the cache away, and a dependency
+  // named like a Node core module (buffer) reported as not installed.
   it('lists every package the measurement loads, transitive ones included, and nothing else', () => {
     const list = tools();
     assert.ok(list.some((t) => t.startsWith('axe-core@4.14.0 ')));
+    assert.ok(list.some((t) => t.startsWith('buffer@5.7.1 ')));
     assert.ok(list.some((t) => t.startsWith('workerd@1.20261023.1 ')));
     assert.ok(!list.some((t) => t.startsWith('knip@')));
     assert.deepEqual(tools(lockfile({ integrity: { knip: 'sha512-other' } })), list);

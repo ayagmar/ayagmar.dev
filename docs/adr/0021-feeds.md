@@ -9,6 +9,7 @@ Readers come back through feeds. `@astrojs/rss` writes RSS only; Atom would need
 ## Decision
 
 `apps/site/src/lib/feed.ts` builds one feed model from the published posts and renders it twice: RSS 2.0 (`/feed.xml`) and Atom 1.0 (`/atom.xml`), plus the same pair per tag (`/writing/tags/<tag>/feed.xml` and `atom.xml`).
+
 - Text is XML-escaped (`& < > " '`) and characters XML 1.0 forbids are dropped. Summaries are plain text (`type="text"` in Atom).
 - Every URL is absolute (`https://ayagmar.dev/...`). Each feed links to itself (`rel="self"`, and `atom:link` in RSS).
 - RSS dates are RFC 822 (`toUTCString`), Atom dates RFC 3339.
