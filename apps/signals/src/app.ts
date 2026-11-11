@@ -8,6 +8,7 @@ import { listening } from './routes/v1/listening.ts';
 import { listeningHistory } from './routes/v1/listening-history.ts';
 import { llmUsage } from './routes/v1/llm-usage.ts';
 import { monkeytype } from './routes/v1/monkeytype.ts';
+import { projectEvents } from './routes/v1/project-events.ts';
 import { projects } from './routes/v1/projects.ts';
 import { push } from './routes/v1/push.ts';
 import { shelf } from './routes/v1/shelf.ts';
@@ -19,6 +20,7 @@ export const app = new Hono<AppEnv>()
   .route('/v1/listening', listening)
   .route('/v1/shipping', shipping)
   .route('/v1/projects', projects)
+  .route('/v1/project-events', projectEvents)
   .route('/v1/llm-usage', llmUsage)
   .route('/v1/shelf', shelf)
   .route('/v1/weather', weather)

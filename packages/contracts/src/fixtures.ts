@@ -17,6 +17,23 @@ import githubRawMalformed from '../fixtures/github/raw/malformed.json' with { ty
 import githubRawMissing from '../fixtures/github/raw/missing.json' with { type: 'json' };
 import githubRawOk from '../fixtures/github/raw/ok.json' with { type: 'json' };
 import githubRawPartial from '../fixtures/github/raw/partial.json' with { type: 'json' };
+import githubGraphqlRawEmpty from '../fixtures/github-graphql/raw/empty.json' with { type: 'json' };
+import githubGraphqlRawMalformed from '../fixtures/github-graphql/raw/malformed.json' with {
+  type: 'json',
+};
+import githubGraphqlRawMissing from '../fixtures/github-graphql/raw/missing.json' with {
+  type: 'json',
+};
+import githubGraphqlRawOk from '../fixtures/github-graphql/raw/ok.json' with { type: 'json' };
+import githubGraphqlRawPartial from '../fixtures/github-graphql/raw/partial.json' with {
+  type: 'json',
+};
+import githubGraphqlRawRateLimited from '../fixtures/github-graphql/raw/rate-limited.json' with {
+  type: 'json',
+};
+import githubGraphqlRawUnresolved from '../fixtures/github-graphql/raw/unresolved.json' with {
+  type: 'json',
+};
 import lastfmRawEmpty from '../fixtures/lastfm/raw/empty.json' with { type: 'json' };
 import lastfmRawErrorIn200 from '../fixtures/lastfm/raw/error-in-200.json' with { type: 'json' };
 import lastfmRawMalformed from '../fixtures/lastfm/raw/malformed.json' with { type: 'json' };
@@ -156,6 +173,15 @@ import openMeteoRawUnknownCode from '../fixtures/open-meteo/raw/unknown-code.jso
 import openMeteoArchiveRawOk from '../fixtures/open-meteo-archive/raw/ok.json' with {
   type: 'json',
 };
+import projectEventsSnapshotEmpty from '../fixtures/project-events/snapshot/empty.json' with {
+  type: 'json',
+};
+import projectEventsSnapshotOk from '../fixtures/project-events/snapshot/ok.json' with {
+  type: 'json',
+};
+import projectEventsSnapshotPartial from '../fixtures/project-events/snapshot/partial.json' with {
+  type: 'json',
+};
 import projectsSnapshotEmpty from '../fixtures/projects/snapshot/empty.json' with { type: 'json' };
 import projectsSnapshotOk from '../fixtures/projects/snapshot/ok.json' with { type: 'json' };
 import projectsSnapshotPartial from '../fixtures/projects/snapshot/partial.json' with {
@@ -232,6 +258,15 @@ export const fixturesCapturedAt = '2026-10-26T09:00:00Z';
 
 /** Upstream responses as each adapter's `fetch` returns them. */
 export const rawFixtures = {
+  'github-graphql': {
+    empty: githubGraphqlRawEmpty,
+    malformed: githubGraphqlRawMalformed,
+    missing: githubGraphqlRawMissing,
+    ok: githubGraphqlRawOk,
+    partial: githubGraphqlRawPartial,
+    'rate-limited': githubGraphqlRawRateLimited,
+    unresolved: githubGraphqlRawUnresolved,
+  },
   github: {
     empty: githubRawEmpty,
     malformed: githubRawMalformed,
@@ -346,6 +381,11 @@ export const snapshotFixtures = {
     ok: monkeytypeSnapshotOk,
     partial: monkeytypeSnapshotPartial,
     'sensitive-fields': monkeytypeSnapshotSensitiveFields,
+  },
+  'project-events': {
+    empty: projectEventsSnapshotEmpty,
+    ok: projectEventsSnapshotOk,
+    partial: projectEventsSnapshotPartial,
   },
   projects: {
     empty: projectsSnapshotEmpty,

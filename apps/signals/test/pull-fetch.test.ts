@@ -10,6 +10,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { getJson } from '../src/adapters/pull/http.ts';
 import { PullError } from '../src/adapters/pull/index.ts';
 import { listening } from '../src/adapters/pull/listening.ts';
+import { projectEvents } from '../src/adapters/pull/project-events.ts';
 import { projects } from '../src/adapters/pull/projects.ts';
 import { shipping } from '../src/adapters/pull/shipping.ts';
 import { shippingActivity } from '../src/adapters/pull/shipping-activity.ts';
@@ -64,6 +65,9 @@ describe('pull adapter fetch', () => {
       npm: rawFixtures.npm.ok,
     });
     expect(await weather.fetch(env, signal())).toEqual(rawFixtures['open-meteo'].ok);
+    expect(await projectEvents.fetch(withSecrets, signal())).toEqual(
+      rawFixtures['github-graphql'].ok
+    );
   });
 
   it('turns a failed part into null and keeps the rest', async () => {
@@ -85,9 +89,11 @@ describe('pull adapter fetch', () => {
           authorization: request.headers.get('authorization'),
           url: request.url,
           body:
-            request.method === 'POST'
-              ? [...(await request.clone().formData()).values()].join('&')
-              : '',
+            request.method !== 'POST'
+              ? ''
+              : request.headers.get('content-type') === 'application/json'
+                ? await request.clone().text()
+                : [...(await request.clone().formData()).values()].join('&'),
         });
       }),
       ...upstreamHandlers()
@@ -97,6 +103,7 @@ describe('pull adapter fetch', () => {
     await shipping.fetch(withSecrets, signal());
     await projects.fetch(withSecrets, signal());
     await weather.fetch(withSecrets, signal());
+    await projectEvents.fetch(withSecrets, signal());
 
     for (const request of seen) {
       const isGithub = request.host === 'api.github.com';
@@ -147,6 +154,22 @@ describe('pull adapter fetch', () => {
     expect(await counted(() => shippingActivity.fetch(env, signal()))).toBe(2);
     expect(await counted(() => weather.fetch(env, signal()))).toBe(1);
     expect((await counted(() => projects.fetch(env, signal()))) * 2).toBeLessThanOrEqual(50);
+    expect(await counted(() => projectEvents.fetch(withSecrets, signal()))).toBe(1);
+  });
+
+  // Catches a pull that asks GitHub's GraphQL API without a token, which it refuses, so every
+  // hourly attempt would spend a request on a known answer instead of saying what is missing.
+  it('asks nothing for the project logs without a GitHub token', async () => {
+    let requests = 0;
+    network.use(
+      http.all('*', () => {
+        requests += 1;
+      }),
+      ...upstreamHandlers()
+    );
+    const error = await pullError(projectEvents.fetch(env, signal()));
+    expect(error.code).toBe('not_configured');
+    expect(requests).toBe(0);
   });
 
   it('keeps at most six projects requests open, so none waits in the runtime queue', async () => {

@@ -79,13 +79,25 @@ export const repoPulseFeedReaderSchema = repoPulseFeedSchema.extend({
 
 const shippingEventBase = { repo: repoFullNameSchema, at: timestampSchema };
 
+/** A published release. Also an entry of a project's log (`/v1/project-events`). */
+export const shippingReleaseSchema = z.object({
+  ...shippingEventBase,
+  type: z.literal('release'),
+  url: githubUrlSchema,
+  tag: z.string().min(1),
+});
+
+/** A merged pull request. Also an entry of a project's log (`/v1/project-events`). */
+export const shippingMergeSchema = z.object({
+  ...shippingEventBase,
+  type: z.literal('merge'),
+  url: githubUrlSchema,
+  number: z.number().int().positive(),
+  title: z.string().min(1),
+});
+
 export const shippingEventSchema = z.discriminatedUnion('type', [
-  z.object({
-    ...shippingEventBase,
-    type: z.literal('release'),
-    url: githubUrlSchema,
-    tag: z.string().min(1),
-  }),
+  shippingReleaseSchema,
   /** Stars gained in one repository on one UTC day; `at` is the latest of them. */
   z.object({
     ...shippingEventBase,
@@ -99,13 +111,7 @@ export const shippingEventSchema = z.discriminatedUnion('type', [
     url: githubUrlSchema,
     commits: z.number().int().nonnegative(),
   }),
-  z.object({
-    ...shippingEventBase,
-    type: z.literal('merge'),
-    url: githubUrlSchema,
-    number: z.number().int().positive(),
-    title: z.string().min(1),
-  }),
+  shippingMergeSchema,
 ]);
 
 export const shippingSnapshotSchema = z.object({

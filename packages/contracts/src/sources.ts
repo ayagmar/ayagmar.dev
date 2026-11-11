@@ -12,6 +12,7 @@ export const sourceIds = [
   'desktop',
   'monkeytype',
   'shipping-activity',
+  'project-events',
 ] as const;
 
 export const sourceIdSchema = z.enum(sourceIds);
@@ -46,4 +47,6 @@ export const staleAfterSeconds: Readonly<Record<SourceId, number>> = {
   // repo-pulse daily activity pulled hourly (ADR 0038); `fetchedAt` is when repo-pulse built
   // the answer.
   'shipping-activity': 6 * 60 * 60,
+  // GitHub releases and merged pull requests of the featured projects, pulled hourly (ADR 0046).
+  'project-events': 6 * 60 * 60,
 };

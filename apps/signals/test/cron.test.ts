@@ -178,13 +178,14 @@ describe('scheduled', () => {
       // up to the end of the two days: the daily one too, so each is tried more than once.
       expect(runs[0], id).toBeLessThan(pullAdapters.length);
       expect(runs.length, id).toBeGreaterThan(1);
-      // The activity pull also waits out the first 15 minutes of a date in Rabat (ADR 0038).
-      const limit =
-        id === 'listening' ? 5 : intervalSeconds / 60 + (id === 'shipping-activity' ? 20 : 5);
+      // The activity and project log pulls also wait out the first 15 minutes of a date in
+      // Rabat (ADR 0038, ADR 0046).
+      const yields = id === 'shipping-activity' || id === 'project-events';
+      const limit = id === 'listening' ? 5 : intervalSeconds / 60 + (yields ? 20 : 5);
       const [first = 0, ...later] = gaps.get(id) ?? [];
-      // At startup listening waits while each of the other six sources is tried once (ADR
-      // 0038): measured 7 minutes, then at most 3.
-      expect(first, id).toBeLessThanOrEqual(id === 'listening' ? 7 : limit);
+      // At startup listening waits while each of the other seven sources is tried once (ADR
+      // 0038, ADR 0046): measured 8 minutes, then at most 3.
+      expect(first, id).toBeLessThanOrEqual(id === 'listening' ? 8 : limit);
       expect(Math.max(...later), id).toBeLessThanOrEqual(limit);
       expect(run - (runs.at(-1) ?? 0), `${id} at the end`).toBeLessThanOrEqual(limit);
     }

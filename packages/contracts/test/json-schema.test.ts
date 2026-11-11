@@ -28,6 +28,7 @@ const fixtureCases: Record<string, Partial<Record<Kind, string[]>>> = {
   'listening-history': { accept: ['listening-history/snapshot'] },
   desktop: { accept: ['desktop/snapshot'] },
   monkeytype: { accept: ['monkeytype/snapshot'] },
+  'project-events': { accept: ['project-events/snapshot'] },
   'repo-pulse-feed': {
     accept: ['repo-pulse/raw/ok.json', 'repo-pulse/raw/empty.json'],
     reject: ['repo-pulse/raw/malformed.json'],
@@ -53,6 +54,7 @@ const envelopes: Record<string, string> = {
   'listening-history': 'listening-history',
   desktop: 'desktop',
   monkeytype: 'monkeytype',
+  'project-events': 'project-events',
   'days-shipping-activity': 'shipping-activity',
 };
 

@@ -1,0 +1,93 @@
+{
+  "status": 200,
+  "body": {
+    "data": {
+      "p_llm_usage_metrics": null,
+      "p_pi_mobile": null,
+      "p_pi_extmgr": null,
+      "p_ccdesk": null,
+      "p_niri_computer_use": null,
+      "p_runnerd": null,
+      "p_pi_codex_web_search": null,
+      "p_pi_promptsmith": null,
+      "p_claude_modmgr": null,
+      "p_repo_pulse": null,
+      "p_agents_skills": null,
+      "p_kipple": null,
+      "p_dotfiles": null,
+      "p_headroom": null
+    },
+    "errors": [
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_llm_usage_metrics"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_pi_mobile"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_pi_extmgr"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_ccdesk"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_niri_computer_use"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_runnerd"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_pi_codex_web_search"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_pi_promptsmith"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_claude_modmgr"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_repo_pulse"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_agents_skills"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_kipple"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_dotfiles"],
+        "message": "Could not resolve to a Repository."
+      },
+      {
+        "type": "NOT_FOUND",
+        "path": ["p_headroom"],
+        "message": "Could not resolve to a Repository."
+      }
+    ]
+  }
+}

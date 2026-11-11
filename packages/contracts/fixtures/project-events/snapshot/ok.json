@@ -1,0 +1,1516 @@
+{
+  "projects": [
+    {
+      "slug": "llm-usage-metrics",
+      "repo": "ayagmar/llm-usage-metrics",
+      "events": [
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-10T10:32:36Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.4",
+          "tag": "v0.14.4"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-10T00:33:25Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/353",
+          "number": 353,
+          "title": "refactor(core): share adapter helpers for file stems, timestamps and usage signals"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-10T00:24:44Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/352",
+          "number": 352,
+          "title": "refactor(cli): read the clock once per report run"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-10T00:24:07Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/351",
+          "number": 351,
+          "title": "refactor: one owner each for model keys, period ranges and completion arms"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-09T23:58:15Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/350",
+          "number": 350,
+          "title": "fix(cli): pace the month-end projection by the time gone by"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-09T23:57:42Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/349",
+          "number": 349,
+          "title": "fix: append event- and file-sized arrays without spreading into push"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-09T22:42:04Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/348",
+          "number": 348,
+          "title": "fix(core): retry atomic-write renames Windows refuses while the file is open"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-09T22:40:57Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/347",
+          "number": 347,
+          "title": "ci(lint): enforce owner modules with ast-grep rules"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-09T22:12:47Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/344",
+          "number": 344,
+          "title": "refactor(cli): decide the run's event store in one place"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-09T21:57:22Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/346",
+          "number": 346,
+          "title": "test(core): fix a race in the overlapping pricing load test"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-09T21:50:53Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/pull/343",
+          "number": 343,
+          "title": "refactor(aggregate): give usage totals and cost state one owner"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-06T21:40:01Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.3",
+          "tag": "v0.14.3"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-11-01T19:03:34Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.2",
+          "tag": "v0.14.2"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-10-23T13:51:53Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.1",
+          "tag": "v0.14.1"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-10-23T02:21:04Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.14.0",
+          "tag": "v0.14.0"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-10-21T21:41:44Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.13.0",
+          "tag": "v0.13.0"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-10-18T19:20:10Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.12.1",
+          "tag": "v0.12.1"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-10-18T16:44:39Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.12.0",
+          "tag": "v0.12.0"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-10-13T01:44:30Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.11.0",
+          "tag": "v0.11.0"
+        },
+        {
+          "repo": "ayagmar/llm-usage-metrics",
+          "at": "2026-10-10T01:10:45Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/llm-usage-metrics/releases/tag/v0.10.2",
+          "tag": "v0.10.2"
+        }
+      ]
+    },
+    {
+      "slug": "pi-mobile",
+      "repo": "ayagmar/pi-mobile",
+      "events": [
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-10-03T15:56:10Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/17",
+          "number": 17,
+          "title": "feat(android client): add workspace picker dialog for new sessions"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-07-24T14:12:58Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/13",
+          "number": 13,
+          "title": "perf work"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-07-13T03:15:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/12",
+          "number": 12,
+          "title": "feat: complete Pi Mobile revival roadmap"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-07-09T16:39:34Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/9",
+          "number": 9,
+          "title": "feature/stable client id"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-07-09T16:39:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/10",
+          "number": 10,
+          "title": "Full markdown rendering"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-07-09T16:38:40Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/11",
+          "number": 11,
+          "title": "feat(nav): default to Hosts view when no hosts are defined"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-03-23T02:45:11Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/8",
+          "number": 8,
+          "title": "fix: deterministic session reload for sync/open + android CI lint stability"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-02-18T23:43:03Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/5",
+          "number": 5,
+          "title": "ci(coverage): publish Kotlin coverage report in PR comments"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-02-17T14:34:34Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/4",
+          "number": 4,
+          "title": "Develop"
+        },
+        {
+          "repo": "ayagmar/pi-mobile",
+          "at": "2026-02-17T13:44:35Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-mobile/pull/3",
+          "number": 3,
+          "title": "Develop"
+        }
+      ]
+    },
+    {
+      "slug": "pi-extmgr",
+      "repo": "ayagmar/pi-extmgr",
+      "events": [
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-21T19:38:01Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.4.2",
+          "tag": "v0.4.2"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-21T19:37:09Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/36",
+          "number": 36,
+          "title": "fix: address linked-root and exact-selection review findings"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-21T18:37:00Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/35",
+          "number": 35,
+          "title": "feat: add footer visibility toggle to the existing manager menu"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-21T18:32:28Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/34",
+          "number": 34,
+          "title": "fix: keep passive status refresh offline when checks are disabled"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-21T18:32:19Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/33",
+          "number": 33,
+          "title": "fix: protect linked extension sources and empty package selections"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-16T16:13:53Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.4.1",
+          "tag": "v0.4.1"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-16T16:12:40Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/32",
+          "number": 32,
+          "title": "feat: toggle all package resources and restore previous filters"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-04T03:02:19Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.4.0",
+          "tag": "v0.4.0"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-10-04T02:51:34Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/26",
+          "number": 26,
+          "title": "feat!: migrate to pi 1.0.1 and unify the npm release process"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-07-24T15:33:10Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/24",
+          "number": 24,
+          "title": "Feat/overlay panes"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-07-21T16:55:49Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/23",
+          "number": 23,
+          "title": "Feat/extmgr ux hardening"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-07-14T16:16:02Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/21",
+          "number": 21,
+          "title": "Show package extension state in manager rows"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-06-26T14:30:41Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-extmgr/pull/22",
+          "number": 22,
+          "title": "chore(deps): bump pi packages to 0.80"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-05-11T10:56:15Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.3.0",
+          "tag": "v0.3.0"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-05-07T16:19:29Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.2.2",
+          "tag": "v0.2.2"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-04-29T21:16:18Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.2.1",
+          "tag": "v0.2.1"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-04-20T10:39:29Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.2.0",
+          "tag": "v0.2.0"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-03-28T18:08:37Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.1.28",
+          "tag": "v0.1.28"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-03-24T21:24:57Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.1.27",
+          "tag": "v0.1.27"
+        },
+        {
+          "repo": "ayagmar/pi-extmgr",
+          "at": "2026-03-14T12:53:38Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-extmgr/releases/tag/v0.1.26",
+          "tag": "v0.1.26"
+        }
+      ]
+    },
+    {
+      "slug": "ccdesk",
+      "repo": "ayagmar/ccdesk",
+      "events": [
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-29T21:53:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/80",
+          "number": 80,
+          "title": "fix(core): read credential variables in a remote MCP server's URL as empty"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-29T20:56:21Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.14",
+          "tag": "v0.5.14"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-29T20:55:14Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/79",
+          "number": 79,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.312)"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-25T11:48:51Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.13",
+          "tag": "v0.5.13"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-25T11:47:54Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/74",
+          "number": 74,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.310)"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-25T02:35:08Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.12",
+          "tag": "v0.5.12"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-25T02:34:04Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/73",
+          "number": 73,
+          "title": "fix(ui): scroll and layout paper cuts"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-25T01:43:58Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.11",
+          "tag": "v0.5.11"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-25T01:42:52Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/72",
+          "number": 72,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.310)"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-25T01:38:30Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/71",
+          "number": 71,
+          "title": "chore(deps): consolidate dependency upgrades"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-21T20:52:10Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.10",
+          "tag": "v0.5.10"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-21T20:50:54Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/65",
+          "number": 65,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.306)"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T17:43:45Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.9",
+          "tag": "v0.5.9"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T17:41:21Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/62",
+          "number": 62,
+          "title": "fix(server): keep the page's address across restarts"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T17:36:49Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.8",
+          "tag": "v0.5.8"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T17:35:30Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/61",
+          "number": 61,
+          "title": "chore: update Claude Code data (claude-agent-sdk 0.3.304)"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T03:56:30Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.7",
+          "tag": "v0.5.7"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T03:53:04Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/ccdesk/pull/60",
+          "number": 60,
+          "title": "feat(ui): show what each change in Recent changes did"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T03:37:38Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.6",
+          "tag": "v0.5.6"
+        },
+        {
+          "repo": "ayagmar/ccdesk",
+          "at": "2026-10-20T02:51:20Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/ccdesk/releases/tag/v0.5.5",
+          "tag": "v0.5.5"
+        }
+      ]
+    },
+    {
+      "slug": "niri-computer-use",
+      "repo": "ayagmar/niri-computer-use",
+      "events": [
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-11-04T21:58:27Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.8",
+          "tag": "v0.1.8"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-11-04T21:36:16Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/65",
+          "number": 65,
+          "title": "chore(release): 0.1.8"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-11-04T20:50:36Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/64",
+          "number": 64,
+          "title": "feat(plugin): a bigger robot that stays alive between actions"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-11-04T19:21:45Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/63",
+          "number": 63,
+          "title": "fix: pre-launch polish"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T21:03:29Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.7",
+          "tag": "v0.1.7"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T20:41:25Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/56",
+          "number": 56,
+          "title": "chore(release): 0.1.7"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T20:23:21Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/55",
+          "number": 55,
+          "title": "feat(plugin): show a robot that follows the agent's actions"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T17:36:31Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.6",
+          "tag": "v0.1.6"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T17:09:35Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/54",
+          "number": 54,
+          "title": "chore(release): 0.1.6"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T16:42:33Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/53",
+          "number": 53,
+          "title": "fix(harness): get the nested suites green under cage"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T16:12:52Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/49",
+          "number": 49,
+          "title": "feat(launch): start installed desktop entries, opt-in"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T15:59:28Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/48",
+          "number": 48,
+          "title": "feat(status): readiness checks, lease notice and a locked screen"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-30T15:49:17Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/niri-computer-use/pull/50",
+          "number": 50,
+          "title": "test(harness): cover typing into chromium form fields that reformat input"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-18T04:43:27Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.5",
+          "tag": "v0.1.5"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-18T00:42:19Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.4",
+          "tag": "v0.1.4"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-17T19:53:05Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.3",
+          "tag": "v0.1.3"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-16T22:19:42Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.2",
+          "tag": "v0.1.2"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-14T15:52:45Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.1",
+          "tag": "v0.1.1"
+        },
+        {
+          "repo": "ayagmar/niri-computer-use",
+          "at": "2026-10-14T05:22:23Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/niri-computer-use/releases/tag/v0.1.0",
+          "tag": "v0.1.0"
+        }
+      ]
+    },
+    {
+      "slug": "runnerd",
+      "repo": "ayagmar/runnerd",
+      "events": [
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-11T00:24:33Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/293",
+          "number": 293,
+          "title": "chore: the wire check reads against v0.1.0"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-11T00:06:00Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.1.0",
+          "tag": "v0.1.0"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T23:47:04Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/291",
+          "number": 291,
+          "title": "chore: release 0.1.0"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T23:35:46Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/292",
+          "number": 292,
+          "title": "test: bound a pass's slot wait by the time the pass took, not a fixed 200 ms"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T21:17:31Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/289",
+          "number": 289,
+          "title": "feat: count what runs uses and keep room for its largest growths"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T19:56:17Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/290",
+          "number": 290,
+          "title": "test: a failed listing forgets its repository's jobs in the invariants until one answers"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T19:25:08Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/288",
+          "number": 288,
+          "title": "fix: keep the plain host margin for a job the tick's last plan still starts"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T18:55:11Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/287",
+          "number": 287,
+          "title": "fix: name an idle runner for the oldest job, whatever order the listing gives"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T18:44:07Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/286",
+          "number": 286,
+          "title": "fix: check a start still fits once its launch's waits are over"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T18:19:29Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/285",
+          "number": 285,
+          "title": "feat: list each repository on its own schedule, faster while active"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-10T17:02:42Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/runnerd/pull/284",
+          "number": 284,
+          "title": "fix: let jobs pass a barrier unless what passed would keep its owner out"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-07T17:46:36Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.29",
+          "tag": "v0.0.29"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-03T15:09:04Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.28",
+          "tag": "v0.0.28"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-11-01T19:27:24Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.27",
+          "tag": "v0.0.27"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-10-31T20:23:25Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.26",
+          "tag": "v0.0.26"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-10-31T00:03:25Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.25",
+          "tag": "v0.0.25"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-10-30T22:26:32Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.24",
+          "tag": "v0.0.24"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-10-30T19:45:13Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.23",
+          "tag": "v0.0.23"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-10-30T14:55:36Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.22",
+          "tag": "v0.0.22"
+        },
+        {
+          "repo": "ayagmar/runnerd",
+          "at": "2026-10-26T17:52:11Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/runnerd/releases/tag/v0.0.21",
+          "tag": "v0.0.21"
+        }
+      ]
+    },
+    {
+      "slug": "pi-codex-web-search",
+      "repo": "ayagmar/pi-codex-web-search",
+      "events": [
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-10-04T03:36:57Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/releases/tag/v0.2.0",
+          "tag": "v0.2.0"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-10-04T02:52:51Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/8",
+          "number": 8,
+          "title": "feat!: migrate to pi 1.0.1 and unify the npm release process"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-06-26T14:30:28Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/7",
+          "number": 7,
+          "title": "chore(deps): bump pi packages to 0.80"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-05-11T10:53:37Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/6",
+          "number": 6,
+          "title": "chore(deps): update pi packages to 0.74"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-03-31T22:43:56Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/5",
+          "number": 5,
+          "title": "fix(web-search): stop counting page reads as searches"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-03-27T21:32:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/4",
+          "number": 4,
+          "title": "fix(web-search): detect codex installs outside PATH"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-03-24T22:10:17Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/3",
+          "number": 3,
+          "title": "fix(web-search): harden codex failure recovery"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-03-21T19:02:44Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/2",
+          "number": 2,
+          "title": "feat(web-search): smooth settings and fast-mode fallback"
+        },
+        {
+          "repo": "ayagmar/pi-codex-web-search",
+          "at": "2026-03-21T03:57:41Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-codex-web-search/pull/1",
+          "number": 1,
+          "title": "fix(web-search): tighten Codex search handling"
+        }
+      ]
+    },
+    {
+      "slug": "pi-promptsmith",
+      "repo": "ayagmar/pi-promptsmith",
+      "events": [
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-10-04T02:52:20Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/11",
+          "number": 11,
+          "title": "feat!: migrate to pi 1.0.1 and unify the npm release process"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-06-26T14:30:34Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/10",
+          "number": 10,
+          "title": "chore(deps): bump pi packages to 0.80"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-05-12T16:04:51Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.4.0",
+          "tag": "v0.4.0"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-05-12T12:41:11Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/8",
+          "number": 8,
+          "title": "feat(promptsmith): align GPT rewrites with OpenAI guidance"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-05-11T10:55:16Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.3.2",
+          "tag": "v0.3.2"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-05-11T10:52:54Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/7",
+          "number": 7,
+          "title": "chore(deps): update pi packages to 0.74"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-27T21:20:37Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.3.1",
+          "tag": "v0.3.1"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-27T21:19:37Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/6",
+          "number": 6,
+          "title": "fix(promptsmith): support pi request auth headers"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-21T02:47:32Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.3.0",
+          "tag": "v0.3.0"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-21T02:45:56Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/4",
+          "number": 4,
+          "title": "feat(promptsmith): add customizable keyboard shortcuts"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-12T17:31:55Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.2.1",
+          "tag": "v0.2.1"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-12T17:24:03Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/pi-promptsmith/releases/tag/v0.2.0",
+          "tag": "v0.2.0"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-12T15:25:17Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/2",
+          "number": 2,
+          "title": "feat(release): add npm release pipeline"
+        },
+        {
+          "repo": "ayagmar/pi-promptsmith",
+          "at": "2026-03-12T13:05:51Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/pi-promptsmith/pull/1",
+          "number": 1,
+          "title": "feat: add Promptsmith prompt enhancement extension"
+        }
+      ]
+    },
+    {
+      "slug": "claude-modmgr",
+      "repo": "ayagmar/claude-modmgr",
+      "events": [
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-24T18:33:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/claude-modmgr/pull/8",
+          "number": 8,
+          "title": "chore(deps): consolidate dependency upgrades"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-13T20:58:15Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.5.0",
+          "tag": "modmgr--v0.5.0"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-13T20:41:05Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/claude-modmgr/pull/6",
+          "number": 6,
+          "title": "README: screenshots of Discover, Installed and the install review"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-13T19:48:55Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/claude-modmgr/pull/5",
+          "number": 5,
+          "title": "Pin Claude Code 2.1.296, check the newest build weekly, notify about updates"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-13T02:42:53Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.4.2",
+          "tag": "modmgr--v0.4.2"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-13T02:41:41Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/claude-modmgr/pull/4",
+          "number": 4,
+          "title": "fix(plugin): wrap links and fact lines instead of cutting them at the edge"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-12T20:54:03Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.4.1",
+          "tag": "modmgr--v0.4.1"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-12T20:11:12Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/claude-modmgr/pull/3",
+          "number": 3,
+          "title": "fix(plugin): close the gaps the final pre-launch audit found"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-12T15:24:40Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/claude-modmgr/pull/2",
+          "number": 2,
+          "title": "Pre-launch: README and site copy, audit fixes, index v2, repo cleanup"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-09T23:27:18Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.4.0",
+          "tag": "modmgr--v0.4.0"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-09T23:25:27Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/claude-modmgr/pull/1",
+          "number": 1,
+          "title": "Polish for 0.4.0: paging, vim keys, Health status page, review scrolling, faster Discover"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-09T02:51:45Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.3.0",
+          "tag": "modmgr--v0.3.0"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-09T02:19:19Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.2.0",
+          "tag": "modmgr--v0.2.0"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-09T01:28:33Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.1.1",
+          "tag": "modmgr--v0.1.1"
+        },
+        {
+          "repo": "ayagmar/claude-modmgr",
+          "at": "2026-10-08T11:27:05Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/claude-modmgr/releases/tag/modmgr--v0.1.0",
+          "tag": "modmgr--v0.1.0"
+        }
+      ]
+    },
+    {
+      "slug": "repo-pulse",
+      "repo": "ayagmar/repo-pulse",
+      "events": [
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-11-07T02:45:12Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/45",
+          "number": 45,
+          "title": "perf(core): index the delivery prune by status and finish time"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-11-03T16:34:55Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/44",
+          "number": 44,
+          "title": "feat: clearer Discord messages"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-11-03T16:15:50Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/43",
+          "number": 43,
+          "title": "feat: celebrate each star milestone once"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-11-03T15:53:30Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/42",
+          "number": 42,
+          "title": "feat: show who is waiting on a reply in digests"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-11-03T15:03:07Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/40",
+          "number": 40,
+          "title": "refactor: receive events only from the GitHub App"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-11-01T16:10:58Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/38",
+          "number": 38,
+          "title": "feat(public): add daily public activity at /public/activity"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-11-01T16:09:04Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/39",
+          "number": 39,
+          "title": "fix(deps): override minimatch to 11.0.3 for GHSA-g3hv-75wg-m249"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-10-30T19:38:53Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/37",
+          "number": 37,
+          "title": "fix: refuse unsigned webhooks before the body; one feed snapshot for every limit"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-10-30T19:13:28Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/35",
+          "number": 35,
+          "title": "chore(config): turn on Discord issue actions"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-10-30T16:43:44Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/repo-pulse/pull/34",
+          "number": 34,
+          "title": "feat(discord): close and label issues from alert buttons"
+        },
+        {
+          "repo": "ayagmar/repo-pulse",
+          "at": "2026-10-13T21:13:28Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/repo-pulse/releases/tag/v1.0.0",
+          "tag": "v1.0.0"
+        }
+      ]
+    },
+    {
+      "slug": "agents-skills",
+      "repo": "ayagmar/agents-skills",
+      "events": [
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-11-01T16:50:42Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/23",
+          "number": 23,
+          "title": "feat(draft-coach): add a coach for blog post and note drafts"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-24T18:31:25Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/20",
+          "number": 20,
+          "title": "chore(deps): consolidate dependency upgrades"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-20T17:41:29Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/17",
+          "number": 17,
+          "title": "feat(session-cost-forensics)!: take tokens and cost from llm-usage-metrics"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:57Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/x-post-craft%400.1.1",
+          "tag": "@ayagmar/x-post-craft@0.1.1"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:54Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/summarize%400.1.3",
+          "tag": "@ayagmar/summarize@0.1.3"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:51Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/session-memory-search%400.1.3",
+          "tag": "@ayagmar/session-memory-search@0.1.3"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:48Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/session-cost-forensics%400.1.2",
+          "tag": "@ayagmar/session-cost-forensics@0.1.2"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:45Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/release-readiness-certification%400.1.2",
+          "tag": "@ayagmar/release-readiness-certification@0.1.2"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:42Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/product-spec-foundry%400.1.2",
+          "tag": "@ayagmar/product-spec-foundry@0.1.2"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:39Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/no-slop%400.1.1",
+          "tag": "@ayagmar/no-slop@0.1.1"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:36Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/improve%400.1.3",
+          "tag": "@ayagmar/improve@0.1.3"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:33Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/implementation-plan-author%400.1.2",
+          "tag": "@ayagmar/implementation-plan-author@0.1.2"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:28:30Z",
+          "type": "release",
+          "url": "https://github.com/ayagmar/agents-skills/releases/tag/%40ayagmar/engineering-optimization%400.1.2",
+          "tag": "@ayagmar/engineering-optimization@0.1.2"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:26:01Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/14",
+          "number": 14,
+          "title": "chore(release): version packages"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-12T01:24:41Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/13",
+          "number": 13,
+          "title": "feat(evals): add skill evals and fix what they found"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-11T18:47:48Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/12",
+          "number": 12,
+          "title": "chore(release): version packages"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-11T18:46:23Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/11",
+          "number": 11,
+          "title": "feat(no-slop): add prose writing and editing skill"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-11T00:42:55Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/10",
+          "number": 10,
+          "title": "chore(release): version packages"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-08T09:56:58Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/9",
+          "number": 9,
+          "title": "chore(release): version packages"
+        },
+        {
+          "repo": "ayagmar/agents-skills",
+          "at": "2026-10-08T02:42:24Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/agents-skills/pull/8",
+          "number": 8,
+          "title": "feat(x-post-craft): add X/Twitter post writing skill"
+        }
+      ]
+    },
+    {
+      "slug": "kipple",
+      "repo": "ayagmar/kipple",
+      "events": [
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-11-06T03:06:23Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/17",
+          "number": 17,
+          "title": "docs(plan): add the quality milestone before the release"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-31T04:56:32Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/15",
+          "number": 15,
+          "title": "feat: m3c review screens, profiles and an interruptible prompt"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-31T00:39:21Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/14",
+          "number": 14,
+          "title": "feat: clean, plan, apply, history and restore from the command line (M3b)"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-30T20:33:44Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/13",
+          "number": 13,
+          "title": "feat: add the mutation contract, confined executor and trash (M3a)"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-30T16:26:10Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/12",
+          "number": 12,
+          "title": "chore: gate one source of wording, format compatibility, docs commands and style"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-24T18:30:40Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/11",
+          "number": 11,
+          "title": "chore(deps): consolidate dependency upgrades"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-18T04:05:54Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/6",
+          "number": 6,
+          "title": "M2d: dashboard, themes, configurable keys and the founder's fixes"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-18T01:53:13Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/5",
+          "number": 5,
+          "title": "M2c: home screen polish and suggested project roots"
+        },
+        {
+          "repo": "ayagmar/kipple",
+          "at": "2026-10-18T00:53:16Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/kipple/pull/2",
+          "number": 2,
+          "title": "M2: levels, config, onboarding and scoped activity"
+        }
+      ]
+    },
+    {
+      "slug": "dotfiles",
+      "repo": "ayagmar/dotfiles",
+      "events": [
+        {
+          "repo": "ayagmar/dotfiles",
+          "at": "2026-10-08T09:35:01Z",
+          "type": "merge",
+          "url": "https://github.com/ayagmar/dotfiles/pull/1",
+          "number": 1,
+          "title": "feat(project-rename): repair Claude Code session state"
+        }
+      ]
+    },
+    {
+      "slug": "headroom",
+      "repo": "ayagmar/headroom",
+      "events": []
+    }
+  ]
+}

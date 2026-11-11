@@ -27,17 +27,18 @@ export const featuredProjectSchema = z.object({
   /** The npm package published from the repository, if any. */
   npmPackage: npmPackageNameSchema.optional(),
   /**
-   * `false`: signals asks GitHub and npm nothing about it, so the pull stays within Workers
+   * `false`: the projects pull asks GitHub and npm nothing about it, so it stays within Workers
    * Free's 50 subrequests (ADR 0009). For a project whose releases or packages say nothing
    * about the repository as a whole (agents-skills publishes one per skill), or that has
-   * neither.
+   * neither. Its log is still pulled: that is one request for every project (ADR 0046).
    */
   pull: z.literal(false).optional(),
 });
 
 /**
- * The featured projects, strongest first: what the site lists and links posts to, and, unless
- * `pull: false`, what signals fetches from GitHub and npm. Identifiers only; descriptions are
+ * The featured projects, strongest first: what the site lists and links posts to, whose
+ * releases and merges signals fetches for their logs, and, unless `pull: false`, whose numbers
+ * it fetches from GitHub and npm. Identifiers only; descriptions are
  * in content/projects. A slug stays the same when the repository is renamed.
  */
 export const featuredProjects = [

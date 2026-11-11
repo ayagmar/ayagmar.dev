@@ -4,6 +4,7 @@ export * from './listening.ts';
 export * from './listening-history.ts';
 export * from './llm-usage.ts';
 export * from './monkeytype.ts';
+export * from './project-events.ts';
 export * from './projects.ts';
 export * from './shelf.ts';
 export * from './shipping.ts';

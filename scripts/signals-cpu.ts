@@ -34,6 +34,8 @@ const allScenarios = [
   'history-last-of-24',
   'monkeytype',
   'monkeytype-max',
+  'project-events',
+  'project-events-max',
   'activity',
   'activity-max',
   'activity-daily',
