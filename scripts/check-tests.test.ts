@@ -14,7 +14,8 @@ const presenceOnly =
 
 describe('check-tests', () => {
   // Catches a test that passes whatever the code does: no assertion, a dangling `expect(x)`,
-  // only mock calls, or only a presence check, and a focused or silently skipped test.
+  // only mock calls, or only a presence check (`not.toBeFalsy()` is `toBeTruthy()`), a focused
+  // or silently skipped test, and a node:test todo, which runs but whose failure exits 0.
   it('flags each kind of test that cannot fail or hides others', () => {
     const source = [
       "it('renders', () => { render(); });",
@@ -29,6 +30,9 @@ describe('check-tests', () => {
       "describe.skip('suite', () => {});",
       "test('inside', () => { test.skip(); expect(a).toBe(1); });",
       "it('opt', { skip: true }, () => { assert.equal(a, 1); });",
+      "it.todo('later', () => { assert.equal(a, 1); });",
+      "it('opt todo', { todo: true }, () => { assert.equal(a, 1); });",
+      "it('falsy', () => { expect(a).not.toBeFalsy(); });",
       '// check-tests: allow',
       "it('no reason given', () => {});",
     ].join('\n');
@@ -45,7 +49,10 @@ describe('check-tests', () => {
       '10: skipped without a reason or condition',
       '11: skipped without a reason or condition',
       '12: skipped without a reason (skip: true)',
-      '14: test has no assertion',
+      '13: marked todo without a reason, so its failures are ignored',
+      '14: marked todo without a reason, so its failures are ignored (todo: true)',
+      `15: ${presenceOnly}`,
+      '17: test has no assertion',
     ]);
   });
 
@@ -92,6 +99,7 @@ describe('check-tests', () => {
       "test.skip(notes.length === 0, 'content/til has no notes');",
       "test('inside', () => { test.skip(!ready, 'needs ready'); expect(a).toBe(1); });",
       "it('opt', { skip: process.platform !== 'linux' }, () => { assert.equal(a, 1); });",
+      "it('opt todo', { todo: 'flaky on CI, #12' }, () => { assert.equal(a, 1); });",
       '// check-tests: allow the smoke run is the assertion',
       "it('runs', () => { main(); });",
       "it.todo('later');",

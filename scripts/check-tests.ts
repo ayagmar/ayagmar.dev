@@ -1,7 +1,8 @@
 // Fails on tests that cannot fail or that hide failures (ADR 0039): a test with no assertion,
-// one whose only assertions are mock-call matchers or toBeDefined/toBeTruthy/not.toBeNull, a
-// focused test (`.only`), and a skipped test with neither a reason nor a condition. A finding
-// stays only with `// check-tests: allow <reason>` on its line or the line above.
+// one whose only assertions are mock-call matchers or toBeDefined/toBeTruthy/not.toBeFalsy/
+// not.toBeNull, a focused test (`.only`), a skipped test with neither a reason nor a condition,
+// and a todo test with a body but no reason, which node:test runs without failing on it. A
+// finding stays only with `// check-tests: allow <reason>` on its line or the line above.
 // Usage: node scripts/check-tests.ts [repo-root]
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -113,7 +114,9 @@ function assertionKind(
     const subject = call.arguments.map((arg) => arg.getText(sourceFile)).join(' ');
     if (mockOnly.test(matcher.name) || mockOnly.test(subject)) return 'mock';
     const weak = matcher.not
-      ? matcher.name === 'toBeNull' || matcher.name === 'toBeUndefined'
+      ? matcher.name === 'toBeNull' ||
+        matcher.name === 'toBeUndefined' ||
+        matcher.name === 'toBeFalsy'
       : matcher.name === 'toBeDefined' || matcher.name === 'toBeTruthy';
     return weak ? 'weak' : 'strong';
   }
@@ -223,6 +226,13 @@ export function checkTestSource(fileName: string, text: string): Finding[] {
     }
     if (option('skip')?.initializer.kind === ts.SyntaxKind.TrueKeyword) {
       report(call, 'skipped without a reason (skip: true)');
+    }
+    // node:test runs a todo test but ignores its failure; vitest does not run it. A bare
+    // `it.todo(name)` is a placeholder and passes.
+    const todo = 'marked todo without a reason, so its failures are ignored';
+    if (path.includes('todo') && defines) report(call, todo);
+    if (option('todo')?.initializer.kind === ts.SyntaxKind.TrueKeyword) {
+      report(call, `${todo} (todo: true)`);
     }
     const isTest =
       defines &&
