@@ -691,17 +691,16 @@
   letter-spacing: -0.03em;
 }
 
-/* The role, marked with the tile star that ends a post: the page's one ornament. */
-.intro span {
-  display: block;
-  margin-top: 0.75rem;
+/* The pitch, marked with the tile star that ends a post: the page's one ornament. */
+.intro-pitch {
+  max-width: 40rem;
+  margin: 0.75rem 0 0;
   color: var(--muted);
   font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.25rem);
-  font-weight: 400;
-  letter-spacing: 0;
+  line-height: 1.45;
 }
 
-.intro span::before {
+.intro-pitch::before {
   content: "";
   display: inline-block;
   width: 0.6em;
@@ -729,15 +728,40 @@
   );
 }
 
-/* The first page of a session (src/scripts/theme.js): the name, the role and the list follow the
-   lamp in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the attribute
-   exists only with scripts, so nothing is hidden without them. */
+/* How to reach the owner: quiet links, lit under the pointer like the panels' own. */
+.intro-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+}
+
+.intro-links a {
+  display: inline-block;
+  min-height: 24px;
+  padding-block: 0.25rem;
+  color: var(--muted);
+}
+
+.intro-links a:hover {
+  color: var(--lamp);
+}
+
+/* Decoration only: the empty alternative keeps the arrow out of the link's name. */
+.intro-links a:last-child::after {
+  content: " →" / "";
+}
+
+/* The first page of a session (src/scripts/theme.js): the name, the pitch and the list follow
+   the lamp in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the
+   attribute exists only with scripts, so nothing is hidden without them. */
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-entrance] :is(.intro, .intro span, .room-list) {
+  :root[data-entrance] :is(.intro, .intro-more, .room-list) {
     animation: arrive 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
   }
 
-  :root[data-entrance] .intro span {
+  :root[data-entrance] .intro-more {
     animation-delay: 0.48s;
   }
 

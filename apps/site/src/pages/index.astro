@@ -142,7 +142,16 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
     <!-- Open-Meteo's CC BY 4.0 credit is on the colophon, linked from the footer (ADR 0029). -->
   </section>
 
-  <h1 class="intro">{site.author} <span>{site.role}, {site.location}.</span></h1>
+  <h1 class="intro">{site.author}</h1>
+  <div class="intro-more">
+    {/* The pitch /about opens with, from the same file. */}
+    <p class="intro-pitch">{about.data.summary}</p>
+    <p class="intro-links">
+      <a href={`mailto:${site.email}`}>{site.email}</a>
+      <a href={site.links.github}>GitHub</a>
+      <a href="/about">More about me</a>
+    </p>
+  </div>
   <nav aria-label="The room as a list">
     <ul class="room-list">
       {roomObjects.map((item) => (
