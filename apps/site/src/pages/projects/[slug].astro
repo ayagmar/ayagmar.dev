@@ -2,14 +2,17 @@
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import Freshness from '../../components/Freshness.astro';
+import Markup from '../../components/Markup.astro';
 import PostList from '../../components/PostList.astro';
 import ProjectLinks from '../../components/ProjectLinks.astro';
 import ProjectStats from '../../components/ProjectStats.astro';
+import { liveAttrs, signals } from '../../data/signals.ts';
 import Base from '../../layouts/Base.astro';
 import { projectReceipt } from '../../lib/days.ts';
 import { feedPaths } from '../../lib/feed.ts';
 import { getDays, getPosts, getProjects } from '../../lib/posts.ts';
-import { postsAbout, projectPath } from '../../lib/projects.ts';
+import { projectLog } from '../../lib/project-panel.ts';
+import { postsAbout, projectPath, projectRepos } from '../../lib/projects.ts';
 import { site } from '../../lib/site.ts';
 import { breadcrumbs } from '../../lib/structured-data.ts';
 
@@ -17,18 +20,22 @@ export const getStaticPaths = (async () => {
   const posts = await getPosts();
   const { projects, envelope } = await getProjects();
   const { history } = await getDays();
+  const shipping = await signals.read('shipping');
   return projects.map((project) => ({
     params: { slug: project.slug },
     props: {
       project,
       envelope,
+      shipping,
       posts: postsAbout(posts, project.slug),
       receipt: projectReceipt(history, project.repo),
     },
   }));
 }) satisfies GetStaticPaths;
 
-const { project, envelope, posts, receipt } = Astro.props;
+const { project, envelope, shipping, posts, receipt } = Astro.props;
+const repos = projectRepos(project);
+const log = projectLog(shipping.data?.events ?? [], repos);
 const { Content } =
   project.file === undefined ? { Content: undefined } : await render(project.file);
 const feeds = feedPaths({ project: project.slug });
@@ -63,9 +70,23 @@ const feeds = feedPaths({ project: project.slug });
       </section>
     )}
     <h2>Numbers</h2>
-    <ProjectStats project={project} />
+    <ProjectStats project={project} envelope={envelope} />
     {receipt !== null && <p class="receipt">{receipt}</p>}
-    {project.live !== null && <Freshness envelope={envelope} />}
+    {/* Always in the page so the live script can fill it; hidden while it has nothing. */}
+    <section
+      class="project-log"
+      aria-labelledby="shipped"
+      hidden={log.length === 0}
+      data-repos={repos.join(' ')}
+      data-pagefind-ignore
+      {...liveAttrs('shipping', shipping)}
+    >
+      <h2 id="shipped">Recently shipped</h2>
+      <div class="project-log-body">
+        <Markup nodes={log} />
+      </div>
+      <Freshness envelope={shipping} />
+    </section>
     <h2>Links</h2>
     <ProjectLinks project={project} />
     <h2>Writing about {project.slug}</h2>

@@ -1843,6 +1843,10 @@ main:has(.toc) .reader ~ .project-card {
   }
 }
 
+.project-stats > div {
+  display: contents;
+}
+
 .project-stats dt {
   color: var(--fg-2);
   font-size: 0.9375rem;

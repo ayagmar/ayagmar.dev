@@ -15,7 +15,7 @@ test('pages with source data load nothing from other origins in fixtures mode', 
   page.on('request', (request) => {
     if (!request.url().startsWith(baseURL ?? '')) elsewhere.push(request.url());
   });
-  for (const path of ['/', '/stats', '/uses', '/projects']) {
+  for (const path of ['/', '/stats', '/uses', '/projects/runnerd', '/projects']) {
     await page.goto(path);
     await page.waitForLoadState('networkidle');
   }

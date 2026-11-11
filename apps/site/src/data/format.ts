@@ -20,14 +20,16 @@ export function describeEvent(event: ShippingEvent): string {
     case 'push':
       return `pushed ${plural(event.commits, 'commit', 'commits')}`;
     case 'merge':
-      return `merged #${event.number}: ${event.title}`;
+      return event.title.trim() === ''
+        ? `merged #${event.number}`
+        : `merged #${event.number}: ${event.title}`;
     case 'stars':
       return `gained ${plural(event.gained, 'star', 'stars')} (${count(event.total)} total)`;
   }
 }
 
 /** A project's numbers the snapshot knows, in display order; empty when it knows none. */
-export function projectFacts({ live }: SiteProject) {
+export function projectFacts({ live }: Pick<SiteProject, 'live'>) {
   const release = live?.latestRelease ?? null;
   const downloads = live?.npm?.monthlyDownloads ?? null;
   return [

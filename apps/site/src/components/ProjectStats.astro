@@ -1,33 +1,34 @@
 ---
-import { projectFacts } from '../data/format.ts';
-import { noNumbers, type SiteProject } from '../lib/projects.ts';
+import type { Envelope } from '@min7/contracts';
+import { liveAttrs } from '../data/signals.ts';
+import { projectStats } from '../lib/project-panel.ts';
+import type { SiteProject } from '../lib/projects.ts';
+import Freshness from './Freshness.astro';
+import Markup from './Markup.astro';
 
 interface Props {
   project: SiteProject;
+  /** The projects envelope the build read, for the freshness line and the live script. */
+  envelope: Envelope<unknown>;
 }
 
-const { project } = Astro.props;
-const facts = projectFacts(project);
+const { project, envelope } = Astro.props;
 ---
 
-{facts.length > 0 ? (
-  <dl class="project-stats">
-    {facts.map((fact) => (
-      <>
-        <dt>{fact.label}</dt>
-        <dd>
-          {'release' in fact && fact.release !== undefined ? (
-            <>
-              <a href={fact.release.url}>{fact.release.tag}</a>,{' '}
-              <time datetime={fact.release.publishedAt}>{fact.release.day}</time>
-            </>
-          ) : (
-            fact.value
-          )}
-        </dd>
-      </>
-    ))}
-  </dl>
-) : (
-  <p class="project-stats-empty">{noNumbers(project)}</p>
-)}
+{/* A project signals fetches is kept current from /v1/projects (src/scripts/project-live.ts);
+    one with `pull: false` has nothing to ask for. */}
+<div
+  class="project-numbers"
+  data-project={project.slug}
+  data-pagefind-ignore
+  {...project.pulled ? liveAttrs('projects', envelope) : {}}
+>
+  <div class="project-numbers-body">
+    <Markup nodes={projectStats(project, project.live)} />
+  </div>
+  {project.pulled && <Freshness envelope={envelope} />}
+</div>
+
+<script>
+import '../scripts/project-live.ts';
+</script>

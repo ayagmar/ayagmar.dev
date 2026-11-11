@@ -1,4 +1,4 @@
-import type { ProjectsSnapshot } from '@min7/contracts';
+import type { ProjectsSnapshot, ShippingSnapshot } from '@min7/contracts';
 import { fixturesCapturedAt, snapshotFixtures } from '@min7/contracts/fixtures';
 import { type MdastNode, markdownToMdast } from 'satteri';
 import { describe, expect, it } from 'vitest';
@@ -259,7 +259,7 @@ describe('a project page', () => {
 
   // Catches a build without the projects snapshot failing or printing empty numbers.
   it('says so when the snapshot has no numbers', () => {
-    expect(renderProjectText(project, [], undefined)).toContain(
+    expect(renderProjectText(project, [], undefined, [])).toContain(
       `Numbers\n  No live numbers for ${project.slug} right now.\n`
     );
   });
@@ -271,11 +271,24 @@ describe('a project page', () => {
       (snapshotFixtures.projects.ok as ProjectsSnapshot).projects
     ).filter((candidate) => candidate.live?.stars != null);
     if (live === undefined) throw new Error('no fixture project with stars');
-    const text = renderProjectText(live, [post('p')], 'See [docs](/about).');
+    const text = renderProjectText(live, [post('p')], 'See [docs](/about).', []);
     expect(text).toContain(`  Stars: ${live.live?.stars?.toLocaleString('en')}\n`);
     expect(text).toContain(`  ${live.repo} on GitHub: ${live.repoUrl}\n`);
     expect(text).toContain('See [docs](https://ayagmar.dev/about).');
     expect(text).toContain('  2026-10-24  A post\n');
+  });
+
+  // Catches the text copy dropping the log the page shows, or its links to GitHub.
+  it('gives what shipped recently with its links, and no heading when nothing did', () => {
+    const ccdesk = siteProjects([], null).find((candidate) => candidate.slug === 'ccdesk');
+    if (ccdesk === undefined) throw new Error('ccdesk is not featured');
+    const events = (snapshotFixtures.shipping.ok as ShippingSnapshot).events;
+    expect(renderProjectText(ccdesk, [], undefined, events)).toContain(
+      'Recently shipped\n' +
+        '  25 Oct, 11:48  released v0.5.13\n' +
+        '                 https://github.com/ayagmar/ccdesk/releases/tag/v0.5.13\n'
+    );
+    expect(renderProjectText(project, [], undefined, [])).not.toContain('Recently shipped');
   });
 });
 
