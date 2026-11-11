@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseAbout } from '../src/data/about.ts';
+import { certificationExpiry, parseAbout } from '../src/data/about.ts';
+import { renderAboutText } from '../src/lib/plaintext.ts';
 import { site, siteUrl } from '../src/lib/site.ts';
 
 const committed = JSON.parse(
@@ -61,5 +62,49 @@ describe('content/about.json', () => {
         data.experience.reverse();
       })
     ).toThrow(/must be newest first\n {2}→ at experience$/);
+  });
+});
+
+describe('certificationExpiry', () => {
+  // Catches a certification called expired during its last month, still valid after it, or
+  // flagged as expiring outside the three months before its end.
+  it.each([
+    ['2027-05-31T23:00:00Z', 'valid', 'Valid to Sep 2027'],
+    ['2027-06-01T00:00:00Z', 'expiring', 'Expires Sep 2027'],
+    ['2027-09-30T23:00:00Z', 'expiring', 'Expires Sep 2027'],
+    ['2027-10-01T00:00:00Z', 'expired', 'Expired Sep 2027'],
+    ['2028-02-01T00:00:00Z', 'expired', 'Expired Sep 2027'],
+  ])('on %s says %s', (today, state, text) => {
+    expect(certificationExpiry('2027-09', new Date(today))).toMatchObject({ state, text });
+  });
+
+  // Catches a year boundary read as twelve months off.
+  it('counts months across a new year', () => {
+    expect(certificationExpiry('2027-02', new Date('2026-11-15T00:00:00Z')).state).toBe('expiring');
+  });
+});
+
+describe('the text copy of /about', () => {
+  const text = renderAboutText(parseAbout(committed), new Date('2026-11-11T12:00:00Z'));
+
+  // Catches a terminal reader losing a certification's end or its verify link, or the
+  // languages section coming back under the name of the /skills page.
+  it('gives each certification its state and verify link, and lists the stack', () => {
+    expect(text).toContain(
+      [
+        '  Claude Certified Developer - Foundations',
+        '    Anthropic, issued Sep 2026. Valid to Sep 2027.',
+        `    Verify: ${committed.certifications[1].verifyUrl}`,
+      ].join('\n')
+    );
+    expect(text).toContain(
+      [
+        '  Professional Scrum Developer I (PSD I)',
+        '    Scrum.org, issued Oct 2024. Credential ID 1145888.',
+        `    Verify: ${committed.certifications[3].verifyUrl}`,
+      ].join('\n')
+    );
+    expect(text).toContain(`\nStack\n  ${committed.stack.join(', ')}\n`);
+    expect(text).not.toMatch(/^Skills$/m);
   });
 });

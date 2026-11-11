@@ -94,6 +94,28 @@ export function formatMonth(value: string): string {
   return `${months[Number(monthNumber) - 1]} ${year}`;
 }
 
+/** Months before its end from which a certification shows as expiring. */
+const expiringWithin = 3;
+
+const monthNumber = (value: string) => {
+  const [year, monthOfYear] = value.split('-').map(Number);
+  return (year ?? 0) * 12 + (monthOfYear ?? 0);
+};
+
+/**
+ * Where a certification with an end month stands on `today`, in the words /about and its text
+ * copy share. It is still valid through its end month. Decided at build, which every deploy
+ * redoes, since /about runs no script: "Valid to" and "Expired" stay true however late the page
+ * is read, and "Expires" is only out of date between the end month and the next deploy.
+ */
+export function certificationExpiry(expires: string, today: Date) {
+  const left = monthNumber(expires) - monthNumber(today.toISOString().slice(0, 7));
+  const state = left < 0 ? 'expired' : left <= expiringWithin ? 'expiring' : 'valid';
+  const lead = { valid: 'Valid to', expiring: 'Expires', expired: 'Expired' }[state];
+  const month = formatMonth(expires);
+  return { state, lead, month, text: `${lead} ${month}` };
+}
+
 /** A role's or school's months as the page says them; a null end is the current one. */
 export const monthSpan = (start: string, end: string | null) => ({
   start: formatMonth(start),
