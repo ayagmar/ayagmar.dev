@@ -90,11 +90,6 @@
       "allowedVersions": "<7.0.0"
     },
     {
-      "description": "Keep the uuid security override in pnpm-workspace.yaml inside the major @lhci/cli declares; the newest 11.x already carries the fix. Remove this rule when @lhci/cli depends on a fixed version and the override goes.",
-      "matchDepNames": ["@lhci/cli>uuid"],
-      "allowedVersions": "<12.0.0"
-    },
-    {
       "description": "@types/node follows the Node major in .node-version (24). Raise this bound in the pull request that moves .node-version to a new major.",
       "matchPackageNames": ["@types/node"],
       "allowedVersions": "<25.0.0"
