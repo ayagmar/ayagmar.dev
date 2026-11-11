@@ -85,6 +85,7 @@ GitHub Actions, pinned by commit SHA in `.github/`: `actions/checkout` 7.0.1, `a
 ### Renovate
 
 `renovate.json` extends `config:best-practices` (pinned action digests, pinned dev dependencies, the dependency dashboard, weekly lock file maintenance) and sets explicitly:
+
 - `rangeStrategy: pin`, so every update stays an exact version.
 - `minimumReleaseAge: 3 days` with `internalChecksFilter: strict` and `minimumReleaseAgeBehaviour: timestamp-required`: no branch is created for a version younger than three days, or one without a release date. pnpm's own `minimumReleaseAge` refuses the same versions at install time; Renovate's default 30-minute buffer covers packages published shortly after their parent.
 - Groups: astro, `@astrojs/*` and satteri; svelte and svelte-check; cloudflare (wrangler, `@cloudflare/*`, miniflare, workerd); vitest and `@vitest/*`; playwright and `@axe-core/*`; biome; typescript; github-actions; toolchain (Node in `.node-version`, pnpm and just in `mise.toml`).
