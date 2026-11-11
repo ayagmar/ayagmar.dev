@@ -4,6 +4,7 @@
  * src/pages/og/.
  */
 import { site, siteUrl } from './site.ts';
+import { list, type YearPage } from './years.ts';
 
 /**
  * Where this build is served, for the absolute URLs in a link preview (`og:url`, `og:image`):
@@ -47,3 +48,29 @@ export const noteOgImage = (slug: string, title: string): OgImage => ({
   path: `/og/til/${slug}.png`,
   alt: `TIL: ${title}, on ${site.name}, under the night room.`,
 });
+
+/**
+ * A year page's image (src/lib/years.ts): the year, its shipping calendar and its figures. The
+ * text says what the card draws: the calendar's range, the months it marks unread, the figures
+ * and, once for all of them, what they cover.
+ */
+export function yearOgImage(page: YearPage): OgImage {
+  const { shipping, year } = page;
+  const parts: string[] = [];
+  if (shipping.empty === null) {
+    const { from, to } = shipping.strip;
+    const unread = shipping.months.filter((month) => month.cells === null).map(({ name }) => name);
+    const blank = unread.length === 0 ? '' : `, ${list(unread)} marked unread`;
+    parts.push(
+      `a square for each day with shipping on record, ${from === to ? from : `${from} to ${to}`}${blank}`
+    );
+  }
+  if (page.figures.length > 0) {
+    const figures = list(page.figures.map((figure) => `${figure.value} ${figure.label}`));
+    parts.push(page.figureScope === '' ? figures : `the year ${page.figureScope}: ${figures}`);
+  }
+  return {
+    path: `/og/year/${year}.png`,
+    alt: `${year} on ${site.name}${parts.length === 0 ? '' : `: ${parts.join('; ')}`}.`,
+  };
+}

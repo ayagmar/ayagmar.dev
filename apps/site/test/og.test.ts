@@ -1,9 +1,11 @@
 import { join } from 'node:path';
+import type { ShippingActivityDay } from '@min7/contracts';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { renderArt } from '../src/lib/art-files.ts';
-import { buildOrigin } from '../src/lib/og.ts';
-import { renderOgCard } from '../src/lib/og-card.ts';
+import { buildOrigin, yearOgImage } from '../src/lib/og.ts';
+import { renderOgCard, renderYearCard } from '../src/lib/og-card.ts';
+import { type YearPage, yearPages } from '../src/lib/years.ts';
 
 describe('link-preview origin', () => {
   it('is production for main and for builds outside Workers Builds', () => {
@@ -104,5 +106,99 @@ describe('link-preview card', () => {
     // The card is a palette PNG, so its colours land near the room's, not on them.
     expect(distance(card, room)).toBeLessThan(6);
     expect(distance(room, blank)).toBeGreaterThan(20);
+  });
+});
+
+describe('year card', () => {
+  const day = (date: string, pushes: number, merges = 0): ShippingActivityDay => ({
+    date,
+    pushes,
+    commits: pushes,
+    merges,
+    releases: 0,
+    stars: 0,
+    repos: [],
+    reposComplete: true,
+  });
+  const year = (shipping: ShippingActivityDay[], now: string, failed: string[] = []): YearPage => {
+    const fetchedAt = '2026-10-20T09:00:00Z';
+    const [page] = yearPages(
+      {
+        shipping: { days: shipping, failed, fetchedAt },
+        usage: { days: [], failed: [], fetchedAt },
+      },
+      [],
+      new Date(now),
+      new Set()
+    );
+    if (page === undefined) throw new Error('no year page');
+    return page;
+  };
+
+  // Catches a fixtures build, whose history stops in October, drawing a new card every day it is
+  // built: days without a record would add squares and the image would never be the same twice.
+  it('is the same image whatever day it is built', async () => {
+    const days = [day('2026-10-01', 3, 1), day('2026-10-02', 0), day('2026-10-20', 1)];
+    const early = await renderYearCard(year(days, '2026-10-21T12:00:00Z'));
+    const late = await renderYearCard(year(days, '2026-12-30T12:00:00Z'));
+    expect(early.equals(late)).toBe(true);
+  });
+
+  // Catches squares in the wrong week or weekday. 1 Jan 2024 is a Monday, so the first column
+  // starts on it, and 31 Dec 2024, a Tuesday, is the second row of column 52.
+  it("draws a day in its week's column and its weekday's row", async () => {
+    const png = await renderYearCard(
+      year([day('2024-01-01', 2), day('2024-12-31', 2)], '2025-06-01T12:00:00Z')
+    );
+    const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+    const pixel = (x: number, y: number) => {
+      const at = (y * info.width + x) * info.channels;
+      return [...data.subarray(at, at + 3)];
+    };
+    // The middle of a 14 px square on a 17 px pitch, the calendar 256 px down.
+    const square = (column: number, row: number) =>
+      pixel(120 + column * 17 + 7, 256 + row * 17 + 7);
+    const ground = [14, 12, 19];
+    expect(square(0, 0)).not.toEqual(ground);
+    expect(square(52, 1)).not.toEqual(ground);
+    expect(square(0, 1)).toEqual(ground);
+    expect(square(52, 0)).toEqual(ground);
+  });
+
+  // Catches a year whose record starts late drawn from January, its squares crowded at the right
+  // under a row of empty months. The page opens on October 2025, whose 1st is a Wednesday, so
+  // the first column is the week from Monday 29 September.
+  it('opens on the week of the first month with a record', async () => {
+    const png = await renderYearCard(
+      year([day('2025-10-01', 2), day('2025-10-06', 2)], '2026-06-01T12:00:00Z')
+    );
+    const { data, info } = await sharp(png).raw().toBuffer({ resolveWithObject: true });
+    const square = (column: number, row: number) => {
+      const at = ((256 + row * 17 + 7) * info.width + 120 + column * 17 + 7) * info.channels;
+      return [...data.subarray(at, at + 3)];
+    };
+    const ground = [14, 12, 19];
+    expect(square(0, 2)).not.toEqual(ground);
+    expect(square(1, 0)).not.toEqual(ground);
+    expect(square(0, 0)).toEqual(ground);
+  });
+
+  // Catches a text alternative that says what the card does not: an unread month the card leaves
+  // unmarked, a figure it does not show, or a qualifier the card says once repeated on each.
+  it('says what the card draws and marks', () => {
+    const page = year(
+      [day('2026-03-02', 1), day('2026-03-03', 2, 1), day('2026-05-04', 1)],
+      '2026-06-10T12:00:00Z',
+      ['2026-04']
+    );
+    expect(yearOgImage(page)).toEqual({
+      path: '/og/year/2026.png',
+      alt: '2026 on min7: a square for each day with shipping on record, 2 Mar to 4 May, April marked unread.',
+    });
+    expect(
+      yearOgImage(year([day('2026-03-02', 1), day('2026-03-03', 2, 1)], '2026-06-10T12:00:00Z')).alt
+    ).toBe(
+      '2026 on min7: a square for each day with shipping on record, 2 Mar to 3 Mar; the year so far, on record: 1 PR merged and 2 days shipped.'
+    );
   });
 });

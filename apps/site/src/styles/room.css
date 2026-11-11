@@ -908,6 +908,11 @@
   text-decoration: none;
 }
 
+/* A second link (the Shipping panel's year) sits beside the first, both at the end of the row. */
+.panel-head a + a {
+  margin-inline-start: 0;
+}
+
 /* Decoration only: the empty alternative keeps the arrow out of the link's name. */
 .panel-head a::after {
   content: " →" / "";
