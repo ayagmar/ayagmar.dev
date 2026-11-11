@@ -23,6 +23,9 @@ let query = $state('');
 let results = $state<Result[]>([]);
 let status = $state('');
 let pagefind: Promise<Pagefind> | undefined;
+// Counts inputs, clearing the field included. A search whose number is no longer the latest
+// leaves the dialog alone, whether it answers or fails: the field has changed under it.
+let latest = 0;
 
 onMount(() => {
   hydrated = true;
@@ -55,6 +58,7 @@ function onKeydown(event: KeyboardEvent) {
 }
 
 async function search() {
+  const input = ++latest;
   const term = query.trim();
   if (term === '') {
     results = [];
@@ -64,14 +68,17 @@ async function search() {
   pagefind ??= import(/* @vite-ignore */ bundle);
   try {
     const found = await (await pagefind).debouncedSearch(term);
-    if (found === null) return; // A newer keystroke superseded this search.
-    results = await Promise.all(found.results.slice(0, limit).map((result) => result.data()));
+    if (found === null || input !== latest) return;
+    const data = await Promise.all(found.results.slice(0, limit).map((result) => result.data()));
+    if (input !== latest) return;
+    results = data;
     status =
       results.length === 0
         ? 'No results.'
         : `${results.length} ${results.length === 1 ? 'result' : 'results'}.`;
   } catch {
     pagefind = undefined;
+    if (input !== latest) return;
     status = 'Search is unavailable right now.';
   }
 }
