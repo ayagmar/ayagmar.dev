@@ -11,15 +11,21 @@ import { toNode } from '../lib/markup-page.ts';
 import { projectLog, projectStats } from '../lib/project-panel.ts';
 import { readProjects, readShipping } from '../lib/stats.ts';
 
+// What each panel draws now, as JSON; absent while it shows the build's HTML.
+const drawn = new WeakMap<HTMLElement, string>();
+
 /**
- * Redraws the panel's `selector` from `markup` only for another snapshot than the one it shows:
- * `live` calls again with the same one when it ages or a request fails, and redrawing then would
- * close a fold the reader opened. Returns whether it drew.
+ * Redraws the panel's `selector` only when its markup changes. Each push to signals brings a new
+ * snapshot, mostly with the same events for this project: redrawing then would close a fold the
+ * reader opened and drop the focus on a link in it. The build's own snapshot is never redrawn.
+ * Returns whether it drew.
  */
-function redraw(panel: HTMLElement, selector: string, at: string, markup: () => Markup[]) {
-  if (at === (panel.dataset.drawnAt ?? panel.dataset.fetchedAt)) return false;
-  panel.dataset.drawnAt = at;
-  panel.querySelector(selector)?.replaceChildren(...markup().map(toNode));
+function redraw(panel: HTMLElement, selector: string, at: string, markup: Markup[]) {
+  if (!drawn.has(panel) && at === panel.dataset.fetchedAt) return false;
+  const key = JSON.stringify(markup);
+  if (key === drawn.get(panel)) return false;
+  drawn.set(panel, key);
+  panel.querySelector(selector)?.replaceChildren(...markup.map(toNode));
   return true;
 }
 
@@ -29,7 +35,10 @@ function redraw(panel: HTMLElement, selector: string, at: string, markup: () => 
 live('projects', 30 * 60_000, readProjects, (panel, answer: Answer<ProjectsSnapshot>) => {
   const slug = panel.dataset.project ?? '';
   const entry = answer.data.projects.find((project) => project.slug === slug) ?? null;
-  redraw(panel, '.project-numbers-body', answer.fetchedAt, () =>
+  redraw(
+    panel,
+    '.project-numbers-body',
+    answer.fetchedAt,
     projectStats({ slug, pulled: true }, entry)
   );
 });
@@ -38,7 +47,7 @@ live('projects', 30 * 60_000, readProjects, (panel, answer: Answer<ProjectsSnaps
 // The log is hidden while the project has nothing in the feed, so it is never an empty box.
 live('shipping', 5 * 60_000, readShipping, (panel, answer: Answer<ShippingSnapshot>) => {
   const log = projectLog(answer.data.events, panel.dataset.repos?.split(' ') ?? []);
-  if (redraw(panel, '.project-log-body', answer.fetchedAt, () => log)) {
+  if (redraw(panel, '.project-log-body', answer.fetchedAt, log)) {
     panel.hidden = log.length === 0;
   }
 });

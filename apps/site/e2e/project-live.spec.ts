@@ -165,6 +165,23 @@ test('the log shows only while the feed has something for the project', async ({
   await expect(log(page).getByRole('link')).toHaveAttribute('href', merge.url);
 });
 
+// Catches each push to signals redrawing an unchanged log: the fold the reader opened closed,
+// and the link they had reached with the keyboard lost focus.
+test('a newer answer with the same events keeps the open fold and the focus', async ({ page }) => {
+  let answer = envelope('shipping');
+  await visit(page, '/projects/ccdesk', { shipping: (route) => route.fulfill(answer) });
+  const freshness = log(page).locator('.freshness time');
+  await expect(freshness).toHaveAttribute('datetime', '2026-10-26T11:59:00Z');
+  await log(page).locator('details summary').click();
+  const link = log(page).locator('details a').first();
+  await link.focus();
+  answer = envelope('shipping', snapshotFixtures.shipping.ok, '2026-10-26T12:04:00Z');
+  await page.clock.runFor(5 * 60_000);
+  await expect(freshness).toHaveAttribute('datetime', '2026-10-26T12:04:00Z');
+  await expect(log(page).locator('details')).toHaveAttribute('open', '');
+  await expect(link).toBeFocused();
+});
+
 const newPage = async (browser: Browser, options: Parameters<Browser['newContext']>[0]) =>
   (await browser.newContext(options)).newPage();
 
