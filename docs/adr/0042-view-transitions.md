@@ -1,6 +1,6 @@
 # 0042. Page changes that keep the header still
 
-Status: accepted, 2026-11-06
+Status: accepted, 2026-11-06. Amended 2026-11-11: while no post is published /writing is empty, so the no-script link reads "Browse projects" and goes to /projects; with the first post it is "Browse writing" again (`browseLink` in `src/lib/writing.ts`). The 404 uses the same two classes, so it mentions Search only when the page has one.
 
 ## Context
 

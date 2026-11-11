@@ -207,7 +207,7 @@ describe('list pages', () => {
       [
         'Writing | min7',
         '-'.repeat(72),
-        '  No posts yet. When I publish one, it will be about software I build or tools I use.',
+        "  No posts yet. They'll be about software I build and the tools I use.",
         '  RSS        https://ayagmar.dev/feed.xml',
         '  Atom       https://ayagmar.dev/atom.xml',
         '',

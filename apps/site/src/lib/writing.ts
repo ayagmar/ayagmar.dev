@@ -40,8 +40,8 @@ export const isoDay = (date: Date) => date.toISOString().slice(0, 10);
 
 /** What /writing, /til and their text copies say while they have nothing to list. */
 export const nothingYet = {
-  writing: 'No posts yet. When I publish one, it will be about software I build or tools I use.',
-  til: 'No notes yet. Each one will be a short thing I learned while working.',
+  writing: "No posts yet. They'll be about software I build and the tools I use.",
+  til: "No notes yet. They'll be short, one thing at a time, picked up while working.",
 } as const;
 
 /** What an empty /writing or /til says before the pages that do have something to read. */
@@ -63,21 +63,13 @@ export function pagesToRead({ posts, notes }: { posts: number; notes: number }) 
 }
 
 /**
- * What search finds, for the 404: the pages marked `data-pagefind-body`, posts and notes once
- * there are some.
+ * The header's link while Search has not hydrated or scripts are off: the posts once there are
+ * some, the projects until then, so it is never a link to an empty page.
  */
-export function searchCovers({ posts, notes }: { posts: number; notes: number }) {
-  const parts = [
-    ...(posts > 0 ? ['every post'] : []),
-    ...(notes > 0 ? ['every note'] : []),
-    'the projects',
-    'Skills',
-    'About',
-    'Uses',
-    'Now',
-  ];
-  return `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
-}
+export const browseLink = (posts: number) =>
+  posts > 0
+    ? { href: '/writing', label: 'Browse writing' }
+    : { href: '/projects', label: 'Browse projects' };
 
 /** What a day or year page says when nothing was published in it. */
 export const nothingPublishedThen = 'Nothing published.';

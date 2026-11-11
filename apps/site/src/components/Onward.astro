@@ -1,7 +1,7 @@
 ---
 interface Props {
-  /** The words before the links, such as "Until then, try". */
-  lead: string;
+  /** The words before the links, such as "Until then, try"; the default slot replaces them. */
+  lead?: string;
   pages: readonly { href: string; label: string }[];
 }
 
@@ -11,7 +11,7 @@ const separator = (index: number) =>
 ---
 
 <p class="onward">
-  {lead}
+  <slot>{lead}</slot>
   {pages.map((page, index) => (
     <>
       {separator(index)}

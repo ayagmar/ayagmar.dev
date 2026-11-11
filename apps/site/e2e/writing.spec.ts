@@ -79,7 +79,21 @@ test.describe('without published posts', () => {
       '/now',
       '/',
     ]);
-    await expect(page.locator('.column')).not.toContainText('every post');
+    await expect(page.locator('.column .onward')).toHaveText(/^Try Search, or one of these: /, {
+      useInnerText: true,
+    });
+  });
+
+  test.describe('without JavaScript', () => {
+    test.use({ javaScriptEnabled: false });
+
+    // Catches the 404 sending a reader to a Search the header only has with scripts on.
+    test('the 404 does not offer Search', async ({ page }) => {
+      await page.goto(notFoundPath);
+      await expect(page.locator('.column .onward')).toHaveText(/^Try one of these: /, {
+        useInnerText: true,
+      });
+    });
   });
 
   test('the writing feeds follow the validator rules with no entries', async ({
@@ -119,8 +133,6 @@ test('draft posts are in none of the places a post is listed', async ({ page, re
   }
 });
 
-// Catches a feed that is well-formed only while empty: entries, dates, ids and links follow the
-// validator's rules on every kind of writing feed, newest first.
 // Catches the empty state outliving the first post: /writing lists it, and the 404 and an empty
 // /til point at /writing again, with no edit to either.
 test('the first post ends the empty state everywhere', { tag: '@drafts' }, async ({ page }) => {
@@ -131,7 +143,6 @@ test('the first post ends the empty state everywhere', { tag: '@drafts' }, async
 
   await page.goto(notFoundPath);
   await expect(page.locator('.column .onward a').first()).toHaveAttribute('href', '/writing');
-  await expect(page.locator('.column')).toContainText('looks through every post');
 
   if (notes.length === 0) {
     await page.goto('/til');
@@ -139,6 +150,8 @@ test('the first post ends the empty state everywhere', { tag: '@drafts' }, async
   }
 });
 
+// Catches a feed that is well-formed only while empty: entries, dates, ids and links follow the
+// validator's rules on every kind of writing feed, newest first.
 test('feeds with entries follow the validator rules', { tag: '@drafts' }, async ({
   page,
   request,
