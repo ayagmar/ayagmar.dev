@@ -28,17 +28,22 @@ import '../styles/room.css';
 const posts = (await getPosts()).slice(0, 4);
 // Until the first post, the Writing window shows the latest TIL notes instead of an empty box.
 const notes = posts.length === 0 ? (await getNotes()).slice(0, 3) : [];
-const projects = (await getProjects()).projects.slice(0, 5);
+const writing = posts.length > 0 || notes.length > 0;
+// Without Writing above them, Projects stands beside Listening and Shipping alone: two more rows
+// keep its column about as long as theirs. Where the panels stack, room.css hides those two.
+const projects = (await getProjects()).projects.slice(0, writing ? 5 : 7);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 const about = await getEntry('about', 'about');
 if (about === undefined) throw new Error('content/about.json is missing');
+const { dates, years } = await getDays();
+const latestYear = years.at(-1);
 // The strip is drawn once, with the page: from the daily history, else from the events.
 const strip = shippingStrip(
   await signals.readDays('shipping-activity'),
   shipping,
   new Date(),
-  (await getDays()).dates
+  dates
 );
 const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
 const seed = await roomSeed();
@@ -142,7 +147,16 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
     <!-- Open-Meteo's CC BY 4.0 credit is on the colophon, linked from the footer (ADR 0029). -->
   </section>
 
-  <h1 class="intro">{site.author} <span>{site.role}, {site.location}.</span></h1>
+  <h1 class="intro">{site.author}</h1>
+  <div class="intro-more">
+    {/* The pitch /about opens with, from the same file. */}
+    <p class="intro-pitch">{about.data.summary}</p>
+    <p class="intro-links">
+      <a href={`mailto:${site.email}`}>{site.email}</a>
+      <a href={site.links.github}>GitHub</a>
+      <a href="/about">More about me</a>
+    </p>
+  </div>
   <nav aria-label="The room as a list">
     <ul class="room-list">
       {roomObjects.map((item) => (
@@ -158,7 +172,7 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
 
   <div class="home-panels">
     {/* A section appears once it has something in it; the room still leads to its page. */}
-    {(posts.length > 0 || notes.length > 0) && (
+    {writing && (
       <section class="paper" aria-labelledby="writing">
         <div class="panel-head">
           <h2 id="writing">Writing</h2>
@@ -218,6 +232,7 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
         <section class="panel m-cork" aria-labelledby="shipping">
           <div class="panel-head">
             <h2 id="shipping">Shipping</h2>
+            {latestYear !== undefined && <a href={latestYear.path}>All of {latestYear.year}</a>}
             <a href="/stats#shipping">More</a>
           </div>
           <HomeShipping strip={strip} events={recentlyShipped} />

@@ -574,6 +574,30 @@
   }
 }
 
+/* And the reverse: an object under the pointer or focus lights its row in the list, so the row
+   reads as the object's other name. One line per object, as above. */
+@supports selector(:has(*)) {
+  main:has([data-room="corkboard"]:is(:hover, :focus-visible))
+    [data-room-list="corkboard"]
+    .room-section,
+  main:has([data-room="frame"]:is(:hover, :focus-visible)) [data-room-list="frame"] .room-section,
+  main:has([data-room="notebook"]:is(:hover, :focus-visible))
+    [data-room-list="notebook"]
+    .room-section,
+  main:has([data-room="monitor"]:is(:hover, :focus-visible))
+    [data-room-list="monitor"]
+    .room-section,
+  main:has([data-room="keyboard"]:is(:hover, :focus-visible))
+    [data-room-list="keyboard"]
+    .room-section,
+  main:has([data-room="tea"]:is(:hover, :focus-visible)) [data-room-list="tea"] .room-section,
+  main:has([data-room="record-player"]:is(:hover, :focus-visible))
+    [data-room-list="record-player"]
+    .room-section {
+    color: var(--lamp);
+  }
+}
+
 .hotspot span {
   position: absolute;
   bottom: 100%;
@@ -691,17 +715,16 @@
   letter-spacing: -0.03em;
 }
 
-/* The role, marked with the tile star that ends a post: the page's one ornament. */
-.intro span {
-  display: block;
-  margin-top: 0.75rem;
+/* The pitch, marked with the tile star that ends a post: the page's one ornament. */
+.intro-pitch {
+  max-width: 40rem;
+  margin: 0.75rem 0 0;
   color: var(--muted);
   font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.25rem);
-  font-weight: 400;
-  letter-spacing: 0;
+  line-height: 1.45;
 }
 
-.intro span::before {
+.intro-pitch::before {
   content: "";
   display: inline-block;
   width: 0.6em;
@@ -729,15 +752,41 @@
   );
 }
 
-/* The first page of a session (src/scripts/theme.js): the name, the role and the list follow the
-   lamp in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the attribute
-   exists only with scripts, so nothing is hidden without them. */
+/* How to reach the owner: quiet links, lit under the pointer like the panels' own. */
+.intro-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.25rem;
+  margin: 0.5rem 0 0;
+  font-size: 0.9375rem;
+}
+
+.intro-links a {
+  display: inline-block;
+  min-height: 24px;
+  padding-block: 0.25rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.intro-links a:hover {
+  color: var(--lamp);
+}
+
+/* Decoration only: the empty alternative keeps the arrow out of the link's name. */
+.intro-links a:last-child::after {
+  content: " →" / "";
+}
+
+/* The first page of a session (src/scripts/theme.js): the name, the pitch and the list follow
+   the lamp in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the
+   attribute exists only with scripts, so nothing is hidden without them. */
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-entrance] :is(.intro, .intro span, .room-list) {
+  :root[data-entrance] :is(.intro, .intro-more, .room-list) {
     animation: arrive 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
   }
 
-  :root[data-entrance] .intro span {
+  :root[data-entrance] .intro-more {
     animation-delay: 0.48s;
   }
 
@@ -816,8 +865,8 @@
   color: var(--lamp);
 }
 
-/* With the room's hotspots in reach the list steps back: one muted row of section names, each
-   lighting its object in the scene. The object's name stays for screen readers. */
+/* With the room's hotspots in reach the list steps back: one muted row, each section over the
+   object it sits on, lighting that object in the scene. */
 @media (min-width: 60rem) {
   .room-list {
     margin-top: 1.5rem;
@@ -826,15 +875,6 @@
   .room-list a {
     padding: 0.25rem 0;
     border-top: 0;
-  }
-
-  .room-object {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 
   .room-section {
@@ -866,6 +906,11 @@
   color: var(--muted);
   font-size: 0.9375rem;
   text-decoration: none;
+}
+
+/* A second link (the Shipping panel's year) sits beside the first, both at the end of the row. */
+.panel-head a + a {
+  margin-inline-start: 0;
 }
 
 /* Decoration only: the empty alternative keeps the arrow out of the link's name. */
@@ -957,6 +1002,17 @@
 
 .home-projects li:first-child {
   padding-top: 0;
+}
+
+/* Rows six and seven only level the two columns (index.astro); stacked, there is nothing to level. */
+.home-projects li:nth-child(n + 6) {
+  display: none;
+}
+
+@media (min-width: 60rem) {
+  .home-projects li:nth-child(n + 6) {
+    display: block;
+  }
 }
 
 .home-projects a {
