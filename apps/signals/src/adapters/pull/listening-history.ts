@@ -213,7 +213,11 @@ export const listeningHistory: PullAdapter<ListeningHistorySnapshot, ListeningHi
     // is still yesterday's.
     if (status.describedDate === today) return last + refreshMs;
     // A new date, or a success that published an earlier date's: due since the last attempt.
-    if (last < midnight || status.lastErrorCode === null) return last;
+    // A success counts only as the last attempt itself: a run cut off by the CPU limit records
+    // just its attempt, and backs off as a failure does.
+    const published =
+      status.lastErrorCode === null && Date.parse(status.lastSuccessAt ?? '') >= last;
+    if (last < midnight || published) return last;
     return last + Math.min(maxRetryMs, Math.max(retryMs, (last - midnight) / 2));
   },
 

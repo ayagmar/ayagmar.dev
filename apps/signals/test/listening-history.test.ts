@@ -692,6 +692,20 @@ describe('when a pull is due', () => {
     ).toBe('2026-10-26T07:02:00.000Z');
   });
 
+  // A run cut off by the CPU limit records only its attempt, so yesterday's success still shows
+  // no code. Catches a cut-off history tried again every minute instead of backing off, while a
+  // success that published yesterday's date after midnight is still due at once.
+  it('backs off after an attempt cut off past midnight, as after a failure', () => {
+    const yesterday = { describedDate: '2026-10-25', lastSuccessAt: '2026-10-25T10:00:00.000Z' };
+    expect(
+      due({ ...yesterday, lastAttemptAt: at('2026-10-26T00:01:00Z') }, '2026-10-26T00:02:00Z')
+    ).toBe('2026-10-26T00:06:00.000Z');
+    const published = { describedDate: '2026-10-25', lastSuccessAt: '2026-10-26T00:01:00.000Z' };
+    expect(
+      due({ ...published, lastAttemptAt: at('2026-10-26T00:01:00Z') }, '2026-10-26T00:02:00Z')
+    ).toBe('2026-10-26T00:01:00.000Z');
+  });
+
   // Catches a failing source tried every minute, and one waiting until tomorrow.
   it('retries a new date after 5 minutes, then at half the time since midnight, at most an hour', () => {
     const failed = (last: string) =>
