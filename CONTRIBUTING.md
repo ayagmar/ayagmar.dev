@@ -81,7 +81,7 @@ A note is a short "today I learned" in `content/til/<slug>.md`; the slug is the 
 
 The featured projects are listed in `packages/contracts/src/projects.ts`, strongest first; the home page shows the first five. Each gets a page at `/projects/<slug>` and feeds at `/projects/<slug>/feed.xml` and `atom.xml`. A post with `projects: [<slug>]` shows that project's card and appears on its page.
 
-signals fetches each project's stars, latest release and npm downloads, which costs two subrequests per repository and one per npm package, and the pull must stay at 25 or fewer ([ADR 0009](docs/adr/0009-pull-adapters.md)). The list is at 25. A project with no release or package to count takes `pull: false` and costs nothing; to pull another one, mark one `pull: false` or drop it.
+signals fetches each project's stars, latest release and npm downloads, which costs two subrequests per repository and one per npm package, and the pull must stay at 25 or fewer ([ADR 0009](docs/adr/0009-pull-adapters.md)). The list is at 25. A project whose releases or packages say nothing about the repository as a whole (agents-skills publishes one per skill), or that has neither (kipple, dotfiles, the archived headroom), takes `pull: false` and costs nothing; to pull another one, mark one `pull: false` or drop it.
 
 To describe a project, add `content/projects/<slug>.md`:
 

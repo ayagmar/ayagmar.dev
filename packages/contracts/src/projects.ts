@@ -27,8 +27,10 @@ export const featuredProjectSchema = z.object({
   /** The npm package published from the repository, if any. */
   npmPackage: npmPackageNameSchema.optional(),
   /**
-   * `false`: signals asks GitHub and npm nothing about it. For a project with no release or
-   * package to count, so the pull stays within Workers Free's 50 subrequests (ADR 0009).
+   * `false`: signals asks GitHub and npm nothing about it, so the pull stays within Workers
+   * Free's 50 subrequests (ADR 0009). For a project whose releases or packages say nothing
+   * about the repository as a whole (agents-skills publishes one per skill), or that has
+   * neither.
    */
   pull: z.literal(false).optional(),
 });
