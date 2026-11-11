@@ -410,10 +410,19 @@ test.describe('the room keeps Rabat time', () => {
       };
     });
 
-  const visit = async (page: Page, time: string, colorScheme: 'light' | 'dark') => {
+  // `patch` runs after the clock is installed: Playwright's clock cannot wrap an Intl.DateTimeFormat
+  // replaced before it, and then leaves the page on the real time.
+  const visit = async (
+    page: Page,
+    time: string,
+    colorScheme: 'light' | 'dark',
+    patch?: () => Promise<unknown>
+  ) => {
     await page.clock.setFixedTime(time);
+    await patch?.();
     await page.emulateMedia({ colorScheme });
     await page.goto('/');
+    expect(await page.evaluate(() => Date.now())).toBe(Date.parse(time));
     await expect(page.locator('.scene')).toHaveAttribute('data-sky', /.+/);
   };
 
@@ -446,17 +455,26 @@ test.describe('the room keeps Rabat time', () => {
   // puts Rabat at +01, so at 01:30 there it would say 02:30 and show "probably asleep" and the cat.
   // The sky and the moon come from UTC and stay.
   test('with outdated time zone rules the lamp stays on and no note shows', async ({ page }) => {
-    await page.addInitScript(() => {
-      const Original = Intl.DateTimeFormat;
-      // Etc/GMT-1 is +01 all year, as Morocco was before the rules changed.
-      Intl.DateTimeFormat = class extends Original {
-        constructor(locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
-          const outdated = options?.timeZone === 'Africa/Casablanca';
-          super(locales, outdated ? { ...options, timeZone: 'Etc/GMT-1' } : options);
-        }
-      } as typeof Intl.DateTimeFormat;
-    });
-    await visit(page, '2026-10-26T01:30:00Z', 'dark');
+    await visit(page, '2026-10-26T01:30:00Z', 'dark', () =>
+      page.addInitScript(() => {
+        const Original = Intl.DateTimeFormat;
+        // Etc/GMT-1 is +01 all year, as Morocco was before the rules changed.
+        Intl.DateTimeFormat = class extends Original {
+          constructor(locales?: string | string[], options?: Intl.DateTimeFormatOptions) {
+            const outdated = options?.timeZone === 'Africa/Casablanca';
+            super(locales, outdated ? { ...options, timeZone: 'Etc/GMT-1' } : options);
+          }
+        } as typeof Intl.DateTimeFormat;
+      })
+    );
+    // With current rules 01:30 shows the same room, so check the old rules are really in place.
+    const rabat = await page.evaluate(() =>
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Africa/Casablanca',
+        timeStyle: 'short',
+      }).format()
+    );
+    expect(rabat).toBe('02:30');
     expect(await room(page)).toMatchObject({
       sky: 'night',
       window: 'window-night',
