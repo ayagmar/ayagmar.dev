@@ -29,8 +29,7 @@ const repoUrl = `https://github.com/${source.repo}`;
   title="Skills"
   description={`${skills.length} Agent Skills by Abdeslam Yassine Agmar: what each does, how to install it, and how it did on its evals.`}
 >
-  <div class="column" data-pagefind-body>
-    <span hidden data-pagefind-meta="title">Skills</span>
+  <div class="column" data-pagefind-body data-pagefind-meta="title:Skills">
     <header class="intro">
       <h1>Skills</h1>
       <p>
@@ -72,7 +71,7 @@ const repoUrl = `https://github.com/${source.repo}`;
                 </div>
                 <div class="contents">
                   <p class="summary">{skill.summary}</p>
-                  <p class="badges">
+                  <p class="badges" data-pagefind-ignore>
                     <span>{skill.license}</span>
                     {needsNode(skill) && <span>needs Node</span>}
                     {result !== null && (
@@ -89,7 +88,7 @@ const repoUrl = `https://github.com/${source.repo}`;
                       )}
                     </p>
                   )}
-                  <p class="links">
+                  <p class="links" data-pagefind-ignore>
                     <a href={skill.readme}>
                       README<span class="sr-only"> for {skill.name}</span>
                     </a>
@@ -104,7 +103,7 @@ const repoUrl = `https://github.com/${source.repo}`;
                       </a>
                     ))}
                   </p>
-                  <details>
+                  <details data-pagefind-ignore>
                     <summary>
                       Install{result !== null && ' and eval run'}
                       <span class="sr-only"> for {skill.name}</span>

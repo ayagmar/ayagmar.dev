@@ -43,7 +43,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
       await page.keyboard.press('/');
       const dialog = page.getByRole('dialog', { name: 'Search' });
-      const input = dialog.getByLabel('Search posts');
+      const input = dialog.getByLabel('Search the site');
       await expect(input).toBeVisible();
       const { border, fill, around } = await input.evaluate((el) => ({
         border: getComputedStyle(el).borderTopColor,

@@ -149,8 +149,10 @@ test('each section heading links to itself', { tag: '@drafts' }, async ({ page }
   await expect(first).toHaveCSS('opacity', '0');
   await first.focus();
   await expect(first).toHaveCSS('opacity', '1');
+  const hash = `#${await headings.first().getAttribute('id')}`;
   await page.keyboard.press('Enter');
-  expect(new URL(page.url()).hash).toBe(`#${await headings.first().getAttribute('id')}`);
+  // The fragment navigation lands after the key press returns.
+  await expect(page).toHaveURL((url) => url.hash === hash);
 });
 
 // Catches a series line stretching the rows beside a long contents list at desktop width, which

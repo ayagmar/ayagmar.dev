@@ -145,7 +145,7 @@ export const diagrams: HastPluginEntry = (factory) => {
         classesForStyles(svg, styles);
         astro.frontmatter = { ...astro.frontmatter, [stylesKey]: styles };
 
-        const children: HastNode[] = [svg];
+        const children: Element['children'] = [svg];
         if (title !== undefined) {
           children.push({
             type: 'element',

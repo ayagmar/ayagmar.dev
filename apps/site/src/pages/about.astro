@@ -18,7 +18,7 @@ const built = new Date();
   description={about.summary}
   structuredData={[website(), person(identity), profilePage('/about')]}
 >
-  <div class="column">
+  <div class="column" data-pagefind-body data-pagefind-meta="title:About">
     <header class="panel m-tea t-about">
       <h1>{identity.name}</h1>
       <p class="lede">{about.summary}</p>
@@ -117,7 +117,7 @@ const built = new Date();
         <p>{about.stack.join(', ')}</p>
       </section>
 
-      <section aria-labelledby="elsewhere">
+      <section aria-labelledby="elsewhere" data-pagefind-ignore>
         <h2 id="elsewhere">Elsewhere</h2>
         <ul class="inline-list">
           {links.map((link) => (

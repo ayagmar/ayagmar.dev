@@ -43,3 +43,13 @@ overrides:
   # typed-rest-client 2.3.1), fixed by 6.16.1.
   "@stryker-mutator/core>minimatch": 11.0.5
   "typed-rest-client>qs": 6.17.1
+
+# Dependencies a package needs but does not declare, until its next release does.
+packageExtensions:
+  # @astrojs/astro2tsx 0.1.3 loads its WASM binding with @emnapi/core 1.11.3 but leaves
+  # @emnapi/runtime to peer resolution, which picks the 2.0 beta Rolldown 1.3 brings; the
+  # mismatched pair throws on import, and `astro check` reports @astrojs/check as missing.
+  # 0.1.4 declares it (withastro/compiler-rs#219). Remove once the lockfile has 0.1.4.
+  "@astrojs/astro2tsx@0.1.3":
+    dependencies:
+      "@emnapi/runtime": 1.11.3
