@@ -16,5 +16,17 @@
     "body": {
       "error": "package pi-extmgr not found"
     }
+  },
+  "pi-codex-web-search": {
+    "status": 404,
+    "body": {
+      "error": "package pi-codex-web-search not found"
+    }
+  },
+  "pi-promptsmith": {
+    "status": 404,
+    "body": {
+      "error": "package pi-promptsmith not found"
+    }
   }
 }

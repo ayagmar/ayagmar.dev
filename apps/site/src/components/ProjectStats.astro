@@ -1,6 +1,6 @@
 ---
 import { projectFacts } from '../data/format.ts';
-import type { SiteProject } from '../lib/projects.ts';
+import { noNumbers, type SiteProject } from '../lib/projects.ts';
 
 interface Props {
   project: SiteProject;
@@ -29,5 +29,5 @@ const facts = projectFacts(project);
     ))}
   </dl>
 ) : (
-  <p class="project-stats-empty">No live numbers for {project.slug} right now.</p>
+  <p class="project-stats-empty">{noNumbers(project)}</p>
 )}

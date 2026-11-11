@@ -3,6 +3,7 @@
 slug: runnerd
 tagline: 'Self-hosted GitHub Actions runners, each job in a fresh container.'
 status: active
+group: self-hosted
 ---
 
 `runnerd` runs ephemeral GitHub Actions runners on one Linux host. Every job gets a fresh container, and the repositories it serves share slots inside one memory budget, a systemd slice.

@@ -9,11 +9,13 @@ import { longDate } from './day-words.ts';
 import { feedPaths } from './feed.ts';
 import type { BrewingItem } from './now-schema.ts';
 import {
+  noNumbers,
   postCount,
   postsAbout,
   projectLinks,
   projectPath,
   projectRowLabel,
+  projectsByGroup,
   type SiteProject,
 } from './projects.ts';
 import { curlTarget, identityLines, nav, nowPage, site, siteUrl, textRule } from './site.ts';
@@ -140,7 +142,7 @@ export function renderTilText(notes: readonly Note[]): string {
   ].join('\n');
 }
 
-/** /projects: what each project is, its posts and its status. */
+/** /projects: what each project is, its posts and its status, under the page's headings. */
 export function renderProjectsText(
   projects: readonly SiteProject[],
   posts: readonly Post[]
@@ -148,12 +150,17 @@ export function renderProjectsText(
   return [
     `Projects | ${site.name}`,
     textRule,
-    ...projects.flatMap((project) => [
-      project.slug,
-      ...(project.summary === null ? [] : [`  ${project.summary}`]),
-      ...(projectRowLabel(project, posts) === '' ? [] : [`  ${projectRowLabel(project, posts)}`]),
-      `  ${siteUrl}${projectPath(project.slug)}`,
+    ...projectsByGroup(projects).flatMap((group, index) => [
+      ...(index === 0 ? [] : [textRule]),
+      group.title,
       '',
+      ...group.projects.flatMap((project) => [
+        project.slug,
+        ...(project.summary === null ? [] : [`  ${project.summary}`]),
+        ...(projectRowLabel(project, posts) === '' ? [] : [`  ${projectRowLabel(project, posts)}`]),
+        `  ${siteUrl}${projectPath(project.slug)}`,
+        '',
+      ]),
     ]),
     ...footer('/projects').slice(1),
   ].join('\n');
@@ -178,7 +185,7 @@ export function renderProjectText(
     ...(description === undefined ? [] : [absoluteLinks(description, path).trim(), textRule]),
     'Numbers',
     ...(facts.length === 0
-      ? [`  No live numbers for ${project.slug} right now.`]
+      ? [`  ${noNumbers(project)}`]
       : facts.map(({ label, value }) => `  ${label}: ${value}`)),
     textRule,
     'Links',

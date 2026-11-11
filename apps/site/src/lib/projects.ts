@@ -1,6 +1,6 @@
 import { featuredProjects, type Project, type ProjectSlug } from '@min7/contracts';
 import { plural } from './plural.ts';
-import type { ProjectFrontmatter } from './project-schema.ts';
+import { type ProjectFrontmatter, type ProjectGroup, projectGroups } from './project-schema.ts';
 import type { Post } from './writing.ts';
 
 /**
@@ -17,6 +17,10 @@ export interface SiteProject {
   summary: string | null;
   /** From the project file, else `archived` when GitHub says so, else unknown. */
   status: ProjectFrontmatter['status'] | null;
+  /** From the project file; null without one. */
+  group: ProjectGroup | null;
+  /** Whether signals fetches its numbers; false for `pull: false` in contracts. */
+  pulled: boolean;
   /** `https://<subdomain>.ayagmar.dev` when the project has its own site. */
   homepage: string | null;
   npmUrl: string | null;
@@ -49,12 +53,36 @@ export function siteProjects(
         repoUrl: stats?.url ?? `https://github.com/${repo}`,
         summary: file?.tagline ?? stats?.description ?? null,
         status: file?.status ?? (stats?.archived === true ? 'archived' : null),
+        group: file?.group ?? null,
+        pulled: !('pull' in entry),
         homepage: file?.subdomain === undefined ? null : `https://${file.subdomain}.ayagmar.dev`,
         npmUrl: 'npmPackage' in entry ? `https://www.npmjs.com/package/${entry.npmPackage}` : null,
         live: stats,
       };
     });
 }
+
+/**
+ * The projects under their group headings, each group where its first project ranks and the
+ * projects in rank order. Projects without a file come last, under "Other".
+ */
+export function projectsByGroup<P extends Pick<SiteProject, 'group'>>(projects: readonly P[]) {
+  const groups = new Map<ProjectGroup | null, P[]>();
+  for (const project of projects.filter((p) => p.group !== null)) {
+    groups.set(project.group, [...(groups.get(project.group) ?? []), project]);
+  }
+  const other = projects.filter((project) => project.group === null);
+  if (other.length > 0) groups.set(null, other);
+  return [...groups].map(([id, members]) => ({
+    id: id ?? 'other',
+    title: id === null ? 'Other' : projectGroups[id],
+    projects: members,
+  }));
+}
+
+/** What a project's page says in place of numbers it has none of. */
+export const noNumbers = ({ slug, pulled }: Pick<SiteProject, 'slug' | 'pulled'>) =>
+  pulled ? `No live numbers for ${slug} right now.` : `I don't fetch numbers for ${slug}.`;
 
 /** Where a project lives: its repository, its own site and its npm package. */
 export const projectLinks = ({ repo, repoUrl, homepage, npmUrl }: SiteProject) => [

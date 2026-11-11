@@ -53,7 +53,7 @@ export function projectsSummary(projects: readonly Pick<Project, 'stars'>[]): st
   const known = projects.flatMap((project) => (project.stars === null ? [] : [project.stars]));
   const total = count(known.reduce((sum, stars) => sum + stars, 0));
   const missing = projects.length - known.length;
-  const head = plural(projects.length, 'featured project', 'featured projects');
+  const head = plural(projects.length, 'project', 'projects');
   return missing === 0
     ? `${head}, ${total} stars in total.`
     : `${head}, at least ${total} stars; GitHub did not answer for ${missing}.`;

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { projectSchema } from '../src/lib/project-schema.ts';
-import { checkProjectFiles, morePostsAbout, siteProjects } from '../src/lib/projects.ts';
+import {
+  checkProjectFiles,
+  morePostsAbout,
+  noNumbers,
+  projectsByGroup,
+  siteProjects,
+} from '../src/lib/projects.ts';
 import { type Post, publishedEntries } from '../src/lib/writing.ts';
 
 const post = (
@@ -22,7 +28,11 @@ const post = (
 
 describe('project files', () => {
   it('reject a slug that is not a featured project, naming it', () => {
-    const result = projectSchema.safeParse({ slug: 'runner-d', status: 'active' });
+    const result = projectSchema.safeParse({
+      slug: 'runner-d',
+      status: 'active',
+      group: 'self-hosted',
+    });
     expect(result.error?.issues.map((issue) => issue.message)).toEqual([
       expect.stringMatching(/^"runner-d" is not a featured project/),
     ]);
@@ -44,17 +54,59 @@ describe('project files', () => {
 
 describe('site projects', () => {
   it('list every featured project, file order first, with no numbers when signals had none', () => {
-    const projects = siteProjects([{ slug: 'headroom', status: 'spec', order: 1 }], null);
+    const projects = siteProjects(
+      [{ slug: 'headroom', status: 'spec', group: 'desktop', order: 1 }],
+      null
+    );
     expect(projects[0]).toMatchObject({ slug: 'headroom', status: 'spec', live: null });
     expect(projects.map((project) => project.slug)).toEqual([
       'headroom',
       'llm-usage-metrics',
-      'ccdesk',
       'pi-mobile',
       'pi-extmgr',
-      'runnerd',
-      'kipple',
+      'ccdesk',
       'niri-computer-use',
+      'runnerd',
+      'pi-codex-web-search',
+      'pi-promptsmith',
+      'claude-modmgr',
+      'repo-pulse',
+      'agents-skills',
+      'kipple',
+      'dotfiles',
+    ]);
+  });
+
+  // Catches a project with no file dropping off /projects, or a group taking the place of a
+  // stronger one: groups follow their best project, and members keep their rank.
+  it('group projects in rank order, with those that have no file last', () => {
+    const groups = projectsByGroup(
+      siteProjects(
+        [
+          { slug: 'runnerd', status: 'active', group: 'self-hosted' },
+          { slug: 'pi-mobile', status: 'active', group: 'agents' },
+          { slug: 'niri-computer-use', status: 'active', group: 'desktop' },
+          { slug: 'llm-usage-metrics', status: 'active', group: 'agents' },
+        ],
+        null
+      ).slice(0, 8)
+    );
+    expect(groups.map((group) => [group.title, group.projects.map((p) => p.slug)])).toEqual([
+      ['Coding agents', ['llm-usage-metrics', 'pi-mobile']],
+      ['Linux desktop', ['niri-computer-use']],
+      ['Self-hosted', ['runnerd']],
+      ['Other', ['pi-extmgr', 'ccdesk', 'pi-codex-web-search', 'pi-promptsmith']],
+    ]);
+  });
+
+  // Catches a page saying "right now" about numbers signals never fetches (ADR 0009).
+  it('say why a project has no numbers', () => {
+    const said = siteProjects([], null)
+      .filter(({ slug }) => slug === 'llm-usage-metrics' || slug === 'agents-skills')
+      .map(noNumbers);
+    expect(said).toEqual([
+      'No live numbers for llm-usage-metrics right now.',
+      "I don't fetch numbers for agents-skills.",
     ]);
   });
 

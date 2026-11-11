@@ -1793,7 +1793,7 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 /* A project's name is its repository's: the code face, in the text colour. */
-.projects h2,
+.projects h3,
 .project h1,
 .project-card h2 a {
   font-family: var(--mono);
@@ -1801,18 +1801,18 @@ main:has(.toc) .reader ~ .project-card {
   letter-spacing: -0.02em;
 }
 
-.projects h2 {
+.projects h3 {
   margin: 0;
   font-size: 1rem;
   line-height: 1.65;
 }
 
-.projects h2 a {
+.projects h3 a {
   color: var(--text);
   text-decoration: none;
 }
 
-.projects h2 a:hover {
+.projects h3 a:hover {
   color: var(--lamp);
 }
 

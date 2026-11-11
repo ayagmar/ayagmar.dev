@@ -1,12 +1,12 @@
-// GitHub repository metadata and npm monthly downloads for the featured projects.
+// GitHub repository metadata and npm monthly downloads for the featured projects it pulls.
 import {
-  featuredProjects,
   githubReleaseSchema,
   githubRepoSchema,
   npmDownloadsSchema,
   type Project,
   type ProjectsSnapshot,
   projectsSnapshotSchema,
+  pulledProjects,
 } from '@min7/contracts';
 import type { PullAdapter } from '../types.ts';
 import {
@@ -32,7 +32,7 @@ export interface ProjectsRaw {
 
 export const projects: PullAdapter<ProjectsRaw, ProjectsSnapshot> = {
   id: 'projects',
-  // Every 6 hours: 19 requests a pull, 16 of them to GitHub. Without a token they share the 60
+  // Every 6 hours: 25 requests a pull, 20 of them to GitHub. Without a token they share the 60
   // an hour GitHub allows Cloudflare's egress IPs, and may be refused (ADR 0009).
   intervalSeconds: 6 * 60 * 60,
 
@@ -52,7 +52,7 @@ export const projects: PullAdapter<ProjectsRaw, ProjectsSnapshot> = {
     const npm = { signal, maxBytes };
     const raw: ProjectsRaw = { github: {}, npm: {} };
     const tasks: (() => Promise<void>)[] = [];
-    for (const project of featuredProjects) {
+    for (const project of pulledProjects) {
       const { repo } = project;
       const answers: ProjectsRaw['github'][string] = { repo: null, release: null };
       raw.github[repo] = answers;
@@ -82,7 +82,7 @@ export const projects: PullAdapter<ProjectsRaw, ProjectsSnapshot> = {
   normalize(raw) {
     const list: Project[] = [];
     const failures: PullError[] = [];
-    for (const project of featuredProjects) {
+    for (const project of pulledProjects) {
       const { slug, repo } = project;
       const npmPackage = 'npmPackage' in project ? project.npmPackage : undefined;
       const answers = raw.github[repo];
@@ -116,7 +116,7 @@ export const projects: PullAdapter<ProjectsRaw, ProjectsSnapshot> = {
     }
     // GitHub answered for no repository at all: the whole source failed.
     const [first] = failures;
-    if (first !== undefined && failures.length === featuredProjects.length) throw first;
+    if (first !== undefined && failures.length === pulledProjects.length) throw first;
     return checkSnapshot(projectsSnapshotSchema, { projects: list });
   },
 };

@@ -11,11 +11,23 @@ export const projectSlug = z.string().refine(isProjectSlug, {
 
 const projectStatuses = ['active', 'maintained', 'archived', 'spec'] as const;
 
+/** The headings /projects lists projects under, by the `group` a project file names. */
+export const projectGroups = {
+  agents: 'Coding agents',
+  desktop: 'Linux desktop',
+  'self-hosted': 'Self-hosted',
+} as const;
+
+export type ProjectGroup = keyof typeof projectGroups;
+
+const groupIds = Object.keys(projectGroups) as [ProjectGroup, ...ProjectGroup[]];
+
 /** Frontmatter of content/projects/<slug>.md; the Markdown body is the long description. */
 export const projectSchema = z.strictObject({
   slug: projectSlug,
   tagline: z.string().trim().min(1, 'must not be empty').optional(),
   status: z.enum(projectStatuses, { error: `must be one of ${projectStatuses.join(', ')}` }),
+  group: z.enum(groupIds, { error: `must be one of ${groupIds.join(', ')}` }),
   /** The project's own site, `<subdomain>.ayagmar.dev`. */
   subdomain: z
     .string()

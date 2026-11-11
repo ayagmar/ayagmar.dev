@@ -360,7 +360,7 @@ describe('the activity pull', () => {
   it('keeps a hidden repository’s counts unnamed and adds late activity on the same day', async () => {
     network.use(...upstreamHandlers());
     await pullAt(capturedAt);
-    const hidden = 'ayagmar/repo-pulse';
+    const hidden = 'ayagmar/ayagmar.dev';
     const date = '2026-10-22';
     const before = dayOf(okAnswer, date);
 
