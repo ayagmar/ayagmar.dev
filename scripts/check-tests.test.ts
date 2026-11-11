@@ -14,8 +14,8 @@ const presenceOnly =
 
 describe('check-tests', () => {
   // Catches a test that passes whatever the code does: no assertion, a dangling `expect(x)`,
-  // only mock calls, or only a presence check, a focused or silently skipped test, and a
-  // node:test todo, which runs but whose failure exits 0.
+  // only mock calls, or only a presence check (`not.toBeFalsy()` is `toBeTruthy()`), a focused
+  // or silently skipped test, and a node:test todo, which runs but whose failure exits 0.
   it('flags each kind of test that cannot fail or hides others', () => {
     const source = [
       "it('renders', () => { render(); });",
@@ -32,6 +32,7 @@ describe('check-tests', () => {
       "it('opt', { skip: true }, () => { assert.equal(a, 1); });",
       "it.todo('later', () => { assert.equal(a, 1); });",
       "it('opt todo', { todo: true }, () => { assert.equal(a, 1); });",
+      "it('falsy', () => { expect(a).not.toBeFalsy(); });",
       '// check-tests: allow',
       "it('no reason given', () => {});",
     ].join('\n');
@@ -50,7 +51,8 @@ describe('check-tests', () => {
       '12: skipped without a reason (skip: true)',
       '13: marked todo without a reason, so its failures are ignored',
       '14: marked todo without a reason, so its failures are ignored (todo: true)',
-      '16: test has no assertion',
+      `15: ${presenceOnly}`,
+      '17: test has no assertion',
     ]);
   });
 
