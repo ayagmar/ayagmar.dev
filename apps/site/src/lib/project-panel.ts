@@ -5,7 +5,8 @@
  */
 import type { Project, ShippingEvent } from '@min7/contracts';
 import { describeEvent, projectFacts } from '../data/format.ts';
-import { capped, el, type Markup, stampMarkup } from './markup.ts';
+import { capped } from './capped.ts';
+import { el, type Markup, stampMarkup } from './markup.ts';
 import { plural } from './plural.ts';
 
 /** What a project's page says in place of numbers it has none of. */
