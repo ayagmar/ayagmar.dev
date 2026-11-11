@@ -1933,8 +1933,8 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 /* Certifications: small cards on hairlines, two across where they fit. Each has a drawn initial
-   in place of the issuer's logo, which is theirs and an image from another origin. An expiring
-   or expired one says so in the text colour, like /now's out-of-date line. */
+   in place of the issuer's logo, which is theirs and an image from another origin. One in its
+   last three months or expired has its end in the text colour, like /now's out-of-date line. */
 .certs {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

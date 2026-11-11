@@ -31,7 +31,7 @@ test('/about shows a card per certification with its end and verify link', async
     about.certifications.map((cert: { name: string }) => cert.name)
   );
   const claude = cards.filter({ hasText: 'Claude Certified Developer' });
-  await expect(claude).toContainText(/(?:Valid to|Expires|Expired) Sep 2027/);
+  await expect(claude).toContainText(/(?:Valid to|Expired) Sep 2027/);
   await expect(
     claude.getByRole('link', { name: 'Verify Claude Certified Developer - Foundations' })
   ).toHaveAttribute('href', about.certifications[1].verifyUrl);

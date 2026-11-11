@@ -66,12 +66,13 @@ describe('content/about.json', () => {
 });
 
 describe('certificationExpiry', () => {
-  // Catches a certification called expired during its last month, still valid after it, or
-  // flagged as expiring outside the three months before its end.
+  // Catches a certification called expired during its last month, still valid after it,
+  // flagged as expiring outside its last three months, or worded in a way an old build would
+  // make false.
   it.each([
-    ['2027-05-31T23:00:00Z', 'valid', 'Valid to Sep 2027'],
-    ['2027-06-01T00:00:00Z', 'expiring', 'Expires Sep 2027'],
-    ['2027-09-30T23:00:00Z', 'expiring', 'Expires Sep 2027'],
+    ['2027-06-30T23:00:00Z', 'valid', 'Valid to Sep 2027'],
+    ['2027-07-01T00:00:00Z', 'expiring', 'Valid to Sep 2027'],
+    ['2027-09-30T23:00:00Z', 'expiring', 'Valid to Sep 2027'],
     ['2027-10-01T00:00:00Z', 'expired', 'Expired Sep 2027'],
     ['2028-02-01T00:00:00Z', 'expired', 'Expired Sep 2027'],
   ])('on %s says %s', (today, state, text) => {
@@ -80,7 +81,7 @@ describe('certificationExpiry', () => {
 
   // Catches a year boundary read as twelve months off.
   it('counts months across a new year', () => {
-    expect(certificationExpiry('2027-02', new Date('2026-11-15T00:00:00Z')).state).toBe('expiring');
+    expect(certificationExpiry('2027-01', new Date('2026-11-15T00:00:00Z')).state).toBe('expiring');
   });
 });
 
