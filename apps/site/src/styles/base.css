@@ -485,7 +485,8 @@ h1 + .caption,
 
 /* With scripts on, the link is drawn as the button it will become, so a new page's header does
    not change when the island hydrates, up to 2 s later (ADR 0042). data-theme-switch is set before
-   the first paint; without it the link stays a plain "Browse writing". */
+   the first paint; without it the link stays a plain "Browse writing" or "Browse projects". The
+   404 uses the same two classes so it only mentions Search when there is one. */
 :root[data-theme-switch] .search-script {
   display: inline;
 }
@@ -813,6 +814,11 @@ h1 + .caption,
 
 .t-error {
   margin-block: 2rem 4rem;
+}
+
+/* A caption after a section, such as /writing's feeds under its tags, belongs to the page. */
+section + .caption {
+  margin-block-start: 1.5rem;
 }
 
 .caption,

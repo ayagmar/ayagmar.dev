@@ -17,6 +17,9 @@ interface Pagefind {
 const bundle = '/pagefind/pagefind.js';
 const limit = 8;
 
+/** The link shown until the island hydrates or without scripts (`browseLink` in writing.ts). */
+const { browse }: { browse: { href: string; label: string } } = $props();
+
 let hydrated = $state(false);
 let dialog = $state<HTMLDialogElement>();
 let query = $state('');
@@ -97,8 +100,8 @@ const href = (url: string) => url.replace(/\.html$/, '');
   </button>
 {:else}
   <!-- With scripts on, base.css shows only the second span, the button's face (ADR 0042). -->
-  <a href="/writing">
-    <span class="search-no-script">Browse writing</span>
+  <a href={browse.href}>
+    <span class="search-no-script">{browse.label}</span>
     <span class="search-script">Search <kbd>/</kbd><kbd>Ctrl K</kbd></span>
   </a>
 {/if}

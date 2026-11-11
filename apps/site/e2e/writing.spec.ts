@@ -1,9 +1,11 @@
 // Posts on the production build: no draft reaches a page, a feed, search, index.txt or the
 // sitemap. While every post in content/writing is a placeholder draft, tests that need a post
 // carry the @drafts tag and run on the build that shows drafts (playwright.config.ts).
+
+import { nothingYet } from '../src/lib/writing.ts';
 import { notes, posts } from './content.ts';
 import { expectValidFeed } from './feed-rules.ts';
-import { expect, feeds, pages, test } from './fixtures.ts';
+import { expect, feeds, notFoundPath, pages, test } from './fixtures.ts';
 
 const published = posts.filter((post) => !post.draft);
 const drafts = posts.filter((post) => post.draft);
@@ -19,7 +21,7 @@ test.describe('without published posts', () => {
     const panel = page.getByRole('region', { name: 'Writing' });
     if (publishedNotes.length === 0) {
       await expect(panel).toHaveCount(0);
-      await expect(page.getByText('Nothing published yet.')).toHaveCount(0);
+      await expect(page.getByText(nothingYet.writing)).toHaveCount(0);
     } else {
       await expect(
         panel.getByText('No posts yet. The latest short notes, from TIL:')
@@ -34,12 +36,64 @@ test.describe('without published posts', () => {
 
     await page.goto('/writing');
     await expect(page.getByRole('heading', { level: 1, name: 'Writing' })).toBeVisible();
-    await expect(page.getByText('Nothing published yet.')).toBeVisible();
+    await expect(page.getByText(nothingYet.writing)).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Tags' })).toHaveCount(0);
 
     const text = await (await request.get('/index.txt')).text();
-    if (publishedNotes.length === 0) expect(text).not.toContain('Nothing published yet.');
+    if (publishedNotes.length === 0) expect(text).not.toContain(nothingYet.writing);
     expect(text).not.toMatch(/^Writing$/m);
+  });
+
+  // Catches the first two items of the header being dead ends: the empty page offers its feeds
+  // and the pages that have something to read, and never the other empty section.
+  test('/writing and /til lead to the pages with content', async ({ page }) => {
+    for (const path of ['/writing', ...(publishedNotes.length === 0 ? ['/til'] : [])]) {
+      await page.goto(path);
+      const column = page.locator('.column');
+      const links = await column
+        .locator('.onward a')
+        .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute('href')));
+      expect(links, path).toEqual([
+        ...(path === '/writing' && publishedNotes.length > 0 ? ['/til'] : []),
+        '/projects',
+        '/about',
+        '/now',
+      ]);
+      await expect(column.getByRole('link', { name: 'RSS' }), path).toHaveAttribute(
+        'href',
+        path === '/til' ? '/til/feed.xml' : '/feed.xml'
+      );
+    }
+  });
+
+  // Catches the 404 sending a reader to the empty writing index.
+  test('the 404 points only at pages with content', async ({ page }) => {
+    await page.goto(notFoundPath);
+    const links = await page
+      .locator('.column .onward a')
+      .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute('href')));
+    expect(links).toEqual([
+      ...(publishedNotes.length > 0 ? ['/til'] : []),
+      '/projects',
+      '/about',
+      '/now',
+      '/',
+    ]);
+    await expect(page.locator('.column .onward')).toHaveText(/^Try Search, or one of these: /, {
+      useInnerText: true,
+    });
+  });
+
+  test.describe('without JavaScript', () => {
+    test.use({ javaScriptEnabled: false });
+
+    // Catches the 404 sending a reader to a Search the header only has with scripts on.
+    test('the 404 does not offer Search', async ({ page }) => {
+      await page.goto(notFoundPath);
+      await expect(page.locator('.column .onward')).toHaveText(/^Try one of these: /, {
+        useInnerText: true,
+      });
+    });
   });
 
   test('the writing feeds follow the validator rules with no entries', async ({
@@ -76,6 +130,23 @@ test('draft posts are in none of the places a post is listed', async ({ page, re
       .getByRole('link')
       .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
     expect(found.join(), slug).not.toContain(`/writing/${slug}`);
+  }
+});
+
+// Catches the empty state outliving the first post: /writing lists it, and the 404 and an empty
+// /til point at /writing again, with no edit to either.
+test('the first post ends the empty state everywhere', { tag: '@drafts' }, async ({ page }) => {
+  await page.goto('/writing');
+  await expect(page.locator('.column .posts li')).toHaveCount(posts.length);
+  await expect(page.getByText(nothingYet.writing)).toHaveCount(0);
+  await expect(page.locator('.column .onward')).toHaveCount(0);
+
+  await page.goto(notFoundPath);
+  await expect(page.locator('.column .onward a').first()).toHaveAttribute('href', '/writing');
+
+  if (notes.length === 0) {
+    await page.goto('/til');
+    await expect(page.locator('.column .onward a').first()).toHaveAttribute('href', '/writing');
   }
 });
 

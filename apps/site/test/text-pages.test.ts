@@ -200,12 +200,36 @@ https://ayagmar.dev/writing/p
 });
 
 describe('list pages', () => {
-  // Catches an empty site printing a blank page instead of saying so.
-  it('say when nothing is published', () => {
-    expect(renderWritingText([])).toContain(
-      'Writing | min7\n'.concat('-'.repeat(72), '\n  Nothing published yet.\n')
+  // Catches an empty /writing or /til printing a dead end: it gives its feeds and the pages that
+  // have something to read, and names the other section once that has an entry.
+  it('send a reader on while nothing is published', () => {
+    expect(renderWritingText([], [])).toBe(
+      [
+        'Writing | min7',
+        '-'.repeat(72),
+        "  No posts yet. They'll be about software I build and the tools I use.",
+        '  RSS        https://ayagmar.dev/feed.xml',
+        '  Atom       https://ayagmar.dev/atom.xml',
+        '',
+        '  Until then, try:',
+        '  Projects   https://ayagmar.dev/projects',
+        '  About      https://ayagmar.dev/about',
+        '  Now        https://ayagmar.dev/now',
+        '-'.repeat(72),
+        '  Page       https://ayagmar.dev/writing',
+        '  Home       https://ayagmar.dev',
+        '',
+      ].join('\n')
     );
-    expect(renderTilText([])).toContain('  Nothing published yet.\n');
+    expect(renderWritingText([], [note('n', 'Body.')])).toContain(
+      '  Until then, try:\n  TIL        https://ayagmar.dev/til\n  Projects '
+    );
+    const til = renderTilText([], []);
+    expect(til).toContain('  RSS        https://ayagmar.dev/til/feed.xml\n');
+    expect(til).not.toContain('https://ayagmar.dev/writing');
+    expect(renderTilText([], [post('p')])).toContain(
+      '  Until then, try:\n  Writing    https://ayagmar.dev/writing\n  Projects '
+    );
   });
 
   // Catches a project's row printing a zero count: on /projects and in its text copy a row says
@@ -243,14 +267,14 @@ describe('list pages', () => {
 
   // Catches a Preview listing a draft as if it were published.
   it('mark a draft post', () => {
-    expect(renderWritingText([post('p', { draft: true })])).toContain(
+    expect(renderWritingText([post('p', { draft: true })], [])).toContain(
       '  2026-10-24  A post (draft)\n              https://ayagmar.dev/writing/p\n              What it says.\n'
     );
   });
 
   // Catches /til showing only titles, when the page shows every note whole.
   it('show each note in full', () => {
-    const text = renderTilText([note('one', 'First [body](/x).'), note('two', 'Second body.')]);
+    const text = renderTilText([note('one', 'First [body](/x).'), note('two', 'Second body.')], []);
     expect(text).toContain('First [body](https://ayagmar.dev/x).');
     expect(text).toContain('Second body.');
     expect(text).toContain('2026-10-25\nhttps://ayagmar.dev/til/two\n');
@@ -260,7 +284,7 @@ describe('list pages', () => {
   it('mark a draft note and give its tags, as the page does', () => {
     const draft = note('one', 'Body.');
     draft.data = { ...draft.data, draft: true, tags: ['bash', 'niri'] };
-    expect(renderTilText([draft])).toContain(
+    expect(renderTilText([draft], [])).toContain(
       'A note\nDraft, 2026-10-25\nTags: bash, niri\nhttps://ayagmar.dev/til/one\n'
     );
   });

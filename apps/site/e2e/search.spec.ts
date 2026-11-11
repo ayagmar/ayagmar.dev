@@ -1,4 +1,6 @@
 import type { Route } from '@playwright/test';
+import { browseLink } from '../src/lib/writing.ts';
+import { posts } from './content.ts';
 import { expect, test } from './fixtures.ts';
 
 test('Ctrl+K opens search and finds a post', { tag: '@drafts' }, async ({ page }) => {
@@ -135,13 +137,21 @@ test('the hint names the key that opens search', async ({ page }) => {
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 
-  test('offers a link instead of the search button', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Browse writing' })).toHaveAttribute(
-      'href',
-      '/writing'
-    );
-  });
+  const builds = [
+    { build: 'production', count: posts.filter((post) => !post.draft).length, tag: [] },
+    { build: 'drafts', count: posts.length, tag: ['@drafts'] },
+  ];
+  for (const { build, count, tag } of builds) {
+    // Catches the header's one link going to an empty /writing before the first post, or
+    // staying on /projects after it.
+    test(`offers a link to a page with content instead of the search button on ${build}`, {
+      tag,
+    }, async ({ page }) => {
+      await page.goto('/');
+      const { href, label } = browseLink(count);
+      await expect(page.getByRole('link', { name: label })).toHaveAttribute('href', href);
+    });
+  }
 });
 
 test('the open search dialog keeps 24px targets and fits a 320px screen', {
