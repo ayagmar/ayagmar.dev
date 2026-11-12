@@ -5,6 +5,7 @@ import HomeShipping from '../components/HomeShipping.astro';
 import Markup from '../components/Markup.astro';
 import NowPlaying from '../components/NowPlaying.astro';
 import PostList from '../components/PostList.astro';
+import ProjectRow from '../components/ProjectRow.astro';
 import Sample from '../components/Sample.astro';
 import { shippingStrip } from '../data/format.ts';
 import { roomSeed, scrubFrom } from '../data/room.ts';
@@ -12,8 +13,17 @@ import { liveAttrs, signals, signalsApiBase, signalsMode } from '../data/signals
 import Base from '../layouts/Base.astro';
 import { dayPath } from '../lib/day-words.ts';
 import { getDays, getNotes, getPosts, getProjects } from '../lib/posts.ts';
-import { projectPath } from '../lib/projects.ts';
-import { catName, catNote, hotspotWords, roomObjects } from '../lib/room.ts';
+import { projectFact } from '../lib/project-row.ts';
+import {
+  catName,
+  catNote,
+  hotspotWords,
+  roomFact,
+  roomList,
+  roomObjects,
+  rowFact,
+  rowLine,
+} from '../lib/room.ts';
 import { seededInputs } from '../lib/room-clock.ts';
 import { daysBack } from '../lib/room-day.ts';
 import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
@@ -26,13 +36,17 @@ import { notePath } from '../lib/til.ts';
 import { isoDay } from '../lib/writing.ts';
 import '../styles/room.css';
 
-const posts = (await getPosts()).slice(0, 4);
+const allNotes = await getNotes();
+const allPosts = await getPosts();
+const posts = allPosts.slice(0, 4);
+const newest = { post: posts[0]?.data.title, note: allNotes[0]?.data.title };
 // Until the first post, the Writing window shows the latest TIL notes instead of an empty box.
-const notes = posts.length === 0 ? (await getNotes()).slice(0, 3) : [];
+const notes = posts.length === 0 ? allNotes.slice(0, 3) : [];
 const writing = posts.length > 0 || notes.length > 0;
 // Without Writing above them, Projects stands beside Listening and Shipping alone: two more rows
 // keep its column about as long as theirs. Where the panels stack, room.css hides those two.
-const projects = (await getProjects()).projects.slice(0, writing ? 5 : 7);
+const { projects: allProjects, envelope: projectsEnvelope } = await getProjects();
+const projects = allProjects.slice(0, writing ? 5 : 7);
 const listening = await signals.read('listening');
 const shipping = await signals.read('shipping');
 const about = await getEntry('about', 'about');
@@ -102,8 +116,10 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
           <span aria-hidden="true">{catNote}</span>
         </span>
       </span>
+      {/* Out of the Tab order as built: from 60 rem the list under the scene reaches the same
+          pages, and src/scripts/room.ts puts them back in it on narrower screens (ADR 0051). */}
       {roomObjects.map((item) => (
-        <a class="hotspot" href={item.href} data-room={item.id}>
+        <a class="hotspot" href={item.href} data-room={item.id} tabindex="-1">
           <span>{hotspotWords(item, room)}</span>
         </a>
       ))}
@@ -129,7 +145,7 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
           aria-valuetext="Now"
         >
         <div class="room-scrub-line">
-          <p class="room-scrub-date">Back through the days</p>
+          <p class="room-scrub-date">Drag to see the room on past days</p>
           <a class="room-scrub-read" href={dayPath(from as string)} hidden>
             Read this day
           </a>
@@ -160,11 +176,18 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
   </div>
   <nav aria-label="The room as a list">
     <ul class="room-list">
-      {roomObjects.map((item) => (
+      {/* The section, then what lies under it: below 60 rem what the page holds, since the
+          cropped scene may not show the object; from 60 rem the object, with the fact its
+          hotspot says for a screen reader (ADR 0051). */}
+      {roomList.map((item) => (
         <li>
           <a href={item.href} data-room-list={item.id}>
-            <span class="room-object">{item.object}</span>{' '}
-            <span class="room-section">{item.section}</span>
+            <span class="room-section">{item.section}</span>{' '}
+            <span class="room-holds">{rowLine(item, newest)}</span>
+            <span class="room-object">
+              {item.object}
+              <span class="sr-only room-fact">{rowFact(roomFact(item.id, room))}</span>
+            </span>
           </a>
         </li>
       ))}
@@ -202,14 +225,10 @@ const daysHeld = from === null ? 0 : daysBack(from, rabatDate(seed.builtAt));
         <h2 id="projects">Projects</h2>
         <a href="/projects">All projects</a>
       </div>
-      <ul class="home-projects">
-        {projects.map((project) => (
-          <li>
-            <a href={projectPath(project.slug)}>{project.slug}</a>
-            {project.summary !== null && <p>{project.summary}</p>}
-          </li>
-        ))}
+      <ul class="projects home-projects" {...liveAttrs('projects', projectsEnvelope)}>
+        {projects.map((project) => <ProjectRow project={project} posts={allPosts} />)}
       </ul>
+      {projects.some((project) => projectFact(project.live) !== '') && <Sample />}
     </section>
 
     <div>

@@ -9,7 +9,7 @@ import { rabatDate } from '@min7/contracts/rabat';
 import { dayPath } from '../lib/day-words.ts';
 import { ask } from '../lib/live.ts';
 import { toNode } from '../lib/markup-page.ts';
-import { hotspotWords, type RoomObject, roomObjects } from '../lib/room.ts';
+import { type RoomObject, roomFact, roomObjects, sayFact } from '../lib/room.ts';
 import { changedParts } from '../lib/room-clock.ts';
 import { dateTitle, dayInstant, daysBack } from '../lib/room-day.ts';
 import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
@@ -40,10 +40,8 @@ export function startScrub(
 
   const layer = (selector: string, nodes: Parameters<typeof toNode>[0][]) =>
     (scene.querySelector(selector) as HTMLElement).replaceChildren(...nodes.map(toNode));
-  const label = (object: RoomObject, state: RoomState) => {
-    const span = scene.querySelector(`[data-room="${object.id}"] span`) as HTMLElement;
-    span.textContent = hotspotWords(object, state);
-  };
+  const label = (object: RoomObject, state: RoomState) =>
+    sayFact(object, roomFact(object.id, state));
   const [corkboard, frame, notebook] = roomObjects;
   let objects: RoomState = roomState(inputs, { kind: 'live', instant: Date.now() });
 

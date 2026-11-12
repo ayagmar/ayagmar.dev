@@ -17,13 +17,18 @@ export const site = {
   },
 } as const;
 
+/**
+ * The header and Menu, in the order a first visit needs them (ADR 0051): what I build and who I
+ * am first, then the writing, which stays even while empty. The home page's list of the room and
+ * its keys 1 to 7 follow this order (src/lib/room.ts).
+ */
 export const nav = [
+  { href: '/projects', label: 'Projects' },
+  { href: '/about', label: 'About' },
   { href: '/writing', label: 'Writing' },
   { href: '/til', label: 'TIL' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/skills', label: 'Skills' },
+  { href: '/skills', label: 'Agent skills' },
   { href: '/stats', label: 'Stats' },
-  { href: '/about', label: 'About' },
 ] as const;
 
 /** The line between the parts of a plain-text page. */

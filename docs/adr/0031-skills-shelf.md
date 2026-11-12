@@ -1,6 +1,6 @@
 # 0031. Skills shelf
 
-Status: accepted, 2026-10-26. Amended 2026-11-11: the title is an attribute on the indexed element, and the badges, links and install details are left out of the index.
+Status: accepted, 2026-10-26. Amended 2026-11-11: the title is an attribute on the indexed element, and the badges, links and install details are left out of the index. Amended 2026-11-12: the label is "Agent skills", fifth in the nav after Projects, About, Writing and TIL (ADR 0051).
 
 ## Context
 

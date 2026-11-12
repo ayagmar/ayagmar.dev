@@ -833,10 +833,11 @@
   }
 }
 
-/* The section first, the object it sits on after it, quieter. */
+/* The section first, what its page holds under it, quieter. The object it sits on takes that
+   line from 60 rem, where the whole scene is in view (ADR 0051). */
 .room-list a {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   padding: 0.6rem 0;
   border-top: 1px solid var(--rule);
   color: var(--muted);
@@ -863,11 +864,23 @@
   color: var(--lamp);
 }
 
+.room-object {
+  display: none;
+}
+
 /* With the room's hotspots in reach the list steps back: one muted row, each section over the
    object it sits on, lighting that object in the scene. */
 @media (min-width: 60rem) {
   .room-list {
     margin-top: 1.5rem;
+  }
+
+  .room-holds {
+    display: none;
+  }
+
+  .room-object {
+    display: inline;
   }
 
   .room-list a {
@@ -987,46 +1000,16 @@
   text-decoration: underline;
 }
 
-.home-projects {
-  display: grid;
-  padding: 0;
-  list-style: none;
-}
-
-.home-projects li {
-  padding-block: 0.75rem;
-  border-bottom: 1px solid var(--rule);
-}
-
-.home-projects li:first-child {
-  padding-top: 0;
-}
-
-/* Rows six and seven only level the two columns (index.astro); stacked, there is nothing to level. */
+/* Rows six and seven only level the two columns (index.astro); stacked, there is nothing to level.
+   The rows themselves are /projects' (base.css). */
 .home-projects li:nth-child(n + 6) {
   display: none;
 }
 
 @media (min-width: 60rem) {
   .home-projects li:nth-child(n + 6) {
-    display: block;
+    display: grid;
   }
-}
-
-.home-projects a {
-  color: var(--text);
-  font: 600 0.9375rem var(--mono);
-  text-decoration: none;
-}
-
-.home-projects a:hover {
-  color: var(--lamp);
-}
-
-.home-projects p {
-  margin: 0.15rem 0 0;
-  max-width: 60ch;
-  color: var(--fg-2);
 }
 
 /* The record player: a turning record next to what is playing. */

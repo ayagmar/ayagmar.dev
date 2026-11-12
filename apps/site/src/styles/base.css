@@ -841,7 +841,7 @@ section + .caption {
 
 .caption,
 .freshness,
-.project-post-count,
+.project-label,
 .project-status,
 .search-projects {
   color: var(--fg-2);
@@ -1787,8 +1787,9 @@ img.plugin-thumb,
   min-inline-size: 0;
 }
 
-/* /projects: one quiet row per project, its name, how much is written about it muted on the
-   right, and the summary under both. */
+/* /projects and home: one quiet row per project, its name, the strongest fact about it muted on
+   the right, and the summary under both. The name's link covers the whole row, so the row is
+   one tap target and one link for a screen reader (ADR 0051). */
 .projects {
   display: grid;
   margin: 0;
@@ -1809,12 +1810,12 @@ img.plugin-thumb,
   padding-top: 0;
 }
 
-.projects li > p:not(.project-post-count) {
+.projects li > p:not(.project-label) {
   grid-column: 1 / -1;
   color: var(--fg-2);
 }
 
-.projects .project-post-count {
+.projects .project-label {
   grid-row: 1;
   grid-column: 2;
 }
@@ -1839,8 +1840,33 @@ img.plugin-thumb,
   text-decoration: none;
 }
 
-.projects h3 a:hover {
+.projects h3 a:hover,
+.project-row:hover h3 a {
   color: var(--lamp);
+}
+
+/* A project's row only (ProjectRow.astro): a plugin's row has its own links and a screenshot
+   button, which a stretched link would cover. */
+.project-row {
+  position: relative;
+  /* WCAG 2.5.5's 44 px, for a row with no summary. */
+  min-block-size: 2.75rem;
+}
+
+.project-row h3 a::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+}
+
+/* The focus ring goes round the row the link covers, not round the name alone. */
+.project-row h3 a:focus-visible {
+  outline: none;
+}
+
+.project-row h3 a:focus-visible::after {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .projects p {

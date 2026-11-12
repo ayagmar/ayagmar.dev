@@ -31,7 +31,12 @@
       {
         "name": "shipping and project reads",
         "file": "/_astro/stats.*.js",
-        "bytes": 1650
+        "bytes": 1170
+      },
+      {
+        "name": "event words and folding",
+        "file": "/_astro/capped.*.js",
+        "bytes": 870
       },
       {
         "name": "uses script",

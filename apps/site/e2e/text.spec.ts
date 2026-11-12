@@ -70,7 +70,7 @@ test.describe('the room in colour', () => {
     for (const line of shown) expect(terminalCells(line)).toBeLessThanOrEqual(80);
     expect(shown.at(-2)).toBe('Without colour: curl ayagmar.dev');
     const paths = shown.flatMap((line) => /^ {2}curl ayagmar\.dev(\/\w+)$/.exec(line)?.[1] ?? []);
-    expect(paths).toEqual(['/writing', '/til', '/projects', '/stats', '/about', '/now']);
+    expect(paths).toEqual(['/projects', '/about', '/writing', '/til', '/stats', '/now']);
     for (const path of paths) {
       const page = await get(request, path, { 'User-Agent': curl, Accept: '*/*' });
       expect(page.status(), path).toBe(200);

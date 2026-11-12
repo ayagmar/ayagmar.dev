@@ -132,6 +132,21 @@ test('a project missing from the answer has no numbers', async ({ page }) => {
   );
 });
 
+// Catches the rows on /projects keeping the build's numbers while the project page moves on, or
+// keeping a number for a project the newer answer leaves out (ADR 0051).
+test('a newer answer redraws the project rows', async ({ page }) => {
+  await visit(page, '/projects', {
+    projects: envelope('projects', {
+      projects: projects
+        .filter((project) => project.slug !== 'pi-mobile')
+        .map((project) => (project === runnerd ? { ...project, stars: 40 } : project)),
+    }),
+  });
+  await expect(page.locator('#runnerd .project-label')).toHaveText('40 stars');
+  await expect(page.locator('#pi-mobile .project-label')).toBeHidden();
+  await expect(page.locator('#pi-extmgr .project-label')).toHaveText('72 stars');
+});
+
 // Catches signals being down, or answering with something that is not a snapshot, blanking the
 // build's numbers and log.
 test('a failed or invalid answer keeps the build', async ({ page }) => {

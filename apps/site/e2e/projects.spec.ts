@@ -144,12 +144,35 @@ test('without JavaScript the command shows with no copy button', async ({ browse
   await context.close();
 });
 
-test('the projects index counts the posts per project', { tag: '@drafts' }, async ({ page }) => {
+// Catches a row repeating a status every row shares, a number below its floor beating a
+// stronger one, and a number shown for a project signals does not fetch (ADR 0051).
+test('each project row says its strongest fact and its posts', { tag: '@drafts' }, async ({
+  page,
+}) => {
   await page.goto('/projects');
-  await expect(page.locator('#llm-usage-metrics .project-post-count')).toHaveText(/^2 posts/);
-  await expect(page.locator('#runnerd .project-post-count')).toHaveText(/^1 post/);
-  await expect(page.locator('#dotfiles')).not.toContainText('no posts');
+  await expect(page.locator('#llm-usage-metrics .project-label')).toHaveText('35 stars, 2 posts');
+  await expect(page.locator('#runnerd .project-label')).toHaveText('v0.0.17, 1 post');
+  await expect(page.locator('#ccdesk .project-label')).toHaveText('1.6k downloads a month');
+  await expect(page.locator('#dotfiles .project-label')).toBeHidden();
+  await expect(page.getByText('Sample data, not live')).toHaveCount(1);
 });
+
+// Catches a row where only the 21 px name is a link, or one that reads as two links (ADR 0051).
+for (const path of ['/', '/projects']) {
+  test(`${path}: each project row is one link at least 44 px tall`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(path);
+    const row = page.locator('.projects li:visible').filter({ hasText: 'pi-mobile' });
+    await expect(row.getByRole('link')).toHaveCount(1);
+    await row.scrollIntoViewIfNeeded();
+    const box = await row.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    // The summary's own box: the link stretched over the row takes the click.
+    const summary = await row.locator('p').first().boundingBox();
+    await page.mouse.click((summary?.x ?? 0) + 4, (summary?.y ?? 0) + 4);
+    await expect(page).toHaveURL(/\/projects\/pi-mobile$/);
+  });
+}
 
 test("a project feed carries only that project's posts", { tag: '@drafts' }, async ({
   request,

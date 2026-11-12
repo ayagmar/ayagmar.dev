@@ -1,0 +1,34 @@
+---
+import { projectPath, projectRowLabel, rowRest, type SiteProject } from '../lib/projects.ts';
+import type { Post } from '../lib/writing.ts';
+
+interface Props {
+  project: SiteProject;
+  posts: readonly Post[];
+  /** The row's own id, for links to it: /projects has them, home does not. */
+  id?: string | undefined;
+}
+
+const { project, posts, id } = Astro.props;
+const label = projectRowLabel(project, posts);
+---
+
+{/* One link per row, stretched over the whole row by base.css (ADR 0051). The label is kept
+    current from /v1/projects by src/scripts/project-rows.ts, when the list is live; a project
+    signals does not fetch has nothing to update. */}
+<li id={id} class="project-row">
+  <h3><a href={projectPath(project.slug)}>{project.slug}</a></h3>
+  {project.summary !== null && <p>{project.summary}</p>}
+  <p
+    class="project-label"
+    data-project-row={project.pulled ? project.slug : undefined}
+    data-rest={rowRest(project, posts)}
+    hidden={label === ''}
+  >
+    {label}
+  </p>
+</li>
+
+<script>
+import '../scripts/project-rows.ts';
+</script>

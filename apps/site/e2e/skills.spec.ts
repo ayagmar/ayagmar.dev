@@ -80,36 +80,42 @@ for (const width of [360, 1280]) {
   });
 }
 
-test('search finds the shelf, labelled Skills', async ({ page }) => {
+test('search finds the shelf, labelled Agent skills', async ({ page }) => {
   await page.goto('/about');
   await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   await page.keyboard.press('Control+k');
   const dialog = page.getByRole('dialog', { name: 'Search' });
   await dialog.getByLabel('Search the site').fill('falsify');
-  await expect(dialog.getByRole('link', { name: 'Skills' })).toHaveAttribute('href', '/skills');
+  await expect(dialog.getByRole('link', { name: 'Agent skills' })).toHaveAttribute(
+    'href',
+    '/skills'
+  );
 });
 
 test('the plain-text page lists the shelf on one line', async ({ request }) => {
   const text = await (await request.get('/index.txt')).text();
   expect(text.split('\n').filter((line) => line.includes('/skills'))).toEqual([
-    '  Skills     https://ayagmar.dev/skills',
+    '  Agent skills https://ayagmar.dev/skills',
   ]);
 });
 
 // Catches the sixth nav entry wrapping the header, overflowing at the width where the nav row
 // first appears, or missing from the phone Menu.
-test('Skills is in the header row from 52rem and in the phone Menu, and the header still fits', async ({
+test('Agent skills is in the header row from 52rem and in the phone Menu, and the header still fits', async ({
   page,
 }) => {
   for (const width of [832, 1280]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/skills');
     const nav = page.getByRole('navigation', { name: 'Site' });
-    await expect(nav.getByRole('link', { name: 'Skills' })).toHaveAttribute('aria-current', 'page');
+    await expect(nav.getByRole('link', { name: 'Agent skills' })).toHaveAttribute(
+      'aria-current',
+      'page'
+    );
     const links = await nav
       .getByRole('link')
       .evaluateAll((items) => items.map((item) => item.textContent));
-    expect(links).toEqual(['Writing', 'TIL', 'Projects', 'Skills', 'Stats', 'About']);
+    expect(links).toEqual(['Projects', 'About', 'Writing', 'TIL', 'Agent skills', 'Stats']);
     expect((await page.locator('.site-header').boundingBox())?.height).toBeLessThan(64);
     expect(
       await page.evaluate(
@@ -121,7 +127,7 @@ test('Skills is in the header row from 52rem and in the phone Menu, and the head
   await page.goto('/');
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(
-    page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Skills' })
+    page.getByRole('navigation', { name: 'Site' }).getByRole('link', { name: 'Agent skills' })
   ).toHaveAttribute('href', '/skills');
   expect(
     await page.evaluate(
