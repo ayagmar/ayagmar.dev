@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { isPostMap } from '../apps/site/src/lib/art.ts';
 import { buildOrigin } from '../apps/site/src/lib/og.ts';
 import { siteUrl } from '../apps/site/src/lib/site.ts';
+import { rabatDate } from '../packages/contracts/src/rabat.ts';
 
 const kinds = { post: { dir: 'writing' }, til: { dir: 'til' } } as const;
 type Kind = keyof typeof kinds;
@@ -34,8 +35,11 @@ const root = () => git('rev-parse', '--show-toplevel');
 const relPath = (kind: Kind, slug: string) => `content/${kinds[kind].dir}/${slug}.md`;
 const pagePath = (kind: Kind, slug: string) => `/${kinds[kind].dir}/${slug}`;
 
-/** The publish date of anything written today: the UTC day, as posts have always used. */
-const today = () => new Date().toISOString().slice(0, 10);
+/**
+ * The publish date of anything written today: the calendar day in Rabat, where the owner writes,
+ * from the zone's tzdata, so a post written just after local midnight gets that night's date.
+ */
+const today = () => rabatDate(Date.now());
 
 function slugify(title: string): string {
   return title
