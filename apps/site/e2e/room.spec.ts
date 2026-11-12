@@ -264,7 +264,7 @@ test.describe('the entrance', () => {
     await countStarts(page);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
-    await expect.poll(() => starts(page)).toBe(3);
+    await expect.poll(() => starts(page)).toBe(2);
     await page.reload();
     await page.waitForLoadState('load');
     expect(await starts(page)).toBe(0);
@@ -272,6 +272,22 @@ test.describe('the entrance', () => {
     await page.goto('/about');
     await page.goto('/');
     expect(await name(page)).toBe('none');
+  });
+
+  // Catches the pitch fading in with the entrance: it is home's largest text, and a fade puts
+  // mobile LCP at the fade's end, over the 2.0 s budget (ADR 0037).
+  test('leaves the pitch and the links visible from the first paint', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.goto('/');
+    await expect(armed(page)).toHaveCount(1);
+    const animated = await page.locator('.intro-pitch').evaluate((pitch) => {
+      const names: string[] = [];
+      for (let node: Element | null = pitch; node !== null; node = node.parentElement) {
+        names.push(getComputedStyle(node).animationName);
+      }
+      return names.filter((name) => name !== 'none');
+    });
+    expect(animated).toEqual([]);
   });
 
   test('does not play when the session starts on another page', async ({ page }) => {
@@ -288,12 +304,12 @@ test.describe('the entrance', () => {
     await countStarts(page);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.goto('/');
-    await expect.poll(() => starts(page)).toBe(3);
+    await expect.poll(() => starts(page)).toBe(2);
     await expect(armed(page)).toHaveCount(0);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     expect(await name(page)).toBe('none');
-    expect(await starts(page)).toBe(3);
+    expect(await starts(page)).toBe(2);
   });
 
   // Catches a page left mid-entrance coming back from the back/forward cache still armed. A real

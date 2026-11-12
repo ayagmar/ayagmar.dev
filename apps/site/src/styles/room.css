@@ -778,20 +778,18 @@
   content: " →" / "";
 }
 
-/* The first page of a session (src/scripts/theme.js): the name, the pitch and the list follow
-   the lamp in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the
-   attribute exists only with scripts, so nothing is hidden without them. */
+/* The first page of a session (src/scripts/theme.js): the name and the list follow the lamp
+   in, 80 ms apart. Opacity and a transform only, so nothing moves the layout; the attribute
+   exists only with scripts, so nothing is hidden without them. The pitch is there from the first
+   paint: it is the page's largest text, and fading it in put mobile LCP at the fade's end
+   (ADR 0037). */
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-entrance] :is(.intro, .intro-more, .room-list) {
+  :root[data-entrance] :is(.intro, .room-list) {
     animation: arrive 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.4s backwards;
   }
 
-  :root[data-entrance] .intro-more {
-    animation-delay: 0.48s;
-  }
-
   :root[data-entrance] .room-list {
-    animation-delay: 0.56s;
+    animation-delay: 0.48s;
   }
 }
 
