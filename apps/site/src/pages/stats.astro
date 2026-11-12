@@ -51,10 +51,7 @@ const featured = pulledProjects.map((project) => project.repo);
       <a href={new URL('/stats', Astro.site)}>ayagmar.dev</a>.
     </p>
   ) : (
-    <p class="caption">
-      Numbers from my own tools, kept current by your browser while this page is open. On this day
-      and this month's LLM usage show only on the date in Rabat they describe.
-    </p>
+    <p class="caption">{statsBuildWords.intro}</p>
   )}
 
   {/* Two columns from 60rem, each a stack, so a tall panel never leaves a hole beside it. On a
@@ -88,6 +85,7 @@ const featured = pulledProjects.map((project) => project.repo);
           <p>On <span class="history-date"></span> in past years:</p>
           <ol></ol>
           <p class="history-empty" hidden>Nothing played on this date in any past year.</p>
+          <p class="fine-print">{statsBuildWords.rabatDate}</p>
         </div>
       </section>
 

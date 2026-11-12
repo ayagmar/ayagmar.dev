@@ -307,6 +307,23 @@ button:hover {
   border-color: var(--accent);
 }
 
+/* A button inside a sentence, such as the 404's "Search": drawn as the link beside it, since it
+   reads as one; it is a button because it opens a dialog, not a page. */
+.inline-button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline 1px color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 0.22em;
+}
+
+.inline-button:hover {
+  text-decoration-color: currentColor;
+}
+
 button[aria-disabled="true"] {
   cursor: not-allowed;
   border-style: dashed;
@@ -1991,6 +2008,12 @@ img.plugin-thumb,
   max-width: 34ch;
   font-size: clamp(1.1875rem, 1.05rem + 0.6vw, 1.4375rem);
   line-height: 1.45;
+}
+
+/* /about: how to reach me, under the summary so a phone reader need not scroll to "Elsewhere". */
+.about-contact {
+  max-width: 52ch;
+  margin-top: 0.75rem;
 }
 
 /* /about: the note on the name, an aside under the summary behind a thin rule. */

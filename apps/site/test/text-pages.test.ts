@@ -426,6 +426,37 @@ describe('/stats as text', () => {
   it('shows no cost', () => {
     expect(renderStatsText(sources(), true)).not.toMatch(/\$|cost|USD/i);
   });
+
+  // Catches Renovate's merges filling the log as what shipped, and a log of only those showing
+  // as no activity at all (ADR 0052).
+  it('leaves dependency updates out of the shipping log', () => {
+    const at = '2026-10-26T08:00:00Z';
+    const merge = (number: number, title: string) => ({
+      type: 'merge',
+      repo: 'ayagmar/runnerd',
+      at,
+      url: `https://github.com/ayagmar/runnerd/pull/${number}`,
+      number,
+      title,
+    });
+    const shipping = (events: unknown[]) =>
+      renderStatsText(
+        {
+          ...sources(),
+          shipping: envelope('shipping', { events, starHistory: [] }),
+        } as StatsSources,
+        true
+      );
+    const text = shipping([
+      merge(3, 'chore(deps): update dependency renovate to v44.223.1'),
+      merge(2, 'feat: run each job in a fresh container'),
+      merge(1, 'chore(deps-dev): update dependency vitest to v5'),
+    ]);
+    expect(text.match(/merged #\d+/g)).toEqual(['merged #2']);
+    expect(shipping([merge(1, 'chore(deps): pin dependencies')])).toContain(
+      'Shipping\nOnly dependency updates lately.\n'
+    );
+  });
 });
 
 describe('/llms.txt', () => {

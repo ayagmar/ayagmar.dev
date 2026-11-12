@@ -11,11 +11,12 @@ import {
 } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { afterEach, describe, expect, it } from 'vitest';
+import { daysAgo } from '../src/lib/days-ago.ts';
 import { nowPlaying, readListening } from '../src/lib/listening.ts';
 import { ago, readAnswer } from '../src/lib/live.ts';
 import { readLlmUsageSnapshot } from '../src/lib/llm-usage.ts';
 import { readProjectEvents, readProjects, readShipping } from '../src/lib/stats.ts';
-import { daysAgo, readMonkeytype } from '../src/lib/typing.ts';
+import { readMonkeytype } from '../src/lib/typing.ts';
 
 const corpus = join(import.meta.dirname, '../../../packages/contracts/corpus');
 const files = (dir: string): [string, unknown][] =>

@@ -5,8 +5,7 @@
  * them.
  */
 import type { MonkeytypeSnapshot, TypingBest } from '@min7/contracts';
-import { dayMs, utcDate } from '@min7/contracts/rabat';
-import { calendarDate, day } from './live.ts';
+import { calendarDate } from './live.ts';
 
 const number = (value: unknown) =>
   typeof value === 'number' && Number.isFinite(value) && value >= 0;
@@ -71,19 +70,4 @@ export function headline({ time }: MonkeytypeSnapshot) {
         text: ` over 60 seconds at ${Math.round(sixty.acc)}% accuracy, set `,
         date: sixty.date,
       };
-}
-
-const relative = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-
-/**
- * How long before the reader's own date at `now` the calendar date `date` was: `today`,
- * `yesterday`, `12 days ago`, `3 months ago`, `last year`, `5 years ago`. `date` is a day, not
- * an instant, so it is never moved into the reader's time zone. A day in the future (a clock
- * behind) is today.
- */
-export function daysAgo(date: string, now: number): string {
-  const days = Math.max(0, day(now) - utcDate(date) / dayMs);
-  if (days < 30) return relative.format(-days, 'day');
-  if (days < 365) return relative.format(-Math.max(1, Math.floor(days / 30.44)), 'month');
-  return relative.format(-Math.max(1, Math.floor(days / 365.25)), 'year');
 }

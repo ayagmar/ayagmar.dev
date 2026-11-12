@@ -1,7 +1,13 @@
-import type { ProjectEvent, ProjectSlug } from '@min7/contracts';
+import { featuredProjects, type ProjectEvent, type ProjectSlug } from '@min7/contracts';
 import { isoDate } from '@min7/contracts/rabat';
 import type { About } from '../data/about.ts';
-import { aboutLinks, certificationExpiry, formatMonth, monthSpan } from '../data/about.ts';
+import {
+  aboutLinks,
+  certificationExpiry,
+  contactLine,
+  formatMonth,
+  monthSpan,
+} from '../data/about.ts';
 import { describeEvent, projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
@@ -268,6 +274,9 @@ export function renderAboutText(about: About, today: Date): string {
   return [
     `${identity.name} | ${site.name}`,
     about.summary,
+    contactLine(identity)
+      .map((part) => (typeof part === 'string' ? part : part.label))
+      .join(''),
     about.nameNote,
     textRule,
     'Experience',
@@ -335,6 +344,17 @@ export const updatedOn = (updated: Date) => longDate(isoDate(updated.getTime()))
 export const brewingTitle = 'Currently brewing';
 
 /**
+ * Where a brewing item's name links: the project's page here when the item is a featured project,
+ * by its name or its repository's URL, so a reader stays on the site; else its own `url`.
+ */
+export function brewingHref({ name, url }: BrewingItem): string | undefined {
+  const project = featuredProjects.find(
+    ({ slug, repo }) => slug === name || url === `https://github.com/${repo}`
+  );
+  return project === undefined ? url : projectPath(project.slug);
+}
+
+/**
  * /now as plain text, what `curl ayagmar.dev/now` prints (worker/index.ts): the same frontmatter
  * and Markdown body the page renders, the body left as Markdown, which reads as text.
  */
@@ -342,11 +362,14 @@ export function renderNowText(
   { updated, brewing }: { updated: Date; brewing: readonly BrewingItem[] },
   body: string
 ): string {
-  const items = brewing.flatMap((item) => [
-    `  ${item.name}`,
-    `    ${item.note}`,
-    ...(item.url === undefined ? [] : [`    ${item.url}`]),
-  ]);
+  const items = brewing.flatMap((item) => {
+    const href = brewingHref(item);
+    return [
+      `  ${item.name}`,
+      `    ${item.note}`,
+      ...(href === undefined ? [] : [`    ${href.startsWith('/') ? siteUrl + href : href}`]),
+    ];
+  });
   return [
     `${nowPage.label} | ${site.name}`,
     `Updated ${updatedOn(updated)}.`,

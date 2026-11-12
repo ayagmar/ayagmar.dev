@@ -10,6 +10,7 @@
 import type { ListeningSnapshot } from '@min7/contracts';
 import { rabatDate } from '@min7/contracts/rabat';
 import { shortDate } from '../lib/day-words.ts';
+import { daysAgo } from '../lib/days-ago.ts';
 import { nowPlaying, readListening } from '../lib/listening.ts';
 import { listeningBody } from '../lib/listening-panel.ts';
 import type { Answer } from '../lib/live.ts';
@@ -22,7 +23,7 @@ import { renderNowPlaying } from '../lib/now-playing-page.ts';
 import { knowsRabat } from '../lib/rabat-date.ts';
 import { readProjects, readShipping } from '../lib/stats.ts';
 import { projectsBody, shippingBody, typingBody } from '../lib/stats-panels.ts';
-import { daysAgo, readMonkeytype } from '../lib/typing.ts';
+import { readMonkeytype } from '../lib/typing.ts';
 
 const minute = 60_000;
 
