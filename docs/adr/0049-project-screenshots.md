@@ -1,6 +1,6 @@
 # 0049. A screenshot on each project page, and an image viewer
 
-Status: accepted, 2026-11-12. Extends ADR 0048 (a third image folder, with the same schema and committed copies; the plugins' thumbnails open their screenshots), amends ADR 0037 (project pages now have a picture) and ADR 0017 (the viewer's script has an allowance, and a regression a change means to make can be accepted).
+Status: accepted, 2026-11-12. Amended 2026-11-12: each project page now has its own link preview (ADR 0050). Extends ADR 0048 (a third image folder, with the same schema and committed copies; the plugins' thumbnails open their screenshots), amends ADR 0037 (project pages now have a picture) and ADR 0017 (the viewer's script has an allowance, and a regression a change means to make can be accepted).
 
 ## Context
 

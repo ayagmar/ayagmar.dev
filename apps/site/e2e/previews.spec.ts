@@ -66,6 +66,13 @@ test('every page names a link-preview image production serves', async ({ request
   expect([...images.keys()]).toContain('/og/default.png');
   const published = notes.some((note) => !note.draft);
   expect([...images.keys()].some((path) => path.startsWith('/og/til/'))).toBe(published);
+  // Catches a shared project link showing the generic card: each page names its own.
+  for (const [path, from] of images) {
+    if (path.startsWith('/og/projects/')) {
+      expect(from).toEqual([`projects/${path.slice('/og/projects/'.length, -4)}.html`]);
+    }
+  }
+  expect([...images.keys()].filter((path) => path.startsWith('/og/projects/'))).toHaveLength(13);
 });
 
 // Catches a Preview pointing crawlers at production, which has no image for an unpublished post.

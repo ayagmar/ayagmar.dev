@@ -1914,6 +1914,53 @@ img.plugin-thumb,
   font-size: 1.0625rem;
 }
 
+/* How to get a project, under its status: the command in the code face on the room's dark
+   screen, as /skills shows its own, wrapped rather than scrolled so all of it is in view on a
+   phone, then one line of links. */
+.project-install {
+  width: fit-content;
+  max-width: 100%;
+  margin-block: 0.75rem;
+}
+
+.project-install pre {
+  padding: 0.55rem 0.75rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Room for the copy button once its script shows it, so it never covers the command; it stays
+   in view, since this is the block a visitor came for. */
+.project-install:has(button:not([hidden])) pre {
+  padding-inline-end: 4.5rem;
+}
+
+.project-install button {
+  top: 50%;
+  translate: 0 -50%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .code-block.project-install:not(:hover, :focus-within) button {
+    opacity: 1;
+  }
+}
+
+.project header .project-links {
+  font-size: 0.9375rem;
+}
+
+/* The end of a project page: its releases feed and the next project. */
+.project-end {
+  margin-block-start: 2.5rem;
+  padding-block-start: 1rem;
+  border-top: 1px solid var(--rule);
+}
+
+.project-end p {
+  margin: 0 0 0.5rem;
+}
+
 /* A project's screenshot belongs to its header: close under the lede, the usual gap below. */
 .project > header:has(+ .project-shot) {
   margin-bottom: 1.5rem;

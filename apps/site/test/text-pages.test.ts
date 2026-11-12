@@ -20,6 +20,7 @@ import {
 } from '../src/lib/plaintext.ts';
 import { projectEvents } from '../src/lib/project-panel.ts';
 import { projectRowLabel, type SiteProject, siteProjects } from '../src/lib/projects.ts';
+import { textRule } from '../src/lib/site.ts';
 import { renderStatsText, type StatsSources } from '../src/lib/stats-text.ts';
 import type { Note } from '../src/lib/til.ts';
 import type { Post } from '../src/lib/writing.ts';
@@ -315,10 +316,18 @@ describe('list pages', () => {
 describe('a project page', () => {
   const [project] = siteProjects([], null);
   if (project === undefined) throw new Error('no featured projects');
+  const parts = {
+    posts: [],
+    description: undefined,
+    shipped: [],
+    released: null,
+    receipt: null,
+    next: undefined,
+  } as const;
 
   // Catches a build without the projects snapshot failing or printing empty numbers.
   it('says so when the snapshot has no numbers', () => {
-    expect(renderProjectText(project, [], undefined, [])).toContain(
+    expect(renderProjectText(project, parts)).toContain(
       `Numbers\n  No live numbers for ${project.slug} right now.\n`
     );
   });
@@ -330,11 +339,52 @@ describe('a project page', () => {
       (snapshotFixtures.projects.ok as ProjectsSnapshot).projects
     ).filter((candidate) => candidate.live?.stars != null);
     if (live === undefined) throw new Error('no fixture project with stars');
-    const text = renderProjectText(live, [post('p')], 'See [docs](/about).', []);
+    const text = renderProjectText(live, {
+      ...parts,
+      posts: [post('p')],
+      description: 'See [docs](/about).',
+    });
     expect(text).toContain(`  Stars: ${live.live?.stars?.toLocaleString('en')}\n`);
-    expect(text).toContain(`  ${live.repo} on GitHub: ${live.repoUrl}\n`);
+    expect(text).toContain(`Source on GitHub: ${live.repoUrl}\n`);
     expect(text).toContain('See [docs](https://ayagmar.dev/about).');
     expect(text).toContain('  2026-10-24  A post\n');
+  });
+
+  // Catches the copy drifting from the page's order: how to get it under the status, before
+  // the description, and the end of the page without an empty writing section.
+  it('puts how to get it first and ends on the releases feed and the next project', () => {
+    const ccdesk = {
+      ...project,
+      slug: 'ccdesk',
+      summary: 'Shows what Claude Code loads.',
+      status: 'active',
+      install: 'npx ccdesk',
+      repoUrl: 'https://github.com/ayagmar/ccdesk',
+      npmUrl: 'https://www.npmjs.com/package/ccdesk',
+      homepage: null,
+    } satisfies SiteProject;
+    const text = renderProjectText(ccdesk, {
+      ...parts,
+      description: 'It reads.',
+      released: true,
+      receipt: '3 merges since 3 Oct 2026, when this site started counting',
+      next: { slug: 'niri-computer-use' },
+    });
+    expect(text).toContain(
+      'Status: active\n\n  npx ccdesk\n\nSource on GitHub: https://github.com/ayagmar/ccdesk\n' +
+        'npm package: https://www.npmjs.com/package/ccdesk\n' +
+        `${textRule}\nIt reads.\n`
+    );
+    expect(text).toContain('  3 merges since 3 Oct 2026, when this site started counting\n');
+    expect(text).not.toContain('Writing about');
+    expect(text).toContain(
+      `${textRule}\nFollow releases: https://github.com/ayagmar/ccdesk/releases.atom\n` +
+        'Next: niri-computer-use (https://ayagmar.dev/projects/niri-computer-use)\n' +
+        textRule
+    );
+    expect(
+      renderProjectText({ ...ccdesk, install: null }, { ...parts, released: false })
+    ).toContain('No release yet: build from source: https://github.com/ayagmar/ccdesk\n');
   });
 
   // Catches the text copy dropping the log the page shows, or its links to GitHub.
@@ -342,14 +392,16 @@ describe('a project page', () => {
     const ccdesk = siteProjects([], null).find((candidate) => candidate.slug === 'ccdesk');
     if (ccdesk === undefined) throw new Error('ccdesk is not featured');
     const logs = snapshotFixtures['project-events'].ok as ProjectEventsSnapshot;
-    expect(renderProjectText(ccdesk, [], undefined, projectEvents(logs, 'ccdesk'))).toContain(
+    expect(
+      renderProjectText(ccdesk, { ...parts, shipped: projectEvents(logs, 'ccdesk') })
+    ).toContain(
       'Recently shipped\n' +
         "  29 Oct, 21:53  merged #80: fix(core): read credential variables in a remote MCP server's URL as empty\n" +
         '                 https://github.com/ayagmar/ccdesk/pull/80\n' +
         '  29 Oct, 20:56  released v0.5.14\n' +
         '                 https://github.com/ayagmar/ccdesk/releases/tag/v0.5.14\n'
     );
-    expect(renderProjectText(project, [], undefined, [])).not.toContain('Recently shipped');
+    expect(renderProjectText(project, parts)).not.toContain('Recently shipped');
   });
 });
 

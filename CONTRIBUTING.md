@@ -92,12 +92,15 @@ slug: runnerd
 status: active # active, maintained, archived or spec
 group: self-hosted # agents, desktop or self-hosted: its heading on /projects
 tagline: 'One line shown under the name.' # optional
+install: 'curl -fsSL https://github.com/ayagmar/runnerd/releases/latest/download/install.sh | sh' # optional
 subdomain: runnerd # optional: links https://runnerd.ayagmar.dev
 order: 1 # optional: overrides the contracts order, lower first
 ---
 
 The long description, in Markdown.
 ```
+
+`install` is the one command that installs or runs the project, copied verbatim from its README; the page shows it under the status with a copy button ([ADR 0050](docs/adr/0050-project-page-header-and-end.md)). Leave it out when the README gives no single command. Keep the keys flat: Biome formats these files as Markdown and flattens nested YAML.
 
 A project page can show a screenshot under its header ([ADR 0049](docs/adr/0049-project-screenshots.md)). Take it from the project's own repository, never from a capture of your machine, and leave out any that shows another person's name or picture: download the file at a commit into `apps/site/src/assets/projects/` and add an entry to `content/project-screenshots.json`:
 

@@ -96,8 +96,9 @@ function tickSoon(): void {
  * `data-fetched-at` (absent when the build had none), and `data-stale-after` gives the
  * source's threshold in seconds. In api mode `data-live-src` names the endpoint, asked every
  * `everyMs` while the page is visible. Which answer shows is `follow`'s rule, and a new one
- * goes through `render`. Whatever is shown is labelled with its age, and called out of date
- * once older than the threshold. `render` is told whether the answer still describes now.
+ * goes through `render`. Whatever is shown is labelled with its age in the panel's `.freshness`,
+ * or the line its `data-freshness` names, and called out of date once older than the threshold.
+ * `render` is told whether the answer still describes now.
  * `relabel`, if given, runs with `tick` every time, whatever is shown: for times the panel reads
  * relative to now its own way.
  */
@@ -113,6 +114,27 @@ export function live<Data>(
   }
 }
 
+/** What each panel sharing a freshness line last showed. */
+const sharing = new WeakMap<
+  HTMLElement,
+  Map<HTMLElement, { at: number; iso: string; fresh: boolean }>
+>();
+
+/**
+ * Labels `line` with the age of what `panel` shows. A line several panels share (each names it
+ * by id in `data-freshness`) gives the oldest of them, and calls them out of date if any is, so
+ * it never claims fresher data than the page has.
+ */
+function label(line: HTMLElement, panel: HTMLElement, at: number, iso: string, fresh: boolean) {
+  const shown = sharing.get(line) ?? new Map();
+  sharing.set(line, shown);
+  shown.set(panel, { at, iso, fresh });
+  const all = [...shown.values()];
+  const oldest = all.reduce((a, b) => (b.at < a.at ? b : a));
+  line.replaceChildren(freshnessWords(all.every((entry) => entry.fresh)), stamp(oldest.iso));
+  line.hidden = false;
+}
+
 function keep<Data>(
   panel: HTMLElement,
   source: string,
@@ -122,7 +144,9 @@ function keep<Data>(
   relabel?: (now: number) => void
 ): void {
   const { liveSrc, fetchedAt, staleAfter } = panel.dataset;
-  const freshness = panel.querySelector<HTMLElement>('.freshness');
+  const freshness =
+    panel.querySelector<HTMLElement>('.freshness') ??
+    (panel.dataset.freshness ? document.getElementById(panel.dataset.freshness) : null);
   const refreshed = follow(source, Number(staleAfter) * 1000, read, fetchedAt);
   let drawn = '';
   poll(liveSrc, everyMs, (body, time, failed) => {
@@ -132,10 +156,7 @@ function keep<Data>(
       drawn = key;
       if (shown.data !== undefined) render(panel, shown as Answer<Data>, now);
       // In fixtures mode the line says the data is a sample, and stays.
-      if (liveSrc && freshness) {
-        freshness.replaceChildren(freshnessWords(fresh), stamp(shown.fetchedAt));
-        freshness.hidden = false;
-      }
+      if (liveSrc && freshness) label(freshness, panel, shown.at, shown.fetchedAt, fresh);
     }
     tickSoon();
     relabel?.(time);

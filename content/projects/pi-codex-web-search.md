@@ -3,6 +3,7 @@
 slug: pi-codex-web-search
 tagline: 'A web_search tool for pi that runs through the Codex CLI you are already signed in to.'
 status: maintained
+install: 'pi install npm:pi-codex-web-search'
 group: agents
 ---
 

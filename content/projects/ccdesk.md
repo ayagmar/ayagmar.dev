@@ -3,6 +3,7 @@
 slug: ccdesk
 tagline: 'Shows everything Claude Code loads in a directory, and which file each piece comes from.'
 status: active
+install: 'npx ccdesk'
 group: agents
 ---
 

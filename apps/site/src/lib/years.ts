@@ -19,7 +19,7 @@ import {
 import { type Counts, dayPath, shipped, shippedCount, shortDate } from './day-words.ts';
 import { type Published, range, repoHref, unnamedRepos, unread } from './days.ts';
 import { hours } from './llm-usage-panel.ts';
-import { count, plural } from './plural.ts';
+import { count, list, plural } from './plural.ts';
 import { repoName, tokens } from './words.ts';
 
 /** A series as the build read it (`readHistory`). */
@@ -154,9 +154,6 @@ function shownMonths(
   const first = [...days.map((day) => day.date.slice(0, 7)), ...failed].sort()[0] ?? '';
   return first === '' ? [] : months.filter((month) => month >= first);
 }
-
-export const list = (names: string[]) =>
-  names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
 /** The dates of `year` that have happened on `today`. */
 const elapsed = (year: string, today: string) =>

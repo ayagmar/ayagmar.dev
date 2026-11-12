@@ -33,6 +33,11 @@ export const projectSchema = z.strictObject({
     .string()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be a label like "ccdesk", without ".ayagmar.dev"')
     .optional(),
+  /**
+   * The one command that installs or runs the project, copied verbatim from its README, shown
+   * under the title. Absent when the README gives no single command.
+   */
+  install: z.string().trim().min(1, 'must not be empty').optional(),
   /** Sorts the project list; lower first, projects without it after, in the contracts order. */
   order: z.number({ error: 'must be a whole number' }).int('must be a whole number').optional(),
 });

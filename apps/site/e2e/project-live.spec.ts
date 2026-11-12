@@ -29,6 +29,11 @@ async function visit(page: Page, path: string, answers: Partial<Record<Source, A
   await page.route(`**${path}`, async (route) => {
     const response = await route.fetch();
     let html = await response.text();
+    // A project page dates both panels on one line outside them.
+    html = html.replace(
+      /<p class="sample" id="project-updated">[^<]*<\/p>/,
+      '<p class="freshness" id="project-updated"></p>'
+    );
     for (const source of Object.keys(answers)) {
       html = html.replace(
         new RegExp(`(data-live="${source}"[^>]*>[^]*?)<p class="sample">[^<]*</p>`, 'g'),
@@ -52,6 +57,7 @@ async function visit(page: Page, path: string, answers: Partial<Record<Source, A
 
 const numbers = (page: Page) => page.locator('[data-live="projects"]');
 const log = (page: Page) => page.locator('[data-live="project-events"]');
+const updated = (page: Page) => page.locator('#project-updated');
 
 /** The markup under `locator` as text, whitespace collapsed, without the build's comments. */
 const html = (locator: Locator) =>
@@ -80,12 +86,7 @@ test('a live answer renders as the build renders the same snapshot', async ({ pa
     projects: envelope('projects'),
     'project-events': envelope('project-events'),
   });
-  for (const panel of [numbers(fresh), log(fresh)]) {
-    await expect(panel.locator('.freshness time')).toHaveAttribute(
-      'datetime',
-      '2026-10-26T11:59:00Z'
-    );
-  }
+  await expect(updated(fresh).locator('time')).toHaveAttribute('datetime', '2026-10-26T11:59:00Z');
   expect([
     await html(numbers(fresh).locator('.project-numbers-body')),
     await html(log(fresh).locator('.project-log-body')),
@@ -115,7 +116,7 @@ test('a newer release replaces the one the build showed', async ({ page }) => {
     'href',
     release.url
   );
-  await expect(numbers(page).locator('.freshness')).toHaveText('Updated 1 minute ago');
+  await expect(updated(page)).toHaveText('Updated 1 minute ago');
 });
 
 // Catches numbers kept under a newer time for a project the newest snapshot leaves out (GitHub
@@ -153,7 +154,7 @@ test('a failed or invalid answer keeps the build', async ({ page }) => {
     projects: { status: 502, body: '' },
     'project-events': envelope('project-events', { projects: 'none' }),
   });
-  await expect(numbers(page).locator('.freshness')).toHaveText('Updated 3 hours ago');
+  await expect(updated(page)).toHaveText('Updated 3 hours ago');
   await expect(numbers(page).locator('dd').nth(1)).toHaveText('72');
   await expect(log(page).locator('li')).toHaveCount(20);
 });
@@ -176,7 +177,7 @@ test('the log shows only while the project has something', async ({ page }) => {
   });
   let answer = envelope('project-events', dotfiles([]));
   await visit(page, '/projects/dotfiles', { 'project-events': (route) => route.fulfill(answer) });
-  await expect(log(page).locator('.freshness')).toHaveText('Updated 1 minute ago');
+  await expect(updated(page)).toHaveText('Updated 1 minute ago');
   await expect(log(page)).toBeHidden();
   answer = envelope('project-events', dotfiles([merge]), '2026-10-26T12:29:00Z');
   // Half an hour on, the next request brings the merge.
@@ -205,7 +206,7 @@ test('a project the newer answer leaves out loses its log', async ({ page }) => 
 test('a newer answer with the same events keeps the open fold and the focus', async ({ page }) => {
   let answer = envelope('project-events');
   await visit(page, '/projects/ccdesk', { 'project-events': (route) => route.fulfill(answer) });
-  const freshness = log(page).locator('.freshness time');
+  const freshness = updated(page).locator('time');
   await expect(freshness).toHaveAttribute('datetime', '2026-10-26T11:59:00Z');
   await log(page).locator('details summary').click();
   const link = log(page).locator('details a').first();
@@ -219,6 +220,22 @@ test('a newer answer with the same events keeps the open fold and the focus', as
   await expect(freshness).toHaveAttribute('datetime', '2026-10-26T12:29:00Z');
   await expect(log(page).locator('details')).toHaveAttribute('open', '');
   await expect(link).toBeFocused();
+});
+
+// Catches the one line claiming fresher data than the page shows: with the numbers three hours
+// old and the log a minute old, it gives the numbers' time, and moves only once both are new.
+test('the Updated line gives the older of the two panels', async ({ page }) => {
+  let numbersAt = '2026-10-26T09:00:00Z';
+  await visit(page, '/projects/pi-extmgr', {
+    projects: (route) =>
+      route.fulfill(envelope('projects', snapshotFixtures.projects.ok, numbersAt)),
+    'project-events': envelope('project-events'),
+  });
+  await expect(updated(page).locator('time')).toHaveAttribute('datetime', '2026-10-26T09:00:00Z');
+  await expect(updated(page)).toHaveText('Updated 3 hours ago');
+  numbersAt = '2026-10-26T12:20:00Z';
+  await page.clock.runFor(30 * 60_000);
+  await expect(updated(page).locator('time')).toHaveAttribute('datetime', '2026-10-26T11:59:00Z');
 });
 
 const newPage = async (browser: Browser, options: Parameters<Browser['newContext']>[0]) =>
