@@ -140,6 +140,15 @@ describe('plan', () => {
     }
   });
 
+  // Catches a tool pin bumped without its sha256 merging green, because no job that installs
+  // the tool ran: osv-scanner 2.7.1 reached main that way and failed there.
+  it('installs every pinned tool when only bootstrap.sh changes', () => {
+    const jobs = runs(['scripts/bootstrap.sh']);
+    for (const job of ['osv', 'secrets-source', 'workflows', 'links', 'shell']) {
+      assert.ok(jobs.includes(job), `${job} should run`);
+    }
+  });
+
   it('runs both apps, the contracts and the site output for a shared fixture change', () => {
     const jobs = runs(['packages/contracts/fixtures/lastfm/raw/ok.json']);
     for (const job of ['contracts', 'signals-test', 'site-test', 'site-build', 'e2e', 'links']) {
