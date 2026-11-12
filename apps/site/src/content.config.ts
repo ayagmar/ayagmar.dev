@@ -3,6 +3,7 @@ import { file, glob, type Loader } from 'astro/loaders';
 import { aboutSchema } from './data/about.ts';
 import { usesSchema } from './data/uses.ts';
 import { postArtErrors, writingBase } from './lib/art-files.ts';
+import { noctaliaPluginsSchema } from './lib/noctalia-plugins.ts';
 import { nowSchema } from './lib/now-schema.ts';
 import { projectSchema } from './lib/project-schema.ts';
 import { checkProjectFiles } from './lib/projects.ts';
@@ -63,6 +64,13 @@ export const collections = {
     schema: nowSchema(new Date()),
   }),
   projects: defineCollection({ loader: projects, schema: projectSchema }),
+  // One entry, id "plugins": the whole list, in its order (the section on /projects).
+  noctaliaPlugins: defineCollection({
+    loader: file('../../content/noctalia-plugins.json', {
+      parser: (text) => ({ plugins: { plugins: JSON.parse(text) } }),
+    }),
+    schema: noctaliaPluginsSchema,
+  }),
   // One entry, id "about": the whole file.
   about: defineCollection({
     loader: file('../../content/about.json', { parser: (text) => ({ about: JSON.parse(text) }) }),

@@ -127,7 +127,7 @@ describe('feeds', () => {
     expect(renderRss(project)).toContain(
       '<atom:link href="https://ayagmar.dev/projects/runnerd/feed.xml" rel="self"'
     );
-    expect(buildFeed(published, { project: 'headroom' }).entries).toEqual([]);
+    expect(buildFeed(published, { project: 'dotfiles' }).entries).toEqual([]);
   });
 
   it('render the same bytes for an empty feed on every build', () => {

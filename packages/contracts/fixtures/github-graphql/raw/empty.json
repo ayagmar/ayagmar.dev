@@ -14,8 +14,7 @@
       "p_repo_pulse": null,
       "p_agents_skills": null,
       "p_kipple": null,
-      "p_dotfiles": null,
-      "p_headroom": null
+      "p_dotfiles": null
     },
     "errors": [
       {
@@ -81,11 +80,6 @@
       {
         "type": "NOT_FOUND",
         "path": ["p_dotfiles"],
-        "message": "Could not resolve to a Repository."
-      },
-      {
-        "type": "NOT_FOUND",
-        "path": ["p_headroom"],
         "message": "Could not resolve to a Repository."
       }
     ]

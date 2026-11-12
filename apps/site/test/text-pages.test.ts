@@ -10,8 +10,10 @@ import {
   renderArticleText,
 } from '../src/lib/article.ts';
 import { renderLlmsTxt } from '../src/lib/llms.ts';
+import { pluginsSection } from '../src/lib/noctalia-plugins.ts';
 import {
   renderPlainText,
+  renderProjectsText,
   renderProjectText,
   renderTilText,
   renderWritingText,
@@ -241,6 +243,25 @@ describe('list pages', () => {
     expect(projectRowLabel({ ...project, status: null }, [])).toBe('');
     const about = post('p', { projects: [project.slug] });
     expect(projectRowLabel(project, [about])).toBe('1 post, active');
+  });
+
+  // Catches /projects.txt printing a "Noctalia plugins" heading over nothing, or a plugin's
+  // line without the directory Noctalia installs it from.
+  it('end /projects with the Noctalia plugins only while there are some', () => {
+    const projects = siteProjects([], null);
+    expect(renderProjectsText(projects, [], [])).not.toContain('Noctalia plugins');
+    const plugin = { directory: 'obs-control', name: 'OBS Control', summary: 'Records.' };
+    expect(renderProjectsText(projects, [], [plugin])).toContain(
+      [
+        'Noctalia plugins',
+        pluginsSection.intro,
+        '',
+        'OBS Control',
+        '  Records.',
+        '  https://github.com/noctalia-dev/community-plugins/tree/main/obs-control',
+        '',
+      ].join('\n')
+    );
   });
 
   // Catches the text copy of home keeping an empty band, or staying empty once there are posts.

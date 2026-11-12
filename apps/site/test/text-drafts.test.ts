@@ -59,6 +59,7 @@ export default defineConfig({
     'content/projects/runnerd.md',
     '---\nslug: runnerd\nstatus: active\ngroup: self-hosted\n---\n'
   );
+  fixture.write('content/noctalia-plugins.json', '[]\n');
 });
 afterEach(() => {
   fixture.remove();

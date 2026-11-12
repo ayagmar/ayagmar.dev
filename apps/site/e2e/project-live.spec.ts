@@ -150,25 +150,25 @@ const logs = snapshotFixtures['project-events'].ok.projects;
 test('the log shows only while the project has something', async ({ page }) => {
   const merge = {
     type: 'merge',
-    repo: 'ayagmar/headroom',
+    repo: 'ayagmar/dotfiles',
     at: '2026-10-26T12:10:00Z',
-    url: 'https://github.com/ayagmar/headroom/pull/3',
-    number: 3,
-    title: 'docs: say it is archived',
+    url: 'https://github.com/ayagmar/dotfiles/pull/2',
+    number: 2,
+    title: 'feat(niri): add a scratchpad workspace',
   };
-  const headroom = (events: unknown[]) => ({
-    projects: [{ slug: 'headroom', repo: 'ayagmar/headroom', events }],
+  const dotfiles = (events: unknown[]) => ({
+    projects: [{ slug: 'dotfiles', repo: 'ayagmar/dotfiles', events }],
   });
-  let answer = envelope('project-events', headroom([]));
-  await visit(page, '/projects/headroom', { 'project-events': (route) => route.fulfill(answer) });
+  let answer = envelope('project-events', dotfiles([]));
+  await visit(page, '/projects/dotfiles', { 'project-events': (route) => route.fulfill(answer) });
   await expect(log(page).locator('.freshness')).toHaveText('Updated 1 minute ago');
   await expect(log(page)).toBeHidden();
-  answer = envelope('project-events', headroom([merge]), '2026-10-26T12:29:00Z');
+  answer = envelope('project-events', dotfiles([merge]), '2026-10-26T12:29:00Z');
   // Half an hour on, the next request brings the merge.
   await page.clock.runFor(30 * 60_000);
   await expect(log(page)).toBeVisible();
   await expect(log(page).locator('li')).toHaveText(
-    '20 minutes ago merged #3: docs: say it is archived'
+    '20 minutes ago merged #2: feat(niri): add a scratchpad workspace'
   );
   await expect(log(page).getByRole('link')).toHaveAttribute('href', merge.url);
 });
@@ -215,9 +215,9 @@ test('without JavaScript the build shows the log, or nothing', async ({ browser 
   await page.goto('/projects/pi-extmgr');
   await expect(page.getByRole('heading', { name: 'Recently shipped' })).toBeVisible();
   await expect(log(page).locator('li').first()).toHaveText('21 Oct, 19:38 released v0.4.2');
-  await page.goto('/projects/headroom');
+  await page.goto('/projects/dotfiles');
   await expect(page.getByRole('heading', { name: 'Recently shipped' })).toBeHidden();
-  await expect(page.getByText("I don't fetch numbers for headroom.")).toBeVisible();
+  await expect(page.getByText("I don't fetch numbers for dotfiles.")).toBeVisible();
   await page.context().close();
 });
 

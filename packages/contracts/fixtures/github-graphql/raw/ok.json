@@ -2961,27 +2961,6 @@
           "nodes": []
         },
         "pullRequests": {
-          "nodes": [
-            {
-              "number": 1,
-              "title": "feat(project-rename): repair Claude Code session state",
-              "url": "https://github.com/ayagmar/dotfiles/pull/1",
-              "mergedAt": "2026-10-08T09:35:01Z",
-              "updatedAt": "2026-10-08T09:35:02Z",
-              "author": {
-                "login": "ayagmar"
-              }
-            }
-          ]
-        }
-      },
-      "p_headroom": {
-        "nameWithOwner": "ayagmar/headroom",
-        "isPrivate": false,
-        "releases": {
-          "nodes": []
-        },
-        "pullRequests": {
           "nodes": []
         }
       }

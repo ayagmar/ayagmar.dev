@@ -117,7 +117,7 @@ test.describe('feeds', () => {
         '/feed.xml',
         '/atom.xml',
         '/projects/runnerd/feed.xml',
-        '/projects/headroom/atom.xml',
+        '/projects/dotfiles/atom.xml',
       ])
     );
   });

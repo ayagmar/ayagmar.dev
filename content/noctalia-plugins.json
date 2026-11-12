@@ -1,0 +1,17 @@
+[
+  {
+    "directory": "headroom",
+    "name": "Headroom",
+    "summary": "How much of your Claude, Codex and Antigravity plan limits is left, when each window resets and where your current rate takes you."
+  },
+  {
+    "directory": "binance",
+    "name": "Binance",
+    "summary": "Your Binance portfolio, Binance Stocks and a watchlist with price alerts, read with a read-only key kept in your keyring."
+  },
+  {
+    "directory": "obs-control",
+    "name": "OBS Control",
+    "summary": "Start and stop OBS recording, the replay buffer and streaming from the bar, a panel or a keybind."
+  }
+]

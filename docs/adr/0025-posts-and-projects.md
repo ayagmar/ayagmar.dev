@@ -1,6 +1,6 @@
 # 0025. Posts and projects
 
-Status: accepted, 2026-10-26. Amended 2026-11-11: project files name a `group`, /projects lists projects under those headings, and a project marked `pull: false` in contracts says on its page that its numbers are not fetched.
+Status: accepted, 2026-10-26. Amended 2026-11-11: project files name a `group`, /projects lists projects under those headings, and a project marked `pull: false` in contracts says on its page that its numbers are not fetched. Amended 2026-11-12: /projects ends with the Noctalia plugins, which are not featured projects (ADR 0047).
 
 ## Context
 

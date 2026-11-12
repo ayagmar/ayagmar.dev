@@ -1,6 +1,6 @@
 # 0046. Each project's log from GitHub
 
-Status: accepted, 2026-11-11. Amends ADR 0008 (a source added within v1), ADR 0009 (an eighth adapter; `pull: false` covers the numbers pull only) and ADR 0010 (a source, a route, listening's first gap after a cold start).
+Status: accepted, 2026-11-11. Amends ADR 0008 (a source added within v1), ADR 0009 (an eighth adapter; `pull: false` covers the numbers pull only) and ADR 0010 (a source, a route, listening's first gap after a cold start). Amended 2026-11-12: headroom left the featured projects (ADR 0047), so 13 projects, every one with a log.
 
 ## Context
 

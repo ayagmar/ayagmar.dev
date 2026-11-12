@@ -98,6 +98,12 @@ curl -s https://api.ayagmar.dev/v1/health | jq '.sources[] | select(.source == "
 
 The pull has run when `lastSuccessAt` is later than the deploy.
 
+Removing a project needs none of this: the site ignores a snapshot entry for a slug that is no longer featured, and the next `project-events` pull drops it. Its page and feeds answer 404 from the deploy on. To tell Bing and the other IndexNow engines sooner than their next crawl:
+
+```sh
+just indexnow https://ayagmar.dev/projects/<slug> https://ayagmar.dev/projects
+```
+
 ## Listening and weather days (ADR 0038)
 
 These need no migration and no new secret. Merging to `main` deploys them through Workers Builds, and recording starts on its own: weather at the next pull, listening in the first minutes of the next hour. A Worker rollback needs nothing either: the older version ignores the new rows and answers 404 on the two new routes.

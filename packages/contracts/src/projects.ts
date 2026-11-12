@@ -59,7 +59,6 @@ export const featuredProjects = [
   { slug: 'agents-skills', repo: 'ayagmar/agents-skills', pull: false },
   { slug: 'kipple', repo: 'ayagmar/kipple', pull: false },
   { slug: 'dotfiles', repo: 'ayagmar/dotfiles', pull: false },
-  { slug: 'headroom', repo: 'ayagmar/headroom', pull: false },
 ] as const satisfies readonly FeaturedProject[];
 
 export type FeaturedProject = z.infer<typeof featuredProjectSchema>;
