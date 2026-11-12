@@ -1,3 +1,4 @@
+import { rabatDate } from '@min7/contracts/rabat';
 import { z } from 'astro/zod';
 
 const text = (max: number) =>
@@ -16,8 +17,9 @@ const item = z.strictObject({
 /**
  * Frontmatter of content/now.md (ADR 0035). `updated` is a quoted `YYYY-MM-DD` string: YAML turns
  * an unquoted 2026-02-30 into 2 March before any schema runs, so only the quoted text can be checked
- * as a calendar day. It may not be after the day of `built`, so a typo such as 2062 fails the build
- * instead of making the page look permanently fresh. Unknown
+ * as a calendar day. It may not be after the day of `built` in Rabat, where the owner writes it, so
+ * a typo such as 2062 fails the build instead of making the page look permanently fresh, while a
+ * build running in UTC just before midnight still takes the day already begun in Rabat. Unknown
  * fields are rejected to catch typos.
  */
 export const nowSchema = (built: Date) =>
@@ -25,7 +27,7 @@ export const nowSchema = (built: Date) =>
     updated: z
       .string({ error: 'must be a quoted day like "2026-10-30"' })
       .pipe(z.iso.date({ error: 'must be a real day like "2026-10-30"', abort: true }))
-      .refine((day) => day <= built.toISOString().slice(0, 10), {
+      .refine((day) => day <= rabatDate(built.getTime()), {
         message: 'must not be in the future',
       })
       .transform((day) => new Date(day)),
