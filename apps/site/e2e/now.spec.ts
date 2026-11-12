@@ -33,15 +33,32 @@ test('/now shows its items, linked, with the date and no JavaScript needed', asy
   const page = await context.newPage();
   await page.goto('/now');
   const window = page.getByRole('region', { name: 'Currently brewing' });
+  // Catches a featured project sending the reader to GitHub when the site has its page.
   await expect(window.getByRole('link', { name: 'repo-pulse' })).toHaveAttribute(
     'href',
-    'https://github.com/ayagmar/repo-pulse'
+    '/projects/repo-pulse'
   );
   // An item without a url is text, not a dead link.
   await expect(window.getByText('this site')).toBeVisible();
   await expect(window.getByRole('link', { name: 'this site' })).toHaveCount(0);
   await expect(page.locator('main time')).toHaveAttribute('datetime', updated);
+  // Without a script there is no clock to count from, so no age.
+  await expect(page.locator('.intro .caption').first()).toHaveText('Updated 30 October 2026.');
   await context.close();
+});
+
+// Catches the age counted from the build's clock (a page served weeks later says "today") or
+// staying put while the page is open past the reader's midnight.
+test.describe('the age by the reader clock', () => {
+  test.use({ timezoneId: 'UTC' });
+  test('/now says how old it is, and moves on at midnight', async ({ page }) => {
+    await page.clock.install({ time: '2026-11-12T23:59:58Z' });
+    await page.goto('/now');
+    const line = page.locator('.intro .caption').first();
+    await expect(line).toHaveText('Updated 30 October 2026, 13 days ago.');
+    await page.clock.runFor(3000);
+    await expect(line).toHaveText('Updated 30 October 2026, 14 days ago.');
+  });
 });
 
 // Catches the notice using the build's clock (a page built fresh and served stale claims
