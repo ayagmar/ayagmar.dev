@@ -20,7 +20,7 @@ catalog:
   msw: 3.0.4
   typescript: 6.0.3
   vitest: 5.1.0
-  wrangler: 4.158.0
+  wrangler: 4.159.0
 
 # Patched versions of transitive dependencies osv-scanner flags, until their parents update.
 # Remove an entry once the parent package depends on a fixed version.

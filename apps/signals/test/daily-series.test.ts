@@ -166,6 +166,24 @@ const dayCount = async () =>
 
 const scrobbleAt = (time: string, name: string) => ({ at: Date.parse(time) / 1000, name });
 
+/**
+ * The binding, with each batch held until `gate()` settles. Every other member is bound to the
+ * real binding: workerd's D1 methods read private fields, so a wrapper `this` throws.
+ */
+const batchAfter = (gate: () => Promise<unknown> | undefined): D1Database =>
+  new Proxy(env.DB, {
+    get(target, key) {
+      if (key === 'batch') {
+        return async (statements: D1PreparedStatement[]) => {
+          await gate();
+          return target.batch(statements);
+        };
+      }
+      const value = Reflect.get(target, key);
+      return typeof value === 'function' ? value.bind(target) : value;
+    },
+  });
+
 describe('which dates a listening pull reads', () => {
   // Catches yesterday worked out as 24 hours ago or by UTC date: both name the wrong date
   // around Rabat's midnight while it was at +01.
@@ -453,16 +471,8 @@ describe('whether days are being recorded', () => {
   it('claims no success for a pull whose write was refused', async () => {
     await seedSnapshots();
     const store = new D1SnapshotStore(env.DB);
-    const batch = env.DB.batch.bind(env.DB);
     let landed: Promise<boolean> | undefined;
-    const db = Object.create(env.DB, {
-      batch: {
-        value: async (statements: D1PreparedStatement[]) => {
-          await landed;
-          return batch(statements);
-        },
-      },
-    }) as D1Database;
+    const db = batchAfter(() => landed);
     const day = '2026-10-26';
     const json = JSON.stringify({ count: 1, last: null, asOf: '2026-11-06T09:00:00.000Z' });
     await new D1SnapshotStore(db).putDated(
@@ -1139,15 +1149,7 @@ describe('the backfill', () => {
       landed = backfilled(store, 9);
     });
     // The pull's write waits for the backfill, as a slower isolate's would.
-    const batch = env.DB.batch.bind(env.DB);
-    const db = Object.create(env.DB, {
-      batch: {
-        value: async (statements: D1PreparedStatement[]) => {
-          await landed;
-          return batch(statements);
-        },
-      },
-    }) as D1Database;
+    const db = batchAfter(() => landed);
     await new D1SnapshotStore(db).putDated('listening', pull, '2026-11-06T09:30:00.000Z');
 
     expect(await landed).toBe(true);
@@ -1167,16 +1169,8 @@ describe('the backfill', () => {
     );
     expect(won).toBe(true);
 
-    const batch = env.DB.batch.bind(env.DB);
     let pulled: Promise<void> | undefined;
-    const db = Object.create(env.DB, {
-      batch: {
-        value: async (statements: D1PreparedStatement[]) => {
-          await pulled;
-          return batch(statements);
-        },
-      },
-    }) as D1Database;
+    const db = batchAfter(() => pulled);
     const lost = await new D1SnapshotStore(db).mergeDays(
       'listening',
       date,

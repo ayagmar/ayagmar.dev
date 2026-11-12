@@ -200,7 +200,10 @@ describe('freshness against a slow read', () => {
   const slow = (delayMs: number) =>
     new Proxy(env.DB, {
       get(target, property) {
-        if (property !== 'prepare') return Reflect.get(target, property);
+        if (property !== 'prepare') {
+          const value = Reflect.get(target, property);
+          return typeof value === 'function' ? value.bind(target) : value;
+        }
         return (sql: string) => ({
           bind: (...values: unknown[]) => ({
             first: async () => {
