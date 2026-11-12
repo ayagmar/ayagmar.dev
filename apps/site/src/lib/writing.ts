@@ -62,10 +62,24 @@ export function pagesToRead({ posts, notes }: { posts: number; notes: number }) 
   return [...nav.filter((item) => shown.has(item.href)), nowPage];
 }
 
-/** What Search offers when it finds nothing: the pages most readers come for. */
-export const searchFallback = ['/projects', '/about', '/stats'].flatMap((href) =>
-  nav.filter((item) => item.href === href)
-);
+const html = (text: string) =>
+  text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+
+/**
+ * What Search offers when it finds nothing, the pages most readers come for: "Try Projects, About
+ * or Stats." with each a link, as HTML made at build time, so the island ships no list code for
+ * three fixed links (budgets, ADR 0017).
+ */
+export const searchFallback = (() => {
+  const links = ['/projects', '/about', '/stats']
+    .flatMap((href) => nav.filter((item) => item.href === href))
+    .map(({ href, label }) => `<a href="${html(href)}">${html(label)}</a>`);
+  return `Try ${links.slice(0, -1).join(', ')} or ${links.at(-1)}.`;
+})();
 
 /**
  * The header's link while Search has not hydrated or scripts are off: the posts once there are

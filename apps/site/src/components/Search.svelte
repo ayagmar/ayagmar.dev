@@ -17,16 +17,13 @@ interface Pagefind {
 const bundle = '/pagefind/pagefind.js';
 const limit = 8;
 
-interface Link {
-  href: string;
-  label: string;
-}
-
 /**
  * `browse`: the link shown until the island hydrates or without scripts (`browseLink` in
- * writing.ts). `fallback`: the pages offered when a search finds nothing (`searchFallback`).
+ * writing.ts). `fallback`: the pages offered when a search finds nothing, as HTML the build made
+ * from the nav (`searchFallback`).
  */
-const { browse, fallback }: { browse: Link; fallback: readonly Link[] } = $props();
+const { browse, fallback }: { browse: { href: string; label: string }; fallback: string } =
+  $props();
 
 let hydrated = $state(false);
 let dialog = $state<HTMLDialogElement>();
@@ -96,12 +93,6 @@ async function search() {
   }
 }
 
-// Svelte keeps a space where the markup breaks a line, so the words around each link come from
-// here: "Try Projects, About or Stats."
-const separator = (index: number) =>
-  index === 0 ? '' : index === fallback.length - 1 ? ' or ' : ', ';
-const end = (index: number) => (index === fallback.length - 1 ? '.' : '');
-
 // A native search field takes the first Escape to clear itself; one Escape closes the dialog.
 // While an input method is composing, Escape cancels the composition and is left to it.
 function onFieldKeydown(event: KeyboardEvent) {
@@ -155,10 +146,8 @@ const href = (url: string) => url.replace(/\.html$/, '');
   </search>
   <p role="status">
     {#if nothingFor !== null}
-      Nothing for "{nothingFor}". Try
-      {#each fallback as page, index (page.href)}
-        {separator(index)}<a href={page.href}>{page.label}</a>{end(index)}
-      {/each}
+      <!-- The query is text; only the build's links are markup. -->
+      Nothing for "{nothingFor}". {@html fallback}
     {:else}
       {status}
     {/if}

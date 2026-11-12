@@ -3,8 +3,9 @@
 // and may be served long after (ADR 0035). The clock is read again whenever the page comes back
 // (history restore, tab or window focus), at the reader's midnight and when the 90 days run out
 // while it is open, and both follow it either way.
+
+import { daysAgo } from '../lib/days-ago.ts';
 import { isStale, staleFrom } from '../lib/now.ts';
-import { daysAgo } from '../lib/typing.ts';
 
 const notice = document.querySelector<HTMLElement>('[data-stale-after]');
 const updated = notice?.dataset.updated;

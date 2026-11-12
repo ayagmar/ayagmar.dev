@@ -22,4 +22,4 @@ A UX audit of the live site, read from a visitor's side, found that a recruiter 
 
 A dependency update titled without `chore(deps)`, such as Dependabot's default "Bump x from 1 to 2", still shows in the log. Sending the author through `/v1/shipping` would need a v2 contract and a change in repo-pulse.
 
-The 404's Search button does nothing in the second or two before the island hydrates.
+The budgets hold without a new allowance (`just budgets`, 2026-11-12, against main's build the same day). /stats loads 20,254 B of JavaScript outside the allowances, against 19,774 B on main and a budget of 20,480 B: the island's no-result sentence, its Escape handling and the 404's request (+194 B), the days' words in a chunk of their own (+249 B), and Svelte's runtime (+45 B). That chunk is shared with /now, which would otherwise load the whole `live` chunk for one function: `src/lib/days-ago.ts` imports nothing for that reason. The "Try Projects, About or Stats." links are HTML made at build time rather than a list the island renders, and "Only dependency updates lately." sits with the shipping panel's code, since the words chunk (`stats.*.js`) was at 1,649 of its 1,650 B.

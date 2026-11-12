@@ -35,11 +35,11 @@ export const shippingItem = (event: ShippingEvent) =>
   );
 
 /**
- * A merge that only updates dependencies: Renovate's titles here start with `chore(deps)`, and
- * Dependabot's with the same prefix when it is set to Conventional Commits. /v1/shipping has no
- * author, so signals' bot list (ADR 0046) cannot be used; the title is all there is (ADR 0052).
+ * A merge that only updates dependencies, `chore(deps)` or `chore(deps-dev)`: how Renovate titles
+ * them here, and Dependabot when set to Conventional Commits. /v1/shipping has no author, so
+ * signals' bot list (ADR 0046) cannot be used; the title is all there is (ADR 0052).
  */
-const dependencyUpdate = /^chore\(deps(?:-dev)?\)!?:/i;
+const dependencyUpdate = /^chore\(deps/;
 
 /**
  * The events a shipping log shows: dependency updates left out, so the log says what was built.
@@ -47,6 +47,9 @@ const dependencyUpdate = /^chore\(deps(?:-dev)?\)!?:/i;
  */
 export const shippingLog = (events: readonly ShippingEvent[]) =>
   events.filter((event) => event.type !== 'merge' || !dependencyUpdate.test(event.title));
+
+// Here rather than in statsWords: that chunk has its own allowance and no room (budgets.json).
+const onlyDependencyUpdates = 'Only dependency updates lately.';
 
 /** The shipping events as a log: all of `events`, or the first `keep` and the rest folded. */
 export const shippingList = (events: readonly ShippingEvent[], keep = events.length) =>
@@ -67,7 +70,7 @@ export function shippingBody(data: ShippingSnapshot, featured: readonly string[]
     ...(data.events.length === 0
       ? [el('p', {}, words.noShipping)]
       : log.length === 0
-        ? [el('p', {}, words.onlyDependencyUpdates)]
+        ? [el('p', {}, onlyDependencyUpdates)]
         : shippingList(log.slice(0, 15), 5)),
     ...(stars.length === 0
       ? []

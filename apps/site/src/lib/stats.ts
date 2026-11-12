@@ -119,7 +119,6 @@ export const statsWords = {
   top: 'Top artists',
   noTop: 'No top artists yet.',
   noShipping: 'No public activity to show yet.',
-  onlyDependencyUpdates: 'Only dependency updates lately.',
   stars: 'Stars on other repositories',
   noProjects: 'No project data yet.',
 };
