@@ -1,7 +1,9 @@
 ---
 import { Image } from 'astro:assets';
+import ImageViewer from '../../components/ImageViewer.astro';
 import ProjectRow from '../../components/ProjectRow.astro';
 import Sample from '../../components/Sample.astro';
+import Viewable from '../../components/Viewable.astro';
 import { liveAttrs } from '../../data/signals.ts';
 import Base from '../../layouts/Base.astro';
 import { imageFor } from '../../lib/content-images.ts';
@@ -54,20 +56,37 @@ const plugins = await getNoctaliaPlugins();
                 <a href={pluginUrl(plugin)}>{plugin.name}</a>
               </h3>
               <p>{plugin.summary}</p>
-              {/* Its name and summary are the row's words; the thumbnail repeats them. */}
-              {plugin.thumbnail !== undefined && (
-                <Image
-                  class="plugin-thumb"
-                  src={imageFor('plugins', plugin.thumbnail.file)}
-                  alt=""
-                  width={160}
-                  densities={[1, 2]}
-                />
-              )}
+              {/* Its name and summary are the row's words; the thumbnail repeats them, so it
+                  has no alt. With a screenshot it is a link that opens it, named by its label. */}
+              {plugin.thumbnail !== undefined &&
+                (plugin.screenshot === undefined ? (
+                  <Image
+                    class="plugin-thumb"
+                    src={imageFor('plugins', plugin.thumbnail.file)}
+                    alt=""
+                    width={160}
+                    densities={[1, 2]}
+                  />
+                ) : (
+                  <Viewable
+                    class="plugin-thumb"
+                    image={imageFor('plugins', plugin.screenshot.image.file)}
+                    alt={plugin.screenshot.alt}
+                    aria-label={`A screenshot of ${plugin.name}`}
+                  >
+                    <Image
+                      src={imageFor('plugins', plugin.thumbnail.file)}
+                      alt=""
+                      width={160}
+                      densities={[1, 2]}
+                    />
+                  </Viewable>
+                ))}
             </li>
           ))}
         </ul>
       </section>
     )}
+    {plugins.some((plugin) => plugin.screenshot !== undefined) && <ImageViewer />}
   </div>
 </Base>

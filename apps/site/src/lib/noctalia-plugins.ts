@@ -16,6 +16,13 @@ const plugin = z.strictObject({
   summary: text,
   /** The plugin's thumbnail.webp from its directory, shown beside its row (ADR 0048). */
   thumbnail: contentImage('plugins').optional(),
+  /** The plugin's screenshot.png from its directory, which its thumbnail opens (ADR 0049). */
+  screenshot: z
+    .strictObject({
+      alt: text,
+      image: contentImage('plugins'),
+    })
+    .optional(),
 });
 
 /**

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { noNumbers } from '../src/lib/project-panel.ts';
 import { projectFact } from '../src/lib/project-row.ts';
 import { projectSchema } from '../src/lib/project-schema.ts';
+import { projectScreenshotsSchema } from '../src/lib/project-screenshot.ts';
 import {
   checkProjectFiles,
   morePostsAbout,
@@ -38,6 +39,26 @@ describe('project files', () => {
     });
     expect(result.error?.issues.map((issue) => issue.message)).toEqual([
       expect.stringMatching(/^"runner-d" is not a featured project/),
+    ]);
+  });
+
+  // Catches half a day and night pair passing, which would show no screenshot in one theme, and a
+  // screenshot whose file was never added reaching the page as a broken image.
+  it('reject a screenshot with only one theme, or a file that is not in src/assets/projects', () => {
+    const image = (file: string) => ({
+      file,
+      source: 'https://raw.githubusercontent.com/ayagmar/runnerd/0000000/x.webp',
+      fetched: '2026-11-12',
+    });
+    const messages = (screenshot: object) =>
+      projectScreenshotsSchema
+        .safeParse({ screenshots: [{ slug: 'runnerd', ...screenshot }] })
+        .error?.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
+    expect(messages({ alt: 'The history view.', day: image('runnerd-day.webp') })).toEqual([
+      'screenshots.0: must have either image, or both day and night',
+    ]);
+    expect(messages({ alt: 'The history view.', image: image('runnerd.webp') })).toEqual([
+      'screenshots.0.image.file: src/assets/projects/runnerd.webp does not exist; add the file or drop the field',
     ]);
   });
 

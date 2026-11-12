@@ -1,0 +1,25 @@
+---
+/* The one image viewer (ADR 0049): any [data-view] link on the page opens in it. A page includes
+   it only when it has such a link, so other pages load neither the dialog nor its script. */
+---
+
+<dialog class="viewer" aria-labelledby="viewer-caption">
+  <div class="viewer-top">
+    <p class="viewer-count" aria-live="polite"></p>
+    <button type="button" class="viewer-close" autofocus>Close</button>
+  </div>
+  <figure class="viewer-figure">
+    <div class="viewer-stage"></div>
+    <figcaption id="viewer-caption"></figcaption>
+  </figure>
+  <div class="viewer-bottom">
+    <button type="button" class="viewer-previous">Previous</button>
+    {/* biome-ignore lint/a11y/useValidAnchor: the script sets its href to the open image's file before the dialog shows, and the dialog never shows without the script. */}
+    <a class="viewer-original">Open original</a>
+    <button type="button" class="viewer-next">Next</button>
+  </div>
+</dialog>
+
+<script>
+import '../scripts/image-viewer.ts';
+</script>
