@@ -64,7 +64,15 @@ export const groups = {
   // What the Lighthouse job runs and measures with (ADR 0017).
   perf: ['scripts/budgets.*', 'scripts/lighthouse*'],
   shell: ['**/*.sh', '.githooks/**'],
-  deps: ['**/package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'osv-scanner.toml'],
+  // bootstrap.sh pins osv-scanner by version and sha256, and only the osv job installs it, so a
+  // pin whose checksum was not updated has to fail there before it reaches main.
+  deps: [
+    '**/package.json',
+    'pnpm-lock.yaml',
+    'pnpm-workspace.yaml',
+    'osv-scanner.toml',
+    'scripts/bootstrap.sh',
+  ],
 } as const;
 
 export type Group = keyof typeof groups;

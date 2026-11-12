@@ -62,7 +62,7 @@ Release binaries, pinned by version and sha256 in `scripts/bootstrap.sh` (Linux 
 | Tool        | Version  | Why                                                                                                |
 | ----------- | -------- | -------------------------------------------------------------------------------------------------- |
 | gitleaks    | 8.30.1   | Secrets in git history and built output. The binary, not the action, which needs a license.        |
-| osv-scanner | 2.7.0    | Known vulnerabilities in `pnpm-lock.yaml` when dependencies change.                                |
+| osv-scanner | 2.7.1    | Known vulnerabilities in `pnpm-lock.yaml` when dependencies change.                                |
 | lychee      | 0.24.2   | Links in the built site.                                                                           |
 | actionlint  | 1.7.12   | Workflow syntax, expressions and the shell in `run:` blocks (with shellcheck).                     |
 | zizmor      | 1.32.0   | Workflow security audits.                                                                          |
