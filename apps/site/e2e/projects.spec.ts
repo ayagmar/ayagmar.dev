@@ -43,15 +43,106 @@ test('a project page lists its writing newest first and links its feeds', {
   ]);
 });
 
-// niri-computer-use only has a draft, which a production build leaves out.
-for (const slug of ['dotfiles', 'niri-computer-use']) {
-  test(`${slug} says nothing is written about it yet`, async ({ page, request }) => {
+// Catches an empty section and two empty feeds at the end of a project page (niri-computer-use
+// only has a draft, which a production build leaves out), and a feed or a next step that is
+// missing or wrong: releases only for a project that has one, next in /projects order.
+for (const [slug, releases, next] of [
+  ['dotfiles', false, 'runnerd'],
+  ['niri-computer-use', true, 'dotfiles'],
+] as const) {
+  test(`${slug} ends on what to follow and the next project`, async ({ page, request }) => {
     await page.goto(`/projects/${slug}`);
-    await expect(page.getByText(`Nothing written about ${slug} yet.`)).toBeVisible();
-    await expect(page.locator('.posts')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: `Writing about ${slug}` })).toHaveCount(0);
+    await expect(page.getByText('Follow writing about')).toHaveCount(0);
+    expect(
+      await page
+        .locator('link[rel="alternate"]')
+        .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+    ).toEqual(['/feed.xml', '/atom.xml']);
     expect(await (await request.get(`/projects/${slug}/feed.xml`)).text()).not.toContain('<item>');
+    const end = page.locator('.project-end');
+    await expect(end.getByRole('link', { name: 'Follow releases' })).toHaveCount(releases ? 1 : 0);
+    if (releases) {
+      await expect(end.getByRole('link', { name: 'Follow releases' })).toHaveAttribute(
+        'href',
+        `https://github.com/ayagmar/${slug}/releases.atom`
+      );
+    }
+    await expect(end.getByRole('link', { name: `Next: ${next} →` })).toHaveAttribute(
+      'href',
+      `/projects/${next}`
+    );
   });
 }
+
+// Catches the page's "Next" and /projects disagreeing, a dead end on the last project, and a
+// project left out of the round.
+test('Next goes through every project in /projects order and back to the first', async ({
+  page,
+}) => {
+  await page.goto('/projects');
+  const order = await page
+    .locator('.projects h3 a[href^="/projects/"]')
+    .evaluateAll((links) => links.map((link) => link.textContent?.trim() ?? ''));
+  expect(order).toHaveLength(13);
+  const seen: string[] = [];
+  let slug = order[0] ?? '';
+  while (seen.length < order.length) {
+    seen.push(slug);
+    await page.goto(`/projects/${slug}`);
+    const href = await page.locator('.project-end a[rel="next"]').getAttribute('href');
+    slug = href?.replace('/projects/', '') ?? '';
+  }
+  expect(seen).toEqual(order);
+  expect(slug).toBe(order[0]);
+});
+
+// Catches the way to get a project sinking below the fold again, a copy button that shows
+// without the Clipboard API, and a "No release yet" on a project that has releases.
+test('how to get a project is under its title, above the fold on a phone', async ({ browser }) => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    permissions: ['clipboard-read', 'clipboard-write'],
+  });
+  const page = await context.newPage();
+  await page.goto('/projects/llm-usage-metrics');
+  const header = page.locator('.project > header');
+  const install = header.locator('.project-install');
+  await expect(install.locator('code')).toHaveText('npm install -g llm-usage-metrics');
+  const links = header.locator('.project-links a');
+  await expect(links).toHaveText(['Source on GitHub', 'npm package']);
+  expect(await links.evaluateAll((all) => all.map((link) => link.getAttribute('href')))).toEqual([
+    'https://github.com/ayagmar/llm-usage-metrics',
+    'https://www.npmjs.com/package/llm-usage-metrics',
+  ]);
+  const bottom = await links.last().evaluate((link) => link.getBoundingClientRect().bottom);
+  expect(bottom).toBeLessThan(844);
+  await expect(page.getByRole('heading', { name: 'Links' })).toHaveCount(0);
+  await install.getByRole('button', { name: 'Copy' }).click();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    'npm install -g llm-usage-metrics'
+  );
+
+  await page.goto('/projects/kipple');
+  await expect(page.locator('.project-install')).toHaveCount(0);
+  await expect(page.locator('.project > header .project-links li')).toHaveText(
+    'No release yet: build from source'
+  );
+  await context.close();
+});
+
+// Catches the command needing JavaScript: without it there is no button, and the text is there
+// to select.
+test('without JavaScript the command shows with no copy button', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto('/projects/pi-extmgr');
+  await expect(page.locator('.project-install code')).toHaveText('pi install npm:pi-extmgr');
+  await expect(page.locator('.project-install button')).toBeHidden();
+  await context.close();
+});
 
 test('the projects index counts the posts per project', { tag: '@drafts' }, async ({ page }) => {
   await page.goto('/projects');

@@ -114,15 +114,14 @@ describe('dayPages', () => {
 });
 
 describe('projectReceipt', () => {
-  // Catches another repository's or an unnamed one's counts added to the project, and a
-  // receipt dated from the project's first activity rather than from when recording began.
+  // Catches another repository's or an unnamed one's counts added to the project, a receipt
+  // dated from the project's first activity rather than from when recording began, and a zero
+  // count shown ("0 commits" read as a dead project), or "nothing" said beside a log of merges.
   it("counts the project's repository over every recorded day, since the first", () => {
-    expect(projectReceipt(history, runnerd)).toBe(
-      '2 merges · 4 commits · 0 releases since 24 Oct 2026'
-    );
-    expect(projectReceipt(history, ccdesk)).toBe(
-      '1 merge · 0 commits · 1 release since 24 Oct 2026'
-    );
+    const since = 'since 24 Oct 2026, when this site started counting';
+    expect(projectReceipt(history, runnerd)).toBe(`2 merges and 4 commits ${since}`);
+    expect(projectReceipt(history, ccdesk)).toBe(`1 merge and 1 release ${since}`);
+    expect(projectReceipt(history, 'ayagmar/kipple')).toBeNull();
     expect(projectReceipt({ shipping: null, usage: history.usage }, runnerd)).toBeNull();
   });
 });

@@ -1,4 +1,9 @@
-import { featuredProjects, type Project, type ProjectSlug } from '@min7/contracts';
+import {
+  featuredProjects,
+  type Project,
+  type ProjectEventsSnapshot,
+  type ProjectSlug,
+} from '@min7/contracts';
 import { plural } from './plural.ts';
 import { type ProjectFrontmatter, type ProjectGroup, projectGroups } from './project-schema.ts';
 import type { Post } from './writing.ts';
@@ -21,6 +26,8 @@ export interface SiteProject {
   group: ProjectGroup | null;
   /** Whether signals fetches its numbers; false for `pull: false` in contracts. */
   pulled: boolean;
+  /** The command that installs or runs it, from the project file; null without one. */
+  install: string | null;
   /** `https://<subdomain>.ayagmar.dev` when the project has its own site. */
   homepage: string | null;
   npmUrl: string | null;
@@ -55,6 +62,7 @@ export function siteProjects(
         status: file?.status ?? (stats?.archived === true ? 'archived' : null),
         group: file?.group ?? null,
         pulled: !('pull' in entry),
+        install: file?.install ?? null,
         homepage: file?.subdomain === undefined ? null : `https://${file.subdomain}.ayagmar.dev`,
         npmUrl: 'npmPackage' in entry ? `https://www.npmjs.com/package/${entry.npmPackage}` : null,
         live: stats,
@@ -80,12 +88,59 @@ export function projectsByGroup<P extends Pick<SiteProject, 'group'>>(projects: 
   }));
 }
 
-/** Where a project lives: its repository, its own site and its npm package. */
-export const projectLinks = ({ repo, repoUrl, homepage, npmUrl }: SiteProject) => [
-  { href: repoUrl, label: `${repo} on GitHub` },
-  ...(homepage === null ? [] : [{ href: homepage, label: new URL(homepage).host }]),
+/**
+ * Whether a project has published a release: yes when the snapshot or the log names one, no when
+ * the log has the project and names none (it keeps the newest releases however old, ADR 0046),
+ * else what the snapshot says. Null when neither has the project, so a failed pull never claims
+ * there is no release.
+ */
+export function hasReleased(
+  { slug, live }: Pick<SiteProject, 'slug' | 'live'>,
+  log: ProjectEventsSnapshot | null
+): boolean | null {
+  if (live?.latestRelease != null) return true;
+  const entry = log?.projects.find((project) => project.slug === slug);
+  if (entry !== undefined) return entry.events.some((event) => event.type === 'release');
+  return live === null ? null : false;
+}
+
+/** A link under a project's title; `lead` is plain text before it. */
+export interface ProjectLink {
+  href: string;
+  label: string;
+  lead?: string;
+}
+
+/**
+ * Where to get a project: its source, its npm package and its own site. `released` is
+ * `hasReleased`'s answer; only a known "no" says there is no release yet.
+ */
+export const projectLinks = (
+  { repoUrl, homepage, npmUrl }: Pick<SiteProject, 'repoUrl' | 'homepage' | 'npmUrl'>,
+  released: boolean | null = null
+): ProjectLink[] => [
+  released === false
+    ? { lead: 'No release yet: ', label: 'build from source', href: repoUrl }
+    : { label: 'Source on GitHub', href: repoUrl },
   ...(npmUrl === null ? [] : [{ href: npmUrl, label: 'npm package' }]),
+  ...(homepage === null ? [] : [{ href: homepage, label: new URL(homepage).host }]),
 ];
+
+/** GitHub's Atom feed of the repository's releases, for a project that has published one. */
+export const releasesFeed = (
+  { repoUrl }: Pick<SiteProject, 'repoUrl'>,
+  released: boolean | null
+) => (released === true ? `${repoUrl}/releases.atom` : null);
+
+/** The project after `slug` in /projects order, the first after the last; none when it is alone. */
+export function nextProject<P extends Pick<SiteProject, 'slug' | 'group'>>(
+  projects: readonly P[],
+  slug: ProjectSlug
+): P | undefined {
+  const order = projectsByGroup(projects).flatMap((group) => group.projects);
+  const index = order.findIndex((project) => project.slug === slug);
+  return index === -1 || order.length < 2 ? undefined : order[(index + 1) % order.length];
+}
 
 /** The posts about one project, in the order given (newest first for the published set). */
 export const postsAbout = <P extends Post>(posts: readonly P[], slug: ProjectSlug): P[] =>

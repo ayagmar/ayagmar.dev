@@ -10,9 +10,11 @@ interface Props {
   project: SiteProject;
   /** The projects envelope the build read, for the freshness line and the live script. */
   envelope: Envelope<unknown>;
+  /** The id of a freshness line outside the panel that dates it, instead of its own. */
+  freshness?: string;
 }
 
-const { project, envelope } = Astro.props;
+const { project, envelope, freshness } = Astro.props;
 ---
 
 {/* A project signals fetches is kept current from /v1/projects (src/scripts/project-live.ts);
@@ -21,12 +23,13 @@ const { project, envelope } = Astro.props;
   class="project-numbers"
   data-project={project.slug}
   data-pagefind-ignore
+  data-freshness={project.pulled ? freshness : undefined}
   {...project.pulled ? liveAttrs('projects', envelope) : {}}
 >
   <div class="project-numbers-body">
     <Markup nodes={projectStats(project, project.live)} />
   </div>
-  {project.pulled && <Freshness envelope={envelope} />}
+  {project.pulled && freshness === undefined && <Freshness envelope={envelope} />}
 </div>
 
 <script>

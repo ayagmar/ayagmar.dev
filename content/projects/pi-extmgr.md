@@ -3,6 +3,7 @@
 slug: pi-extmgr
 tagline: 'An extension manager for pi: browse, install, toggle and update extensions from one screen.'
 status: active
+install: 'pi install npm:pi-extmgr'
 group: agents
 ---
 

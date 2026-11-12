@@ -2,7 +2,7 @@
 
 Downloads each release once into ~/.cache/min7-fonts, checks its sha256, subsets it to the
 characters the site uses and writes WOFF2 files into src/fonts/, plus TrueType copies of the
-roman in src/fonts/ttf/ for the build's link-preview images (src/lib/og-card.ts):
+roman and the mono in src/fonts/ttf/ for the build's link-preview images (src/lib/og-card.ts):
 the FreeType in sharp reads no WOFF2. The TrueType files never ship to a page. The outputs are
 committed; run this again only to change the character set or a font version: `just fonts`.
 """
@@ -19,8 +19,10 @@ from fontTools.ttLib import TTFont
 from fontTools.varLib import instancer
 
 OUT = Path(__file__).resolve().parent.parent / "src" / "fonts"
-# The face the link-preview images draw with: the title's serif.
-TTF = {"serif-roman.woff2"}
+# The faces the link-preview images draw with, by the family name the TrueType copy carries: the
+# title's serif, and the mono of a project's name. The mono gets a name no installed font has,
+# so the build draws with this file and never with a system copy of JetBrains Mono.
+TTF = {"serif-roman.woff2": None, "mono.woff2": "min7 Mono"}
 CACHE = Path.home() / ".cache" / "min7-fonts"
 
 RELEASES = {
@@ -72,6 +74,19 @@ def release(name: str) -> bytes:
     return data
 
 
+def rename(font: TTFont, family: str) -> None:
+    names = font["name"]
+    style = names.getDebugName(2) or "Regular"
+    for record in list(names.names):
+        if record.nameID in (1, 3, 4, 6, 16, 17, 21, 22, 25):
+            names.removeNames(nameID=record.nameID)
+    names.setName(family, 1, 3, 1, 0x409)
+    names.setName(style, 2, 3, 1, 0x409)
+    names.setName(f"{family} {style}", 4, 3, 1, 0x409)
+    names.setName(f"{family.replace(' ', '')}-{style.replace(' ', '')}", 6, 3, 1, 0x409)
+    names.setName(f"{family}; {style}; subset", 3, 3, 1, 0x409)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     total = 0
@@ -87,20 +102,17 @@ def main() -> None:
         subsetter.subset(font)
         font = instancer.instantiateVariableFont(font, limits)
         if family is not None:
-            names = font["name"]
-            style = names.getDebugName(2) or "Regular"
-            for record in list(names.names):
-                if record.nameID in (1, 3, 4, 6, 16, 17, 21, 22, 25):
-                    names.removeNames(nameID=record.nameID)
-            names.setName(family, 1, 3, 1, 0x409)
-            names.setName(style, 2, 3, 1, 0x409)
-            names.setName(f"{family} {style}", 4, 3, 1, 0x409)
-            names.setName(f"{family.replace(' ', '')}-{style.replace(' ', '')}", 6, 3, 1, 0x409)
-            names.setName(f"{family}; {style}; subset", 3, 3, 1, 0x409)
+            rename(font, family)
         if out in TTF:
             ttf = OUT / "ttf" / out.replace(".woff2", ".ttf")
             ttf.parent.mkdir(exist_ok=True)
-            font.save(ttf)
+            copy = io.BytesIO()
+            font.save(copy)
+            copy.seek(0)
+            ttf_font = TTFont(copy)
+            if TTF[out] is not None:
+                rename(ttf_font, TTF[out])
+            ttf_font.save(ttf)
             print(f"ttf/{ttf.name}: {ttf.stat().st_size / 1024:.1f} KiB (build only)")
         target = OUT / out
         font.flavor = "woff2"

@@ -3,6 +3,7 @@
 slug: pi-promptsmith
 tagline: 'Rewrites the rough prompt in the pi editor into a clearer one, in place.'
 status: maintained
+install: 'pi install npm:pi-promptsmith'
 group: agents
 ---
 

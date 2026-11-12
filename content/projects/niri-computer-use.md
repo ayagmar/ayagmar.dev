@@ -3,6 +3,7 @@
 slug: niri-computer-use
 tagline: 'An MCP server that lets coding agents see and drive a niri desktop, with a stop key they cannot press.'
 status: active
+install: 'curl -fsSL https://github.com/ayagmar/niri-computer-use/releases/latest/download/install.sh | sh'
 group: desktop
 ---
 

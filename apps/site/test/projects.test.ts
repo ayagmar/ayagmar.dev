@@ -1,3 +1,4 @@
+import type { ProjectEventsSnapshot, ProjectsSnapshot } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { noNumbers } from '../src/lib/project-panel.ts';
@@ -5,8 +6,11 @@ import { projectSchema } from '../src/lib/project-schema.ts';
 import { projectScreenshotsSchema } from '../src/lib/project-screenshot.ts';
 import {
   checkProjectFiles,
+  hasReleased,
   morePostsAbout,
+  nextProject,
   projectsByGroup,
+  releasesFeed,
   siteProjects,
 } from '../src/lib/projects.ts';
 import { type Post, publishedEntries } from '../src/lib/writing.ts';
@@ -161,5 +165,52 @@ describe('site projects', () => {
       'older',
     ]);
     expect(morePostsAbout(posts, 'ccdesk', 'newest').map((p) => p.id)).toEqual(['elsewhere']);
+  });
+});
+
+describe('the end of a project page', () => {
+  const live = (snapshotFixtures.projects.ok as ProjectsSnapshot).projects;
+  const log = snapshotFixtures['project-events'].ok as ProjectEventsSnapshot;
+  const projects = siteProjects([], live);
+  const find = (slug: string) => {
+    const project = projects.find((candidate) => candidate.slug === slug);
+    if (project === undefined) throw new Error(`${slug} is not featured`);
+    return project;
+  };
+
+  // Catches "No release yet" said about a project whose release is only in the log (one signals
+  // does not pull, like agents-skills), or said while neither source had the project, which a
+  // failed pull would make look like a project without releases.
+  it('knows a release from either source, and says nothing when neither has the project', () => {
+    expect(hasReleased(find('runnerd'), null)).toBe(true);
+    expect(hasReleased(find('agents-skills'), log)).toBe(true);
+    expect(hasReleased(find('pi-mobile'), log)).toBe(false);
+    expect(hasReleased(find('kipple'), log)).toBe(false);
+    expect(hasReleased(find('kipple'), null)).toBeNull();
+    expect(hasReleased(find('pi-mobile'), null)).toBe(false);
+    expect(releasesFeed(find('runnerd'), true)).toBe(
+      'https://github.com/ayagmar/runnerd/releases.atom'
+    );
+    expect(releasesFeed(find('kipple'), null)).toBeNull();
+  });
+
+  // Catches "Next" following the registry order instead of the grouped order /projects shows,
+  // and a dead end on the last project.
+  it('leads to the next project in /projects order, from the last to the first', () => {
+    const grouped = siteProjects(
+      [
+        { slug: 'runnerd', status: 'active', group: 'self-hosted' },
+        { slug: 'kipple', status: 'active', group: 'agents' },
+        { slug: 'llm-usage-metrics', status: 'active', group: 'agents' },
+      ],
+      null
+    ).filter((project) => project.group !== null);
+    // Registry order llm-usage-metrics, runnerd, kipple; /projects shows the agents group first.
+    expect(grouped.map((project) => nextProject(grouped, project.slug)?.slug)).toEqual([
+      'kipple',
+      'llm-usage-metrics',
+      'runnerd',
+    ]);
+    expect(nextProject(grouped.slice(0, 1), 'llm-usage-metrics')).toBeUndefined();
   });
 });

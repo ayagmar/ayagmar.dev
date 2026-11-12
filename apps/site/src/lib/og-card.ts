@@ -1,7 +1,8 @@
 /**
  * Link-preview images (src/lib/og.ts) and the favicon's PNG sizes, drawn at build time by the
  * endpoints under src/pages/. Every card is 1200x630 and the same: a 3:1 picture on the night
- * ground, the title in the site's serif under it, a muted line under that. A post with art
+ * ground, the title in the site's serif (a project's name in its mono) under it, a muted line
+ * under that. A post with art
  * (ADR 0027) shows its art; every other card shows the night room. Only the build runs this:
  * sharp never reaches a page.
  */
@@ -28,25 +29,46 @@ const corner = 8;
 
 const file = (dir: string | URL, path: string) => fileURLToPath(new URL(path, dir));
 const serif = file(srcDir, 'fonts/ttf/serif-roman.ttf');
+const mono = file(srcDir, 'fonts/ttf/mono.ttf');
+
+/**
+ * libvips adds a text's `fontfile` to fontconfig for the rest of the process, and Pango
+ * remembers a family it could not find: a layout that names "min7 Mono" before that file is
+ * added gets a system monospace for good. So both files are added, by drawing nothing much
+ * with each, before any layout is drawn.
+ */
+const fontsAdded = (async () => {
+  for (const fontfile of [mono, serif]) {
+    await sharp({ text: { text: '.', fontfile, rgba: true } })
+      .png()
+      .toBuffer();
+  }
+})();
 
 const markup = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
-/** Pango markup in the site's serif as a transparent PNG, wrapped to `width`, cropped to its ink. */
-const pango = (marked: string, width: number) =>
-  sharp({
+/** Pango markup in the site's faces as a transparent PNG, wrapped to `width`, cropped to its ink. */
+const pango = async (marked: string, width: number) => {
+  await fontsAdded;
+  return sharp({
     text: { text: marked, fontfile: serif, width, dpi: 72, rgba: true, wrap: 'word-char' },
   })
     .png()
     .toBuffer({ resolveWithObject: true });
+};
+
+/** The title's face: the serif, or the code face for a name that is code, as a project's is. */
+type TitleFace = 'serif' | 'mono';
+const titleFont = { serif: 'min7 Serif Semi-Bold', mono: 'min7 Mono Semi-Bold' } as const;
 
 /** A title, a gap and a muted line, as one Pango layout (see `textBlock`). */
-const titled = (title: string, size: number, line: string, lineSize: number) =>
-  `<span font="min7 Serif Semi-Bold ${size}" foreground="${text}">${markup(title)}</span>\n<span font="min7 Serif 14"> </span>\n<span font="min7 Serif ${lineSize}" foreground="${muted}">${markup(line)}</span>`;
+const titled = (title: string, size: number, line: string, lineSize: number, face: TitleFace) =>
+  `<span font="${titleFont[face]} ${size}" foreground="${text}">${markup(title)}</span>\n<span font="min7 Serif 14"> </span>\n<span font="min7 Serif ${lineSize}" foreground="${muted}">${markup(line)}</span>`;
 
 /** The text block at one title size, wrapped at words and, inside a word too long for a line, at characters. */
-async function renderText(title: string, line: string, size: number) {
-  const { data, info } = await pango(titled(title, size, line, 28), textBox.width);
+async function renderText(title: string, line: string, size: number, face: TitleFace) {
+  const { data, info } = await pango(titled(title, size, line, 28, face), textBox.width);
   return { data, fits: info.width <= textBox.width && info.height <= textBox.height };
 }
 
@@ -58,9 +80,9 @@ const titleSizes = [54, 48, 42, 36];
  * whatever the title's descenders happen to be. The title is 54 px, down to 36 px; a title that
  * still overflows at 36 px is cut at the longest prefix that fits, and ends in an ellipsis.
  */
-async function textBlock(title: string, line: string): Promise<Buffer> {
+async function textBlock(title: string, line: string, face: TitleFace): Promise<Buffer> {
   for (const size of titleSizes) {
-    const block = await renderText(title, line, size);
+    const block = await renderText(title, line, size, face);
     if (block.fits) return block.data;
   }
   const min = titleSizes.at(-1) ?? 36;
@@ -71,10 +93,10 @@ async function textBlock(title: string, line: string): Promise<Buffer> {
   let [low, high] = [0, characters.length - 1];
   while (low < high) {
     const middle = Math.ceil((low + high) / 2);
-    if ((await renderText(cut(middle), line, min)).fits) low = middle;
+    if ((await renderText(cut(middle), line, min, face)).fits) low = middle;
     else high = middle - 1;
   }
-  const block = await renderText(cut(low), line, min);
+  const block = await renderText(cut(low), line, min, face);
   if (!block.fits) throw new Error(`og-card: "${line}" does not fit the card's text box`);
   return block.data;
 }
@@ -96,11 +118,15 @@ const roundedMask = Buffer.from(
   `<svg xmlns="http://www.w3.org/2000/svg" width="${picture.width}" height="${picture.height}"><rect width="100%" height="100%" rx="${corner}"/></svg>`
 );
 
-/** A 1200x630 card: the picture (post art SVG, or the room), the title, and a muted line. */
+/**
+ * A 1200x630 card: the picture (post art SVG, or the room), the title, and a muted line. `mono`
+ * sets the title in the code face, as the site sets a project's name.
+ */
 export async function renderOgCard(card: {
   title: string;
   line: string;
   art?: string | undefined;
+  mono?: boolean;
 }): Promise<Buffer> {
   const image = await sharp(await pictureImage(card.art))
     .composite([{ input: roundedMask, blend: 'dest-in' }])
@@ -109,7 +135,11 @@ export async function renderOgCard(card: {
   return sharp({ create: { ...ogSize, channels: 3, background: ground } })
     .composite([
       { input: image, left: picture.left, top: picture.top },
-      { input: await textBlock(card.title, card.line), left: picture.left, top: textBox.top },
+      {
+        input: await textBlock(card.title, card.line, card.mono === true ? 'mono' : 'serif'),
+        left: picture.left,
+        top: textBox.top,
+      },
     ])
     .png({ palette: true, compressionLevel: 9, effort: 10 })
     .toBuffer();
@@ -154,7 +184,7 @@ export async function renderYearCard(page: YearPage): Promise<Buffer> {
   const line = `${site.name} · The year${page.figureScope === '' ? '' : ` ${page.figureScope}`}`;
   const layers: OverlayOptions[] = [
     {
-      input: (await pango(titled(year, 72, line, 28), textBox.width)).data,
+      input: (await pango(titled(year, 72, line, 28, 'serif'), textBox.width)).data,
       left: picture.left,
       top: picture.top,
     },
