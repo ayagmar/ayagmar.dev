@@ -62,6 +62,21 @@ test('one Escape closes search with text in the field, and focus goes back', asy
   await expect(button).toBeFocused();
 });
 
+// Catches /about's ways to reach me falling out of the index: a recruiter searches for them.
+for (const term of ['contact', 'email', 'linkedin', 'github']) {
+  test(`"${term}" finds /about`, async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    await page.keyboard.press('Control+k');
+    const dialog = page.getByRole('dialog', { name: 'Search' });
+    await dialog.getByLabel('Search the site').fill(term);
+    await expect(dialog.getByRole('link', { name: 'About', exact: true })).toHaveAttribute(
+      'href',
+      '/about'
+    );
+  });
+}
+
 // Catches the 404 naming a Search that does nothing.
 test('the 404 opens search from its sentence', async ({ page }) => {
   await page.goto('/no-such-page');

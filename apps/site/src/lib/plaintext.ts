@@ -1,7 +1,13 @@
 import type { ProjectEvent, ProjectSlug } from '@min7/contracts';
 import { isoDate } from '@min7/contracts/rabat';
 import type { About } from '../data/about.ts';
-import { aboutLinks, certificationExpiry, formatMonth, monthSpan } from '../data/about.ts';
+import {
+  aboutLinks,
+  certificationExpiry,
+  contactLine,
+  formatMonth,
+  monthSpan,
+} from '../data/about.ts';
 import { describeEvent, projectFacts } from '../data/format.ts';
 import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
@@ -268,6 +274,9 @@ export function renderAboutText(about: About, today: Date): string {
   return [
     `${identity.name} | ${site.name}`,
     about.summary,
+    contactLine(identity)
+      .map((part) => (typeof part === 'string' ? part : part.label))
+      .join(''),
     about.nameNote,
     textRule,
     'Experience',

@@ -119,10 +119,9 @@ test('the footer, /about and index.txt link /now; the sitemap lists it', async (
     'href',
     '/now'
   );
-  await expect(page.getByRole('link', { name: 'hello@ayagmar.dev' })).toHaveAttribute(
-    'href',
-    'mailto:hello@ayagmar.dev'
-  );
+  await expect(
+    page.getByRole('region', { name: 'Elsewhere' }).getByRole('link', { name: 'hello@ayagmar.dev' })
+  ).toHaveAttribute('href', 'mailto:hello@ayagmar.dev');
   expect(await (await request.get('/index.txt')).text()).toContain('https://ayagmar.dev/now');
   expect(await (await request.get('/sitemap-0.xml')).text()).toContain(
     '<loc>https://ayagmar.dev/now</loc>'

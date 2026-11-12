@@ -1957,6 +1957,12 @@ main:has(.toc) .reader ~ .project-card {
   line-height: 1.45;
 }
 
+/* /about: how to reach me, under the summary so a phone reader need not scroll to "Elsewhere". */
+.about-contact {
+  max-width: 52ch;
+  margin-top: 0.75rem;
+}
+
 /* /about: the note on the name, an aside under the summary behind a thin rule. */
 .lede-aside {
   max-width: 52ch;

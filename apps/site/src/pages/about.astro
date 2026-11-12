@@ -1,7 +1,13 @@
 ---
 import { Image } from 'astro:assets';
 import { getEntry } from 'astro:content';
-import { aboutLinks, certificationExpiry, formatMonth, monthSpan as span } from '../data/about.ts';
+import {
+  aboutLinks,
+  certificationExpiry,
+  contactLine,
+  formatMonth,
+  monthSpan as span,
+} from '../data/about.ts';
 import Base from '../layouts/Base.astro';
 import { imageFor } from '../lib/content-images.ts';
 import { person, profilePage, website } from '../lib/structured-data.ts';
@@ -24,6 +30,11 @@ const built = new Date();
     <header class="panel m-tea t-about">
       <h1>{identity.name}</h1>
       <p class="lede">{about.summary}</p>
+      <p class="about-contact">
+        {contactLine(identity).map((part) =>
+          typeof part === 'string' ? part : <a href={part.href}>{part.label}</a>
+        )}
+      </p>
       <p class="lede-aside">{about.nameNote}</p>
     </header>
 
@@ -130,7 +141,7 @@ const built = new Date();
         <p>{about.stack.join(', ')}</p>
       </section>
 
-      <section aria-labelledby="elsewhere" data-pagefind-ignore>
+      <section aria-labelledby="elsewhere">
         <h2 id="elsewhere">Elsewhere</h2>
         <ul class="inline-list">
           {links.map((link) => (
