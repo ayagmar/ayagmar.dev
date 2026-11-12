@@ -46,7 +46,25 @@ export interface Budgets {
     assert: Record<'mobile' | 'desktop', Record<string, number>>;
     /** Per profile, a head value fails when it is over base × ratio and over base + delta. */
     regression: Record<'mobile' | 'desktop', Record<string, { ratio: number; delta: number }>>;
+    /** Regressions the owner meant to make, each passed for a while (ADR 0017). */
+    accepted: AcceptedChange[];
   };
+}
+
+/**
+ * An intended LCP regression on one page and profile. It passes while the base reads within the
+ * profile's regression delta of `base` and head, measured again, at or under `ceiling` ms; once
+ * the base has caught up, the job says to remove it.
+ */
+export interface AcceptedChange {
+  page: string;
+  profile: 'mobile' | 'desktop';
+  metric: 'lcp';
+  base: number;
+  ceiling: number;
+  reason: string;
+  /** The ADR that explains the change, as its four digits. */
+  adr: string;
 }
 
 export const budgets = JSON.parse(

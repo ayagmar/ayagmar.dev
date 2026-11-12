@@ -1,6 +1,7 @@
 /* The late-night room (ADR 0026), quiet around it: the room and a post's dots are the pictures,
-   with certification badges and plugin thumbnails (ADR 0048); the rest is type, hairline rules
-   and one accent, the lamp. One token layer for day and night, mobile first.
+   with certification badges, plugin thumbnails (ADR 0048) and project screenshots (ADR 0049); the
+   rest is type, hairline rules and one accent, the lamp. One token layer for day and night, mobile
+   first.
    Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
    It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
 
@@ -1277,7 +1278,9 @@ main:has(.toc) .reader ~ .project-card {
 
 /* A faint edge in the text colour, so an image holds its shape on either ground. */
 .prose img,
-.plugin-thumb {
+img.plugin-thumb,
+.plugin-thumb img,
+.project-shot img {
   outline: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
   outline-offset: -1px;
 }
@@ -1834,9 +1837,15 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .plugin-thumb {
+  display: block;
   order: -1;
   width: 10rem;
   margin-bottom: 0.6rem;
+  border-radius: var(--radius);
+}
+
+.plugin-thumb img {
+  display: block;
   border-radius: var(--radius);
 }
 
@@ -1866,6 +1875,50 @@ main:has(.toc) .reader ~ .project-card {
 .project-summary {
   color: var(--fg-2);
   font-size: 1.0625rem;
+}
+
+/* A project's screenshot belongs to its header: close under the lede, the usual gap below. */
+.project > header:has(+ .project-shot) {
+  margin-bottom: 1.5rem;
+}
+
+.project-shot {
+  margin: 0;
+}
+
+.project-shot-link {
+  display: block;
+  width: fit-content;
+  border-radius: var(--radius);
+}
+
+.project-shot img {
+  display: block;
+  border-radius: var(--radius);
+}
+
+/* A day and a night screenshot of the same view: one shown per theme, as the room does it
+   (room.css), from CSS alone so a page without scripts shows exactly one. */
+.project-shot-link.day {
+  display: none;
+}
+
+:root[data-theme="day"] .project-shot-link.day {
+  display: block;
+}
+
+:root[data-theme="day"] .project-shot-link.night {
+  display: none;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="night"]) .project-shot-link.day {
+    display: block;
+  }
+
+  :root:not([data-theme="night"]) .project-shot-link.night {
+    display: none;
+  }
 }
 
 /* Label above value on phones, side by side from 30rem. */
@@ -2346,6 +2399,107 @@ dialog li p {
 
 :root[data-theme-switch] .keys-open {
   display: inline-block;
+}
+
+/* The image viewer (ADR 0049): the whole window on the page's ground, the image as large as fits
+   and never past its own pixels (src/scripts/image-viewer.ts). */
+dialog.viewer {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0.75rem var(--gutter);
+  background: var(--ground);
+  box-shadow: none;
+}
+
+dialog.viewer[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+dialog.viewer::backdrop {
+  background: transparent;
+}
+
+/* The page under the open viewer stays where it was. */
+:root:has(dialog.viewer[open]) {
+  overflow: hidden;
+}
+
+.viewer-top,
+.viewer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.viewer-top {
+  justify-content: space-between;
+}
+
+.viewer-bottom {
+  justify-content: center;
+}
+
+.viewer-count {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.viewer-figure {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  min-height: 0;
+  margin: 0;
+}
+
+.viewer-stage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.viewer-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius);
+  outline: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  outline-offset: -1px;
+}
+
+.viewer figcaption {
+  max-width: 60ch;
+  margin-inline: auto;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.viewer button[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.viewer[open] {
+    animation: viewer-in 160ms ease-out;
+  }
+}
+
+@keyframes viewer-in {
+  from {
+    opacity: 0;
+  }
 }
 
 dialog mark {

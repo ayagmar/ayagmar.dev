@@ -1,6 +1,6 @@
 # 0048. Images for content entries: certification badges and plugin thumbnails
 
-Status: accepted, 2026-11-12. Amends ADR 0037 (the room and a post's dots are no longer the only pictures), ADR 0047 (the plugins now have thumbnails) and ADR 0022 (the badges are not under the repository's licences).
+Status: accepted, 2026-11-12. Amends ADR 0037 (the room and a post's dots are no longer the only pictures), ADR 0047 (the plugins now have thumbnails) and ADR 0022 (the badges are not under the repository's licences). Extended 2026-11-12 by ADR 0049: project screenshots are a third folder with the same schema, drawn at the column's width and loaded eagerly as the page's largest paint. Amended 2026-11-12 by ADR 0049: a plugin's thumbnail is a link that opens its screenshot.png in the image viewer.
 
 ## Context
 

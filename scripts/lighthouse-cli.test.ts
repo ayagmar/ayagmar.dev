@@ -11,11 +11,13 @@ import assert from 'node:assert/strict';
 import { execFile, spawnSync } from 'node:child_process';
 import {
   chmodSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { createServer } from 'node:http';
@@ -123,11 +125,11 @@ const site = (name: string, files: Record<string, string>, bin = false) => {
     chmodSync(join(dir, name, 'node_modules/.bin', binary), 0o755);
   }
 };
-const run = (...extra: string[]) =>
+const runScript = (path: string, ...extra: string[]) =>
   spawnSync(
     process.execPath,
     [
-      script,
+      path,
       '--base',
       'base',
       '--head',
@@ -144,6 +146,8 @@ const run = (...extra: string[]) =>
       env: { PATH: process.env.PATH, HOME: dir, CHROME_PATH: '/nonexistent' },
     }
   );
+
+const run = (...extra: string[]) => runScript(script, ...extra);
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'min7-lighthouse-cli-'));
@@ -390,4 +394,64 @@ it('serves on free ports, so ports another run or a leftover server holds do not
   } finally {
     for (const server of held) server.close();
   }
+});
+
+/**
+ * The script copied beside a budgets.json whose accepted changes are `accepted`, so these tests
+ * do not depend on the entries the real file holds today.
+ */
+const withAccepted = (accepted: object[]) => {
+  mkdirSync(join(dir, 'scripts'));
+  for (const file of ['lighthouse.ts', 'budgets.ts', 'free-port.ts', 'lighthouse-report.js']) {
+    copyFileSync(join(import.meta.dirname, file), join(dir, 'scripts', file));
+  }
+  const config = JSON.parse(readFileSync(join(import.meta.dirname, 'budgets.json'), 'utf8'));
+  config.lighthouse.accepted = accepted;
+  writeFileSync(join(dir, 'scripts/budgets.json'), JSON.stringify(config));
+  symlinkSync(join(import.meta.dirname, '../node_modules'), join(dir, 'node_modules'));
+  return join(dir, 'scripts/lighthouse.ts');
+};
+const screenshot = {
+  page: 'project',
+  profile: 'desktop',
+  metric: 'lcp',
+  base: 278,
+  ceiling: 550,
+  reason: 'the screenshot',
+  adr: '0049',
+};
+
+// Catches an intended change that still fails the job (the merge blocked with no way through),
+// one that passes without saying so in the log, and a ceiling that does not hold.
+it('passes an LCP regression budgets.json accepts, saying so, and fails one past its ceiling', () => {
+  const accepting = withAccepted([screenshot]);
+  site('base', { ...pages, 'projects/a.html': 'lcp:278' });
+  site('head', { ...pages, 'projects/a.html': 'lcp:453' }, true);
+  cache({ '/projects/a': 278 });
+  const result = runScript(accepting, '--base-cache', 'base.json');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /lighthouse: project \(desktop\) lcp: accepted a regression from 278 to 453 ms \(re-measured, ceiling 550 ms\): the screenshot \(ADR 0049\)/
+  );
+  assert.deepEqual(row('project')?.regressed, []);
+  assert.equal(row('project')?.remeasured?.base?.lcp, 278);
+
+  site('head', { 'projects/a.html': 'lcp:600' });
+  const over = runScript(accepting, '--base-cache', 'base.json');
+  assert.equal(over.status, 1);
+  assert.match(over.stderr, /project \(desktop\): lcp regressed from 278 to 600, re-measured/);
+});
+
+// Catches an accepted change that passes the whole page, hiding a budget it also misses.
+it('still fails an absolute budget on a page whose LCP regression is accepted', () => {
+  const accepting = withAccepted([screenshot]);
+  site('base', { ...pages, 'projects/a.html': 'lcp:278' });
+  site('head', { ...pages, 'projects/a.html': 'lcp:453 cls:0.05' }, true);
+  cache({ '/projects/a': 278 });
+  const result = runScript(accepting, '--base-cache', 'base.json');
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /project \(desktop\) lcp: accepted a regression from 278 to 453 ms/);
+  assert.match(result.stderr, /project \(desktop\): cls 0\.05 over budget, re-measured/);
+  assert.doesNotMatch(result.stderr, /lcp regressed/);
 });

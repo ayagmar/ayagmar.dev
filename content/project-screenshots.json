@@ -1,0 +1,89 @@
+[
+  {
+    "slug": "llm-usage-metrics",
+    "alt": "The daily usage page it writes: tokens, cost and active time for three months, over a bar chart of cost per day by source.",
+    "day": {
+      "file": "llm-usage-metrics-day.webp",
+      "source": "https://raw.githubusercontent.com/ayagmar/llm-usage-metrics/76e8c6c1f62853b47f9933501248dafaa8805a49/site/src/assets/screenshots/share-daily-light.webp",
+      "fetched": "2026-11-12"
+    },
+    "night": {
+      "file": "llm-usage-metrics-night.webp",
+      "source": "https://raw.githubusercontent.com/ayagmar/llm-usage-metrics/76e8c6c1f62853b47f9933501248dafaa8805a49/site/src/assets/screenshots/share-daily-dark.webp",
+      "fetched": "2026-11-12"
+    }
+  },
+  {
+    "slug": "pi-extmgr",
+    "alt": "The Installed screen in Pi: local extensions and npm and git packages on the left, the selected package on the right.",
+    "image": {
+      "file": "pi-extmgr.png",
+      "source": "https://raw.githubusercontent.com/ayagmar/pi-extmgr/899dfbddb0110a421f00d4437443ae117595a332/docs/assets/installed-workspace.png",
+      "fetched": "2026-11-12"
+    }
+  },
+  {
+    "slug": "ccdesk",
+    "alt": "What Claude sees for one directory: every file Claude Code loads when a session starts, with its lines and estimated tokens.",
+    "day": {
+      "file": "ccdesk-day.webp",
+      "source": "https://raw.githubusercontent.com/ayagmar/ccdesk/2b33b7093ef57bbf1ddc12d372a09ee48d7556c9/site/src/assets/screenshots/context-light.webp",
+      "fetched": "2026-11-12"
+    },
+    "night": {
+      "file": "ccdesk-night.webp",
+      "source": "https://raw.githubusercontent.com/ayagmar/ccdesk/2b33b7093ef57bbf1ddc12d372a09ee48d7556c9/site/src/assets/screenshots/context-dark.webp",
+      "fetched": "2026-11-12"
+    }
+  },
+  {
+    "slug": "niri-computer-use",
+    "alt": "Claude Code on a niri desktop moving two screenshots into a new folder in Files, with its last call to the tool below.",
+    "image": {
+      "file": "niri-computer-use.png",
+      "source": "https://raw.githubusercontent.com/ayagmar/niri-computer-use/c224322cc7e780580ba006b6a8e900f890cb294a/site/public/demo/errand.png",
+      "fetched": "2026-11-12"
+    }
+  },
+  {
+    "slug": "runnerd",
+    "alt": "The dashboard's history of the last 30 days: 861 jobs, with charts of jobs per day, run time and wait, and memory peak.",
+    "day": {
+      "file": "runnerd-day.webp",
+      "source": "https://raw.githubusercontent.com/ayagmar/runnerd/212366082e997931ec3d1668808081c18653d228/site/src/assets/dashboard/history-light.webp",
+      "fetched": "2026-11-12"
+    },
+    "night": {
+      "file": "runnerd-night.webp",
+      "source": "https://raw.githubusercontent.com/ayagmar/runnerd/212366082e997931ec3d1668808081c18653d228/site/src/assets/dashboard/history-dark.webp",
+      "fetched": "2026-11-12"
+    }
+  },
+  {
+    "slug": "pi-codex-web-search",
+    "alt": "A Pi session where web_search runs four searches for a match result and answers with three sources.",
+    "image": {
+      "file": "pi-codex-web-search.png",
+      "source": "https://raw.githubusercontent.com/ayagmar/pi-codex-web-search/d35aae6a0784e275592781cd70a0491ad80277d2/docs/images/web-search-demo.png",
+      "fetched": "2026-11-12"
+    }
+  },
+  {
+    "slug": "pi-promptsmith",
+    "alt": "Pi after Promptsmith rewrote a short question into a fuller prompt, with the /promptsmith commands open below.",
+    "image": {
+      "file": "pi-promptsmith.png",
+      "source": "https://raw.githubusercontent.com/ayagmar/pi-promptsmith/082878a0a8db989c2d4736edbf9a6804292c41eb/promptsmith.gif",
+      "fetched": "2026-11-12"
+    }
+  },
+  {
+    "slug": "claude-modmgr",
+    "alt": "The Discover tab: Claude Code mods from GitHub by stars, and the selected one with its description and what it can do.",
+    "image": {
+      "file": "claude-modmgr.png",
+      "source": "https://raw.githubusercontent.com/ayagmar/claude-modmgr/01470121e06b3c0cfa329c62902bd571bcfb3a94/docs/images/discover.png",
+      "fetched": "2026-11-12"
+    }
+  }
+]
