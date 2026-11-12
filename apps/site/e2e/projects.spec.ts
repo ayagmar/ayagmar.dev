@@ -191,19 +191,19 @@ test("a project's screenshot is sized, described and links to the full image", a
   page,
   request,
 }) => {
-  await page.goto('/projects/repo-pulse');
+  await page.goto('/projects/pi-extmgr');
   const image = page.locator('.project-shot img');
-  await expect(image).toHaveAttribute('width', '652');
-  await expect(image).toHaveAttribute('height', '394');
+  await expect(image).toHaveAttribute('width', '672');
+  await expect(image).toHaveAttribute('height', '211');
   await expect(image).toHaveAttribute('loading', 'eager');
   await expect(image).toHaveAttribute(
     'alt',
-    'Two Repo Pulse messages in Discord: a new star on llm-usage-metrics, then the same star taken back.'
+    'The Installed screen in Pi: local extensions and npm and git packages on the left, the selected package on the right.'
   );
   const full = await page.locator('.project-shot a').getAttribute('href');
-  expect(full).toMatch(/^\/_astro\/repo-pulse\.[\w-]+\.png$/);
+  expect(full).toMatch(/^\/_astro\/pi-extmgr\.[\w-]+\.png$/);
   expect((await request.get(full ?? '')).headers()['content-type']).toBe('image/png');
-  await page.goto('/projects/pi-mobile');
+  await page.goto('/projects/repo-pulse');
   await expect(page.locator('.project-shot')).toHaveCount(0);
 });
 

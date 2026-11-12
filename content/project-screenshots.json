@@ -85,14 +85,5 @@
       "source": "https://raw.githubusercontent.com/ayagmar/claude-modmgr/01470121e06b3c0cfa329c62902bd571bcfb3a94/docs/images/discover.png",
       "fetched": "2026-11-12"
     }
-  },
-  {
-    "slug": "repo-pulse",
-    "alt": "Two Repo Pulse messages in Discord: a new star on llm-usage-metrics, then the same star taken back.",
-    "image": {
-      "file": "repo-pulse.png",
-      "source": "https://raw.githubusercontent.com/ayagmar/repo-pulse/bc2c719cd3f337e1eca0fb1838c1875f2dfc8d81/docs/images/stars.png",
-      "fetched": "2026-11-12"
-    }
   }
 ]

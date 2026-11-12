@@ -99,15 +99,15 @@ order: 1 # optional: overrides the contracts order, lower first
 The long description, in Markdown.
 ```
 
-A project page can show a screenshot under its header ([ADR 0049](docs/adr/0049-project-screenshots.md)). Take it from the project's own repository, never from a capture of your machine: download the file at a commit into `apps/site/src/assets/projects/` and add an entry to `content/project-screenshots.json`:
+A project page can show a screenshot under its header ([ADR 0049](docs/adr/0049-project-screenshots.md)). Take it from the project's own repository, never from a capture of your machine, and leave out any that shows another person's name or picture: download the file at a commit into `apps/site/src/assets/projects/` and add an entry to `content/project-screenshots.json`:
 
 ```json
 {
-  "slug": "repo-pulse",
+  "slug": "pi-extmgr",
   "alt": "One sentence on what is on screen.",
   "image": {
-    "file": "repo-pulse.png",
-    "source": "https://raw.githubusercontent.com/ayagmar/repo-pulse/<commit>/docs/images/stars.png",
+    "file": "pi-extmgr.png",
+    "source": "https://raw.githubusercontent.com/ayagmar/pi-extmgr/<commit>/docs/assets/installed-workspace.png",
     "fetched": "2026-11-12"
   }
 }
