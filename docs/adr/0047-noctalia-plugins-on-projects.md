@@ -1,6 +1,6 @@
 # 0047. Noctalia plugins on /projects
 
-Status: accepted, 2026-11-12. Amends ADR 0025 (a section after the groups that is not a featured project) and ADR 0046 (13 featured projects; headroom is gone).
+Status: accepted, 2026-11-12. Amended 2026-11-12: each plugin shows its `thumbnail.webp`, copied into the site (ADR 0048). Amends ADR 0025 (a section after the groups that is not a featured project) and ADR 0046 (13 featured projects; headroom is gone).
 
 ## Context
 

@@ -14,7 +14,7 @@ Weather data is neither. It comes from Open-Meteo under CC BY 4.0 (ADR 0029): wh
 
 Skills metadata is neither: `content/skills.json` copies names, versions, one-line descriptions and credit lines from the public skills repo (MIT, with two Apache-2.0 skills), and each skill's licence and credit are shown beside it (ADR 0031).
 
-Certification badges are neither. The five images in `apps/site/src/assets/badges/` are Oracle's, Anthropic's and Scrum.org's, shown on /about to identify certifications the owner holds; the MIT licence does not cover them.
+Certification badges are neither. The five images in `apps/site/src/assets/badges/` are Oracle's, Anthropic's and Scrum.org's, shown on /about to identify certifications the owner holds; the MIT licence does not cover them. The plugin thumbnails in `apps/site/src/assets/plugins/` are the owner's, MIT in their own repository (ADR 0048).
 
 ## Consequences
 

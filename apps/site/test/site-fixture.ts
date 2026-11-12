@@ -1,6 +1,6 @@
 // A throwaway copy of the site's content setup for tests that run a real `astro build`: the
 // content config with the schema modules it imports (src/lib, src/data/{about,uses}.ts), the
-// images content/ names (src/assets/badges), content/{about,uses,skills}.json, the
+// images content/ names (src/assets/{badges,plugins}), content/{about,uses,skills}.json, the
 // repo's layout (so ../../content resolves), the site's node_modules, and a temporary HOME. Nothing is written outside the temporary directory.
 import { type SpawnSyncReturns, spawnSync } from 'node:child_process';
 import {
@@ -32,7 +32,7 @@ export function siteFixture(prefix: string): SiteFixture {
   mkdirSync(join(app, 'src'), { recursive: true });
   copyFileSync(join(site, 'src/content.config.ts'), join(app, 'src/content.config.ts'));
   cpSync(join(site, 'src/lib'), join(app, 'src/lib'), { recursive: true });
-  for (const folder of ['badges']) {
+  for (const folder of ['badges', 'plugins']) {
     cpSync(join(site, 'src/assets', folder), join(app, 'src/assets', folder), { recursive: true });
   }
   mkdirSync(join(app, 'src/data'));
