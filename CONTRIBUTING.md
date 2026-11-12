@@ -101,7 +101,9 @@ The long description, in Markdown.
 
 The build fails when `slug` is not a featured project or differs from the file name, and warns about featured projects that have no file.
 
-The Noctalia plugins are not featured projects: they are directories in [noctalia-dev/community-plugins](https://github.com/noctalia-dev/community-plugins), listed after the groups on /projects ([ADR 0047](docs/adr/0047-noctalia-plugins-on-projects.md)). To add one, append it to `content/noctalia-plugins.json` with its directory, the `name` from its `plugin.toml` and one line on what it does.
+The Noctalia plugins are not featured projects: they are directories in [noctalia-dev/community-plugins](https://github.com/noctalia-dev/community-plugins), listed after the groups on /projects ([ADR 0047](docs/adr/0047-noctalia-plugins-on-projects.md)). To add one, append it to `content/noctalia-plugins.json` with its directory, the `name` from its `plugin.toml` and one line on what it does. To show its thumbnail, copy its `thumbnail.webp` into `apps/site/src/assets/plugins/<directory>.webp` and add `thumbnail` with the file, the raw URL at a commit and the day you fetched it ([ADR 0048](docs/adr/0048-content-images.md)).
+
+A certification on /about can show its badge: save the issuer's badge image from its verify page (the Credly badge image, or Oracle's from its certview share page) in `apps/site/src/assets/badges/` and add `badge` with the file, the image's URL and the day you fetched it ([ADR 0048](docs/adr/0048-content-images.md)). Without one it shows the issuer's initial.
 
 ## Styling
 

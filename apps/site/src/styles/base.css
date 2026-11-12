@@ -1,6 +1,6 @@
-/* The late-night room (ADR 0026), quiet around it: the room and a post's dots are the pictures;
-   the rest is type, hairline rules and one accent, the lamp. One token layer for day and night,
-   mobile first.
+/* The late-night room (ADR 0026), quiet around it: the room and a post's dots are the pictures,
+   with certification badges and plugin thumbnails (ADR 0048); the rest is type, hairline rules
+   and one accent, the lamp. One token layer for day and night, mobile first.
    Every color is a light-dark() pair, so the theme is one switch: color-scheme on <html>.
    It follows the system unless src/scripts/theme.js set data-theme="day" or "night". */
 
@@ -1276,7 +1276,8 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 /* A faint edge in the text colour, so an image holds its shape on either ground. */
-.prose img {
+.prose img,
+.plugin-thumb {
   outline: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
   outline-offset: -1px;
 }
@@ -1826,6 +1827,37 @@ main:has(.toc) .reader ~ .project-card {
   margin: 0;
 }
 
+/* A Noctalia plugin's thumbnail: above its name on a phone, so the summary keeps the full
+   measure, and left of the name and summary where there is room. */
+.projects li.has-thumb {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.plugin-thumb {
+  order: -1;
+  width: 10rem;
+  margin-bottom: 0.6rem;
+  border-radius: var(--radius);
+}
+
+@media (min-width: 36rem) {
+  .projects li.has-thumb {
+    grid-template-columns: 10rem minmax(0, 1fr);
+    column-gap: 1.25rem;
+    align-items: start;
+  }
+
+  .projects li.has-thumb > :not(.plugin-thumb) {
+    grid-column: 2;
+  }
+
+  .plugin-thumb {
+    grid-row: 1 / span 2;
+    grid-column: 1;
+    margin-bottom: 0;
+  }
+}
+
 .project h1 {
   margin-bottom: 0.5rem;
   font-size: clamp(1.75rem, 1.3rem + 2vw, 2.25rem);
@@ -1942,9 +1974,9 @@ main:has(.toc) .reader ~ .project-card {
   margin-bottom: 0;
 }
 
-/* Certifications: small cards on hairlines, two across where they fit. Each has a drawn initial
-   in place of the issuer's logo, which is theirs and an image from another origin. One in its
-   last three months or expired has its end in the text colour, like /now's out-of-date line. */
+/* Certifications: small cards on hairlines, two across where they fit. Each has its badge, or a
+   drawn initial when it has none (ADR 0048). One in its last three months or expired has its end
+   in the text colour, like /now's out-of-date line. */
 .certs {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -1962,7 +1994,7 @@ main:has(.toc) .reader ~ .project-card {
 
 .cert {
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 0.875rem;
   padding: 1rem;
   border: 1px solid var(--rule);
@@ -1984,6 +2016,13 @@ main:has(.toc) .reader ~ .project-card {
   border-radius: 50%;
   color: var(--fg-2);
   font: 600 0.9375rem / 1 var(--serif);
+}
+
+/* Badges come square or a little tall; each fits the same box, so the names line up. */
+.cert-badge {
+  width: 3.5rem;
+  height: 3.5rem;
+  object-fit: contain;
 }
 
 .cert h3 {

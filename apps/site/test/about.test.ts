@@ -56,6 +56,17 @@ describe('content/about.json', () => {
     ).toThrow(/must not be before issued\n {2}→ at certifications\[1\]\.expires$/);
   });
 
+  // Catches a badge named in the JSON but never committed, which would build a broken image.
+  it('rejects a badge whose file is not in src/assets/badges', () => {
+    expect(
+      edit((data) => {
+        data.certifications[0].badge.file = 'oracle-java-se-99.png';
+      })
+    ).toThrow(
+      /src\/assets\/badges\/oracle-java-se-99\.png does not exist; add the file or drop the field\n {2}→ at certifications\[0\]\.badge\.file$/
+    );
+  });
+
   it('keeps the resume order newest first', () => {
     expect(
       edit((data) => {

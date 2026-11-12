@@ -137,6 +137,20 @@ test('/projects ends with the Noctalia plugins, which have no pages of their own
   for (const url of urls) expect(text).toContain(`  ${url}\n`);
 });
 
+// Catches a plugin's thumbnail missing from its row or served broken.
+test('each Noctalia plugin shows its thumbnail from the site', async ({ page, request }) => {
+  await page.goto('/projects');
+  const rows = page.locator('#noctalia-plugins li');
+  const sources = await rows.evaluateAll((items) =>
+    items.map((item) => item.querySelector('img.plugin-thumb')?.getAttribute('src') ?? '')
+  );
+  expect(sources).toHaveLength(3);
+  for (const src of sources) {
+    expect(src).toMatch(/^\/_astro\/[\w.-]+\.webp$/);
+    expect((await request.get(src)).headers()['content-type'], src).toBe('image/webp');
+  }
+});
+
 // Catches the redirects from headroom's old page and copy being dropped (the Worker and
 // _redirects, ADR 0047), or the section they point at losing its id.
 test("headroom's old page and copy move to the plugins section for good", async ({

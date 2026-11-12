@@ -2,16 +2,31 @@
   {
     "directory": "headroom",
     "name": "Headroom",
-    "summary": "How much of your Claude, Codex and Antigravity plan limits is left, when each window resets and where your current rate takes you."
+    "summary": "How much of your Claude, Codex and Antigravity plan limits is left, when each window resets and where your current rate takes you.",
+    "thumbnail": {
+      "file": "headroom.webp",
+      "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/headroom/thumbnail.webp",
+      "fetched": "2026-11-12"
+    }
   },
   {
     "directory": "binance",
     "name": "Binance",
-    "summary": "Your Binance portfolio, Binance Stocks and a watchlist with price alerts, read with a read-only key kept in your keyring."
+    "summary": "Your Binance portfolio, Binance Stocks and a watchlist with price alerts, read with a read-only key kept in your keyring.",
+    "thumbnail": {
+      "file": "binance.webp",
+      "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/binance/thumbnail.webp",
+      "fetched": "2026-11-12"
+    }
   },
   {
     "directory": "obs-control",
     "name": "OBS Control",
-    "summary": "Start and stop OBS recording, the replay buffer and streaming from the bar, a panel or a keybind."
+    "summary": "Start and stop OBS recording, the replay buffer and streaming from the bar, a panel or a keybind.",
+    "thumbnail": {
+      "file": "obs-control.webp",
+      "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/obs-control/thumbnail.webp",
+      "fetched": "2026-11-12"
+    }
   }
 ]

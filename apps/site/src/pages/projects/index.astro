@@ -1,5 +1,7 @@
 ---
+import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
+import { imageFor } from '../../lib/content-images.ts';
 import { pluginsSection, pluginUrl } from '../../lib/noctalia-plugins.ts';
 import { getNoctaliaPlugins, getPosts, getProjects } from '../../lib/posts.ts';
 import { projectPath, projectRowLabel, projectsByGroup } from '../../lib/projects.ts';
@@ -46,11 +48,21 @@ const plugins = await getNoctaliaPlugins();
         <p class="caption">{pluginsSection.intro}</p>
         <ul class="projects">
           {plugins.map((plugin) => (
-            <li>
+            <li class:list={{ 'has-thumb': plugin.thumbnail !== undefined }}>
               <h3>
                 <a href={pluginUrl(plugin)}>{plugin.name}</a>
               </h3>
               <p>{plugin.summary}</p>
+              {/* Its name and summary are the row's words; the thumbnail repeats them. */}
+              {plugin.thumbnail !== undefined && (
+                <Image
+                  class="plugin-thumb"
+                  src={imageFor('plugins', plugin.thumbnail.file)}
+                  alt=""
+                  width={160}
+                  densities={[1, 2]}
+                />
+              )}
             </li>
           ))}
         </ul>

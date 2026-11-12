@@ -1,4 +1,5 @@
 import { z } from 'astro/zod';
+import { contentImage } from './content-images.ts';
 
 /** Where Noctalia installs community plugins from; each plugin is a directory in it. */
 const communityPlugins = 'https://github.com/noctalia-dev/community-plugins';
@@ -13,6 +14,8 @@ const plugin = z.strictObject({
   /** `name` from its plugin.toml, as Noctalia lists it. */
   name: text,
   summary: text,
+  /** The plugin's thumbnail.webp from its directory, shown beside its row (ADR 0048). */
+  thumbnail: contentImage('plugins').optional(),
 });
 
 /**
