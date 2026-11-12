@@ -59,7 +59,7 @@ tool_path["gitleaks"]="gitleaks"
 # renovate: datasource=github-releases depName=google/osv-scanner
 tool_version["osv-scanner"]="2.7.1"
 tool_url["osv-scanner"]="https://github.com/google/osv-scanner/releases/download/v{v}/osv-scanner_linux_amd64"
-tool_sha256["osv-scanner"]="160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b"
+tool_sha256["osv-scanner"]="fb7dab19a8bd9bbe5c3189f09d4b7ee1820c9553a23bac202648a56efd2f6ee8"
 tool_path["osv-scanner"]="-"
 # renovate: datasource=github-releases depName=lycheeverse/lychee extractVersion=^lychee-v(?<version>.+)$
 tool_version["lychee"]="0.24.2"
