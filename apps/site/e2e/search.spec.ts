@@ -89,6 +89,26 @@ test('the 404 opens search from its sentence', async ({ page }) => {
   );
 });
 
+// Catches a click lost while the island is still loading: it hydrates when the browser is idle,
+// up to 2 s after load, and the 404's button is there from the first paint.
+test('the 404 opens search when clicked before search has loaded', async ({ page }) => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/_astro/Search.*.js', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('/no-such-page');
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  await page.locator('main').getByRole('button', { name: 'Search' }).click();
+  await expect(dialog).toBeHidden();
+  release();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Search the site')).toBeFocused();
+});
+
 // Catches the project pages falling out of the index: with no published post, search on
 // production finds little else.
 test('finds a project by its name', async ({ page }) => {

@@ -39,6 +39,10 @@ let latest = 0;
 
 onMount(() => {
   hydrated = true;
+  // The 404's "Search" asks for the dialog before this island loads or after it
+  // (src/scripts/search-open.ts).
+  addEventListener('search-open', open);
+  if (document.documentElement.hasAttribute('data-search-wanted')) open();
 });
 
 function open() {
@@ -101,18 +105,11 @@ function onFieldKeydown(event: KeyboardEvent) {
   dialog?.close();
 }
 
-// Any `[data-search-open]` on the page opens the dialog, such as the 404's "Search".
-function onClick(event: MouseEvent) {
-  if (!(event.target instanceof Element) || !event.target.closest('[data-search-open]')) return;
-  open();
-}
-
 // Pagefind indexes writing/post.html; the site serves it as /writing/post.
 const href = (url: string) => url.replace(/\.html$/, '');
 </script>
 
 <svelte:window onkeydown={onKeydown} />
-<svelte:document onclick={onClick} />
 
 {#if hydrated}
   <!-- The hint names `/`, or Ctrl K when single-key shortcuts are off (base.css). Only Ctrl K is
