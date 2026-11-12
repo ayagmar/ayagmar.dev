@@ -3,8 +3,9 @@
  * themselves are drawn at build time by src/lib/og-card.ts, through the endpoints under
  * src/pages/og/.
  */
+import { list } from './plural.ts';
 import { site, siteUrl } from './site.ts';
-import { list, type YearPage } from './years.ts';
+import type { YearPage } from './years.ts';
 
 /**
  * Where this build is served, for the absolute URLs in a link preview (`og:url`, `og:image`):

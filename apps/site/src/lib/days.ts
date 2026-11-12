@@ -13,7 +13,7 @@ import {
 import { dayMs, rabatTimeZone, utcDate } from '@min7/contracts/rabat';
 import { dayPath, longDate, shipped, shippedCount, shortDate } from './day-words.ts';
 import { hours } from './llm-usage-panel.ts';
-import { plural } from './plural.ts';
+import { list, plural } from './plural.ts';
 import { projectPath } from './projects.ts';
 import { repoName, tokens } from './words.ts';
 
@@ -157,9 +157,12 @@ export function dayPages(history: History, published: readonly Published[]): Day
 }
 
 /**
- * A project's receipt: `12 merges · 40 commits · 2 releases since 12 Oct 2026`, its repository's
- * counts over every recorded shipping day. Null without a recorded day. Agent tokens are not
- * counted per repository, so a project's receipt has none.
+ * A project's receipt: `12 merges, 40 commits and 2 releases since 12 Oct 2026, when this site
+ * started counting`, its repository's counts over every recorded shipping day. A zero count is
+ * left out: "0 commits" read as a dead project when the work went in by merge. The date is said
+ * to be the start of the record, not the project's age. Null without a recorded day, and with
+ * nothing counted, since the log beside it can still list merges the history does not name. Agent
+ * tokens are not counted per repository, so a project's receipt has none.
  */
 export function projectReceipt(history: History, repo: string): string | null {
   const days = history.shipping;
@@ -175,7 +178,14 @@ export function projectReceipt(history: History, repo: string): string | null {
     commits += entry.commits;
     releases += entry.releases;
   }
-  return `${plural(merges, 'merge', 'merges')} · ${plural(commits, 'commit', 'commits')} · ${plural(releases, 'release', 'releases')} since ${shortDate(first.date)}`;
+  const counts = [
+    merges > 0 && plural(merges, 'merge', 'merges'),
+    commits > 0 && plural(commits, 'commit', 'commits'),
+    releases > 0 && plural(releases, 'release', 'releases'),
+  ].filter((part) => part !== false);
+  return counts.length === 0
+    ? null
+    : `${list(counts)} since ${shortDate(first.date)}, when this site started counting`;
 }
 
 /** A post's `receipts` frontmatter, dates as `YYYY-MM-DD`. */
