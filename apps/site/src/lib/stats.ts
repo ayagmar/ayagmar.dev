@@ -119,14 +119,15 @@ export const statsWords = {
   top: 'Top artists',
   noTop: 'No top artists yet.',
   noShipping: 'No public activity to show yet.',
+  onlyDependencyUpdates: 'Only dependency updates lately.',
   stars: 'Stars on other repositories',
   noProjects: 'No project data yet.',
 };
 
-/** The words only the build uses, kept apart so they stay out of the browser's script. */
 /** What /stats measures, the first words of its intro on the page and in the text copy. */
 const statsIntro = 'What I listen to, ship, type and spend on coding agents, from my own tools.';
 
+/** The words only the build uses, kept apart so they stay out of the browser's script. */
 export const statsBuildWords = {
   noListening: 'No listening data yet',
   noLlmUsage: 'No data yet.',

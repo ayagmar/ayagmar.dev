@@ -20,6 +20,7 @@ import { booksMarkup, pinsMarkup, screenMarkup } from '../lib/room-markup.ts';
 import { roomState } from '../lib/room-state.ts';
 import { site } from '../lib/site.ts';
 import { moonColour } from '../lib/sky.ts';
+import { shippingLog } from '../lib/stats-panels.ts';
 import { person, website } from '../lib/structured-data.ts';
 import { notePath } from '../lib/til.ts';
 import { isoDay } from '../lib/writing.ts';
@@ -45,7 +46,7 @@ const strip = shippingStrip(
   new Date(),
   dates
 );
-const recentlyShipped = shipping.data?.events.slice(0, 4) ?? [];
+const recentlyShipped = shippingLog(shipping.data?.events ?? []).slice(0, 4);
 const seed = await roomSeed();
 // The page is the room's `built` moment: no clock, so no sky, and every object carries its date.
 const room = roomState(seededInputs(seed, true), { kind: 'built', instant: seed.builtAt });

@@ -34,6 +34,20 @@ export const shippingItem = (event: ShippingEvent) =>
     )
   );
 
+/**
+ * A merge that only updates dependencies: Renovate's titles here start with `chore(deps)`, and
+ * Dependabot's with the same prefix when it is set to Conventional Commits. /v1/shipping has no
+ * author, so signals' bot list (ADR 0046) cannot be used; the title is all there is (ADR 0052).
+ */
+const dependencyUpdate = /^chore\(deps(?:-dev)?\)!?:/i;
+
+/**
+ * The events a shipping log shows: dependency updates left out, so the log says what was built.
+ * Counts, the strip, day and year pages read the history and keep them.
+ */
+export const shippingLog = (events: readonly ShippingEvent[]) =>
+  events.filter((event) => event.type !== 'merge' || !dependencyUpdate.test(event.title));
+
 /** The shipping events as a log: all of `events`, or the first `keep` and the rest folded. */
 export const shippingList = (events: readonly ShippingEvent[], keep = events.length) =>
   capped('ul', { class: 'shipping log' }, events.map(shippingItem), keep, (rest) =>
@@ -41,16 +55,20 @@ export const shippingList = (events: readonly ShippingEvent[], keep = events.len
   );
 
 /**
- * /stats's shipping body: the 15 latest events, 5 open, then the star counts of the
- * repositories that are not `featured` (`owner/name`). The projects window counts the featured
- * ones from its own, fresher source, so a repository never shows two counts on one page.
+ * /stats's shipping body: the 15 latest events of the log (`shippingLog`), 5 open, then the star
+ * counts of the repositories that are not `featured` (`owner/name`). The projects window counts
+ * the featured ones from its own, fresher source, so a repository never shows two counts on one
+ * page.
  */
 export function shippingBody(data: ShippingSnapshot, featured: readonly string[]): Markup[] {
   const stars = starTotals(data).filter((entry) => !featured.includes(entry.repo));
+  const log = shippingLog(data.events);
   return [
     ...(data.events.length === 0
       ? [el('p', {}, words.noShipping)]
-      : shippingList(data.events.slice(0, 15), 5)),
+      : log.length === 0
+        ? [el('p', {}, words.onlyDependencyUpdates)]
+        : shippingList(log.slice(0, 15), 5)),
     ...(stars.length === 0
       ? []
       : [
