@@ -3,8 +3,9 @@
 // pages in scripts/budgets.json for each profile, takes the median of the runs, and fails when
 // a head page is over budget or regressed against the base beyond the noise allowance. A page
 // that looks regressed is measured again, base and head in turn, and the regression stands only
-// if it holds on those numbers; a page over its CLS or TBT budget is measured again on head alone. Writes
-// the metrics artifact (scripts/lighthouse-report.js has its schema) either way.
+// if it holds on those numbers, unless budgets.json accepts it; a page over its CLS or TBT budget
+// is measured again on head alone. Writes the metrics artifact (scripts/lighthouse-report.js has
+// its schema) either way.
 // Chromium comes from CHROME_PATH (`just lighthouse` sets it to Playwright's).
 // A base cache file holds the base's medians by URL path, so a base measured once (CI keys the
 // file by the base commit) is not measured again; the base is served only for pages the cache
@@ -31,7 +32,7 @@ import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { isDocument, parseAllDocuments } from 'yaml';
-import { budgets } from './budgets.ts';
+import { type AcceptedChange, budgets } from './budgets.ts';
 import { freePort } from './free-port.ts';
 import {
   pages as knownPages,
@@ -421,6 +422,101 @@ export function decide(
   };
 }
 
+const acceptedKeys = ['page', 'profile', 'metric', 'base', 'ceiling', 'reason', 'adr'];
+
+/**
+ * The accepted changes in budgets.json, checked. Throws on an entry that is malformed, so the job
+ * fails before measuring and `just check` fails through the test that reads the real file.
+ * Only LCP: it moves when the largest element changes, which is a design choice; a TBT
+ * regression is script work and is fixed, not accepted.
+ */
+export function acceptedChanges(list: unknown = budgets.lighthouse.accepted): AcceptedChange[] {
+  if (!Array.isArray(list)) throw new Error('budgets.json: lighthouse.accepted is not a list');
+  const seen = new Set<string>();
+  return list.map((entry: unknown, i) => {
+    const where = `budgets.json: lighthouse.accepted[${i}]`;
+    const e = (typeof entry === 'object' && entry !== null ? entry : {}) as Record<string, unknown>;
+    if (Object.keys(e).sort().join() !== [...acceptedKeys].sort().join()) {
+      throw new Error(`${where}: needs exactly ${acceptedKeys.join(', ')}`);
+    }
+    const { page, profile, metric, base, ceiling, reason, adr } = e;
+    if (typeof page !== 'string' || !Object.hasOwn(budgets.lighthouse.pages, page)) {
+      throw new Error(`${where}: page ${String(page)} is not in lighthouse.pages`);
+    }
+    if (!profiles.includes(profile as Profile)) {
+      throw new Error(`${where}: profile ${String(profile)}: mobile or desktop`);
+    }
+    if (metric !== 'lcp') throw new Error(`${where}: metric ${String(metric)}: only lcp`);
+    const ms = (n: unknown): n is number => Number.isInteger(n) && (n as number) > 0;
+    if (!ms(base) || !ms(ceiling)) throw new Error(`${where}: base and ceiling are whole ms`);
+    const budget = budgets.lighthouse.assert[profile as Profile].lcp ?? 0;
+    if (ceiling <= base || ceiling > budget) {
+      throw new Error(`${where}: ceiling ${ceiling} ms is not between the base and the budget`);
+    }
+    if (typeof reason !== 'string' || reason.trim() === '' || /\n/.test(reason)) {
+      throw new Error(`${where}: reason is one line of text`);
+    }
+    if (typeof adr !== 'string' || !/^\d{4}$/.test(adr)) {
+      throw new Error(`${where}: adr ${String(adr)} is not an ADR's four digits`);
+    }
+    const key = `${page} ${String(profile)} ${metric}`;
+    if (seen.has(key)) throw new Error(`${where}: ${key} is accepted twice`);
+    seen.add(key);
+    return e as unknown as AcceptedChange;
+  });
+}
+
+/**
+ * Applies the accepted changes to a page's verdict. A regression decided on re-measured numbers
+ * passes when an entry covers its page, profile and metric, the base still reads within the
+ * regression delta of the entry's base, and head is at or under the ceiling. A regression from
+ * the first numbers alone (the re-measure failed) is never excused. An entry whose base the
+ * build has moved past is reported as stale whether or not the page regressed. Returns what
+ * still regresses and a log line for each entry that applied, did not, or is stale.
+ */
+export function acknowledge(
+  row: {
+    page: string;
+    regressed: Metric[];
+    base: Values | null;
+    remeasured: { base: Values | null; head: Values } | null;
+  },
+  profile: Profile,
+  entries: AcceptedChange[] = acceptedChanges()
+): { regressed: Metric[]; notes: string[] } {
+  const again = row.remeasured;
+  const decided = again?.base ? { base: again.base, head: again.head } : null;
+  const base = decided?.base ?? row.base;
+  let regressed = row.regressed;
+  const notes: string[] = [];
+  if (!base) return { regressed, notes };
+  for (const entry of entries) {
+    if (entry.page !== row.page || entry.profile !== profile) continue;
+    const { metric, ceiling, reason, adr } = entry;
+    const what = `${row.page} (${profile}) ${metric}`;
+    const delta = budgets.lighthouse.regression[profile][metric]?.delta ?? 0;
+    if (Math.abs(base[metric] - entry.base) > delta) {
+      notes.push(
+        `${what}: the accepted change (ADR ${adr}) is stale: the base reads ${base[metric]} ms, not about ${entry.base} ms; remove it from budgets.json`
+      );
+      continue;
+    }
+    if (!decided || !regressed.includes(metric)) continue;
+    const head = decided.head[metric];
+    if (head > ceiling) {
+      notes.push(
+        `${what}: ${head} ms is over the ${ceiling} ms accepted in ADR ${adr}, so the regression stands`
+      );
+      continue;
+    }
+    regressed = regressed.filter((key) => key !== metric);
+    notes.push(
+      `${what}: accepted a regression from ${base[metric]} to ${head} ms (re-measured, ceiling ${ceiling} ms): ${reason} (ADR ${adr})`
+    );
+  }
+  return { regressed, notes };
+}
+
 /** Medians by profile and URL path, the format of the cache files. */
 export type Cache = Partial<Record<Profile, Record<string, Values>>>;
 
@@ -514,6 +610,7 @@ async function main() {
     if (!profiles.includes(p as Profile)) throw new Error(`--profile ${p}: mobile or desktop`);
   }
   if (!process.env.CHROME_PATH) throw new Error('CHROME_PATH is not set; run just lighthouse');
+  const accepted = acceptedChanges();
   const head = resolve(args.head);
   const base = args.base ? resolve(args.base) : undefined;
   const bin = (name: string) => join(head, 'node_modules/.bin', name);
@@ -662,6 +759,9 @@ async function main() {
         }
       }
       for (const row of rows) {
+        const { regressed, notes } = acknowledge(row, profile, accepted);
+        row.regressed = regressed;
+        for (const note of notes) console.log(`lighthouse: ${note}`);
         const again = row.remeasured;
         for (const key of row.over) {
           const [value, note] =

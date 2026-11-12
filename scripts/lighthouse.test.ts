@@ -1,12 +1,14 @@
 // The Lighthouse job's decisions: which head values fail their budget, which count as a
 // regression rather than noise, and how runs and pages are chosen. Lighthouse itself runs in CI.
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
 import { budgets } from './budgets.ts';
 import {
+  acceptedChanges,
+  acknowledge,
   decide,
   type Metric,
   measuringTools,
@@ -148,6 +150,109 @@ describe('measured again', () => {
     assert.deepEqual(decide(overTbt, tbtRuns([300, 310, 295]), 'mobile').over, ['tbt']);
     const first = { over: ['lcp', 'tbt'] as Metric[], regressed: [] as Metric[] };
     assert.deepEqual(decide(first, tbtRuns([80, 80, 80]), 'mobile').over, ['lcp']);
+  });
+});
+
+describe('accepted changes', () => {
+  // ADR 0049's case: desktop LCP on the project page CI measures, about 278 ms of text before
+  // and 453 ms of screenshot after, re-measured in CI at 426 to 481 ms.
+  const entry = {
+    page: 'project',
+    profile: 'desktop' as const,
+    metric: 'lcp' as const,
+    base: 278,
+    ceiling: 600,
+    reason: 'the largest paint is now the project screenshot, not text',
+    adr: '0049',
+  };
+  /** A page whose LCP regressed from `base` to `head`, decided on numbers measured again. */
+  const row = (page: string, base: number, head: number, remeasured = true) => ({
+    page,
+    regressed: ['lcp'] as Metric[],
+    base: values({ lcp: base - 20 }),
+    remeasured: remeasured ? { base: values({ lcp: base }), head: values({ lcp: head }) } : null,
+  });
+
+  // Catches an accepted change that still fails the job, or passes without saying so in the log.
+  it('passes the accepted regression on its page and profile, and says so with both numbers', () => {
+    assert.deepEqual(acknowledge(row('project', 278, 453), 'desktop', [entry]), {
+      regressed: [],
+      notes: [
+        'project (desktop) lcp: accepted a regression from 278 to 453 ms (re-measured, ceiling 600 ms): the largest paint is now the project screenshot, not text (ADR 0049)',
+      ],
+    });
+    // A base that reads a round trip off the recorded one is the same base.
+    assert.deepEqual(acknowledge(row('project', 318, 468), 'desktop', [entry]).regressed, []);
+  });
+
+  // Catches an entry that turns into a pass for any LCP on the page, or one excusing first
+  // numbers the re-measure never confirmed.
+  it('still fails the same page over the ceiling, or decided on first numbers only', () => {
+    const over = acknowledge(row('project', 278, 650), 'desktop', [entry]);
+    assert.deepEqual(over.regressed, ['lcp']);
+    assert.match(over.notes[0] ?? '', /650 ms is over the 600 ms accepted in ADR 0049/);
+    assert.deepEqual(acknowledge(row('project', 278, 453, false), 'desktop', [entry]), {
+      regressed: ['lcp'],
+      notes: [],
+    });
+  });
+
+  // Catches an entry that matches on profile or metric alone and excuses other pages.
+  it('still fails another page, or the same page on mobile, with the same numbers', () => {
+    assert.deepEqual(acknowledge(row('projects', 278, 453), 'desktop', [entry]).regressed, ['lcp']);
+    // 278 to 500 ms is past mobile's 200 ms allowance.
+    assert.deepEqual(acknowledge(row('project', 278, 500), 'mobile', [entry]), {
+      regressed: ['lcp'],
+      notes: [],
+    });
+  });
+
+  // Catches an entry left in budgets.json after main caught up excusing the next regression on
+  // the page, which should fail like any other.
+  it('excuses nothing once the base has moved off the recorded one, and asks for its removal', () => {
+    const later = acknowledge(row('project', 400, 520), 'desktop', [entry]);
+    assert.deepEqual(later.regressed, ['lcp']);
+    assert.deepEqual(later.notes, [
+      'project (desktop) lcp: the accepted change (ADR 0049) is stale: the base reads 400 ms, not about 278 ms; remove it from budgets.json',
+    ]);
+    // After the merge the base reads the screenshot too: nothing regresses, the note still shows.
+    const caughtUp = {
+      page: 'project',
+      regressed: [],
+      base: values({ lcp: 453 }),
+      remeasured: null,
+    };
+    assert.match(acknowledge(caughtUp, 'desktop', [entry]).notes[0] ?? '', /is stale/);
+  });
+
+  // Catches a typo in budgets.json that would excuse nothing (an unknown page, a misspelt field)
+  // or more than meant (a ceiling past the budget, another metric), found by `just check`
+  // rather than on the run that needs it.
+  it('refuses a malformed entry, and reads the real one with its ADR on disk', () => {
+    const { adr: _, ...noAdr } = entry;
+    for (const [bad, message] of [
+      [{ ...entry, page: 'projetc' }, /page projetc is not in lighthouse\.pages/],
+      [{ ...entry, profile: 'tablet' }, /profile tablet/],
+      [{ ...entry, metric: 'tbt' }, /metric tbt: only lcp/],
+      [{ ...entry, ceiling: 1200 }, /ceiling 1200 ms is not between the base and the budget/],
+      [{ ...entry, ceiling: 278 }, /ceiling 278 ms/],
+      [{ ...entry, base: 278.5 }, /whole ms/],
+      [{ ...entry, reason: '' }, /reason is one line/],
+      [{ ...entry, adr: '49' }, /adr 49/],
+      [noAdr, /needs exactly/],
+      [{ ...entry, until: '2026-12-01' }, /needs exactly/],
+    ] as const) {
+      assert.throws(() => acceptedChanges([bad]), message);
+    }
+    assert.throws(() => acceptedChanges([entry, entry]), /project desktop lcp is accepted twice/);
+    const adrs = readdirSync(join(import.meta.dirname, '../docs/adr'));
+    for (const { adr } of acceptedChanges()) {
+      assert.equal(
+        adrs.some((file) => file.startsWith(`${adr}-`)),
+        true,
+        `ADR ${adr} is not in docs/adr`
+      );
+    }
   });
 });
 
