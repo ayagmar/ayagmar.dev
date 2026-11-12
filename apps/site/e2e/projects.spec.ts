@@ -130,7 +130,7 @@ test('/projects ends with the Noctalia plugins, which have no pages of their own
   ]);
   expect(
     await section
-      .getByRole('link')
+      .locator('h3 a')
       .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
   ).toEqual(urls);
   const text = await (await request.get('/projects.txt')).text();
@@ -142,7 +142,9 @@ test('each Noctalia plugin shows its thumbnail from the site', async ({ page, re
   await page.goto('/projects');
   const rows = page.locator('#noctalia-plugins li');
   const sources = await rows.evaluateAll((items) =>
-    items.map((item) => item.querySelector('img.plugin-thumb')?.getAttribute('src') ?? '')
+    items.map(
+      (item) => item.querySelector('img.plugin-thumb, .plugin-thumb img')?.getAttribute('src') ?? ''
+    )
   );
   expect(sources).toHaveLength(3);
   for (const src of sources) {

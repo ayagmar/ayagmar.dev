@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import Freshness from '../../components/Freshness.astro';
+import ImageViewer from '../../components/ImageViewer.astro';
 import Markup from '../../components/Markup.astro';
 import PostList from '../../components/PostList.astro';
 import ProjectLinks from '../../components/ProjectLinks.astro';
@@ -94,6 +95,7 @@ const feeds = feedPaths({ project: project.slug });
     <ProjectLinks project={project} />
     <h2>Writing about {project.slug}</h2>
     <PostList posts={posts} empty={`Nothing written about ${project.slug} yet.`} />
+    {screenshot !== undefined && <ImageViewer />}
     <p>
       Follow writing about {project.slug}: <a href={feeds.rss}>RSS</a>,{' '}
       <a href={feeds.atom}>Atom</a>.

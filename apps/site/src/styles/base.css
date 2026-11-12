@@ -1278,7 +1278,8 @@ main:has(.toc) .reader ~ .project-card {
 
 /* A faint edge in the text colour, so an image holds its shape on either ground. */
 .prose img,
-.plugin-thumb,
+img.plugin-thumb,
+.plugin-thumb img,
 .project-shot img {
   outline: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
   outline-offset: -1px;
@@ -1836,9 +1837,15 @@ main:has(.toc) .reader ~ .project-card {
 }
 
 .plugin-thumb {
+  display: block;
   order: -1;
   width: 10rem;
   margin-bottom: 0.6rem;
+  border-radius: var(--radius);
+}
+
+.plugin-thumb img {
+  display: block;
   border-radius: var(--radius);
 }
 
@@ -2392,6 +2399,107 @@ dialog li p {
 
 :root[data-theme-switch] .keys-open {
   display: inline-block;
+}
+
+/* The image viewer (ADR 0049): the whole window on the page's ground, the image as large as fits
+   and never past its own pixels (src/scripts/image-viewer.ts). */
+dialog.viewer {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0.75rem var(--gutter);
+  background: var(--ground);
+  box-shadow: none;
+}
+
+dialog.viewer[open] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+}
+
+dialog.viewer::backdrop {
+  background: transparent;
+}
+
+/* The page under the open viewer stays where it was. */
+:root:has(dialog.viewer[open]) {
+  overflow: hidden;
+}
+
+.viewer-top,
+.viewer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.viewer-top {
+  justify-content: space-between;
+}
+
+.viewer-bottom {
+  justify-content: center;
+}
+
+.viewer-count {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.viewer-figure {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  min-height: 0;
+  margin: 0;
+}
+
+.viewer-stage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.viewer-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius);
+  outline: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  outline-offset: -1px;
+}
+
+.viewer figcaption {
+  max-width: 60ch;
+  margin-inline: auto;
+  color: var(--muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.viewer button[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  dialog.viewer[open] {
+    animation: viewer-in 160ms ease-out;
+  }
+}
+
+@keyframes viewer-in {
+  from {
+    opacity: 0;
+  }
 }
 
 dialog mark {

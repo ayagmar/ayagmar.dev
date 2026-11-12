@@ -7,6 +7,14 @@
       "file": "headroom.webp",
       "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/headroom/thumbnail.webp",
       "fetched": "2026-11-12"
+    },
+    "screenshot": {
+      "alt": "Headroom's panel with session and weekly limits for two Claude accounts, beside its bar widget showing 74% and 26% left.",
+      "image": {
+        "file": "headroom-screenshot.png",
+        "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/headroom/screenshot.png",
+        "fetched": "2026-11-12"
+      }
     }
   },
   {
@@ -17,6 +25,14 @@
       "file": "binance.webp",
       "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/binance/thumbnail.webp",
       "fetched": "2026-11-12"
+    },
+    "screenshot": {
+      "alt": "Binance's overview, holdings and watchlist tabs, and its desktop widget with the total balance and the day's top movers.",
+      "image": {
+        "file": "binance-screenshot.png",
+        "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/binance/screenshot.png",
+        "fetched": "2026-11-12"
+      }
     }
   },
   {
@@ -27,6 +43,14 @@
       "file": "obs-control.webp",
       "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/obs-control/thumbnail.webp",
       "fetched": "2026-11-12"
+    },
+    "screenshot": {
+      "alt": "The OBS Studio panel, connected to a local OBS, with buttons to record, start the replay buffer and stream.",
+      "image": {
+        "file": "obs-control-screenshot.png",
+        "source": "https://raw.githubusercontent.com/noctalia-dev/community-plugins/2f15521fef8f7b7463c38f1c7d5fe00e063aa741/obs-control/screenshot.png",
+        "fetched": "2026-11-12"
+      }
     }
   }
 ]

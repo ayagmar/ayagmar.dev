@@ -57,6 +57,11 @@
         "name": "project script",
         "file": "/_astro/ProjectStats.astro_astro_type_script_index_0_lang.*.js",
         "bytes": 930
+      },
+      {
+        "name": "image viewer",
+        "file": "/_astro/ImageViewer.astro_astro_type_script_index_0_lang.*.js",
+        "bytes": 930
       }
     ]
   },
