@@ -1,13 +1,19 @@
 ---
 import { Image } from 'astro:assets';
+import ProjectRow from '../../components/ProjectRow.astro';
+import Sample from '../../components/Sample.astro';
+import { liveAttrs } from '../../data/signals.ts';
 import Base from '../../layouts/Base.astro';
 import { imageFor } from '../../lib/content-images.ts';
 import { pluginsSection, pluginUrl } from '../../lib/noctalia-plugins.ts';
 import { getNoctaliaPlugins, getPosts, getProjects } from '../../lib/posts.ts';
-import { projectPath, projectRowLabel, projectsByGroup } from '../../lib/projects.ts';
+import { projectFact } from '../../lib/project-row.ts';
+import { projectsByGroup } from '../../lib/projects.ts';
 
 const posts = await getPosts();
-const { projects } = await getProjects();
+const { projects, envelope } = await getProjects();
+// The fixtures' numbers are a sample (ADR 0015): said once, above the rows that show them.
+const sample = projects.some((project) => projectFact(project.live) !== '');
 const plugins = await getNoctaliaPlugins();
 ---
 
@@ -18,24 +24,19 @@ const plugins = await getNoctaliaPlugins();
   <div class="column">
     <h1>Projects</h1>
     <p class="caption">What is on the monitor: tools I build and keep running.</p>
-    {projectsByGroup(projects).map((group) => (
-      <section class="panel m-screen" aria-labelledby={`group-${group.id}`}>
-        <h2 id={`group-${group.id}`}>{group.title}</h2>
-        <ul class="projects">
-          {group.projects.map((project) => (
-            <li id={project.slug}>
-              <h3>
-                <a href={projectPath(project.slug)}>{project.slug}</a>
-              </h3>
-              {project.summary !== null && <p>{project.summary}</p>}
-              {projectRowLabel(project, posts) !== '' && (
-                <p class="project-post-count">{projectRowLabel(project, posts)}</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-    ))}
+    {sample && <Sample />}
+    <div {...liveAttrs('projects', envelope)}>
+      {projectsByGroup(projects).map((group) => (
+        <section class="panel m-screen" aria-labelledby={`group-${group.id}`}>
+          <h2 id={`group-${group.id}`}>{group.title}</h2>
+          <ul class="projects">
+            {group.projects.map((project) => (
+              <ProjectRow project={project} posts={posts} id={project.slug} />
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
     {plugins.length > 0 && (
       <section
         id={pluginsSection.id}

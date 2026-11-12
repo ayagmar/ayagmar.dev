@@ -142,11 +142,11 @@ test('the first post ends the empty state everywhere', { tag: '@drafts' }, async
   await expect(page.locator('.column .onward')).toHaveCount(0);
 
   await page.goto(notFoundPath);
-  await expect(page.locator('.column .onward a').first()).toHaveAttribute('href', '/writing');
+  await expect(page.locator('.column .onward a[href="/writing"]')).toHaveCount(1);
 
   if (notes.length === 0) {
     await page.goto('/til');
-    await expect(page.locator('.column .onward a').first()).toHaveAttribute('href', '/writing');
+    await expect(page.locator('.column .onward a[href="/writing"]')).toHaveCount(1);
   }
 });
 

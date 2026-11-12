@@ -1,5 +1,6 @@
 import { featuredProjects, type Project, type ProjectSlug } from '@min7/contracts';
 import { plural } from './plural.ts';
+import { projectFact, rowLabel } from './project-row.ts';
 import { type ProjectFrontmatter, type ProjectGroup, projectGroups } from './project-schema.ts';
 import type { Post } from './writing.ts';
 
@@ -103,11 +104,20 @@ export const morePostsAbout = <P extends Post>(
     .slice(0, limit);
 
 /** `2 posts`; nothing at all for none, so a project's row says only what it has. */
-export const postCount = (count: number) => (count === 0 ? '' : plural(count, 'post', 'posts'));
+const postCount = (count: number) => (count === 0 ? '' : plural(count, 'post', 'posts'));
 
-/** A project's row on /projects and its text copy: `2 posts, active`, or only what it has. */
+/** What a project's row says after its fact, from the build alone: `2 posts, archived`. */
+export const rowRest = <P extends Post>(project: SiteProject, posts: readonly P[]) =>
+  [
+    postCount(postsAbout(posts, project.slug).length),
+    project.status === 'archived' ? 'archived' : '',
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+/** A project's row on home, /projects and its text copy: `118 stars, 2 posts`, or only what it has. */
 export const projectRowLabel = <P extends Post>(project: SiteProject, posts: readonly P[]) =>
-  [postCount(postsAbout(posts, project.slug).length), project.status].filter(Boolean).join(', ');
+  rowLabel(projectFact(project.live), rowRest(project, posts));
 
 /**
  * Problems with the content/projects files, by file id (the file name without `.md`): a slug

@@ -5,16 +5,18 @@
 // the Listening panel's line from `/v1/listening` (ADR 0015). The corkboard, the shelf and the
 // framed screen stay as the build drew them, until a reader scrubs to a past day: the control
 // loads src/scripts/room-scrub.ts on first touch (ADR 0044), and the live answers keep arriving
-// behind it. Also the keys 1 to 7, which open the room's objects in reading order, unless the
-// list of keys has turned single-key shortcuts off. Without this script the room is the build's:
-// the static scene of the page's theme, with no moon, note, cat or weather; a browser with
-// outdated time zone rules gets the sky and the moon, but not the lamp, the note or the cat.
+// behind it. Also the keys 1 to 7, which open the rows of the list under the scene in order,
+// unless the list of keys has turned single-key shortcuts off. The hotspots are out of the Tab
+// order as built, since from 60 rem the list reaches the same pages (ADR 0051); narrower, where
+// the list is the way in, this puts them back. Without this script the room is the build's: the
+// static scene of the page's theme, with no moon, note, cat or weather; a browser with outdated
+// time zone rules gets the sky and the moon, but not the lamp, the note or the cat.
 
 import { readListening } from '../lib/listening.ts';
 import { live, poll } from '../lib/live-page.ts';
 import { renderNowPlaying } from '../lib/now-playing-page.ts';
 import { knowsRabat } from '../lib/rabat-date.ts';
-import { hotspotName, roomObjects } from '../lib/room.ts';
+import { roomObjects, sayFact } from '../lib/room.ts';
 import { changedParts, liveReading, roomClock, seededInputs } from '../lib/room-clock.ts';
 import type { RoomSeed, RoomState } from '../lib/room-state.ts';
 import { moonPath } from '../lib/sky.ts';
@@ -54,9 +56,7 @@ const draw: Record<keyof Clocked, (state: Clocked) => void> = {
   record(state) {
     if (state.record.state === 'unknown') delete scene.dataset.record;
     else scene.dataset.record = state.record.state;
-    const object = roomObjects[6];
-    const label = scene.querySelector(`[data-room="${object.id}"] span`) as HTMLElement;
-    label.textContent = hotspotName(object, state.record.words);
+    sayFact(roomObjects[6], state.record.words);
   },
 };
 
@@ -112,6 +112,16 @@ const wake = () => {
     });
 };
 for (const touch of ['focusin', 'pointerdown', 'input']) scrub?.addEventListener(touch, wake);
+
+const wide = matchMedia('(min-width: 60rem)');
+const tabStops = () => {
+  for (const spot of scene.querySelectorAll('.hotspot')) {
+    if (wide.matches) spot.setAttribute('tabindex', '-1');
+    else spot.removeAttribute('tabindex');
+  }
+};
+tabStops();
+wide.addEventListener('change', tabStops);
 
 document.addEventListener('keydown', (event) => {
   const target = event.target;

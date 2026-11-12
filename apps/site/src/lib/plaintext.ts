@@ -1,4 +1,4 @@
-import type { ProjectEvent, ProjectSlug } from '@min7/contracts';
+import type { ProjectEvent } from '@min7/contracts';
 import { isoDate } from '@min7/contracts/rabat';
 import type { About } from '../data/about.ts';
 import { aboutLinks, certificationExpiry, formatMonth, monthSpan } from '../data/about.ts';
@@ -11,8 +11,6 @@ import { type NoctaliaPlugin, pluginsSection, pluginUrl } from './noctalia-plugi
 import type { BrewingItem } from './now-schema.ts';
 import { noNumbers } from './project-panel.ts';
 import {
-  postCount,
-  postsAbout,
   projectLinks,
   projectPath,
   projectRowLabel,
@@ -94,7 +92,7 @@ export function renderPlainText(
   summary: string,
   posts: readonly Post[],
   notes: readonly Note[],
-  projects: readonly ProjectSlug[],
+  projects: readonly SiteProject[],
   origin: string
 ): string {
   const writing = posts
@@ -103,10 +101,16 @@ export function renderPlainText(
   const til = notes
     .slice(0, 5)
     .flatMap((note) => dated(note.data.date, note.data.title, notePath(note.id)));
-  const slugWidth = Math.max(0, ...projects.map((slug) => slug.length)) + 2;
-  const projectLines = projects.map(
-    (slug) =>
-      `  ${slug.padEnd(slugWidth)}${postCount(postsAbout(posts, slug).length).padEnd(10)}${siteUrl}${projectPath(slug)}`
+  // The row home shows: the name, the label beside it, and where it leads.
+  const rows = projects.map((project) => ({
+    slug: project.slug,
+    label: projectRowLabel(project, posts),
+  }));
+  const slugWidth = Math.max(0, ...rows.map(({ slug }) => slug.length)) + 2;
+  const labelWidth = Math.max(0, ...rows.map(({ label }) => label.length));
+  const projectLines = rows.map(
+    ({ slug, label }) =>
+      `  ${slug.padEnd(slugWidth)}${labelWidth === 0 ? '' : `${label.padEnd(labelWidth)}  `}${siteUrl}${projectPath(slug)}`
   );
   return [
     asciiRoom,
@@ -120,12 +124,12 @@ export function renderPlainText(
     'Projects',
     ...projectLines,
     textRule,
-    ...[...nav, nowPage].map((item) => `  ${item.label.padEnd(10)} ${siteUrl}${item.href}`),
-    `  ${'RSS'.padEnd(10)} ${siteUrl}${feedPaths().rss}`,
-    `  ${'Atom'.padEnd(10)} ${siteUrl}${feedPaths().atom}`,
-    `  ${'Email'.padEnd(10)} ${site.email}`,
-    `  ${'GitHub'.padEnd(10)} ${site.links.github}`,
-    `  ${'In colour'.padEnd(10)} curl ${curlTarget(origin)}/room`,
+    ...[...nav, nowPage].map((item) => `  ${item.label.padEnd(12)} ${siteUrl}${item.href}`),
+    `  ${'RSS'.padEnd(12)} ${siteUrl}${feedPaths().rss}`,
+    `  ${'Atom'.padEnd(12)} ${siteUrl}${feedPaths().atom}`,
+    `  ${'Email'.padEnd(12)} ${site.email}`,
+    `  ${'GitHub'.padEnd(12)} ${site.links.github}`,
+    `  ${'In colour'.padEnd(12)} curl ${curlTarget(origin)}/room`,
     '',
   ].join('\n');
 }

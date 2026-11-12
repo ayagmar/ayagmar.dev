@@ -14,7 +14,7 @@ export const GET: APIRoute = async () => {
       about.data.summary,
       await getPosts(),
       await getNotes(),
-      projects.map((project) => project.slug),
+      projects,
       buildOrigin(WORKERS_CI_BRANCH)
     )
   );

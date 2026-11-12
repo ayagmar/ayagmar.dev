@@ -1,6 +1,6 @@
 # 0044. Scrubbing the room through past days
 
-Status: accepted, 2026-11-06. Amended 2026-11-06: shipping and usage are worded `on record`, the control needs Rabat's current rules, a failed load of its code recovers, and the slider has a date anchor. Amends ADR 0043 (the `past` moment, what home's script loads), ADR 0038 (the site reads all four series), ADR 0029 (the credit's note of changes) and ADR 0017 (on-demand chunks, allowances).
+Status: accepted, 2026-11-06. Amended 2026-11-06: shipping and usage are worded `on record`, the control needs Rabat's current rules, a failed load of its code recovers, and the slider has a date anchor. Amends ADR 0043 (the `past` moment, what home's script loads), ADR 0038 (the site reads all four series), ADR 0029 (the credit's note of changes) and ADR 0017 (on-demand chunks, allowances). Amended 2026-11-12: the caption reads "Drag to see the room on past days" (ADR 0051).
 
 ## Context
 

@@ -225,24 +225,24 @@ describe('list pages', () => {
       ].join('\n')
     );
     expect(renderWritingText([], [note('n', 'Body.')])).toContain(
-      '  Until then, try:\n  TIL        https://ayagmar.dev/til\n  Projects '
+      '  About      https://ayagmar.dev/about\n  TIL        https://ayagmar.dev/til\n  Now '
     );
     const til = renderTilText([], []);
     expect(til).toContain('  RSS        https://ayagmar.dev/til/feed.xml\n');
     expect(til).not.toContain('https://ayagmar.dev/writing');
     expect(renderTilText([], [post('p')])).toContain(
-      '  Until then, try:\n  Writing    https://ayagmar.dev/writing\n  Projects '
+      '  About      https://ayagmar.dev/about\n  Writing    https://ayagmar.dev/writing\n  Now '
     );
   });
 
-  // Catches a project's row printing a zero count: on /projects and in its text copy a row says
-  // only what the project has, and picks the count up again with the first post.
-  it('leave out a post count of zero', () => {
+  // Catches a project's row printing a zero count or a status every row shares: a row says only
+  // what the project has, and keeps saying when it is archived.
+  it('say only what a project has beside its name', () => {
     const project = { ...siteProjects([], null)[0], status: 'active' } as SiteProject;
-    expect(projectRowLabel(project, [])).toBe('active');
-    expect(projectRowLabel({ ...project, status: null }, [])).toBe('');
+    expect(projectRowLabel(project, [])).toBe('');
     const about = post('p', { projects: [project.slug] });
-    expect(projectRowLabel(project, [about])).toBe('1 post, active');
+    expect(projectRowLabel(project, [about])).toBe('1 post');
+    expect(projectRowLabel({ ...project, status: 'archived' }, [about])).toBe('1 post, archived');
   });
 
   // Catches /projects.txt printing a "Noctalia plugins" heading over nothing, or a plugin's
@@ -284,7 +284,7 @@ describe('list pages', () => {
   it('open index.txt with the pitch home shows, and give the email', () => {
     const text = renderPlainText('Pitch.', [], [], [], 'https://ayagmar.dev');
     expect(text).toContain('\nmin7 | Abdeslam Yassine Agmar\nPitch.\n');
-    expect(text).toContain('\n  Email      hello@ayagmar.dev\n');
+    expect(text).toContain('\n  Email        hello@ayagmar.dev\n');
   });
 
   // Catches a Preview listing a draft as if it were published.

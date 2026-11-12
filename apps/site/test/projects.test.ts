@@ -1,6 +1,8 @@
+import type { Project } from '@min7/contracts';
 import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { noNumbers } from '../src/lib/project-panel.ts';
+import { projectFact } from '../src/lib/project-row.ts';
 import { projectSchema } from '../src/lib/project-schema.ts';
 import {
   checkProjectFiles,
@@ -140,5 +142,38 @@ describe('site projects', () => {
       'older',
     ]);
     expect(morePostsAbout(posts, 'ccdesk', 'newest').map((p) => p.id)).toEqual(['elsewhere']);
+  });
+});
+
+describe("a project row's fact", () => {
+  const live: Project = {
+    ...(snapshotFixtures.projects.ok.projects[0] as Project),
+    stars: 3,
+    npm: { package: 'pi-extmgr', monthlyDownloads: 40 },
+    latestRelease: null,
+  };
+  const release = {
+    tag: 'v0.4.0',
+    url: 'https://github.com/ayagmar/runnerd/releases/tag/v0.4.0',
+    publishedAt: '2026-10-20T10:00:00Z',
+  };
+
+  // Catches the order or a floor slipping: a handful of stars beating 2,604 downloads, or a
+  // rounding that turns 2,604 into "3k" or "2,604k".
+  it.each([
+    [{ stars: 118 }, '118 stars'],
+    [{ stars: 1240 }, '1.2k stars'],
+    [{ stars: 9, npm: { package: 'pi-extmgr', monthlyDownloads: 2604 } }, '2.6k downloads a month'],
+    [{ npm: { package: 'pi-extmgr', monthlyDownloads: 100 } }, '100 downloads a month'],
+    [{ latestRelease: release }, 'v0.4.0'],
+    [{ stars: null, npm: { package: 'pi-extmgr', monthlyDownloads: null } }, ''],
+    [{}, ''],
+  ])('says %j as %j', (change, words) => {
+    expect(projectFact({ ...live, ...change })).toBe(words);
+  });
+
+  // Catches a number made up for a project signals has no entry for.
+  it('says nothing without a snapshot entry', () => {
+    expect(projectFact(null)).toBe('');
   });
 });

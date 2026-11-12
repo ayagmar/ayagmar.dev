@@ -1,6 +1,6 @@
 # 0026. Visual design: the late-night room
 
-Status: accepted, 2026-10-26. Amended 2026-10-26: ADR 0034 changes the panels, the palette and the headings' typeface. Amended 2026-11-06: a phone crops the scene instead of scaling it.
+Status: accepted, 2026-10-26. Amended 2026-10-26: ADR 0034 changes the panels, the palette and the headings' typeface. Amended 2026-11-06: a phone crops the scene instead of scaling it. Amended 2026-11-12: the list under the scene follows the nav's order, and the hotspots keep the scene's (ADR 0051).
 
 ## Context
 

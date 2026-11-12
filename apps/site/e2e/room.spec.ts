@@ -128,7 +128,8 @@ test('the hotspots and the list reach the same pages', async ({ page, request })
     .getByRole('link')
     .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
   expect(list).toHaveLength(7);
-  expect(await roomLinks(page)).toEqual(list);
+  // The scene goes left to right, the list in the nav's order (ADR 0051).
+  expect((await roomLinks(page)).toSorted()).toEqual(list.toSorted());
 
   for (const href of new Set(list)) {
     const [path = '', id] = (href ?? '').split('#');
@@ -240,11 +241,6 @@ test('hovering or focusing an object lights its row in the list', async ({ page 
     await expect.poll(lit).toEqual([id]);
     await page.mouse.move(0, 0);
     await expect.poll(lit).toEqual([]);
-    await spot.focus();
-    await page.keyboard.press('Shift+Tab');
-    await page.keyboard.press('Tab');
-    await expect.poll(lit).toEqual([id]);
-    await spot.blur();
   }
 });
 
@@ -366,12 +362,58 @@ test('a hotspot lights by itself without :has()', async ({ page }) => {
     .not.toBe(unlit);
   await page.mouse.move(0, 0);
   await expect(label).toHaveCSS('opacity', '0');
+  // Below 60 rem, where the hotspots are in the Tab order.
+  await page.setViewportSize({ width: 800, height: 800 });
+  await expect(spot).not.toHaveAttribute('tabindex');
   await page.locator('[data-room="notebook"]').focus();
   await page.keyboard.press('Tab');
   await expect(spot).toBeFocused();
   await expect(label).toHaveCSS('opacity', '1');
   await page.locator('[data-room-list="tea"]').hover();
   await expect(page.locator('[data-room="tea"] span')).toHaveCSS('opacity', '0');
+});
+
+// Catches the keyboard reaching every home destination twice on a wide screen (ADR 0051), a
+// row that tells a screen reader less than the hotspot it replaces, and the hotspots left out of
+// the Tab order where the list is not the only way in.
+test('from 60 rem the Tab order skips the hotspots and each row says their fact', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  const tabbable = () =>
+    page
+      .locator('.hotspot')
+      .evaluateAll((spots) => spots.filter((spot) => spot.tabIndex >= 0).length);
+  expect(await tabbable()).toBe(0);
+  const list = page.getByRole('navigation', { name: 'The room as a list' });
+  await expect(list.getByRole('link', { name: /^shipping Corkboard ?: Shipped to / })).toHaveCount(
+    1
+  );
+  await expect(list.getByRole('link', { name: /^music Record player ?: \S/ })).toHaveCount(1);
+  await expect(list.getByRole('link').first()).toHaveAccessibleName('projects Monitor');
+  await page.setViewportSize({ width: 800, height: 800 });
+  await expect.poll(tabbable).toBe(7);
+});
+
+// Catches the keys and the list drifting from the nav's order, which puts the pages a first visit
+// needs first (ADR 0051).
+test('the list starts with Projects and About, and 1 opens Projects', async ({ page }) => {
+  await page.goto('/');
+  const hrefs = await page
+    .locator('[data-room-list]')
+    .evaluateAll((rows) => rows.map((row) => row.getAttribute('href')));
+  expect(hrefs).toEqual([
+    '/projects',
+    '/about',
+    '/writing',
+    '/til',
+    '/stats#shipping',
+    '/stats#llm-usage',
+    '/stats#listening',
+  ]);
+  await page.keyboard.press('1');
+  await expect(page).toHaveURL(/\/projects$/);
 });
 
 test.describe('on a phone', () => {
@@ -399,6 +441,22 @@ test.describe('on a phone', () => {
       expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
     }
     await expect(page.locator('[data-room-list]:visible')).toHaveCount(7);
+  });
+
+  // Catches a row naming an object the cropped room does not show: each says what its page
+  // holds instead (ADR 0051), Writing and TIL what they have so far.
+  test('each row says what its page holds', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('.room-holds:visible')).toHaveText([
+      'Tools I build',
+      'Work and contact',
+      'No posts yet',
+      'No notes yet',
+      'What I merged, by day',
+      'My coding-agent use',
+      "What I'm playing",
+    ]);
+    await expect(page.locator('.room-object:visible')).toHaveCount(0);
   });
 });
 
