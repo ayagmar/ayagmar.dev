@@ -22,8 +22,10 @@ const day = isoDay(updated);
   <div class="column" data-pagefind-body data-pagefind-meta={`title:${nowPage.label}`}>
     <header class="intro">
       <h1>Now</h1>
+      {/* src/scripts/now.ts adds the age against the reader's clock; the build never says it,
+          since the page is served long after it is built. */}
       <p class="caption" data-pagefind-ignore>
-        Updated <time datetime={day}>{updatedOn(updated)}</time>.
+        Updated <time datetime={day}>{updatedOn(updated)}</time><span data-age-of={day}></span>.
       </p>
       {/* Shown by src/scripts/now.ts against the reader's clock; never claims freshness itself. */}
       <p

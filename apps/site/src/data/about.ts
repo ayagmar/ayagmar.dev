@@ -126,12 +126,26 @@ export const monthSpan = (start: string, end: string | null) => ({
   end: end === null ? 'present' : formatMonth(end),
 });
 
+/** The ways to reach the owner, in the line under /about's summary and in "Elsewhere". */
+const contactLinks = (identity: About['identity']) => ({
+  email: { href: `mailto:${site.email}`, label: site.email },
+  linkedin: { href: identity.links.linkedin, label: 'LinkedIn' },
+  github: { href: identity.links.github, label: 'GitHub' },
+});
+
+/**
+ * The line under /about's summary, as text and links in order. It names "contact" and "email" in
+ * words, so Search finds /about for them (ADR 0052).
+ */
+export function contactLine(identity: About['identity']) {
+  const { email, linkedin, github } = contactLinks(identity);
+  return ['Contact me by email at ', email, ', or on ', linkedin, ' or ', github, '.'] as const;
+}
+
 /** The "Elsewhere" list on /about. */
 export const aboutLinks = (identity: About['identity']) => [
   { href: nowPage.href, label: nowPage.label },
-  { href: `mailto:${site.email}`, label: site.email },
-  { href: identity.links.linkedin, label: 'LinkedIn' },
-  { href: identity.links.github, label: 'GitHub' },
+  ...Object.values(contactLinks(identity)),
   { href: identity.links.x, label: 'X' },
   { href: identity.links.lastfm, label: 'Last.fm' },
 ];
