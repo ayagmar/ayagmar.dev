@@ -1,0 +1,42 @@
+---
+import { Image } from 'astro:assets';
+import { imageFor } from '../lib/content-images.ts';
+import type { ProjectScreenshot } from '../lib/project-screenshot.ts';
+
+interface Props {
+  screenshot: ProjectScreenshot;
+}
+
+const { screenshot } = Astro.props;
+const day = imageFor('projects', screenshot.day.file);
+const night = imageFor('projects', screenshot.night.file);
+const themed = day !== night;
+// As wide as the reading column (--column, 672 px) and at most 560 px tall, so a tall screenshot
+// is drawn narrower instead of pushing the numbers off the screen.
+const width = Math.min(672, day.width, Math.floor((560 * day.width) / day.height));
+const shots = themed
+  ? [
+      { image: day, theme: 'day' },
+      { image: night, theme: 'night' },
+    ]
+  : [{ image: day, theme: undefined }];
+---
+
+{/* A pair is swapped by CSS like the room (room.css), and lazy so that with scripts on the hidden
+    one is not fetched. One image is the page's largest paint and loads at once (ADR 0049). */}
+<figure class="project-shot">
+  {shots.map(({ image, theme }) => (
+    <a class:list={['project-shot-link', theme]} href={image.src}>
+      <Image
+        src={image}
+        alt={screenshot.alt}
+        width={width}
+        widths={[width, width * 2].filter((candidate) => candidate <= image.width)}
+        sizes={`min(${width}px, 100vw - 2rem)`}
+        loading={themed ? 'lazy' : 'eager'}
+        quality={60}
+        fetchpriority="high"
+      />
+    </a>
+  ))}
+</figure>

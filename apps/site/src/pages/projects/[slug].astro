@@ -5,12 +5,13 @@ import Freshness from '../../components/Freshness.astro';
 import Markup from '../../components/Markup.astro';
 import PostList from '../../components/PostList.astro';
 import ProjectLinks from '../../components/ProjectLinks.astro';
+import ProjectShot from '../../components/ProjectShot.astro';
 import ProjectStats from '../../components/ProjectStats.astro';
 import { liveAttrs, signals } from '../../data/signals.ts';
 import Base from '../../layouts/Base.astro';
 import { projectReceipt } from '../../lib/days.ts';
 import { feedPaths } from '../../lib/feed.ts';
-import { getDays, getPosts, getProjects } from '../../lib/posts.ts';
+import { getDays, getPosts, getProjectScreenshots, getProjects } from '../../lib/posts.ts';
 import { projectEvents, projectLog } from '../../lib/project-panel.ts';
 import { postsAbout, projectPath } from '../../lib/projects.ts';
 import { site } from '../../lib/site.ts';
@@ -21,6 +22,7 @@ export const getStaticPaths = (async () => {
   const { projects, envelope } = await getProjects();
   const { history } = await getDays();
   const logs = await signals.read('project-events');
+  const screenshots = await getProjectScreenshots();
   return projects.map((project) => ({
     params: { slug: project.slug },
     props: {
@@ -29,11 +31,12 @@ export const getStaticPaths = (async () => {
       logs,
       posts: postsAbout(posts, project.slug),
       receipt: projectReceipt(history, project.repo),
+      screenshot: screenshots.get(project.slug),
     },
   }));
 }) satisfies GetStaticPaths;
 
-const { project, envelope, logs, posts, receipt } = Astro.props;
+const { project, envelope, logs, posts, receipt, screenshot } = Astro.props;
 const log = projectLog(projectEvents(logs.data, project.slug));
 const { Content } =
   project.file === undefined ? { Content: undefined } : await render(project.file);
@@ -57,6 +60,7 @@ const feeds = feedPaths({ project: project.slug });
       {project.summary !== null && <p class="project-summary">{project.summary}</p>}
       {project.status !== null && <p class="project-status">Status: {project.status}</p>}
     </header>
+    {screenshot !== undefined && <ProjectShot screenshot={screenshot} />}
     {Content !== undefined && (
       <section
         class="paper project-description"

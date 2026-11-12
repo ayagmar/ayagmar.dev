@@ -6,6 +6,7 @@ import { postArtErrors, writingBase } from './lib/art-files.ts';
 import { noctaliaPluginsSchema } from './lib/noctalia-plugins.ts';
 import { nowSchema } from './lib/now-schema.ts';
 import { projectSchema } from './lib/project-schema.ts';
+import { projectScreenshotsSchema } from './lib/project-screenshot.ts';
 import { checkProjectFiles } from './lib/projects.ts';
 import { skillsSchema } from './lib/skills-schema.ts';
 import { tilSchema } from './lib/til-schema.ts';
@@ -64,6 +65,13 @@ export const collections = {
     schema: nowSchema(new Date()),
   }),
   projects: defineCollection({ loader: projects, schema: projectSchema }),
+  // One entry, id "screenshots": a screenshot per project that has one (ADR 0049).
+  projectScreenshots: defineCollection({
+    loader: file('../../content/project-screenshots.json', {
+      parser: (text) => ({ screenshots: { screenshots: JSON.parse(text) } }),
+    }),
+    schema: projectScreenshotsSchema,
+  }),
   // One entry, id "plugins": the whole list, in its order (the section on /projects).
   noctaliaPlugins: defineCollection({
     loader: file('../../content/noctalia-plugins.json', {

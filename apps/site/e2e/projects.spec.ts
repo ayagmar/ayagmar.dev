@@ -151,6 +151,62 @@ test('each Noctalia plugin shows its thumbnail from the site', async ({ page, re
   }
 });
 
+// Catches a day and night pair showing both screenshots or neither, without scripts or against
+// a stored choice, or the hidden one downloaded anyway. Browsers load lazy images at once when
+// scripts are off, so only pages with scripts can skip the hidden one (ADR 0049).
+for (const { scheme, stored, script, shown } of [
+  { scheme: 'light', stored: null, script: false, shown: 'day' },
+  { scheme: 'dark', stored: null, script: false, shown: 'night' },
+  { scheme: 'dark', stored: 'day', script: true, shown: 'day' },
+  { scheme: 'light', stored: 'night', script: true, shown: 'night' },
+] as const) {
+  test(`runnerd's screenshot is the ${shown} one for a ${scheme} system with ${stored ?? 'no'} choice${script ? '' : ', without scripts'}`, async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({ colorScheme: scheme, javaScriptEnabled: script });
+    if (stored !== null)
+      await context.addInitScript((theme) => localStorage.setItem('theme', theme), stored);
+    const page = await context.newPage();
+    const fetched: string[] = [];
+    page.on('requestfinished', (request) => {
+      const file = new URL(request.url()).pathname;
+      if (file.startsWith('/_astro/runnerd-')) fetched.push(file);
+    });
+    await page.goto('/projects/runnerd');
+    const visible = page.locator('.project-shot img:visible');
+    await expect(visible).toHaveCount(1);
+    await expect(visible).toHaveAttribute('src', new RegExp(`^/_astro/runnerd-${shown}\\.`));
+    await expect(visible).toHaveJSProperty('complete', true);
+    if (script) {
+      await expect.poll(() => fetched.length).toBeGreaterThan(0);
+      expect(fetched.filter((file) => !file.startsWith(`/_astro/runnerd-${shown}.`))).toEqual([]);
+    }
+    await context.close();
+  });
+}
+
+// Catches the screenshot losing its size (a layout shift), its alt text, or its link to the
+// full-size file, and a project without one drawing an empty frame.
+test("a project's screenshot is sized, described and links to the full image", async ({
+  page,
+  request,
+}) => {
+  await page.goto('/projects/repo-pulse');
+  const image = page.locator('.project-shot img');
+  await expect(image).toHaveAttribute('width', '652');
+  await expect(image).toHaveAttribute('height', '394');
+  await expect(image).toHaveAttribute('loading', 'eager');
+  await expect(image).toHaveAttribute(
+    'alt',
+    'Two Repo Pulse messages in Discord: a new star on llm-usage-metrics, then the same star taken back.'
+  );
+  const full = await page.locator('.project-shot a').getAttribute('href');
+  expect(full).toMatch(/^\/_astro\/repo-pulse\.[\w-]+\.png$/);
+  expect((await request.get(full ?? '')).headers()['content-type']).toBe('image/png');
+  await page.goto('/projects/pi-mobile');
+  await expect(page.locator('.project-shot')).toHaveCount(0);
+});
+
 // Catches the redirects from headroom's old page and copy being dropped (the Worker and
 // _redirects, ADR 0047), or the section they point at losing its id.
 test("headroom's old page and copy move to the plugins section for good", async ({

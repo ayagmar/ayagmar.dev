@@ -33,6 +33,13 @@ export async function getProjects() {
   return { projects, envelope };
 }
 
+/** The screenshots in content/project-screenshots.json, by project (ADR 0049). */
+export async function getProjectScreenshots() {
+  const entry = await getEntry('projectScreenshots', 'screenshots');
+  if (entry === undefined) throw new Error('content/project-screenshots.json is missing');
+  return new Map(entry.data.screenshots.map((screenshot) => [screenshot.slug, screenshot]));
+}
+
 /** The owner's plugins in Noctalia's community list, from content/noctalia-plugins.json. */
 export async function getNoctaliaPlugins() {
   const entry = await getEntry('noctaliaPlugins', 'plugins');

@@ -2,13 +2,18 @@ import type { ImageMetadata } from 'astro';
 import { z } from 'astro/zod';
 
 /**
- * Images that belong to an entry in content/: a certification's badge, a plugin's thumbnail. Each
- * is downloaded once and committed under src/assets/, since the CSP allows images from the site
- * alone; the build turns it into WebP at the sizes the page shows (ADR 0048).
+ * Images that belong to an entry in content/: a certification's badge, a plugin's thumbnail, a
+ * project's screenshot (ADR 0049). Each is downloaded once and committed under src/assets/, since
+ * the CSP allows images from the site alone; the build turns it into WebP at the sizes the page
+ * shows (ADR 0048).
  */
 const folders = {
   badges: import.meta.glob<ImageMetadata>('../assets/badges/*', { eager: true, import: 'default' }),
   plugins: import.meta.glob<ImageMetadata>('../assets/plugins/*', {
+    eager: true,
+    import: 'default',
+  }),
+  projects: import.meta.glob<ImageMetadata>('../assets/projects/*', {
     eager: true,
     import: 'default',
   }),
