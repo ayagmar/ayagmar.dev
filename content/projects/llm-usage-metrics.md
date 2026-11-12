@@ -3,6 +3,7 @@
 slug: llm-usage-metrics
 tagline: 'Token and cost reports for AI coding agents, read from their local session logs.'
 status: active
+install: 'npm install -g llm-usage-metrics'
 group: agents
 ---
 

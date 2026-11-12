@@ -3,6 +3,7 @@
 slug: claude-modmgr
 tagline: 'A /mods dialog in Claude Code that finds plugins and says what each can reach before it runs.'
 status: active
+install: '/plugin install modmgr --marketplace ayagmar/claude-mods'
 group: agents
 ---
 

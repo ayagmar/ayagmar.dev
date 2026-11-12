@@ -19,7 +19,7 @@ interface Props {
   title?: string;
   description?: string;
   /** Adds discovery links for this tag's or project's feeds next to the site-wide ones. */
-  feed?: FeedScope;
+  feed?: FeedScope | undefined;
   /** The link-preview image; pages without their own share the room's (src/lib/og.ts). */
   image?: OgImage;
   /** schema.org nodes about this page (src/lib/structured-data.ts). */

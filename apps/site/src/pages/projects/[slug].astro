@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
+import CodeCopy from '../../components/CodeCopy.astro';
 import Freshness from '../../components/Freshness.astro';
 import ImageViewer from '../../components/ImageViewer.astro';
 import Markup from '../../components/Markup.astro';
@@ -12,9 +13,17 @@ import { liveAttrs, signals } from '../../data/signals.ts';
 import Base from '../../layouts/Base.astro';
 import { projectReceipt } from '../../lib/days.ts';
 import { feedPaths } from '../../lib/feed.ts';
+import { el } from '../../lib/markup.ts';
+import { projectOgImage } from '../../lib/og.ts';
 import { getDays, getPosts, getProjectScreenshots, getProjects } from '../../lib/posts.ts';
 import { projectEvents, projectLog } from '../../lib/project-panel.ts';
-import { postsAbout, projectPath } from '../../lib/projects.ts';
+import {
+  hasReleased,
+  nextProject,
+  postsAbout,
+  projectPath,
+  releasesFeed,
+} from '../../lib/projects.ts';
 import { site } from '../../lib/site.ts';
 import { breadcrumbs } from '../../lib/structured-data.ts';
 
@@ -33,21 +42,25 @@ export const getStaticPaths = (async () => {
       posts: postsAbout(posts, project.slug),
       receipt: projectReceipt(history, project.repo),
       screenshot: screenshots.get(project.slug),
+      released: hasReleased(project, logs.data),
+      next: nextProject(projects, project.slug),
     },
   }));
 }) satisfies GetStaticPaths;
 
-const { project, envelope, logs, posts, receipt, screenshot } = Astro.props;
+const { project, envelope, logs, posts, receipt, screenshot, released, next } = Astro.props;
 const log = projectLog(projectEvents(logs.data, project.slug));
 const { Content } =
   project.file === undefined ? { Content: undefined } : await render(project.file);
 const feeds = feedPaths({ project: project.slug });
+const releases = releasesFeed(project, released);
 ---
 
 <Base
   title={project.slug}
   description={project.summary ?? `${project.slug}, a project by ${site.author}.`}
-  feed={{ project: project.slug }}
+  feed={posts.length > 0 ? { project: project.slug } : undefined}
+  image={projectOgImage(project.slug, project.summary)}
   structuredData={[
     breadcrumbs([
       { name: 'Projects', path: '/projects' },
@@ -60,6 +73,21 @@ const feeds = feedPaths({ project: project.slug });
       <h1>{project.slug}</h1>
       {project.summary !== null && <p class="project-summary">{project.summary}</p>}
       {project.status !== null && <p class="project-status">Status: {project.status}</p>}
+      {project.install !== null && (
+        // The copy button of a code block (src/lib/markdown/code-copy.ts), hidden until its
+        // script finds the Clipboard API; the command stays selectable without it.
+        <div class="code-block project-install">
+          {/* Drawn from markup: a formatter would put whitespace inside a written <pre>. */}
+          <Markup nodes={[el('pre', {}, el('code', {}, project.install))]} />
+          <button type="button" hidden data-copy data-pagefind-ignore>
+            Copy
+          </button>
+          <span class="sr-only" role="status"></span>
+        </div>
+      )}
+      <div data-pagefind-ignore>
+        <ProjectLinks project={project} released={released} />
+      </div>
     </header>
     {screenshot !== undefined && <ProjectShot screenshot={screenshot} />}
     {Content !== undefined && (
@@ -74,7 +102,7 @@ const feeds = feedPaths({ project: project.slug });
       </section>
     )}
     <h2>Numbers</h2>
-    <ProjectStats project={project} envelope={envelope} />
+    <ProjectStats project={project} envelope={envelope} freshness="project-updated" />
     {receipt !== null && <p class="receipt">{receipt}</p>}
     {/* Always in the page so the live script can fill it; hidden while it has nothing. */}
     <section
@@ -83,22 +111,41 @@ const feeds = feedPaths({ project: project.slug });
       hidden={log.length === 0}
       data-project={project.slug}
       data-pagefind-ignore
+      data-freshness="project-updated"
       {...liveAttrs('project-events', logs)}
     >
       <h2 id="shipped">Recently shipped</h2>
       <div class="project-log-body">
         <Markup nodes={log} />
       </div>
-      <Freshness envelope={logs} />
     </section>
-    <h2>Links</h2>
-    <ProjectLinks project={project} />
-    <h2>Writing about {project.slug}</h2>
-    <PostList posts={posts} empty={`Nothing written about ${project.slug} yet.`} />
+    {/* One line for both panels, giving the older of their times (src/lib/live-page.ts). */}
+    <Freshness envelope={project.pulled ? [envelope, logs] : logs} id="project-updated" />
+    {posts.length > 0 && (
+      <>
+        <h2>Writing about {project.slug}</h2>
+        <PostList posts={posts} />
+        <p>
+          Follow writing about {project.slug}: <a href={feeds.rss}>RSS</a>,{' '}
+          <a href={feeds.atom}>Atom</a>.
+        </p>
+      </>
+    )}
+    <footer class="project-end" data-pagefind-ignore>
+      {releases !== null && (
+        <p>
+          <a href={releases}>Follow releases</a> (GitHub's Atom feed)
+        </p>
+      )}
+      {next !== undefined && (
+        <p>
+          <a href={projectPath(next.slug)} rel="next">
+            Next: {next.slug} →
+          </a>
+        </p>
+      )}
+    </footer>
+    {project.install !== null && <CodeCopy />}
     {screenshot !== undefined && <ImageViewer />}
-    <p>
-      Follow writing about {project.slug}: <a href={feeds.rss}>RSS</a>,{' '}
-      <a href={feeds.atom}>Atom</a>.
-    </p>
   </article>
 </Base>

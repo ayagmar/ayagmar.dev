@@ -3,14 +3,17 @@ import { projectLinks, type SiteProject } from '../lib/projects.ts';
 
 interface Props {
   project: SiteProject;
+  /** `hasReleased`'s answer; null when the page does not know. */
+  released?: boolean | null;
 }
 
-const { project } = Astro.props;
+const { project, released = null } = Astro.props;
 ---
 
 <ul class="project-links">
-  {projectLinks(project).map((link) => (
+  {projectLinks(project, released).map((link) => (
     <li>
+      {link.lead}
       <a href={link.href}>{link.label}</a>
     </li>
   ))}

@@ -1,8 +1,19 @@
 ---
 import { signalsMode } from '../data/signals.ts';
 import { sampleNote } from '../lib/site.ts';
+
+interface Props {
+  /** The id of the freshness line it stands in for, if that line has one. */
+  id?: string | undefined;
+}
+
+const { id } = Astro.props;
 ---
 
 <!-- Fixtures mode (local builds and public Previews, ADR 0015): the numbers near this tape are
      the shared fixtures, some invented, never live. Nothing in api mode. -->
-{signalsMode === 'fixtures' && <p class="sample">{sampleNote}</p>}
+{signalsMode === 'fixtures' && (
+  <p class="sample" id={id}>
+    {sampleNote}
+  </p>
+)}

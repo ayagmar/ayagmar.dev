@@ -3,6 +3,7 @@
 slug: runnerd
 tagline: 'Self-hosted GitHub Actions runners, each job in a fresh container.'
 status: active
+install: 'curl -fsSL https://github.com/ayagmar/runnerd/releases/latest/download/install.sh | sh'
 group: self-hosted
 ---
 

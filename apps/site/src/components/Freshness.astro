@@ -6,22 +6,33 @@ import Sample from './Sample.astro';
 import Stamp from './Stamp.astro';
 
 interface Props {
-  envelope: Envelope<unknown>;
+  /**
+   * The snapshot the line dates, or several a line shares: it gives the oldest of those the
+   * build had, and calls them out of date if any is, as the browser does (src/lib/live-page.ts).
+   */
+  envelope: Envelope<unknown> | readonly Envelope<unknown>[];
+  /** For a line outside its panels, which name it in `data-freshness`. */
+  id?: string;
 }
 
-const { envelope } = Astro.props;
-const fetchedAt = envelope.data === null ? null : envelope.fetchedAt;
+const { envelope, id } = Astro.props;
+const read = [envelope]
+  .flat()
+  .filter((entry) => entry.data !== null && entry.fetchedAt !== null)
+  .toSorted((a, b) => Date.parse(a.fetchedAt ?? '') - Date.parse(b.fetchedAt ?? ''));
+const fetchedAt = read[0]?.fetchedAt ?? null;
+const fresh = read.every((entry) => !entry.stale);
 ---
 
 {signalsMode === 'fixtures' ? (
-  fetchedAt !== null && <Sample />
+  fetchedAt !== null && <Sample id={id} />
 ) : (
   // `stale` as of the build; a live panel's script rewrites the line as time passes, and
   // fills in the hidden one of a source the build had no data for (ADR 0015).
-  <p class="freshness" hidden={fetchedAt === null}>
+  <p class="freshness" id={id} hidden={fetchedAt === null}>
     {fetchedAt !== null && (
       <>
-        {freshnessWords(!envelope.stale)}
+        {freshnessWords(fresh)}
         <Stamp iso={fetchedAt} />
       </>
     )}

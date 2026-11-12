@@ -17,6 +17,7 @@ import {
   projectPath,
   projectRowLabel,
   projectsByGroup,
+  releasesFeed,
   type SiteProject,
 } from './projects.ts';
 import { curlTarget, identityLine, nav, nowPage, site, siteUrl, textRule } from './site.ts';
@@ -213,31 +214,50 @@ export function renderProjectsText(
   ].join('\n');
 }
 
+/** What a project's page and its text copy show besides the project itself. */
+export interface ProjectPageParts {
+  posts: readonly Post[];
+  /** The project file's Markdown, if it has one. */
+  description: string | undefined;
+  /** The project's log as its page draws it. */
+  shipped: readonly ProjectEvent[];
+  /** `hasReleased`'s answer. */
+  released: boolean | null;
+  receipt: string | null;
+  next: Pick<SiteProject, 'slug'> | undefined;
+}
+
 /**
- * /projects/<slug>: the summary, the description as written, the numbers from the build's
- * snapshot, its log, the links and the posts. `description` is the project file's Markdown, if
- * it has one; `shipped` is the project's log as its page draws it.
+ * /projects/<slug>: the summary, how to get it, the description as written, the numbers from
+ * the build's snapshot, its log, the posts if there are any, and where to go next, in the
+ * page's order.
  */
 export function renderProjectText(
   project: SiteProject,
-  posts: readonly Post[],
-  description: string | undefined,
-  shipped: readonly ProjectEvent[]
+  { posts, description, shipped, released, receipt, next }: ProjectPageParts
 ): string {
   const path = projectPath(project.slug);
   const facts = projectFacts(project);
-  return [
-    `${project.slug} | ${site.name}`,
-    ...(project.summary === null ? [] : [project.summary]),
-    ...(project.status === null ? [] : [`Status: ${project.status}`]),
-    textRule,
-    ...(description === undefined ? [] : [absoluteLinks(description, path).trim(), textRule]),
-    'Numbers',
-    ...(facts.length === 0
-      ? [`  ${noNumbers(project)}`]
-      : facts.map(({ label, value }) => `  ${label}: ${value}`)),
-    textRule,
-    ...(shipped.length === 0
+  const releases = releasesFeed(project, released);
+  const sections: string[][] = [
+    [
+      `${project.slug} | ${site.name}`,
+      ...(project.summary === null ? [] : [project.summary]),
+      ...(project.status === null ? [] : [`Status: ${project.status}`]),
+      ...(project.install === null ? [] : ['', `  ${project.install}`, '']),
+      ...projectLinks(project, released).map(
+        ({ lead, label, href }) => `${lead ?? ''}${label}: ${href}`
+      ),
+    ],
+    description === undefined ? [] : [absoluteLinks(description, path).trim()],
+    [
+      'Numbers',
+      ...(facts.length === 0
+        ? [`  ${noNumbers(project)}`]
+        : facts.map(({ label, value }) => `  ${label}: ${value}`)),
+      ...(receipt === null ? [] : [`  ${receipt}`]),
+    ],
+    shipped.length === 0
       ? []
       : [
           'Recently shipped',
@@ -245,15 +265,22 @@ export function renderProjectText(
             `  ${rabatStamp(event.at).padEnd(13)}  ${describeEvent(event)}`,
             `                 ${event.url}`,
           ]),
-          textRule,
-        ]),
-    'Links',
-    ...projectLinks(project).map(({ label, href }) => `  ${label}: ${href}`),
-    textRule,
-    `Writing about ${project.slug}`,
-    ...(posts.length === 0
-      ? [`  Nothing written about ${project.slug} yet.`]
-      : posts.flatMap((post) => dated(post.data.date, post.data.title, postPath(post.id)))),
+        ],
+    posts.length === 0
+      ? []
+      : [
+          `Writing about ${project.slug}`,
+          ...posts.flatMap((post) => dated(post.data.date, post.data.title, postPath(post.id))),
+        ],
+    [
+      ...(releases === null ? [] : [`Follow releases: ${releases}`]),
+      ...(next === undefined ? [] : [`Next: ${next.slug} (${siteUrl}${projectPath(next.slug)})`]),
+    ],
+  ];
+  return [
+    ...sections
+      .filter((lines) => lines.length > 0)
+      .flatMap((lines, index) => (index === 0 ? lines : [textRule, ...lines])),
     ...footer(path),
   ].join('\n');
 }
