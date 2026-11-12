@@ -57,7 +57,7 @@ tool_url["gitleaks"]="https://github.com/gitleaks/gitleaks/releases/download/v{v
 tool_sha256["gitleaks"]="551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
 tool_path["gitleaks"]="gitleaks"
 # renovate: datasource=github-releases depName=google/osv-scanner
-tool_version["osv-scanner"]="2.7.0"
+tool_version["osv-scanner"]="2.7.1"
 tool_url["osv-scanner"]="https://github.com/google/osv-scanner/releases/download/v{v}/osv-scanner_linux_amd64"
 tool_sha256["osv-scanner"]="160c6253e2922e9e0a6a9771c5c4c40a4b3c6090b34a3cdd5e80c96cc2e4218b"
 tool_path["osv-scanner"]="-"
