@@ -36,3 +36,20 @@ test('/about shows a card per certification with its end and verify link', async
     claude.getByRole('link', { name: 'Verify Claude Certified Developer - Foundations' })
   ).toHaveAttribute('href', about.certifications[1].verifyUrl);
 });
+
+// Catches a certification with a badge in content/about.json drawn without it, or with one the
+// site does not serve.
+test('/about shows each certification badge from the site', async ({ page, request }) => {
+  await page.goto('/about');
+  const cards = page.locator('section[aria-labelledby="certifications"] li');
+  const sources = await cards.evaluateAll((items) =>
+    items.map((item) => item.querySelector('img.cert-badge')?.getAttribute('src') ?? null)
+  );
+  expect(sources.map((src) => src !== null)).toEqual(
+    about.certifications.map((cert: { badge?: unknown }) => cert.badge !== undefined)
+  );
+  for (const src of sources.filter((src) => src !== null)) {
+    expect(src).toMatch(/^\/_astro\/[\w.-]+\.webp$/);
+    expect((await request.get(src)).headers()['content-type'], src).toBe('image/webp');
+  }
+});

@@ -1,4 +1,5 @@
 import { z } from 'astro/zod';
+import { contentImage } from '../lib/content-images.ts';
 import { nowPage, site } from '../lib/site.ts';
 
 const text = z.string({ error: 'is required' }).trim().min(1, 'must not be empty');
@@ -53,6 +54,8 @@ export const aboutSchema = z.strictObject({
         expires: month.optional(),
         credentialId: text.optional(),
         verifyUrl: url,
+        /** The issuer's badge, shown in place of the issuer's initial (ADR 0048). */
+        badge: contentImage('badges').optional(),
       })
       .refine((cert) => cert.expires === undefined || cert.expires >= cert.issued, {
         ...valid,

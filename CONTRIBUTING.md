@@ -103,6 +103,8 @@ The build fails when `slug` is not a featured project or differs from the file n
 
 The Noctalia plugins are not featured projects: they are directories in [noctalia-dev/community-plugins](https://github.com/noctalia-dev/community-plugins), listed after the groups on /projects ([ADR 0047](docs/adr/0047-noctalia-plugins-on-projects.md)). To add one, append it to `content/noctalia-plugins.json` with its directory, the `name` from its `plugin.toml` and one line on what it does.
 
+A certification on /about can show its badge: save the issuer's badge image from its verify page (the Credly badge image, or Oracle's from its certview share page) in `apps/site/src/assets/badges/` and add `badge` with the file, the image's URL and the day you fetched it ([ADR 0048](docs/adr/0048-content-images.md)). Without one it shows the issuer's initial.
+
 ## Styling
 
 The design is the late-night room ([ADR 0026](docs/adr/0026-visual-design-late-night-room.md)).

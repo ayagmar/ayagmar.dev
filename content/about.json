@@ -50,35 +50,60 @@
       "issuer": "Oracle",
       "issued": "2026-09",
       "credentialId": "100772024JSE25OCP",
-      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=0AA77B8F454C8701C2F8DB071FE30142410E3EC7CF89C5631F04A26D95E9A0AA"
+      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=0AA77B8F454C8701C2F8DB071FE30142410E3EC7CF89C5631F04A26D95E9A0AA",
+      "badge": {
+        "file": "oracle-java-se-25.png",
+        "source": "https://brm-workforce.oracle.com/pdf/certview/images/JSE25OCP.png",
+        "fetched": "2026-11-12"
+      }
     },
     {
       "name": "Claude Certified Developer - Foundations",
       "issuer": "Anthropic",
       "issued": "2026-09",
       "expires": "2027-09",
-      "verifyUrl": "https://www.credly.com/badges/5d45dde1-4c1c-422d-8590-c0b2b1da9607"
+      "verifyUrl": "https://www.credly.com/badges/5d45dde1-4c1c-422d-8590-c0b2b1da9607",
+      "badge": {
+        "file": "claude-certified-developer-foundations.png",
+        "source": "https://images.credly.com/images/f101c6ac-8a2d-4220-b381-70e3e6c364e3/blob",
+        "fetched": "2026-11-12"
+      }
     },
     {
       "name": "Oracle Certified Professional, Java EE 7 Application Developer",
       "issuer": "Oracle",
       "issued": "2025-01",
       "credentialId": "100772024OCPJEE7AD",
-      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=A95496BBDADAF638136F35118D71F1495EF7EA7515C27CD6A3209704C8A7EB96"
+      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=A95496BBDADAF638136F35118D71F1495EF7EA7515C27CD6A3209704C8A7EB96",
+      "badge": {
+        "file": "oracle-java-ee-7.png",
+        "source": "https://brm-workforce.oracle.com/pdf/certview/images/OCPJEE7AD.png",
+        "fetched": "2026-11-12"
+      }
     },
     {
       "name": "Professional Scrum Developer I (PSD I)",
       "issuer": "Scrum.org",
       "issued": "2024-10",
       "credentialId": "1145888",
-      "verifyUrl": "https://www.credly.com/badges/20ac0298-22e8-4795-ac3a-03d5de7d603b"
+      "verifyUrl": "https://www.credly.com/badges/20ac0298-22e8-4795-ac3a-03d5de7d603b",
+      "badge": {
+        "file": "scrum-psd-1.png",
+        "source": "https://images.credly.com/images/d2298e82-b671-434a-876b-21a0ebc3af0e/image.png",
+        "fetched": "2026-11-12"
+      }
     },
     {
       "name": "Oracle Certified Professional: Java SE 17 Developer",
       "issuer": "Oracle",
       "issued": "2024-09",
       "credentialId": "100772024OCPJSE17",
-      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=686A2CB5A9B83BE939EE54C5E7E104DA1FBFE1B010B0C390642853E1F64E60D0"
+      "verifyUrl": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=686A2CB5A9B83BE939EE54C5E7E104DA1FBFE1B010B0C390642853E1F64E60D0",
+      "badge": {
+        "file": "oracle-java-se-17.png",
+        "source": "https://brm-workforce.oracle.com/pdf/certview/images/OCPJSE17.png",
+        "fetched": "2026-11-12"
+      }
     }
   ],
   "education": [
