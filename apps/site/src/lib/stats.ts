@@ -112,10 +112,10 @@ export function readProjects(data: unknown): ProjectsSnapshot | undefined {
 
 /** The words /stats shows around the numbers, at build time and live. */
 export const statsWords = {
-  thisWeek: 'Scrobbles this week',
-  lastWeek: 'Scrobbles last week',
+  thisWeek: 'Tracks played this week',
+  lastWeek: 'Tracks played last week',
   recent: 'Recent tracks',
-  noRecent: 'No scrobbles yet.',
+  noRecent: 'No tracks played yet.',
   top: 'Top artists',
   noTop: 'No top artists yet.',
   noShipping: 'No public activity to show yet.',
@@ -124,11 +124,19 @@ export const statsWords = {
 };
 
 /** The words only the build uses, kept apart so they stay out of the browser's script. */
+/** What /stats measures, the first words of its intro on the page and in the text copy. */
+const statsIntro = 'What I listen to, ship, type and spend on coding agents, from my own tools.';
+
 export const statsBuildWords = {
   noListening: 'No listening data yet',
   noLlmUsage: 'No data yet.',
   sample: 'Sample data: this build shows the test fixtures, some of them made up.',
-  snapshot: 'Numbers from my own tools, as of the last build. The page keeps itself current.',
+  /** The page's intro; the text copy says the numbers are the build's instead. */
+  intro: `${statsIntro} It updates while the page is open.`,
+  snapshot: `${statsIntro} These numbers are from the last build; the page updates while it is open.`,
+  /** Small print under On this day, which with the month's LLM usage follows the Rabat date. */
+  rabatDate:
+    "On this day, like this month's LLM usage, shows only on the date in Rabat it describes.",
 };
 
 /** A week's scrobbles, or `unknown` when Last.fm did not answer that part. */
