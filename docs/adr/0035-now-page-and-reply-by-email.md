@@ -1,6 +1,6 @@
 # 0035. A /now page and reply by email
 
-Status: accepted, 2026-10-30. Amended 2026-11-12: `updated` may not be after the day of the build in Rabat, not in UTC, so a build just before UTC midnight accepts the day already begun there.
+Status: accepted, 2026-10-30. Amended 2026-11-12: `updated` may not be after the day of the build in Rabat, not in UTC, so a build just before UTC midnight accepts the day already begun there. Amended 2026-11-12: the date is followed by its age by the reader's clock, and a featured project links to its page on the site (ADR 0052).
 
 ## Context
 

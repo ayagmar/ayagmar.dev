@@ -25,7 +25,88 @@ test('/ opens search; drafts are not in the index', async ({ page }) => {
   await page.keyboard.press('/');
   const dialog = page.getByRole('dialog', { name: 'Search' });
   await dialog.getByLabel('Search the site').fill('ricing');
-  await expect(dialog.getByRole('status')).toHaveText('No results.');
+  await expect(dialog.getByRole('status')).toHaveText(
+    'Nothing for "ricing". Try Projects, About or Stats.'
+  );
+});
+
+// Catches a search that finds nothing leaving the reader with no way on, and a query painted as
+// markup instead of text.
+test('a search that finds nothing offers three pages and shows the query as typed', async ({
+  page,
+}) => {
+  await page.goto('/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  const query = '<qzxv>&amp;';
+  await dialog.getByLabel('Search the site').fill(query);
+  const status = dialog.getByRole('status');
+  await expect(status).toHaveText(`Nothing for "${query}". Try Projects, About or Stats.`);
+  await expect(status.locator('qzxv')).toHaveCount(0);
+  await expect(status.getByRole('link')).toHaveText(['Projects', 'About', 'Stats']);
+  await expect(status.getByRole('link', { name: 'About' })).toHaveAttribute('href', '/about');
+});
+
+// Catches the native search field taking the first Escape to clear itself, so closing took two,
+// and focus lost on close.
+test('one Escape closes search with text in the field, and focus goes back', async ({ page }) => {
+  await page.goto('/about');
+  const button = page.getByRole('button', { name: /search/i });
+  await button.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  await dialog.getByLabel('Search the site').fill('runnerd');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(button).toBeFocused();
+});
+
+// Catches /about's ways to reach me falling out of the index: a recruiter searches for them.
+for (const term of ['contact', 'email', 'linkedin', 'github']) {
+  test(`"${term}" finds /about`, async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+    await page.keyboard.press('Control+k');
+    const dialog = page.getByRole('dialog', { name: 'Search' });
+    await dialog.getByLabel('Search the site').fill(term);
+    await expect(dialog.getByRole('link', { name: 'About', exact: true })).toHaveAttribute(
+      'href',
+      '/about'
+    );
+  });
+}
+
+// Catches the 404 naming a Search that does nothing.
+test('the 404 opens search from its sentence', async ({ page }) => {
+  await page.goto('/no-such-page');
+  await expect(page.getByRole('button', { name: /search/i }).first()).toBeVisible();
+  await page.locator('main').getByRole('button', { name: 'Search' }).click();
+  await expect(page.getByRole('dialog', { name: 'Search' })).toBeVisible();
+  await expect(page.locator('main .onward')).toHaveText(
+    /^Try Search, or one of these: .+ or the home page\.$/,
+    { useInnerText: true }
+  );
+});
+
+// Catches a click lost while the island is still loading: it hydrates when the browser is idle,
+// up to 2 s after load, and the 404's button is there from the first paint.
+test('the 404 opens search when clicked before search has loaded', async ({ page }) => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/_astro/Search.*.js', async (route) => {
+    await held;
+    await route.continue();
+  });
+  await page.goto('/no-such-page');
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  await page.locator('main').getByRole('button', { name: 'Search' }).click();
+  await expect(dialog).toBeHidden();
+  release();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Search the site')).toBeFocused();
 });
 
 // Catches the project pages falling out of the index: with no published post, search on

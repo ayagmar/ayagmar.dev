@@ -125,7 +125,7 @@ test('draft posts are in none of the places a post is listed', async ({ page, re
   for (const { slug, title } of drafts) {
     await dialog.getByLabel('Search the site').fill(title);
     // Pagefind ranks pages that match part of a query, so other pages may answer; the post must not.
-    await expect(dialog.getByRole('status')).toHaveText(/results?\.$/);
+    await expect(dialog.getByRole('status')).toHaveText(/results?\.$|^Nothing for /);
     const found = await dialog
       .getByRole('link')
       .evaluateAll((links) => links.map((link) => link.getAttribute('href')));

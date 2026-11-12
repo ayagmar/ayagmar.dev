@@ -57,7 +57,7 @@ const dayMonthYear = new Intl.DateTimeFormat('en-GB', {
   year: 'numeric',
 });
 /** Days since the epoch of `time`'s calendar date in the reader's own time zone. */
-export const day = (time: number) => {
+const day = (time: number) => {
   const date = new Date(time);
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / dayMs;
 };

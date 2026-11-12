@@ -1,6 +1,6 @@
 ---
 import type { BrewingItem } from '../lib/now-schema.ts';
-import { brewingTitle } from '../lib/plaintext.ts';
+import { brewingHref, brewingTitle } from '../lib/plaintext.ts';
 
 interface Props {
   items: readonly BrewingItem[];
@@ -13,12 +13,15 @@ const { items } = Astro.props;
   <section class="panel m-cork" aria-labelledby="brewing">
     <h2 id="brewing">{brewingTitle}</h2>
     <ul class="brewing">
-      {items.map((item) => (
-        <li>
-          <strong>{item.url === undefined ? item.name : <a href={item.url}>{item.name}</a>}</strong>{' '}
-          <span>{item.note}</span>
-        </li>
-      ))}
+      {items.map((item) => {
+        const href = brewingHref(item);
+        return (
+          <li>
+            <strong>{href === undefined ? item.name : <a href={href}>{item.name}</a>}</strong>{' '}
+            <span>{item.note}</span>
+          </li>
+        );
+      })}
     </ul>
   </section>
 )}

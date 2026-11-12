@@ -11,7 +11,7 @@ import { roomList } from '../lib/room.ts';
 import { analyticsToken, cloudflareAnalytics, siteVerification } from '../lib/search.ts';
 import { nav, nowPage, publicPath, site } from '../lib/site.ts';
 import { jsonLd, type StructuredData } from '../lib/structured-data.ts';
-import { browseLink } from '../lib/writing.ts';
+import { browseLink, searchFallback } from '../lib/writing.ts';
 import themeScript from '../scripts/theme.js?url&no-inline';
 import '../styles/base.css';
 
@@ -128,7 +128,7 @@ const feeds = [undefined, ...(feed === undefined ? [] : [feed])].map((scope) => 
       <div class="site-tools">
         <!-- Hydrates when the browser is idle, or after 2 s if it never says so: a busy main
              thread can withhold idle time indefinitely, leaving the no-JS link in place. -->
-        <Search client:idle={{ timeout: 2000 }} browse={browse} />
+        <Search client:idle={{ timeout: 2000 }} browse={browse} fallback={searchFallback} />
       </div>
       <!-- On phones the nav and the theme switch sit in a popover this button opens, with no
            script (base.css); from 52rem they are part of the header row. Search comes before them
