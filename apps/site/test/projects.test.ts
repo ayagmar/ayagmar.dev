@@ -196,6 +196,18 @@ describe("a project row's fact", () => {
     expect(projectFact({ ...live, ...change })).toBe(words);
   });
 
+  // Catches a row reading `modmgr--v0.5.0`, the tag a monorepo release tool writes, where a
+  // reader expects the version, and a plain tag or one with no version being rewritten.
+  it.each([
+    ['modmgr--v0.5.0', 'v0.5.0'],
+    ['claude-modmgr@1.2.3', 'v1.2.3'],
+    ['claude-modmgr-v1.2.3', 'v1.2.3'],
+    ['v0.1.5', 'v0.1.5'],
+    ['nightly', 'nightly'],
+  ])('says the tag %j as %j', (tag, words) => {
+    expect(projectFact({ ...live, latestRelease: { ...release, tag } })).toBe(words);
+  });
+
   // Catches a number made up for a project signals has no entry for.
   it('says nothing without a snapshot entry', () => {
     expect(projectFact(null)).toBe('');

@@ -13,8 +13,18 @@ const rounded = (value: number) =>
     : `${(Math.round(value / 100) / 10).toLocaleString('en')}k`;
 
 /**
+ * The version in a release tag that also names its package, as monorepo tools write them:
+ * `modmgr--v0.5.0`, `pkg@1.2.3`, `pkg-v1.2.3` say `v0.5.0`, `v1.2.3`. Any other tag, a plain
+ * `v0.1.5` included, is said as it is. The project page's log keeps the tag GitHub shows.
+ */
+function tagVersion(tag: string): string {
+  const version = /^.+?(?:--|@|-)v?(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)$/.exec(tag)?.[1];
+  return version === undefined ? tag : `v${version}`;
+}
+
+/**
  * The strongest fact the snapshot entry `live` holds: stars from 10, else npm downloads over the
- * last 30 days from 100, else the latest release's tag, else nothing. Below those floors a number
+ * last 30 days from 100, else the latest release's version, else nothing. Below those floors a number
  * says less than the summary next to it; without an entry there is no number to say.
  */
 export function projectFact(live: Project | null): string {
@@ -22,7 +32,8 @@ export function projectFact(live: Project | null): string {
   if (live.stars !== null && live.stars >= 10) return `${rounded(live.stars)} stars`;
   const downloads = live.npm?.monthlyDownloads ?? null;
   if (downloads !== null && downloads >= 100) return `${rounded(downloads)} downloads a month`;
-  return live.latestRelease?.tag ?? '';
+  const tag = live.latestRelease?.tag;
+  return tag === undefined ? '' : tagVersion(tag);
 }
 
 /** The row's label: the fact, then `rest` (what the build knows: posts, archived), or only what it has. */
