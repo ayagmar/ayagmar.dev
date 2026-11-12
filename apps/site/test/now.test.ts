@@ -27,6 +27,14 @@ describe('now frontmatter', () => {
     expect(nowSchema(built).parse({ updated: valid.updated }).brewing).toEqual([]);
   });
 
+  // Catches a build in UTC at 23:30 rejecting the day it already is in Rabat (+01 until
+  // 2026-09-20), which fails every deploy in that hour after the owner edits /now.
+  it('accepts the day in Rabat while it is still the day before in UTC', () => {
+    expect(
+      nowSchema(new Date('2026-09-19T23:30:00Z')).safeParse({ updated: '2026-09-20' }).success
+    ).toBe(true);
+  });
+
   // Catches a typo such as 2062-10-30 making the page look permanently fresh.
   it.each([
     ['a future day', { updated: '2026-10-31' }, 'updated: must not be in the future'],

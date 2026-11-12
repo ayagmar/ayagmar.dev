@@ -15,6 +15,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, it } from 'node:test';
+import { rabatDate } from '../packages/contracts/src/rabat.ts';
 import { freePort } from './free-port.ts';
 
 const script = join(import.meta.dirname, 'writing.ts');
@@ -34,8 +35,18 @@ const env = (extra: Record<string, string> = {}) => ({
 });
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, env: env(), encoding: 'utf8' }).trim();
-const cli = (args: string[], extra: Record<string, string> = {}) => {
-  const result = spawnSync(process.execPath, [script, ...args], {
+/** A module for `--import` that stops the CLI's clock at `instant`. */
+const clockAt = (instant: string) =>
+  `data:text/javascript,${encodeURIComponent(
+    `const now = ${Date.parse(instant)};
+    globalThis.Date = class extends Date {
+      constructor(...args) { super(...(args.length > 0 ? args : [now])); }
+      static now() { return now; }
+    };`
+  )}`;
+const cli = (args: string[], extra: Record<string, string> = {}, instant?: string) => {
+  const clock = instant === undefined ? [] : ['--import', clockAt(instant)];
+  const result = spawnSync(process.execPath, [...clock, script, ...args], {
     cwd: repo,
     env: env(extra),
     encoding: 'utf8',
@@ -51,7 +62,7 @@ const failingHook = (name: string) => {
   writeFileSync(join(repo, '.git', 'hooks', name), '#!/bin/sh\nexit 1\n');
   chmodSync(join(repo, '.git', 'hooks', name), 0o755);
 };
-const today = new Date().toISOString().slice(0, 10);
+const today = rabatDate(Date.now());
 
 const draftPost = `---
 title: "Cache reads"
@@ -164,6 +175,18 @@ describe('publish', () => {
         out,
         /https:\/\/content-cache-reads-min7-site\.ayagmar\.workers\.dev\/writing\/cache-reads/
       );
+    });
+
+  // Catches a post written just after midnight in Rabat dated the day before (the UTC day), and
+  // a fixed +01 offset, which is an hour wrong whenever Morocco is at +00.
+  for (const [instant, date] of [
+    ['2026-09-19T23:30:00Z', '2026-09-20'],
+    ['2026-03-01T23:30:00Z', '2026-03-01'],
+  ])
+    it(`publishes at ${instant} with the Rabat date ${date}`, () => {
+      const { code, out } = cli(['publish', 'cache-reads'], {}, instant);
+      assert.equal(code, 0, out);
+      assert.match(read('content/writing/cache-reads.md'), new RegExp(`^date: ${date}$`, 'm'));
     });
 
   // Catches a note published under content(writing), or its Preview link pointing at /writing.
