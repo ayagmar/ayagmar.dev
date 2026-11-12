@@ -112,8 +112,8 @@ for (const path of ['/', '/projects/pi-mobile', '/projects', '/writing/token-log
   });
 }
 
-// Catches the plugins section dropping off /projects or its text copy, a plugin linking anywhere
-// but its directory in Noctalia's community list, and headroom's old page outliving its removal.
+// Catches the plugins section dropping off /projects or its text copy, or a plugin linking
+// anywhere but its directory in Noctalia's community list.
 test('/projects ends with the Noctalia plugins, which have no pages of their own', async ({
   page,
   request,
@@ -122,10 +122,7 @@ test('/projects ends with the Noctalia plugins, which have no pages of their own
   const urls = [`${directory}/headroom`, `${directory}/binance`, `${directory}/obs-control`];
   await page.goto('/projects');
   const section = page.getByRole('region', { name: 'Noctalia plugins' });
-  await expect(page.locator('.column > section').last()).toHaveAttribute(
-    'aria-labelledby',
-    'noctalia-plugins'
-  );
+  await expect(page.locator('.column > section').last()).toHaveId('noctalia-plugins');
   await expect(section.getByRole('heading', { level: 3 })).toHaveText([
     'Headroom',
     'Binance',
@@ -138,6 +135,23 @@ test('/projects ends with the Noctalia plugins, which have no pages of their own
   ).toEqual(urls);
   const text = await (await request.get('/projects.txt')).text();
   for (const url of urls) expect(text).toContain(`  ${url}\n`);
-  expect((await request.get('/projects/headroom')).status()).toBe(404);
-  expect((await request.get('/projects/headroom.txt')).status()).toBe(404);
+});
+
+// Catches the redirects from headroom's old page and copy being dropped (the Worker and
+// _redirects, ADR 0047), or the section they point at losing its id.
+test("headroom's old page and copy move to the plugins section for good", async ({
+  page,
+  request,
+}) => {
+  for (const [path, target] of [
+    ['/projects/headroom', '/projects#noctalia-plugins'],
+    ['/projects/headroom.txt', '/projects.txt'],
+  ] as const) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status(), path).toBe(301);
+    const location = new URL(response.headers().location ?? '', 'http://127.0.0.1');
+    expect(location.pathname + location.hash, path).toBe(target);
+  }
+  await page.goto('/projects/headroom');
+  await expect(page.locator('#noctalia-plugins')).toHaveAccessibleName('Noctalia plugins');
 });

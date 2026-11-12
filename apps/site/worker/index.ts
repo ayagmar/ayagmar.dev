@@ -3,10 +3,17 @@
 // everything else, or any page without that copy, the static page. The copies are assets, so
 // every answer carries the headers from dist/_headers. /room is the exception: a terminal asked
 // for colour, which is rendered per request (ADR 0045), and everyone else goes to the home page.
+// A page that moved redirects for every client (ADR 0047).
 
 import { terminalRoom } from './room.ts';
 
 const terminalAgent = /^(curl|wget|httpie|xh)\//i;
+
+/** Pages that moved, answered with a permanent redirect for every client (ADR 0047). */
+const moved: Readonly<Record<string, string>> = {
+  '/projects/headroom': '/projects#noctalia-plugins',
+  '/projects/headroom.txt': '/projects.txt',
+};
 
 /**
  * Whether Markdown beats HTML for `accept`. Each is rated by the most specific range that matches
@@ -41,6 +48,10 @@ function prefersMarkdown(accept: string | null) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const target = moved[url.pathname];
+    if (target !== undefined) {
+      return new Response(null, { status: 301, headers: { Location: target } });
+    }
     const terminal = terminalAgent.test(request.headers.get('user-agent') ?? '');
     const markdown = prefersMarkdown(request.headers.get('accept'));
     if (url.pathname === '/room') {

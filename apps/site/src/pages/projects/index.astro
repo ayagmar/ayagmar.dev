@@ -36,12 +36,13 @@ const plugins = await getNoctaliaPlugins();
     ))}
     {plugins.length > 0 && (
       <section
+        id={pluginsSection.id}
         class="panel m-screen"
-        aria-labelledby={pluginsSection.id}
+        aria-labelledby={`${pluginsSection.id}-title`}
         data-pagefind-body
         data-pagefind-meta={`title:${pluginsSection.title}`}
       >
-        <h2 id={pluginsSection.id}>{pluginsSection.title}</h2>
+        <h2 id={`${pluginsSection.id}-title`}>{pluginsSection.title}</h2>
         <p class="caption">{pluginsSection.intro}</p>
         <ul class="projects">
           {plugins.map((plugin) => (

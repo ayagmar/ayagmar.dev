@@ -33,7 +33,10 @@ export type NoctaliaPlugin = z.output<typeof plugin>;
 export const pluginUrl = ({ directory }: NoctaliaPlugin) =>
   `${communityPlugins}/tree/main/${directory}`;
 
-/** The section after the project groups on /projects and in its text copy. */
+/**
+ * The section after the project groups on /projects and in its text copy. `id` is its anchor, the
+ * target of the site Worker's redirect from /projects/headroom (ADR 0047).
+ */
 export const pluginsSection = {
   id: 'noctalia-plugins',
   title: 'Noctalia plugins',

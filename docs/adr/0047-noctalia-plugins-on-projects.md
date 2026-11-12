@@ -15,7 +15,8 @@ A plugin is a directory in someone else's repository. It has no stars, releases 
 - /projects shows them after the groups under "Noctalia plugins", in the same row markup, each linking its directory on `main`. `projects.txt` ends with the same block, and the section is in the Pagefind index. With an empty list neither shows it.
 - Plugins are not featured projects: no page, feed, numbers, log, sitemap entry, `llms.txt` line or home page row, and posts cannot name them in `projects`. A plugin that should have a page becomes a featured project with its own repository.
 - No thumbnails: the plugins' images live in the other repository and the CSP allows no image from it, and the site has no pipeline for copying them in.
-- `/projects/headroom`, its `.txt` and its feeds answer 404. The site has no redirect mechanism: static assets serve `dist/`, and the Worker's only redirect is `/room` (ADR 0045). A `_redirects` file would be a new mechanism for one page.
+- `/projects/headroom` answers a 301 to `/projects#noctalia-plugins` from the site Worker, the way `/room` redirects (ADR 0045); `moved` in `worker/index.ts` holds it, for every client, since curl following it gets the text copy of /projects anyway. The section carries that id.
+- `/projects/headroom.txt` answers a 301 to `/projects.txt` from `public/_redirects`, which Workers static assets apply before serving a file. The Worker never sees it: `run_worker_first` keeps every `.txt` off the Worker (ADR 0040), and Wrangler refuses a rule for one `.txt` under `/projects/*`. Running every copy through the Worker for one old URL would cost a Worker run per copy. Its feeds answer 404; they never carried an item, as no post named headroom.
 
 ## Consequences
 
