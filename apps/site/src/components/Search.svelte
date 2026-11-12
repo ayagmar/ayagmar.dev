@@ -17,14 +17,24 @@ interface Pagefind {
 const bundle = '/pagefind/pagefind.js';
 const limit = 8;
 
-/** The link shown until the island hydrates or without scripts (`browseLink` in writing.ts). */
-const { browse }: { browse: { href: string; label: string } } = $props();
+interface Link {
+  href: string;
+  label: string;
+}
+
+/**
+ * `browse`: the link shown until the island hydrates or without scripts (`browseLink` in
+ * writing.ts). `fallback`: the pages offered when a search finds nothing (`searchFallback`).
+ */
+const { browse, fallback }: { browse: Link; fallback: readonly Link[] } = $props();
 
 let hydrated = $state(false);
 let dialog = $state<HTMLDialogElement>();
 let query = $state('');
 let results = $state<Result[]>([]);
 let status = $state('');
+// The search that found nothing, said back with the pages to try; null otherwise.
+let nothingFor = $state<string | null>(null);
 let pagefind: Promise<Pagefind> | undefined;
 // Counts inputs, clearing the field included. A search whose number is no longer the latest
 // leaves the dialog alone, whether it answers or fails: the field has changed under it.
@@ -66,6 +76,7 @@ async function search() {
   if (term === '') {
     results = [];
     status = '';
+    nothingFor = null;
     return;
   }
   pagefind ??= import(/* @vite-ignore */ bundle);
@@ -75,15 +86,34 @@ async function search() {
     const data = await Promise.all(found.results.slice(0, limit).map((result) => result.data()));
     if (input !== latest) return;
     results = data;
-    status =
-      results.length === 0
-        ? 'No results.'
-        : `${results.length} ${results.length === 1 ? 'result' : 'results'}.`;
+    nothingFor = results.length === 0 ? term : null;
+    status = `${results.length} ${results.length === 1 ? 'result' : 'results'}.`;
   } catch {
     pagefind = undefined;
     if (input !== latest) return;
+    nothingFor = null;
     status = 'Search is unavailable right now.';
   }
+}
+
+// Svelte keeps a space where the markup breaks a line, so the words around each link come from
+// here: "Try Projects, About or Stats."
+const separator = (index: number) =>
+  index === 0 ? '' : index === fallback.length - 1 ? ' or ' : ', ';
+const end = (index: number) => (index === fallback.length - 1 ? '.' : '');
+
+// A native search field takes the first Escape to clear itself; one Escape closes the dialog.
+// While an input method is composing, Escape cancels the composition and is left to it.
+function onFieldKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape' || event.isComposing) return;
+  event.preventDefault();
+  dialog?.close();
+}
+
+// Any `[data-search-open]` on the page opens the dialog, such as the 404's "Search".
+function onClick(event: MouseEvent) {
+  if (!(event.target instanceof Element) || !event.target.closest('[data-search-open]')) return;
+  open();
 }
 
 // Pagefind indexes writing/post.html; the site serves it as /writing/post.
@@ -91,6 +121,7 @@ const href = (url: string) => url.replace(/\.html$/, '');
 </script>
 
 <svelte:window onkeydown={onKeydown} />
+<svelte:document onclick={onClick} />
 
 {#if hydrated}
   <!-- The hint names `/`, or Ctrl K when single-key shortcuts are off (base.css). Only Ctrl K is
@@ -118,10 +149,20 @@ const href = (url: string) => url.replace(/\.html$/, '');
       autofocus
       bind:value={query}
       oninput={search}
+      onkeydown={onFieldKeydown}
     >
     <button type="button" onclick={() => dialog?.close()}>Close</button>
   </search>
-  <p role="status">{status}</p>
+  <p role="status">
+    {#if nothingFor !== null}
+      Nothing for "{nothingFor}". Try
+      {#each fallback as page, index (page.href)}
+        {separator(index)}<a href={page.href}>{page.label}</a>{end(index)}
+      {/each}
+    {:else}
+      {status}
+    {/if}
+  </p>
   <ul>
     {#each results as result (result.url)}
       <li>

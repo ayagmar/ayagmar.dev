@@ -11,9 +11,13 @@ const counts = { posts: (await getPosts()).length, notes: (await getNotes()).len
   <div class="paper column t-error">
     <h1>Nothing here</h1>
     <p>No page lives at this address.</p>
-    <Onward pages={[...pagesToRead(counts), { href: '/', label: 'the room' }]}>
-      <!-- Search is only in the header with scripts on; base.css shows one of the two. -->
-      <span class="search-script">Try Search, or one of these:</span>
+    <Onward pages={[...pagesToRead(counts), { href: '/', label: 'the home page' }]}>
+      <!-- Search exists only with scripts on; base.css shows one of the two. The island opens
+           the dialog for the button (src/components/Search.svelte). -->
+      <span class="search-script">
+        Try <button type="button" class="inline-button" data-search-open>Search</button>, or one of
+        these:
+      </span>
       <span class="search-no-script">Try one of these:</span>
     </Onward>
   </div>

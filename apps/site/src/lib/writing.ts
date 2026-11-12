@@ -62,6 +62,11 @@ export function pagesToRead({ posts, notes }: { posts: number; notes: number }) 
   return [...nav.filter((item) => shown.has(item.href)), nowPage];
 }
 
+/** What Search offers when it finds nothing: the pages most readers come for. */
+export const searchFallback = ['/projects', '/about', '/stats'].flatMap((href) =>
+  nav.filter((item) => item.href === href)
+);
+
 /**
  * The header's link while Search has not hydrated or scripts are off: the posts once there are
  * some, the projects until then, so it is never a link to an empty page.
