@@ -32,7 +32,7 @@ describe("a project's log", () => {
 
   // Catches an empty box on a project with nothing shipped yet.
   it('is nothing at all when the project has no release or merge', () => {
-    expect(projectLog(projectEvents(logs, 'headroom'))).toEqual([]);
+    expect(projectLog(projectEvents(logs, 'dotfiles'))).toEqual([]);
   });
 
   // Catches a log that runs down the page: five open, the rest folded where no JavaScript is needed.

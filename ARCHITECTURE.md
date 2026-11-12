@@ -10,7 +10,7 @@ apps/signals         Hono Worker on api.ayagmar.dev. Pulls sources on a cron, ac
                      Knows no pages.
 packages/contracts   zod schemas for every snapshot, push payload and the response envelope,
                      their JSON Schema export, and the shared test fixtures.
-content/             Posts and optional project descriptions in Markdown. Data for the site, not code.
+content/             Posts, optional project descriptions and the Noctalia plugins list. Data for the site, not code.
 ```
 
 Dependencies point one way:
@@ -110,6 +110,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 | TIL notes: schema, model, summary, page and feeds (ADR 0028)              | `apps/site/src/lib/{til-schema,til}.ts`, `src/pages/til/`, `src/components/TilNote.astro`                                                          |
 | Project frontmatter schema; project model, post counts and cross-links    | `apps/site/src/lib/project-schema.ts`, `src/lib/projects.ts` (ADR 0025); numbers and log in `src/lib/project-panel.ts`                             |
 | Project logs: GitHub GraphQL pull, frontier, bots left out (ADR 0046)     | `apps/signals/src/adapters/pull/project-events.ts`, `packages/contracts/src/snapshots/project-events.ts`                                           |
+| Noctalia plugins on /projects: data and schema (ADR 0047)                 | `content/noctalia-plugins.json`, `apps/site/src/lib/noctalia-plugins.ts`                                                                           |
 | RSS and Atom (one model, two renderers; writing and TIL)                  | `apps/site/src/lib/feed.ts`                                                                                                                        |
 | Mermaid diagrams in posts (build-time SVG, `/diagrams.css`)               | `apps/site/src/lib/markdown/diagrams.ts`, `src/pages/diagrams.css.ts`                                                                              |
 | Copy buttons on code blocks in posts and notes                            | `apps/site/src/lib/markdown/code-copy.ts`, `src/scripts/code-copy.ts`                                                                              |
@@ -147,7 +148,7 @@ A push goes through, in order: content type, a 64 KiB streamed body cap, token (
 `just site-build` runs these steps:
 
 1. `astro build` writes static HTML (one file per page, `/writing` is `writing.html`), the text and Markdown copies, `llms.txt`, the feeds, the sitemap, the icons and a link-preview PNG for each post, note and year page plus one for every other page.
-2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` into `dist/pagefind/`: posts, notes, each project's name, tagline and description, /about, /uses, /now and /skills. Pages other than posts set their result title with `data-pagefind-meta`; posts use their h1. /now's date, /uses' live panel, /about's links and the skills' badges, links and install details are `data-pagefind-ignore`. A project page indexes only its header and description.
+2. `pagefind --site dist` indexes the elements marked `data-pagefind-body` into `dist/pagefind/`: posts, notes, each project's name, tagline and description, the Noctalia plugins on /projects, /about, /uses, /now and /skills. Pages other than posts set their result title with `data-pagefind-meta`; posts use their h1. /now's date, /uses' live panel, /about's links and the skills' badges, links and install details are `data-pagefind-ignore`. A project page indexes only its header and description.
 3. `scripts/postbuild.ts` hashes Astro's own inline scripts and style, fails on any other inline script or style, and writes `dist/_headers` with one Content-Security-Policy for the whole site.
 
 In production, Workers static assets serve `dist/`. The site Worker runs only for the pages with a copy ([ADR 0040](docs/adr/0040-text-and-markdown-copies.md)): a request whose `Accept` prefers Markdown gets the page's `.md` or else its `.txt`, a `curl`, `wget`, HTTPie or `xh` user agent its `.txt`, anything else the HTML page. `index.txt` starts with the room in ASCII. Every response comes from the assets binding, so it carries the `_headers` rules, plus `Vary: Accept, User-Agent`. The `.md` and `.txt` URLs themselves are plain assets, marked `noindex`. `/room` is the one answer the Worker renders: a terminal client gets the room in truecolor with the sky, the track and the latest commit as they are now, anyone else a redirect to `/` ([ADR 0045](docs/adr/0045-truecolor-room.md)).

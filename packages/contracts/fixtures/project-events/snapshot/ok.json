@@ -1480,20 +1480,6 @@
     {
       "slug": "dotfiles",
       "repo": "ayagmar/dotfiles",
-      "events": [
-        {
-          "repo": "ayagmar/dotfiles",
-          "at": "2026-10-08T09:35:01Z",
-          "type": "merge",
-          "url": "https://github.com/ayagmar/dotfiles/pull/1",
-          "number": 1,
-          "title": "feat(project-rename): repair Claude Code session state"
-        }
-      ]
-    },
-    {
-      "slug": "headroom",
-      "repo": "ayagmar/headroom",
       "events": []
     }
   ]

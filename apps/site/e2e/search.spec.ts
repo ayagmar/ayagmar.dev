@@ -40,6 +40,18 @@ test('finds a project by its name', async ({ page }) => {
   await expect(result).toHaveAttribute('href', '/projects/runnerd');
 });
 
+// Catches the Noctalia plugins falling out of the index: they have no pages of their own, so the
+// section on /projects is the only place search can find them.
+test('finds a Noctalia plugin on /projects', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog', { name: 'Search' });
+  await dialog.getByLabel('Search the site').fill('OBS');
+  const result = dialog.getByRole('link', { name: 'Noctalia plugins', exact: true });
+  await expect(result).toHaveAttribute('href', '/projects');
+});
+
 // Catches words in neighbouring inline elements running together in an excerpt, as
 // "repo-pulseA self-hosted" and "CPUAMD Ryzen" did.
 for (const { term, title, words } of [

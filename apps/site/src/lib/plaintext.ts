@@ -7,6 +7,7 @@ import type { Uses } from '../data/uses.ts';
 import { absoluteLinks, articleMeta, noteArticle, textBody } from './article.ts';
 import { longDate } from './day-words.ts';
 import { feedPaths } from './feed.ts';
+import { type NoctaliaPlugin, pluginsSection, pluginUrl } from './noctalia-plugins.ts';
 import type { BrewingItem } from './now-schema.ts';
 import { noNumbers } from './project-panel.ts';
 import {
@@ -170,10 +171,14 @@ export function renderTilText(notes: readonly Note[], posts: readonly Post[]): s
   ].join('\n');
 }
 
-/** /projects: what each project is, its posts and its status, under the page's headings. */
+/**
+ * /projects: what each project is, its posts and its status, under the page's headings, then
+ * the Noctalia plugins when there are any.
+ */
 export function renderProjectsText(
   projects: readonly SiteProject[],
-  posts: readonly Post[]
+  posts: readonly Post[],
+  plugins: readonly NoctaliaPlugin[]
 ): string {
   return [
     `Projects | ${site.name}`,
@@ -190,6 +195,20 @@ export function renderProjectsText(
         '',
       ]),
     ]),
+    ...(plugins.length === 0
+      ? []
+      : [
+          textRule,
+          pluginsSection.title,
+          pluginsSection.intro,
+          '',
+          ...plugins.flatMap((plugin) => [
+            plugin.name,
+            `  ${plugin.summary}`,
+            `  ${pluginUrl(plugin)}`,
+            '',
+          ]),
+        ]),
     ...footer('/projects').slice(1),
   ].join('\n');
 }

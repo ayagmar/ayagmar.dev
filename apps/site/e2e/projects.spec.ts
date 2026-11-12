@@ -44,7 +44,7 @@ test('a project page lists its writing newest first and links its feeds', {
 });
 
 // niri-computer-use only has a draft, which a production build leaves out.
-for (const slug of ['headroom', 'niri-computer-use']) {
+for (const slug of ['dotfiles', 'niri-computer-use']) {
   test(`${slug} says nothing is written about it yet`, async ({ page, request }) => {
     await page.goto(`/projects/${slug}`);
     await expect(page.getByText(`Nothing written about ${slug} yet.`)).toBeVisible();
@@ -57,7 +57,7 @@ test('the projects index counts the posts per project', { tag: '@drafts' }, asyn
   await page.goto('/projects');
   await expect(page.locator('#llm-usage-metrics .project-post-count')).toHaveText(/^2 posts/);
   await expect(page.locator('#runnerd .project-post-count')).toHaveText(/^1 post/);
-  await expect(page.locator('#headroom')).not.toContainText('no posts');
+  await expect(page.locator('#dotfiles')).not.toContainText('no posts');
 });
 
 test("a project feed carries only that project's posts", { tag: '@drafts' }, async ({
@@ -111,3 +111,33 @@ for (const path of ['/', '/projects/pi-mobile', '/projects', '/writing/token-log
     }
   });
 }
+
+// Catches the plugins section dropping off /projects or its text copy, a plugin linking anywhere
+// but its directory in Noctalia's community list, and headroom's old page outliving its removal.
+test('/projects ends with the Noctalia plugins, which have no pages of their own', async ({
+  page,
+  request,
+}) => {
+  const directory = 'https://github.com/noctalia-dev/community-plugins/tree/main';
+  const urls = [`${directory}/headroom`, `${directory}/binance`, `${directory}/obs-control`];
+  await page.goto('/projects');
+  const section = page.getByRole('region', { name: 'Noctalia plugins' });
+  await expect(page.locator('.column > section').last()).toHaveAttribute(
+    'aria-labelledby',
+    'noctalia-plugins'
+  );
+  await expect(section.getByRole('heading', { level: 3 })).toHaveText([
+    'Headroom',
+    'Binance',
+    'OBS Control',
+  ]);
+  expect(
+    await section
+      .getByRole('link')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+  ).toEqual(urls);
+  const text = await (await request.get('/projects.txt')).text();
+  for (const url of urls) expect(text).toContain(`  ${url}\n`);
+  expect((await request.get('/projects/headroom')).status()).toBe(404);
+  expect((await request.get('/projects/headroom.txt')).status()).toBe(404);
+});

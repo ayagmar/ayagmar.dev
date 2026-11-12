@@ -342,11 +342,6 @@
         "slug": "agents-skills",
         "repo": "ayagmar/agents-skills",
         "events": []
-      },
-      {
-        "slug": "headroom",
-        "repo": "ayagmar/headroom",
-        "events": []
       }
     ]
   }

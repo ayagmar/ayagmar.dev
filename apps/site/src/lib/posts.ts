@@ -1,4 +1,4 @@
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import { PUBLIC_SHOW_DRAFTS } from 'astro:env/server';
 import { signals } from '../data/signals.ts';
 import { dayPages, type History, type Published, wholeSeries } from './days.ts';
@@ -31,6 +31,13 @@ export async function getProjects() {
     envelope.data?.projects ?? null
   ).map((project) => ({ ...project, file: files.find((file) => file.id === project.slug) }));
   return { projects, envelope };
+}
+
+/** The owner's plugins in Noctalia's community list, from content/noctalia-plugins.json. */
+export async function getNoctaliaPlugins() {
+  const entry = await getEntry('noctaliaPlugins', 'plugins');
+  if (entry === undefined) throw new Error('content/noctalia-plugins.json is missing');
+  return entry.data.plugins;
 }
 
 /**

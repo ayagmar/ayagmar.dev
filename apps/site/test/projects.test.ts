@@ -1,3 +1,4 @@
+import { snapshotFixtures } from '@min7/contracts/fixtures';
 import { describe, expect, it } from 'vitest';
 import { noNumbers } from '../src/lib/project-panel.ts';
 import { projectSchema } from '../src/lib/project-schema.ts';
@@ -55,12 +56,12 @@ describe('project files', () => {
 describe('site projects', () => {
   it('list every featured project, file order first, with no numbers when signals had none', () => {
     const projects = siteProjects(
-      [{ slug: 'headroom', status: 'spec', group: 'desktop', order: 1 }],
+      [{ slug: 'dotfiles', status: 'spec', group: 'desktop', order: 1 }],
       null
     );
-    expect(projects[0]).toMatchObject({ slug: 'headroom', status: 'spec', live: null });
+    expect(projects[0]).toMatchObject({ slug: 'dotfiles', status: 'spec', live: null });
     expect(projects.map((project) => project.slug)).toEqual([
-      'headroom',
+      'dotfiles',
       'llm-usage-metrics',
       'pi-mobile',
       'pi-extmgr',
@@ -73,8 +74,18 @@ describe('site projects', () => {
       'repo-pulse',
       'agents-skills',
       'kipple',
-      'dotfiles',
     ]);
+  });
+
+  // Catches a project dropped from contracts coming back from a snapshot that still names it: a
+  // row signals stored before the drop, or an older signals answering during a deploy.
+  it('list no project the snapshot names that contracts no longer do', () => {
+    const live = snapshotFixtures.projects.ok.projects;
+    const dropped = live.slice(0, 1).map((project) => ({ ...project, slug: 'headroom' }));
+    const stale = [...live, ...dropped];
+    expect(siteProjects([], stale).map((project) => project.slug)).toEqual(
+      siteProjects([], live).map((project) => project.slug)
+    );
   });
 
   // Catches a project with no file dropping off /projects, or a group taking the place of a

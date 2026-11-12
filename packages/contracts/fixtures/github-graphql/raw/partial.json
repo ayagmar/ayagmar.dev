@@ -575,16 +575,6 @@
             }
           ]
         }
-      },
-      "p_headroom": {
-        "nameWithOwner": "ayagmar/headroom",
-        "isPrivate": false,
-        "releases": {
-          "nodes": []
-        },
-        "pullRequests": {
-          "nodes": []
-        }
       }
     },
     "errors": [
