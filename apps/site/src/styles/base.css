@@ -1799,12 +1799,9 @@ img.plugin-thumb,
 
 .projects li {
   display: grid;
-  position: relative;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.15rem 1.5rem;
   align-items: baseline;
-  /* WCAG 2.5.5's 44 px, for a row with no summary. */
-  min-block-size: 2.75rem;
   padding-block: 1rem;
   border-bottom: 1px solid var(--rule);
 }
@@ -1843,22 +1840,31 @@ img.plugin-thumb,
   text-decoration: none;
 }
 
-.projects h3 a::after {
+.projects h3 a:hover,
+.project-row:hover h3 a {
+  color: var(--lamp);
+}
+
+/* A project's row only (ProjectRow.astro): a plugin's row has its own links and a screenshot
+   button, which a stretched link would cover. */
+.project-row {
+  position: relative;
+  /* WCAG 2.5.5's 44 px, for a row with no summary. */
+  min-block-size: 2.75rem;
+}
+
+.project-row h3 a::after {
   position: absolute;
   inset: 0;
   content: "";
 }
 
-.projects li:hover h3 a {
-  color: var(--lamp);
-}
-
 /* The focus ring goes round the row the link covers, not round the name alone. */
-.projects h3 a:focus-visible {
+.project-row h3 a:focus-visible {
   outline: none;
 }
 
-.projects h3 a:focus-visible::after {
+.project-row h3 a:focus-visible::after {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

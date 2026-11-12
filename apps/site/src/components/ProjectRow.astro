@@ -16,7 +16,7 @@ const label = projectRowLabel(project, posts);
 {/* One link per row, stretched over the whole row by base.css (ADR 0051). The label is kept
     current from /v1/projects by src/scripts/project-rows.ts, when the list is live; a project
     signals does not fetch has nothing to update. */}
-<li id={id}>
+<li id={id} class="project-row">
   <h3><a href={projectPath(project.slug)}>{project.slug}</a></h3>
   {project.summary !== null && <p>{project.summary}</p>}
   <p
