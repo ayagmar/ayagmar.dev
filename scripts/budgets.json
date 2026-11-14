@@ -122,16 +122,6 @@
         }
       }
     },
-    "accepted": [
-      {
-        "page": "project",
-        "profile": "desktop",
-        "metric": "lcp",
-        "base": 278,
-        "ceiling": 600,
-        "reason": "the largest paint is now the project screenshot, not text",
-        "adr": "0049"
-      }
-    ]
+    "accepted": []
   }
 }
