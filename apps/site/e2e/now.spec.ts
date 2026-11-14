@@ -2,7 +2,7 @@
 // runs axe on it at 360 and 1280 px and checks it does not scroll sideways at 320 px.
 import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
-const updated = '2026-10-30';
+const updated = '2026-11-14';
 
 for (const colorScheme of ['light', 'dark'] as const) {
   // Catches a window or notice whose text fails contrast in one theme, which axe cannot see on
@@ -43,7 +43,7 @@ test('/now shows its items, linked, with the date and no JavaScript needed', asy
   await expect(window.getByRole('link', { name: 'this site' })).toHaveCount(0);
   await expect(page.locator('main time')).toHaveAttribute('datetime', updated);
   // Without a script there is no clock to count from, so no age.
-  await expect(page.locator('.intro .caption').first()).toHaveText('Updated 30 October 2026.');
+  await expect(page.locator('.intro .caption').first()).toHaveText('Updated 14 November 2026.');
   await context.close();
 });
 
@@ -52,12 +52,12 @@ test('/now shows its items, linked, with the date and no JavaScript needed', asy
 test.describe('the age by the reader clock', () => {
   test.use({ timezoneId: 'UTC' });
   test('/now says how old it is, and moves on at midnight', async ({ page }) => {
-    await page.clock.install({ time: '2026-11-12T23:59:58Z' });
+    await page.clock.install({ time: '2026-11-27T23:59:58Z' });
     await page.goto('/now');
     const line = page.locator('.intro .caption').first();
-    await expect(line).toHaveText('Updated 30 October 2026, 13 days ago.');
+    await expect(line).toHaveText('Updated 14 November 2026, 13 days ago.');
     await page.clock.runFor(3000);
-    await expect(line).toHaveText('Updated 30 October 2026, 14 days ago.');
+    await expect(line).toHaveText('Updated 14 November 2026, 14 days ago.');
   });
 });
 
@@ -65,9 +65,9 @@ test.describe('the age by the reader clock', () => {
 // freshness), showing for a fresh page, or flipping on the wrong side of the 90-day line.
 test.describe('the out-of-date notice follows the reader clock', () => {
   const cases = [
-    ['90 days after', '2027-01-28T00:00:00Z', false],
-    ['91 days after', '2027-01-29T00:00:01Z', true],
-    ['the day of', '2026-10-30T12:00:00Z', false],
+    ['90 days after', '2027-02-12T00:00:00Z', false],
+    ['91 days after', '2027-02-13T00:00:01Z', true],
+    ['the day of', '2026-11-14T12:00:00Z', false],
   ] as const;
   for (const [name, time, shown] of cases) {
     test(`${name} the update: ${shown ? 'shown' : 'hidden'}`, async ({ page }) => {
@@ -84,10 +84,10 @@ test.describe('the out-of-date notice follows the reader clock', () => {
 // It is paused before the page loads: a running clock would cross the line during a slow load.
 test.describe('the out-of-date notice follows the clock while the page stays', () => {
   const notice = (page: import('@playwright/test').Page) => page.getByText(/may be out of date/);
-  const lastFresh = '2027-01-27T23:59:59Z';
-  const stale = '2027-01-28T00:00:02Z';
+  const lastFresh = '2027-02-11T23:59:59Z';
+  const stale = '2027-02-12T00:00:02Z';
   const pause = async (page: import('@playwright/test').Page) => {
-    await page.clock.install({ time: '2027-01-27T23:00:00Z' });
+    await page.clock.install({ time: '2027-02-11T23:00:00Z' });
     await page.clock.pauseAt(lastFresh);
   };
 
