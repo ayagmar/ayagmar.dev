@@ -6,7 +6,7 @@ tags: [linux, ci, btrfs]
 art: ci-wrote-my-ssd-twice-over.art.txt
 ---
 
-My CI runs on my own machine, on the same 1 TB SSD as everything else. Fourteen hours after boot, the drive had taken 2,512 GiB of writes, about 2.3 GiB per job. That is the whole drive rewritten every five hours.
+My CI runs on my own machine, on the same 1 TB SSD as everything else. Fourteen hours and about 1,100 jobs after boot, the drive had taken 2,512 GiB of writes. That is the whole drive rewritten every five hours.
 
 Linux counts this for you, no root needed. For the whole drive:
 
