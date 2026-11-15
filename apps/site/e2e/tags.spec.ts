@@ -107,11 +107,14 @@ test('tags on /til and on a note lead to their tag page', async ({ page, request
 // (ADR 0021), so it must lead to the new one.
 test("a tag page's old address leads to the new one", async ({ request }) => {
   const tag = liveTags[0] ?? 'linux';
-  const response = await request.get(`/writing/tags/${tag}`, { maxRedirects: 0 });
-  expect(response.status()).toBe(301);
-  expect(new URL(response.headers().location ?? '', 'http://127.0.0.1').pathname).toBe(
-    `/tags/${tag}`
-  );
+  // With and without a trailing slash: the placeholder does not match the slash.
+  for (const old of [`/writing/tags/${tag}`, `/writing/tags/${tag}/`]) {
+    const response = await request.get(old, { maxRedirects: 0 });
+    expect(response.status(), old).toBe(301);
+    expect(new URL(response.headers().location ?? '', 'http://127.0.0.1').pathname, old).toBe(
+      `/tags/${tag}`
+    );
+  }
 });
 
 const all = { posts, notes };

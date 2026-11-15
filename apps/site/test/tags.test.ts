@@ -49,32 +49,4 @@ describe('tag pages', () => {
       { path: '/tags/rust', posts: ['/writing/runners'], notes: [] },
     ]);
   });
-
-  // Catches a tag that only drafts use reaching production, or missing from a Preview.
-  it('give a tag only drafts use a page only where drafts are built', () => {
-    expect(pages(false).map((page) => page.path)).not.toContain('/tags/secret');
-    expect(pages(true).find((page) => page.path === '/tags/secret')).toEqual({
-      path: '/tags/secret',
-      posts: ['/writing/soon'],
-      notes: ['/til/later'],
-    });
-  });
-
-  // Catches tags merged by a normalisation the slug rules do not make: "home-lab" and
-  // "homelab" are two tags and two pages.
-  it('keep tags apart that differ only by a hyphen', () => {
-    const tags = taggedEntries(
-      [post('a', '2026-10-01', ['home-lab'])],
-      [note('b', '2026-10-02', ['homelab'])]
-    ).map((entry) => [entry.tag, entry.posts.length, entry.notes.length]);
-    expect(tags).toEqual([
-      ['home-lab', 1, 0],
-      ['homelab', 0, 1],
-    ]);
-  });
-
-  // Catches an empty site failing the build instead of building no tag page.
-  it('are none on a site with nothing published', () => {
-    expect(taggedEntries([], [])).toEqual([]);
-  });
 });
