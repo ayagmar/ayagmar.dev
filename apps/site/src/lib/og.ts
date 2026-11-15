@@ -46,9 +46,9 @@ export const postOgImage = (slug: string, title: string, art: boolean): OgImage 
   alt: `${title}, on ${site.name}, ${art ? "under the post's art" : 'under the night room'}.`,
 });
 
-export const noteOgImage = (slug: string, title: string): OgImage => ({
+export const noteOgImage = (slug: string, title: string, art: boolean): OgImage => ({
   path: `/og/til/${slug}.png`,
-  alt: `TIL: ${title}, on ${site.name}, under the night room.`,
+  alt: `TIL: ${title}, on ${site.name}, ${art ? "under the note's art" : 'under the night room'}.`,
 });
 
 /** A project page's image: its name in the code face and its tagline, under the night room. */

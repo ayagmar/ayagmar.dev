@@ -54,9 +54,9 @@ test.describe('without published posts', () => {
         .locator('.onward a')
         .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute('href')));
       expect(links, path).toEqual([
-        ...(path === '/writing' && publishedNotes.length > 0 ? ['/til'] : []),
         '/projects',
         '/about',
+        ...(path === '/writing' && publishedNotes.length > 0 ? ['/til'] : []),
         '/now',
       ]);
       await expect(column.getByRole('link', { name: 'RSS' }), path).toHaveAttribute(
@@ -73,9 +73,9 @@ test.describe('without published posts', () => {
       .locator('.column .onward a')
       .evaluateAll((anchors) => anchors.map((anchor) => anchor.getAttribute('href')));
     expect(links).toEqual([
-      ...(publishedNotes.length > 0 ? ['/til'] : []),
       '/projects',
       '/about',
+      ...(publishedNotes.length > 0 ? ['/til'] : []),
       '/now',
       '/',
     ]);

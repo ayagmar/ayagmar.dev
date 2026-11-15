@@ -1,0 +1,4 @@
+Where each map in this folder comes from. The source images are not in this repository.
+
+ci-wrote-my-ssd-twice-over.art.txt
+  Own work: an M.2 drive drawn by hand, with its wear bar in amber.

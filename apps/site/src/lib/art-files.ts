@@ -33,11 +33,16 @@ export const mapsIn =
     }
   };
 
+/** The TIL collection's base. A note's map sits beside the note, as a post's does (ADR 0028). */
+export const tilBase = '../../content/til';
+
+const writingDir = 'content/writing';
 const beside = mapsIn(writingBase);
+const besideNotes = mapsIn(tilBase);
 
 /** The map a valid name stands for, under the name a message should use. */
-function mapOf(art: string, read: typeof beside) {
-  if (isPostMap(art)) return { file: `content/writing/${art}`, map: read(art) };
+function mapOf(art: string, read: typeof beside, dir: string) {
+  if (isPostMap(art)) return { file: `${dir}/${art}`, map: read(art) };
   const text = objectMaps[`../art/${art}.txt`];
   return {
     file: `src/art/${art}.txt`,
@@ -45,11 +50,11 @@ function mapOf(art: string, read: typeof beside) {
   };
 }
 
-/** What is wrong with a post's `art` value or its map, or undefined. */
-export function artProblem(art: unknown, read = beside): string | undefined {
+/** What is wrong with an `art` value or its map, or undefined. `dir` is the folder a message names. */
+export function artProblem(art: unknown, read = beside, dir = writingDir): string | undefined {
   const name = artNameProblem(art);
   if (name !== undefined || typeof art !== 'string') return name;
-  const { file, map } = mapOf(art, read);
+  const { file, map } = mapOf(art, read, dir);
   const problem = 'problem' in map ? map.problem : mapProblem(map.text);
   return problem === undefined ? undefined : `${file} ${problem}`;
 }
@@ -61,18 +66,26 @@ export function artProblem(art: unknown, read = beside): string | undefined {
  */
 export function postArtErrors(
   posts: readonly { id: string; art: unknown }[],
-  read = beside
+  read = beside,
+  dir = writingDir
 ): string[] {
   return posts.flatMap(({ id, art }) => {
-    const problem = art === undefined ? undefined : artProblem(art, read);
-    return problem === undefined ? [] : [`content/writing/${id}.md: art ${problem}`];
+    const problem = art === undefined ? undefined : artProblem(art, read, dir);
+    return problem === undefined ? [] : [`${dir}/${id}.md: art ${problem}`];
   });
 }
 
+/** The same check over the notes, whose maps are in content/til. */
+export const noteArtErrors = (notes: readonly { id: string; art: unknown }[]): string[] =>
+  postArtErrors(notes, besideNotes, 'content/til');
+
 /** The post's art as an SVG string, for PostHeader. */
-export function renderArt(art: string, read = beside): string {
-  const problem = artProblem(art, read);
+export function renderArt(art: string, read = beside, dir = writingDir): string {
+  const problem = artProblem(art, read, dir);
   if (problem !== undefined) throw new Error(`art: ${problem}`);
-  const { map } = mapOf(art, read);
+  const { map } = mapOf(art, read, dir);
   return renderMap('text' in map ? map.text : '');
 }
+
+/** A note's art as an SVG string. */
+export const renderNoteArt = (art: string): string => renderArt(art, besideNotes, 'content/til');

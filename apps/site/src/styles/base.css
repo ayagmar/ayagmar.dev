@@ -1255,6 +1255,10 @@ main:has(.toc) .reader ~ .project-card {
       transparent var(--pixel) calc(8 * var(--pixel))
     )
     calc(2 * var(--pixel)) calc(3 * var(--pixel)) / 100% var(--pixel) no-repeat;
+  /* Dimmer than a link and gone before the column's edges, so it is light thinning out and not
+     a ribbon across the page. */
+  opacity: 0.55;
+  mask: linear-gradient(90deg, transparent, #000 30% 70%, transparent);
 }
 
 /* A series: which part this is, then every part on one quiet line, the current one unlinked. */

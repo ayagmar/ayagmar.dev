@@ -12,7 +12,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { lattice, mapProblem, renderMap, roomObjects, roomPalette } from '../src/lib/art.ts';
-import { artProblem, mapsIn, postArtErrors, renderArt } from '../src/lib/art-files.ts';
+import {
+  artProblem,
+  mapsIn,
+  noteArtErrors,
+  postArtErrors,
+  renderArt,
+} from '../src/lib/art-files.ts';
 import { moonColour } from '../src/lib/sky.ts';
 
 const hex = ([r, g, b]: readonly number[]) =>
@@ -79,19 +85,22 @@ describe('post art', () => {
 
   // Catches a map published with no record of its image, a record with no link or licence, and a
   // record left behind by a deleted map.
-  it('records the source and licence of every map beside a post', () => {
-    const dir = join(repo, 'content/writing');
-    const records = readFileSync(join(dir, 'art-sources.txt'), 'utf8')
-      .trim()
-      .split('\n\n')
-      .slice(1);
-    const maps = readdirSync(dir).filter((name) => name.endsWith('.art.txt'));
-    expect(records.map((record) => record.split('\n')[0]).sort()).toEqual(maps.sort());
-    const sourced = (record: string) =>
-      /own work/i.test(record) ||
-      (/https:\/\/\S/.test(record) && /CC0|public domain/i.test(record));
-    expect(records.filter((record) => !sourced(record))).toEqual([]);
-  });
+  it.each(['content/writing', 'content/til'])(
+    'records the source and licence of every map in %s',
+    (folder) => {
+      const dir = join(repo, folder);
+      const records = readFileSync(join(dir, 'art-sources.txt'), 'utf8')
+        .trim()
+        .split('\n\n')
+        .slice(1);
+      const maps = readdirSync(dir).filter((name) => name.endsWith('.art.txt'));
+      expect(records.map((record) => record.split('\n')[0]).sort()).toEqual(maps.sort());
+      const sourced = (record: string) =>
+        /own work/i.test(record) ||
+        (/https:\/\/\S/.test(record) && /CC0|public domain/i.test(record));
+      expect(records.filter((record) => !sourced(record))).toEqual([]);
+    }
+  );
 });
 
 describe('text maps', () => {
@@ -221,6 +230,13 @@ describe('maps on disk', () => {
     expect(postArtErrors(posts, mapsIn(dir))).toEqual([
       'content/writing/a-draft.md: art content/writing/a-draft.art.txt does not exist',
       'content/writing/a-post.md: art content/writing/a-post.art.txt row 1 has "x"; a map uses only #, ., + and spaces',
+    ]);
+  });
+
+  // Catches a note's broken map reported under content/writing, where no such file is.
+  it('names the note and its own folder for a note with a missing map', () => {
+    expect(noteArtErrors([{ id: 'a-note', art: 'gone.art.txt' }])).toEqual([
+      'content/til/a-note.md: art content/til/gone.art.txt does not exist',
     ]);
   });
 

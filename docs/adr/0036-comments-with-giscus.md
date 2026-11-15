@@ -1,6 +1,6 @@
 # 0036. Comments on posts and notes with giscus
 
-Status: accepted, 2026-10-30
+Status: accepted, 2026-10-30. Amended 2026-11-15: the comments script has its own allowance in `scripts/budgets.json` (1,460 B). With the code copy button, the first published note with a code block was 734 B over the 20 KB a page with an island may load.
 
 ## Context
 

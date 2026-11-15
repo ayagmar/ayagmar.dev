@@ -39,4 +39,6 @@ The names are `lamp`, `notebook`, `monitor`, `record`, `cat`, `window` and `tea`
    art: my-post.art.txt
    ```
 
+A note takes `art` too. Its map goes in `content/til/<slug>.art.txt`, written by hand or moved there after `just art-map`, and its source in `content/til/art-sources.txt`.
+
 `just publish` commits a new or changed map and `art-sources.txt` with the post, so leave them uncommitted, as you leave the post. Any other change in the tree stops it.

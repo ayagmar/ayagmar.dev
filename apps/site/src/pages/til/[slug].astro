@@ -7,6 +7,7 @@ import PostHeader from '../../components/PostHeader.astro';
 import ReplyByEmail from '../../components/ReplyByEmail.astro';
 import Toc from '../../components/Toc.astro';
 import Base from '../../layouts/Base.astro';
+import { renderNoteArt } from '../../lib/art-files.ts';
 import { diagramStyles } from '../../lib/markdown/diagrams.ts';
 import { noteOgImage } from '../../lib/og.ts';
 import { getNotes } from '../../lib/posts.ts';
@@ -22,9 +23,9 @@ export const getStaticPaths = (async () =>
 const { note } = Astro.props;
 const { Content, headings, remarkPluginFrontmatter } = await render(note);
 const hasDiagrams = Object.keys(diagramStyles(remarkPluginFrontmatter)).length > 0;
-const { title, date, tags, draft } = note.data;
+const { title, date, tags, draft, art } = note.data;
 const description = noteSummary(note);
-const image = noteOgImage(note.id, title);
+const image = noteOgImage(note.id, title, art !== undefined);
 const path = notePath(note.id);
 const structuredData = [
   blogPosting({ path, title, description, published: date, tags, image: image.path }),
@@ -41,7 +42,11 @@ const structuredData = [
   <article class="reader" data-pagefind-body>
     <!-- Search shows this as the result's title, so a note reads "TIL: ..." (ADR 0028). -->
     <span hidden data-pagefind-meta="title">TIL: {note.data.title}</span>
-    <PostHeader post={note} linkTags={false} />
+    <PostHeader
+      post={note}
+      linkTags={false}
+      art={art === undefined ? undefined : renderNoteArt(art)}
+    />
     <Toc headings={headings} idPrefix={`${note.id}-`} />
     <div class="prose">
       <Content />

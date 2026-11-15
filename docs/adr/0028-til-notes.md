@@ -1,6 +1,6 @@
 # 0028. TIL notes
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. Amended 2026-11-15: a note takes the posts' optional `art` field (ADR 0027). Its map and the record of its source sit in `content/til`, every build checks it, the note's page and link-preview card draw it, `/til` does not, and `just publish` commits a new map with the note.
 
 ## Context
 

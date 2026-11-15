@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import sharp from 'sharp';
+import { notes } from './content.ts';
 import { expect, expectNoAxeViolations, test } from './fixtures.ts';
 
 // The page background of each theme (--ground in base.css).
@@ -462,12 +463,15 @@ test.describe('on a phone', () => {
   // Catches a row naming an object the cropped room does not show: each says what its page
   // holds instead (ADR 0051), Writing and TIL what they have so far.
   test('each row says what its page holds', async ({ page }) => {
+    const newestNote = notes
+      .filter((note) => !note.draft)
+      .toSorted((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug))[0];
     await page.goto('/');
     await expect(page.locator('.room-holds:visible')).toHaveText([
       'Tools I build',
       'Work and contact',
       'No posts yet',
-      'No notes yet',
+      newestNote?.title ?? 'No notes yet',
       'What I merged, by day',
       'My coding-agent use',
       "What I'm playing",

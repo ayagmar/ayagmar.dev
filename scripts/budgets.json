@@ -64,6 +64,11 @@
         "bytes": 930
       },
       {
+        "name": "comments",
+        "file": "/_astro/Comments.astro_astro_type_script_index_0_lang.*.js",
+        "bytes": 1460
+      },
+      {
         "name": "image viewer",
         "file": "/_astro/ImageViewer.astro_astro_type_script_index_0_lang.*.js",
         "bytes": 930
