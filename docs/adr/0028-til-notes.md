@@ -1,6 +1,6 @@
 # 0028. TIL notes
 
-Status: accepted, 2026-10-26. Amended 2026-11-15: a note takes the posts' optional `art` field (ADR 0027). Its map and the record of its source sit in `content/til`, every build checks it, the note's page and link-preview card draw it, `/til` does not, and `just publish` commits a new map with the note.
+Status: accepted, 2026-10-26. Amended 2026-11-15: a note takes the posts' optional `art` field (ADR 0027). Amended 2026-11-15: `/til` lists the notes instead of stacking them whole: each has its title, date, reading time, tags and first paragraph (`noteSummary`, the feeds' text), since the first note with code and diagrams filled the page and would push every later note out of sight. `/til.txt` still gives each note in full. Its map and the record of its source sit in `content/til`, every build checks it, the note's page and link-preview card draw it, `/til` does not, and `just publish` commits a new map with the note.
 
 ## Context
 

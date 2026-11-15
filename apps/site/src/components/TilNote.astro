@@ -2,14 +2,16 @@
 import { notePath } from '../lib/til.ts';
 import type { TilFrontmatter } from '../lib/til-schema.ts';
 import { isoDay } from '../lib/writing.ts';
-import CodeCopy from './CodeCopy.astro';
 
 interface Props {
   id: string;
   data: TilFrontmatter;
+  /** The note's first paragraph (`noteSummary`); left out when it is only the title again. */
+  summary: string;
+  minutes: number;
 }
 
-const { id, data } = Astro.props;
+const { id, data, summary, minutes } = Astro.props;
 const { title, date, tags, draft } = data;
 ---
 
@@ -20,6 +22,7 @@ const { title, date, tags, draft } = data;
       <time datetime={isoDay(date)}>{isoDay(date)}</time>{' '}
       {draft && <strong>Draft</strong>}
     </p>
+    <p>{minutes} min read</p>
     {tags.length > 0 && (
       <ul class="tags" aria-label="Tags">
         {tags.map((tag) => (
@@ -30,8 +33,5 @@ const { title, date, tags, draft } = data;
       </ul>
     )}
   </div>
-  <div class="prose">
-    <slot />
-  </div>
-  <CodeCopy />
+  {summary !== title && <p class="til-summary">{summary}</p>}
 </article>

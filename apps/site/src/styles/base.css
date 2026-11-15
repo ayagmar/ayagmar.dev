@@ -1627,7 +1627,19 @@ img.plugin-thumb,
   color: var(--ink);
 }
 
-/* A short page stacked on others (TIL): no extra chrome, the star between notes. */
+/* /til lists the notes: a title, its line of facts and the first paragraph, a note apart. */
+.til-note {
+  margin-top: 1.75rem;
+}
+
+.til-note + .til-note {
+  margin-top: 2.25rem;
+}
+
+.til-note ~ .caption {
+  margin-top: 2.5rem;
+}
+
 .til-note h2 {
   margin: 0 0 0.25rem;
   font-size: 1.55em;
@@ -1640,7 +1652,11 @@ img.plugin-thumb,
 }
 
 .til-note .post-meta {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.til-summary {
+  margin: 0;
 }
 
 @media (max-width: 39.99rem) {

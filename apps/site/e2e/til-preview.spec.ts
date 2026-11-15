@@ -80,9 +80,9 @@ test('a long code line scrolls inside its block', async ({ page }) => {
   expect({ scrolls, inside, focusable }).toEqual({ scrolls: true, inside: true, focusable: true });
 });
 
-// Catches a /til that links notes without showing them, loses a note's date or permalink, or
-// shows them oldest first.
-test('/til shows every note in full, newest first, each with its date and permalink', async ({
+// Catches a /til that drops a note, loses its date or permalink, shows them oldest first, or
+// goes back to stacking whole notes, where one long note pushes the rest out of sight.
+test('/til lists every note, newest first, each with its date, permalink and opening', async ({
   page,
 }) => {
   await page.goto('/til');
@@ -95,11 +95,9 @@ test('/til shows every note in full, newest first, each with its date and permal
       'href',
       `/til/${note.slug}`
     );
-    // The body, not a summary: every note here has at least one paragraph of prose.
-    expect(await entry.locator('.prose p').count()).toBeGreaterThan(0);
+    await expect(entry.locator('.til-summary')).toHaveCount(1);
   }
-  // The long command is on the page, not only on the note's own.
-  if (hasLongLine) await expect(shown.locator('pre')).toContainText('install.sh | sh');
+  await expect(page.locator('.til-note pre, .til-note .diagram')).toHaveCount(0);
 });
 
 test('a note page shows that note alone', async ({ page }) => {
