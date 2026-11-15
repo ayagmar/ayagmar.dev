@@ -1,0 +1,1 @@
+Where each map in this folder comes from. The source images are not in this repository.

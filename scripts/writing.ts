@@ -297,16 +297,17 @@ function publishBranch(slug: string): string {
 }
 
 /**
- * What a post's map brings to its publishing commit: the map and the record of its source. Only a
+ * What a post's or note's map brings to its publishing commit: the map and the record of its source. Only a
  * new or changed map does, so a post needs no pull request of its own to land its map first.
  */
-function mapFiles(text: string, changed: string[]): string[] {
+function mapFiles(kind: Kind, text: string, changed: string[]): string[] {
   const art = frontmatter(text)
     .lines.map((line) => /^art:\s*['"]?([^\s'"#]+)/.exec(line)?.[1])
     .find((value) => value !== undefined);
   if (art === undefined || !isPostMap(art)) return [];
-  const map = `content/writing/${art}`;
-  return changed.includes(map) ? [map, 'content/writing/art-sources.txt'] : [];
+  const dir = `content/${kinds[kind].dir}`;
+  const map = `${dir}/${art}`;
+  return changed.includes(map) ? [map, `${dir}/art-sources.txt`] : [];
 }
 
 function publish(slug: string, dryRun: boolean) {
@@ -325,6 +326,7 @@ function publish(slug: string, dryRun: boolean) {
     .split('\n')
     .filter((line) => line !== '');
   const carried = mapFiles(
+    kind,
     text,
     changes.map((line) => line.slice(3))
   );

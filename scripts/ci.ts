@@ -27,12 +27,14 @@ const checkConfig = ['biome.json', 'knip.jsonc', 'tsconfig.json'];
 
 export const groups = {
   // Site source and config, the contracts both apps use, the repo's own scripts, and the
-  // producers that run on the owner's machine (their tests are in `just check`). A post's map and
+  // producers that run on the owner's machine (their tests are in `just check`). A post's or note's map and
   // the record of its source count too: the site's tests read them (ADR 0027).
   code: [
     'apps/site/**',
     'content/writing/*.art.txt',
     'content/writing/art-sources.txt',
+    'content/til/*.art.txt',
+    'content/til/art-sources.txt',
     'packages/contracts/**',
     'scripts/**',
     'producers/**',

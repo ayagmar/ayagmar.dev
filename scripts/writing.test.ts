@@ -208,6 +208,25 @@ describe('publish', () => {
     );
   });
 
+  // Catches a note's map looked for beside the posts: the note's PR would leave it out, and the
+  // build on main would fail on the missing file.
+  it('publishes a note with its own map and the record beside the notes', () => {
+    rmSync(join(repo, 'content/writing/cache-reads.md'));
+    const files = {
+      'content/til/art-sources.txt': 'Where each map comes from.\n\nA record.\n',
+      'content/til/brace-groups.art.txt': '#\n',
+      'content/til/brace-groups.md':
+        '---\ntitle: "Brace groups"\ndate: 2026-10-01\nart: brace-groups.art.txt\ndraft: true\n---\n\nBody.\n',
+    };
+    for (const [path, text] of Object.entries(files)) writeFileSync(join(repo, path), text);
+    const { code, out } = cli(['publish', 'brace-groups']);
+    assert.equal(code, 0, out);
+    assert.equal(
+      git(origin, 'diff', '--name-only', 'main', 'content/brace-groups'),
+      Object.keys(files).join('\n')
+    );
+  });
+
   it('a dry run checks and prints the steps but changes nothing', () => {
     const { code, out } = cli(['publish', '--dry-run', 'cache-reads']);
     assert.equal(code, 0, out);

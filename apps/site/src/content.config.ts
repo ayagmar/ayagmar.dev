@@ -2,7 +2,7 @@ import { defineCollection } from 'astro:content';
 import { file, glob, type Loader } from 'astro/loaders';
 import { aboutSchema } from './data/about.ts';
 import { usesSchema } from './data/uses.ts';
-import { postArtErrors, writingBase } from './lib/art-files.ts';
+import { noteArtErrors, postArtErrors, tilBase, writingBase } from './lib/art-files.ts';
 import { noctaliaPluginsSchema } from './lib/noctalia-plugins.ts';
 import { nowSchema } from './lib/now-schema.ts';
 import { projectSchema } from './lib/project-schema.ts';
@@ -52,13 +52,23 @@ const writing: Loader = {
   },
 };
 
+const tilFiles = glob({ pattern: '*.md', base: tilBase, deferRender: true });
+
+// A note's map is checked as a post's is, over the stored entries.
+const til: Loader = {
+  name: 'til',
+  load: async (context) => {
+    await tilFiles.load(context);
+    const notes = [...context.store.values()].map(({ id, data }) => ({ id, art: data.art }));
+    const errors = noteArtErrors(notes);
+    if (errors.length > 0) throw new Error(errors.join('\n'));
+  },
+};
+
 export const collections = {
   writing: defineCollection({ loader: writing, schema: writingSchema }),
   // Short notes, rendered per build like posts so the diagram renderer runs on each (ADR 0028).
-  til: defineCollection({
-    loader: glob({ pattern: '*.md', base: '../../content/til', deferRender: true }),
-    schema: tilSchema,
-  }),
+  til: defineCollection({ loader: til, schema: tilSchema }),
   // One entry, id "now": the /now page (ADR 0035). `updated` is checked against the build's day.
   now: defineCollection({
     loader: glob({ pattern: 'now.md', base: '../../content', deferRender: true }),

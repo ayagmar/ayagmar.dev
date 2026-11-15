@@ -13,7 +13,7 @@ const dateMessage = 'must be a date like 2026-10-26';
  * Optional art above the title (ADR 0027): a room object, or a map file beside the post. The map
  * itself is checked over the stored entries, in src/content.config.ts.
  */
-const art = z.string({ error: artForm }).superRefine((name, ctx) => {
+export const art = z.string({ error: artForm }).superRefine((name, ctx) => {
   const message = artNameProblem(name);
   if (message !== undefined) ctx.addIssue({ code: 'custom', message });
 });
