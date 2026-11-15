@@ -1,9 +1,9 @@
 ---
 
-title: 'CI wrote my SSD twice over in 14 hours'
+title: 'My SSD took 2.5 TiB of writes in 14 hours'
 date: 2026-11-15
 tags: [linux, ci, btrfs]
-art: ci-wrote-my-ssd-twice-over.art.txt
+art: ssd-2-5-tib-in-14-hours.art.txt
 ---
 
 My CI runs on my own machine, on the same 1 TB SSD as everything else. Fourteen hours and about 1,100 jobs after boot, the drive had taken 2,512 GiB of writes. That is the whole drive rewritten every five hours.

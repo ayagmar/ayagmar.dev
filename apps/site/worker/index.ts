@@ -13,6 +13,9 @@ const terminalAgent = /^(curl|wget|httpie|xh)\//i;
 const moved: Readonly<Record<string, string>> = {
   '/projects/headroom': '/projects#noctalia-plugins',
   '/projects/headroom.txt': '/projects.txt',
+  '/til/ci-wrote-my-ssd-twice-over': '/til/ssd-2-5-tib-in-14-hours',
+  '/til/ci-wrote-my-ssd-twice-over.md': '/til/ssd-2-5-tib-in-14-hours.md',
+  '/til/ci-wrote-my-ssd-twice-over.txt': '/til/ssd-2-5-tib-in-14-hours.txt',
 };
 
 /**

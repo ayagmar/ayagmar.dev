@@ -341,3 +341,17 @@ test("headroom's old page and copy move to the plugins section for good", async 
   await page.goto('/projects/headroom');
   await expect(page.locator('#noctalia-plugins')).toHaveAccessibleName('Noctalia plugins');
 });
+
+// Catches a link to the first note's address of its first minutes going dead: it was published
+// as /til/ci-wrote-my-ssd-twice-over and renamed the same day.
+test("the first note's old address and copies lead to its new one", async ({ request }) => {
+  for (const end of ['', '.md', '.txt']) {
+    const response = await request.get(`/til/ci-wrote-my-ssd-twice-over${end}`, {
+      maxRedirects: 0,
+    });
+    expect(response.status(), end).toBe(301);
+    const location = new URL(response.headers().location ?? '', 'http://127.0.0.1');
+    expect(location.pathname, end).toBe(`/til/ssd-2-5-tib-in-14-hours${end}`);
+    expect((await request.get(location.pathname)).status(), end).toBe(200);
+  }
+});
