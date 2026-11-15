@@ -3,7 +3,10 @@ import { join } from 'node:path';
 
 const content = join(import.meta.dirname, '..', '..', '..', 'content');
 
-/** Every entry in content/<dir>: its slug, title, date and whether its frontmatter says `draft: true`. */
+/**
+ * Every entry in content/<dir>: its slug, title, date, tags (written as an inline `[a, b]` list,
+ * as `just post` and `just til` write them) and whether its frontmatter says `draft: true`.
+ */
 function entries(dir: 'writing' | 'til') {
   return readdirSync(join(content, dir))
     .filter((file) => file.endsWith('.md'))
@@ -14,6 +17,10 @@ function entries(dir: 'writing' | 'til') {
         slug: file.replace(/\.md$/, ''),
         title: (/^title:\s*(.+?)\s*$/m.exec(front)?.[1] ?? '').replace(/^(['"])(.*)\1$/, '$2'),
         date: /^date:\s*(\S+)/m.exec(front)?.[1] ?? '',
+        tags: (/^tags:\s*\[(.*)\]\s*$/m.exec(front)?.[1] ?? '')
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
         draft: /^draft:\s*true\s*$/m.test(front),
       };
     });

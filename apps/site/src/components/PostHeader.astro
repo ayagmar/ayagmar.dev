@@ -11,15 +11,13 @@ interface Props {
     data: Pick<WritingFrontmatter, 'title' | 'date' | 'tags' | 'draft'> &
       Partial<Pick<WritingFrontmatter, 'updated' | 'projects'>>;
   };
-  /** Tags link to their writing page; a note's tags have none, so they are plain text. */
-  linkTags?: boolean;
   /** The post's receipt line (src/lib/days.ts), when its frontmatter gives a range. */
   receipt?: string | null;
   /** The post's art as SVG (ADR 0027); without it the header has no figure. */
   art?: string | undefined;
 }
 
-const { post, linkTags = true, receipt = null, art } = Astro.props;
+const { post, receipt = null, art } = Astro.props;
 const { title, date, updated, tags, draft, projects = [] } = post.data;
 ---
 
@@ -45,7 +43,9 @@ const { title, date, updated, tags, draft, projects = [] } = post.data;
     {tags.length > 0 && (
       <ul class="tags" aria-label="Tags">
         {tags.map((tag) => (
-          <li>{linkTags ? <a href={tagPath(tag)}>{tag}</a> : <span>{tag}</span>}</li>
+          <li>
+            <a href={tagPath(tag)}>{tag}</a>
+          </li>
         ))}
       </ul>
     )}

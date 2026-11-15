@@ -2,7 +2,7 @@ import type { ProjectSlug } from '@min7/contracts';
 import { projectPath } from './projects.ts';
 import { site, siteUrl } from './site.ts';
 import { type Note, notePath, noteSummary } from './til.ts';
-import { isoDay, lastUpdated, type Post, postPath, tagPath } from './writing.ts';
+import { isoDay, lastUpdated, type Post, postPath, tagFeedPath } from './writing.ts';
 
 interface FeedEntry {
   /** Atom id: fixed once the post is published, whatever is edited later. */
@@ -52,7 +52,7 @@ export function feedScope(scope?: FeedScope) {
   }
   if ('tag' in scope) {
     return {
-      page: tagPath(scope.tag),
+      page: tagFeedPath(scope.tag),
       title: `${site.name} writing tagged ${scope.tag}`,
       description: `Posts tagged ${scope.tag} on ${site.name}.`,
     };

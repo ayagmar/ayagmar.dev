@@ -1,6 +1,6 @@
 # 0021. RSS and Atom written by hand from one model
 
-Status: accepted, 2026-10-26
+Status: accepted, 2026-10-26. Amended 2026-11-15: the tag page moved to `/tags/<tag>` and lists notes too (ADR 0028). The tag feeds stay at `/writing/tags/<tag>/feed.xml` and `atom.xml`, posts only, and keep `/writing/tags/<tag>` as their id and page link so they do not change by a byte; `public/_redirects` sends that address to `/tags/<tag>` with a 301. `tagFeedPath` in `writing.ts` builds the old address, `tagPath` the page's. A tag page with posts links its tag's feeds; one with notes only links the TIL feeds.
 
 ## Context
 

@@ -1,6 +1,6 @@
 # 0040. Text and Markdown copies of the pages, and llms.txt
 
-Status: accepted, 2026-11-06. Amended 2026-11-06: `/room` is routed too, and `index.txt` names it (ADR 0045).
+Status: accepted, 2026-11-06. Amended 2026-11-06: `/room` is routed too, and `index.txt` names it (ADR 0045). Amended 2026-11-15: tag pages moved to `/tags/<tag>` (ADR 0028), which no routed pattern covers, so they still skip the Worker; `!/writing/tags/*` stays for the tag feeds and the redirect from the old address.
 
 ## Context
 

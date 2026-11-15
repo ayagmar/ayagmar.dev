@@ -9,7 +9,14 @@ export interface Post {
 }
 
 export const postPath = (id: string) => `/writing/${id}`;
-export const tagPath = (tag: string) => `/writing/tags/${tag}`;
+/** A tag's page, listing its posts and notes; the one place its address is built. */
+export const tagPath = (tag: string) => `/tags/${tag}`;
+/**
+ * Where a tag's writing feeds live and the page they name as theirs: the tag page's address
+ * before it moved to `tagPath`. Feeds keep it so they do not change by a byte (ADR 0021), and
+ * `public/_redirects` sends it on to `tagPath`.
+ */
+export const tagFeedPath = (tag: string) => `/writing/tags/${tag}`;
 
 /** What publishing needs of a post or a TIL note. */
 interface Dated {
@@ -31,6 +38,33 @@ export function postsByTag<P extends Post>(posts: readonly P[]): Map<string, P[]
     for (const tag of post.data.tags) byTag.set(tag, [...(byTag.get(tag) ?? []), post]);
   }
   return new Map([...byTag].sort(([a], [b]) => a.localeCompare(b)));
+}
+
+/** What a tag page lists: the tag, its posts and its notes, each in the order given. */
+export interface Tagged<P, N> {
+  tag: string;
+  posts: P[];
+  notes: N[];
+}
+
+/**
+ * Every tag a post or note in `posts` and `notes` uses, sorted by name, with the entries that use
+ * it in the order given. Pass the published sets, newest first, so a tag only drafts use gets no
+ * page outside a build that shows drafts.
+ */
+export function taggedEntries<
+  P extends { data: { tags: readonly string[] } },
+  N extends { data: { tags: readonly string[] } },
+>(posts: readonly P[], notes: readonly N[]): Tagged<P, N>[] {
+  const byTag = new Map<string, Tagged<P, N>>();
+  const entry = (tag: string) => {
+    const found = byTag.get(tag) ?? { tag, posts: [], notes: [] };
+    byTag.set(tag, found);
+    return found;
+  };
+  for (const post of posts) for (const tag of post.data.tags) entry(tag).posts.push(post);
+  for (const note of notes) for (const tag of note.data.tags) entry(tag).notes.push(note);
+  return [...byTag.values()].sort((a, b) => a.tag.localeCompare(b.tag));
 }
 
 export const lastUpdated = (post: Post) => post.data.updated ?? post.data.date;

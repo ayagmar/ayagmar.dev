@@ -42,11 +42,7 @@ const structuredData = [
   <article class="reader" data-pagefind-body>
     <!-- Search shows this as the result's title, so a note reads "TIL: ..." (ADR 0028). -->
     <span hidden data-pagefind-meta="title">TIL: {note.data.title}</span>
-    <PostHeader
-      post={note}
-      linkTags={false}
-      art={art === undefined ? undefined : renderNoteArt(art)}
-    />
+    <PostHeader post={note} art={art === undefined ? undefined : renderNoteArt(art)} />
     <Toc headings={headings} idPrefix={`${note.id}-`} />
     <div class="prose">
       <Content />

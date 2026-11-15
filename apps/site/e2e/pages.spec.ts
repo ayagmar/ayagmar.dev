@@ -1,11 +1,16 @@
-import { posts } from './content.ts';
+import { notes, posts } from './content.ts';
 import { expect, expectNoAxeViolations, notFoundPath, pages, test } from './fixtures.ts';
+
+// Tag pages are noindex, so not in the sitemap: those of the published posts and notes.
+const publishedTags = [
+  ...new Set([...posts, ...notes].filter((entry) => !entry.draft).flatMap((entry) => entry.tags)),
+].map((tag) => `/tags/${tag}`);
 
 // Every page in the sitemap, and on the drafts build the pages that show or list a post: while
 // every post is a draft, production has none of them.
 const checked = [
   // Day pages are noindex, so not in the sitemap: one stands for them all.
-  ...[...pages, '/day/2026-10-25', notFoundPath].map((path) => ({
+  ...[...pages, ...publishedTags, '/day/2026-10-25', notFoundPath].map((path) => ({
     path,
     title: path,
     details: {},
@@ -13,7 +18,7 @@ const checked = [
   ...[
     '/',
     '/writing',
-    '/writing/tags/rust',
+    '/tags/rust',
     '/projects/llm-usage-metrics',
     ...posts.map((post) => `/writing/${post.slug}`),
   ].map((path) => ({ path, title: `${path} with drafts`, details: { tag: '@drafts' } })),
@@ -41,7 +46,7 @@ for (const { path, title, details } of checked) {
 }
 
 test('pages link their feeds for discovery', { tag: '@drafts' }, async ({ page }) => {
-  await page.goto('/writing/tags/rust');
+  await page.goto('/tags/rust');
   const feeds = await page
     .locator('link[rel="alternate"]')
     .evaluateAll((links) =>

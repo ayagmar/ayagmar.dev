@@ -42,11 +42,7 @@ it('passes a site whose pages and sitemap agree', () => {
   write({
     'dist/index.html': page('/', 'Home'),
     'dist/writing/out.html': page('/writing/out', 'Out', posting('2026-10-12')),
-    'dist/writing/tags/a.html': page(
-      '/writing/tags/a',
-      'Tagged a',
-      '<meta name="robots" content="noindex">'
-    ),
+    'dist/tags/a.html': page('/tags/a', 'Tagged a', '<meta name="robots" content="noindex">'),
     'dist/sitemap-0.xml': sitemap(
       '<loc>https://ayagmar.dev/</loc>',
       '<loc>https://ayagmar.dev/writing/out</loc><lastmod>2026-10-12</lastmod>'

@@ -1,3 +1,5 @@
 /projects/headroom.txt /projects.txt 301
 /til/ci-wrote-my-ssd-twice-over.md /til/ssd-2-5-tib-in-14-hours.md 301
 /til/ci-wrote-my-ssd-twice-over.txt /til/ssd-2-5-tib-in-14-hours.txt 301
+/writing/tags/:tag /tags/:tag 301
+/writing/tags/:tag/ /tags/:tag 301
