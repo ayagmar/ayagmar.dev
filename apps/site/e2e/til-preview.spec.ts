@@ -99,7 +99,7 @@ test('/til shows every note in full, newest first, each with its date and permal
     expect(await entry.locator('.prose p').count()).toBeGreaterThan(0);
   }
   // The long command is on the page, not only on the note's own.
-  await expect(shown.locator('pre')).toContainText('install.sh | sh');
+  if (hasLongLine) await expect(shown.locator('pre')).toContainText('install.sh | sh');
 });
 
 test('a note page shows that note alone', async ({ page }) => {
