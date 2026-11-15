@@ -1,7 +1,7 @@
 ---
 import { notePath } from '../lib/til.ts';
 import type { TilFrontmatter } from '../lib/til-schema.ts';
-import { isoDay } from '../lib/writing.ts';
+import { isoDay, tagPath } from '../lib/writing.ts';
 
 interface Props {
   id: string;
@@ -9,14 +9,17 @@ interface Props {
   /** The note's first paragraph (`noteSummary`); left out when it is only the title again. */
   summary: string;
   minutes: number;
+  /** The title's level: 2 on /til, 3 under a tag page's "Notes" heading. */
+  level?: 2 | 3;
 }
 
-const { id, data, summary, minutes } = Astro.props;
+const { id, data, summary, minutes, level = 2 } = Astro.props;
 const { title, date, tags, draft } = data;
+const Heading = level === 3 ? 'h3' : 'h2';
 ---
 
 <article class="til-note">
-  <h2><a href={notePath(id)}>{title}</a></h2>
+  <Heading><a href={notePath(id)}>{title}</a></Heading>
   <div class="post-meta">
     <p>
       <time datetime={isoDay(date)}>{isoDay(date)}</time>{' '}
@@ -27,7 +30,7 @@ const { title, date, tags, draft } = data;
       <ul class="tags" aria-label="Tags">
         {tags.map((tag) => (
           <li>
-            <span>{tag}</span>
+            <a href={tagPath(tag)}>{tag}</a>
           </li>
         ))}
       </ul>

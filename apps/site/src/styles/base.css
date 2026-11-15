@@ -977,8 +977,7 @@ time[data-ago] {
   }
 }
 
-.tags a,
-.tags span {
+.tags a {
   color: var(--fg-2);
   font-size: 0.9375rem;
 }
@@ -987,8 +986,7 @@ time[data-ago] {
   color: var(--accent);
 }
 
-.tags a::before,
-.tags span::before {
+.tags a::before {
   content: "#";
 }
 
@@ -1640,13 +1638,13 @@ img.plugin-thumb,
   margin-top: 2.5rem;
 }
 
-.til-note h2 {
+.til-note :is(h2, h3) {
   margin: 0 0 0.25rem;
   font-size: 1.55em;
   line-height: 1.2;
 }
 
-.til-note h2 a {
+.til-note :is(h2, h3) a {
   color: var(--fg);
   text-decoration-color: var(--lamp);
 }

@@ -61,7 +61,7 @@ for (const page of pages) {
   for (const node of nodes) {
     if (typeof node['@type'] !== 'string') problems.push(`${page}: a JSON-LD node has no @type`);
   }
-  const article = /^(writing|til)\/[^/]+\.html$/.test(page) && !page.startsWith('writing/tags/');
+  const article = /^(writing|til)\/[^/]+\.html$/.test(page);
   if (article && !nodes.some((node) => node['@type'] === 'BlogPosting')) {
     problems.push(`${page}: a post or note without a BlogPosting`);
   }

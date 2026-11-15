@@ -193,7 +193,7 @@ describe('writing about skills', () => {
 
   // Catches a link to a tag page that was never built.
   it('links the skills tag page only when a published post has the tag', () => {
-    expect(skillsTagPath(posts)).toBe('/writing/tags/skills');
+    expect(skillsTagPath(posts)).toBe('/tags/skills');
     expect(skillsTagPath([post('c', ['rust'])])).toBeNull();
   });
 });
