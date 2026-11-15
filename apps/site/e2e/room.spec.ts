@@ -465,7 +465,7 @@ test.describe('on a phone', () => {
   test('each row says what its page holds', async ({ page }) => {
     const newestNote = notes
       .filter((note) => !note.draft)
-      .toSorted((a, b) => b.date.localeCompare(a.date))[0];
+      .toSorted((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug))[0];
     await page.goto('/');
     await expect(page.locator('.room-holds:visible')).toHaveText([
       'Tools I build',
