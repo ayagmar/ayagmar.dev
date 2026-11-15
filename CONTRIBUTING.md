@@ -15,7 +15,7 @@ Frontmatter:
 | `date`     | yes      | `YYYY-MM-DD`, the publish date.                                                   |
 | `updated`  | no       | `YYYY-MM-DD`, not before `date`. Shown as "last updated".                         |
 | `summary`  | yes      | One sentence. Used in lists, feeds and search.                                    |
-| `tags`     | no       | Lowercase slugs like `rust` or `home-lab`, no repeats.                            |
+| `tags`     | no       | Lowercase slugs like `home-lab`, no repeats. Each gets a page, `/tags/<tag>`.     |
 | `series`   | no       | A slug a series' posts share; each then shows "Part 2 of 3" and links the others. |
 | `draft`    | no       | `true` keeps the post out of production builds. Defaults to `false`.              |
 | `projects` | no       | Slugs of the featured projects the post is about, like `[runnerd]`.               |
@@ -71,7 +71,7 @@ The build fails, naming the file and line, when a diagram has no name, has a Mer
 
 ## TIL notes
 
-A note is a short "today I learned" in `content/til/<slug>.md`; the slug is the URL, `/til/<slug>`. `just til "Title"`, `just drafts` and `just publish <slug>` work as for posts, and the commit is `content(til): publish <slug>`. Frontmatter is `title` and `date` (`YYYY-MM-DD`), plus optional `tags` (the posts' rules), `art` (as for a post; a note's map and its record sit in `content/til`, see [docs/art.md](docs/art.md)) and `draft: true`. Any other field, `summary` included, fails the build. The body is a few lines to a few paragraphs of Markdown, with the same code blocks and diagrams as posts. `/til` lists every published note, newest first, with its date, reading time, tags and first paragraph; `/til/feed.xml` and `/til/atom.xml` carry them, and the writing feeds do not. Feeds use the note's first paragraph as its summary. Details: [ADR 0028](docs/adr/0028-til-notes.md).
+A note is a short "today I learned" in `content/til/<slug>.md`; the slug is the URL, `/til/<slug>`. `just til "Title"`, `just drafts` and `just publish <slug>` work as for posts, and the commit is `content(til): publish <slug>`. Frontmatter is `title` and `date` (`YYYY-MM-DD`), plus optional `tags` (the posts' rules), `art` (as for a post; a note's map and its record sit in `content/til`, see [docs/art.md](docs/art.md)) and `draft: true`. Any other field, `summary` included, fails the build. The body is a few lines to a few paragraphs of Markdown, with the same code blocks and diagrams as posts. `/til` lists every published note, newest first, with its date, reading time, tags and first paragraph; `/til/feed.xml` and `/til/atom.xml` carry them, and the writing feeds do not. A tag's page, `/tags/<tag>`, lists its posts and then its notes, and offers the tag's feeds, or the TIL feeds when only notes use the tag. Feeds use the note's first paragraph as its summary. Details: [ADR 0028](docs/adr/0028-til-notes.md).
 
 ## Skills
 
