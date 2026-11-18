@@ -1,5 +1,6 @@
 // Tests that need a post carry @drafts and run on the build that shows drafts, where the
 // placeholder drafts in content/writing are posts (playwright.config.ts).
+import { notes } from './content.ts';
 import { expect, test } from './fixtures.ts';
 
 test('a post about a project shows its card and the other posts on it', { tag: '@drafts' }, async ({
@@ -343,8 +344,10 @@ test("headroom's old page and copy move to the plugins section for good", async 
 });
 
 // Catches a link to the first note's address of its first minutes going dead: it was published
-// as /til/ci-wrote-my-ssd-twice-over and renamed the same day.
+// as /til/ci-wrote-my-ssd-twice-over and renamed the same day. While the note is a draft the
+// redirect stays and its target is a 404.
 test("the first note's old address and copies lead to its new one", async ({ request }) => {
+  const draft = notes.find((note) => note.slug === 'ssd-2-5-tib-in-14-hours')?.draft;
   for (const end of ['', '.md', '.txt']) {
     const response = await request.get(`/til/ci-wrote-my-ssd-twice-over${end}`, {
       maxRedirects: 0,
@@ -352,6 +355,6 @@ test("the first note's old address and copies lead to its new one", async ({ req
     expect(response.status(), end).toBe(301);
     const location = new URL(response.headers().location ?? '', 'http://127.0.0.1');
     expect(location.pathname, end).toBe(`/til/ssd-2-5-tib-in-14-hours${end}`);
-    expect((await request.get(location.pathname)).status(), end).toBe(200);
+    expect((await request.get(location.pathname)).status(), end).toBe(draft ? 404 : 200);
   }
 });

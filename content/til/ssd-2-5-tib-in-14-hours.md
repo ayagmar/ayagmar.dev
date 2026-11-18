@@ -3,6 +3,7 @@
 title: 'My SSD took 2.5 TiB of writes in 14 hours'
 date: 2026-11-15
 tags: [linux, ci, btrfs]
+draft: true
 art: ssd-2-5-tib-in-14-hours.art.txt
 ---
 

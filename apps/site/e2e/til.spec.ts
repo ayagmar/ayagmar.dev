@@ -55,8 +55,9 @@ test('draft notes are in none of the places a note is listed', async ({ page, re
   const dialog = page.getByRole('dialog', { name: 'Search' });
   for (const { slug, title } of drafts) {
     await dialog.getByLabel('Search the site').fill(title);
-    // Pagefind ranks pages that match part of a query, so other pages may answer; the note must not.
-    await expect(dialog.getByRole('status')).toHaveText(/results?\.$/);
+    // Pagefind ranks pages that match part of a query, so other pages may answer, or none; the
+    // note must not.
+    await expect(dialog.getByRole('status')).toHaveText(/results?\.$|^Nothing for /);
     const found = await dialog
       .getByRole('link')
       .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
