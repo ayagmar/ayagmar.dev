@@ -19,7 +19,7 @@ catalog:
   "@types/node": 24.19.2
   msw: 3.0.7
   typescript: 6.0.3
-  vitest: 5.1.0
+  vitest: 5.1.1
   wrangler: 4.164.0
 
 # Patched versions of transitive dependencies osv-scanner flags, until their parents update.
