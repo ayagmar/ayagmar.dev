@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@astrojs/markdown-satteri": "0.4.7",
-    "@astrojs/sitemap": "3.7.4",
-    "@astrojs/svelte": "9.1.2",
+    "@astrojs/markdown-satteri": "0.4.10",
+    "@astrojs/sitemap": "3.7.5",
+    "@astrojs/svelte": "9.1.6",
     "@min7/contracts": "workspace:*",
-    "astro": "7.4.8",
+    "astro": "7.4.12",
     "pele": "1.13.0",
     "satteri": "0.11.7",
     "svelte": "5.58.0"
